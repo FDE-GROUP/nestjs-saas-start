@@ -34,6 +34,9 @@ function RootLayout() {
             <Link to="/settings/account" className="hover:text-slate-900">
               账号
             </Link>
+            <Link to="/platform/tenants" search={{ offset: 0 }} className="hover:text-slate-900">
+              平台运营
+            </Link>
           </nav>
         </div>
         <span className="text-xs text-slate-400">F2 自助面 · apps/web</span>
