@@ -58,7 +58,7 @@
   1. **中间档取舍** → 采 `vi.mock('../lib/api')`+`vi.mock('../lib/session')` 做拟真 envelope 的 loader 集成（留 Vitest 内·不引 MSW·零修宪）；联调真浏览器链路仍留 B。
   2. **monolithic 页导出基元** → 优先整页 memory-router；实测四页均可整页测·**未加 additive 导出**（零生产码改动）。唯 `platform.tenants.$id` 因父分页 loader 不可忠实驱动而归 B（非导出基元可补救其分支逻辑）。
   3. **e2e 工具** → 保持切片 B 立项·Playwright 待 B-0 签核，本阶段未引任何新工具。
-- **发现项（待归人·本切片未修）**：① `settings.roles.$roleKey` **实证**缺 `<Outlet/>` 不渲染（孤例·行为改动·另案签核修复）；② `platform.tenants.tsx:30` 父 loader 直读 `ctx.search` 深链敏感；③ web 测试运行须用根 Vitest 配置（见 §2-3 附带发现）。
+- **发现项（待归人·本切片未修）**：① `settings.roles.$roleKey` **实证**缺 `<Outlet/>` 不渲染（孤例·行为改动·已另立项 [`module-frontend-roles-outlet-delegation`](./module-frontend-roles-outlet-delegation.md) 待签核修复）；② `platform.tenants.tsx:30` 父 loader 直读 `ctx.search` 深链敏感；③ web 测试运行须用根 Vitest 配置（见 §2-3 附带发现）。
 - 审计人 / 日期：用户（令「1」·GO 切片 A）/ 2026-10-19
 
 ## 5. 完成判据（可核验 + 穷尽）
