@@ -1,4 +1,4 @@
-# 前端 F4 · 平台运营治理面：apps/web PlatformOperator 跨租户治理 UI（已审·实施稿·F4a 租户面）
+# 前端 F4 · 平台运营治理面：apps/web PlatformOperator 跨租户治理 UI（已审·实施稿·F4a 租户面 + F4b 用户面）
 
 > 适用范围: `模块(apps/web · 前端平台运营面)` | 受众: 人（审计/裁点）
 > 关联: `global-frontend-adoption` §2.2 · `module-frontend-tenant-console`（F2） · `module-frontend-rbac-admin`（F3） · `module-frontend-posts`（B1） · `specs/vision.md` §4 第 7 支柱「人的界面」 · `specs/architecture.md`（platform 跨租治理·FR-6/FR-11①/FR-13） · `specs/tooling-standards.md` §4.12
@@ -84,8 +84,15 @@
 
 - 结论：**已审计并放行实施**——人 CreatePlan 批准本 plan（2026-10-18）·§2.4 待裁点①–⑦按推荐档甲全采（整体「同意」非逐条裁·**尤①拆片 / ③硬删强确认已随批准背书**）·F4a 租户面已按此实施落地（详见 §5 勾选）。
 - 实施期两处据实纠偏（不改裁点·纯落地细节）：① 文件式路由 `platform.tenants.$id` 自动成为列表路由的**子路由**（routeTree `getParentRoute`）→ 父级命中子路由时经 `useMatchRoute` 委托 `<Outlet/>`（否则详情不渲染·`settings.roles` 面存同结构隐患·已登记复用坑）；② 列表页 `useState` 上移至早退之前守 rules-of-hooks。本仓首个 `validateSearch` 面：loader 上下文 `ctx.search` 未被插件登记进类型·运行时形取·编译期诚实降级。
-- 未决项：F4b（用户治理 3 op）列为配对下一片·本片不含；approve/reject（A3·审批申请）不在平台面·另立项。
+- 未决项：approve/reject（A3·审批申请）不在平台面·另立项。
 - 审计人 / 日期：人（CreatePlan 批准 + 「同意」放行）/ 2026-10-18。
+
+### 4b. F4b · 用户治理面（配对片·已审计并放行实施）
+
+- 结论：**已审计并放行实施**——续 F4a 后用户择片①（F4b）→ 呈新 plan（`F4b_platform_users_governance`）·人 CreatePlan 批准 + 「同意」放行（2026-10-18）·待裁点按推荐档甲全采。消费 `PlatformUsersController` **3 op**（GET list + PATCH suspend + PATCH resume）·**后端零改动**。
+- 落地要事：`/platform/users` 子段（PlatformShell 加「用户治理」导航）·列表复用 offset 分页/search·行内 suspend（toggle 输入 reason·裁①甲）/resume（单击）·`UsersListView` `renderActions` 插槽使纯展示可测·`StatusBadge` 直接复用 F4a（`UserStatus = TenantStatus` 结构同型·裁②甲）。
+- **据实边界**：后端无 `GET /users/{id}`/无删除端点 → **不做详情页·无不可逆硬删面**（suspend 可逆）→ 本面不命中高危清单。
+- 完成判据见 §5b。
 
 ## 5. 完成判据（可核验 + 穷尽）
 
@@ -97,8 +104,20 @@
 - [x] 403 非运营者 → AccessDeniedPanel·未登录 → 弹登录（deny-by-default）
 - [x] 组件测：`platform.tenants.test.tsx`（列表 typed 渲染/空态/状态徽标 + 动作 enable/disable 矩阵·11 测）·纯展示对齐既有 View 模式
 - [x] `pnpm run ci` L1 全绿（基线 571→**582 passed / 31 skipped·110 files** 只增不减·fallow 无越界·后端零改动 git status 坐实）
-- [x] 前端消费 op 29 → 37（+8·F4a）·F4b 待下片再 +3
+- [x] 前端消费 op 29 → 37（+8·F4a）
 - [ ] dev 反代真跑端到端（运营者登录态→列租户→进详情→转移→软删→硬删→导出·**归人类验收执行**）
+- [ ] 提交 + 人类验收（归人）
+
+### 5b. F4b 完成判据
+
+- [x] 待裁点①②（行内 toggle reason / StatusBadge 复用）经人签核放行（CreatePlan 批准 + 「同意」·甲档全采）
+- [x] `/platform/users` 列表（search + offset 分页 + 状态徽标）typed 落地·PlatformShell 加「用户治理」导航
+- [x] 行内 suspend（toggle 输入 reason）/ resume（单击）· useAction 成功 invalidate 重跑 loader·409/404 describeApiError 回显
+- [x] 403 非运营者 → ErrorPanel·未登录 → 弹登录（deny-by-default·承 F4a）
+- [x] 组件测：`platform.users.test.tsx`（typed 渲染/空态/徽标 + `userActionEnabled` 矩阵 + `UserRowActions` disable·9 测）
+- [x] `pnpm run ci` L1 全绿（基线 582→**591 passed / 31 skipped·111 files** 只增不减·fallow 无越界·后端零改动 git status 坐实）
+- [x] 前端消费 op 37 → 40（+3·**平台治理 11 op 全消费·F4 平台线收口**）
+- [ ] dev 反代真跑端到端（运营者登录→列用户→suspend 带 reason→resume·**归人类验收执行**）
 - [ ] 提交 + 人类验收（归人）
 
 ## 6. 演变记录
@@ -107,8 +126,9 @@
 |------|------|----------|----------|
 | 2026-10-18 | 0.1.0 | 续 B1 择下一片：剩余 tenant 面经取证偏薄/provider-gated → 最大自洽片 = F4 平台治理面；取证坐实为 tenants8+users3（据实修正先前「含 events/impersonation/approve」误口径）→ 起草呈审（拆片·聚焦不可逆硬删） | 首版呈审：11 op typed 实据 + 状态机 TRANSITIONS 联动设计 + offset 分页首落 + 硬删强确认 + export passthrough 降档 + 七待裁点·§4 标「待审计」 |
 | 2026-10-18 | 0.2.0 | 人 CreatePlan 批准 + 「同意」放行·F4a 实施落地 | §4 转「已审计并放行实施」·§5 实施项勾选（CI 571→582·op 29→37）·登记落地两纠偏（嵌套子路由 Outlet 委托 + rules-of-hooks + validateSearch loader search 类型降级）·F4b 待下片 |
+| 2026-10-18 | 0.3.0 | 人择片①（F4b 用户面）+ CreatePlan 批准 + 「同意」放行·F4b 实施落地 | 新增 §4b/§5b：消费 PlatformUsersController 3 op·`/platform/users` 行内 suspend(toggle reason)/resume·无详情/硬删面（不命高危）·复用 StatusBadge/offset 分页·CI 582→591·op 37→40·**F4 平台线（tenants8+users3=11 op）收口** |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-18 / v0.2.0 实施落地（**F4a 已实施·待人类验收**——平台租户治理面 8 op typed 消费·`/platform` 段 + PlatformShell + 列表 offset 分页/search/徽标 + 详情诊断/状态机联动动作/软删二次确认/硬删键入 slug 强确认/export 下载·后端零改动 git status 坐实·L1 571→582/31 只增不减；dev 反代真跑端到端 + 提交 + 人类验收归人·F4b 用户面配对下一片）。
+正文已于 2026-10-18 / v0.3.0 实施落地（**F4a 租户面 + F4b 用户面均已实施·待人类验收**——平台治理面 11 op（tenants8+users3）typed 全消费·`/platform` 段 + PlatformShell（租户/用户双导航）·F4a：列表 offset 分页/search/徽标 + 详情诊断/状态机联动动作/软删二次确认/硬删键入 slug 强确认/export；F4b：用户列表 + 行内 suspend（toggle reason）/resume·无详情/硬删面·后端零改动 git status 坐实·L1 571→582→591/31 只增不减；op 29→37→40·F4 平台线收口；dev 反代真跑端到端 + 提交 + 人类验收归人）。

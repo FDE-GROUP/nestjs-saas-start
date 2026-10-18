@@ -17,6 +17,7 @@ import { Route as PostsRouteImport } from './routes/posts'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as PlatformTenantsRouteImport } from './routes/platform.tenants'
+import { Route as PlatformUsersRouteImport } from './routes/platform.users'
 import { Route as SettingsAccountRouteImport } from './routes/settings.account'
 import { Route as SettingsInvitationsRouteImport } from './routes/settings.invitations'
 import { Route as SettingsMembersRouteImport } from './routes/settings.members'
@@ -64,6 +65,11 @@ const PlatformTenantsRoute = PlatformTenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => PlatformRoute,
 } as any)
+const PlatformUsersRoute = PlatformUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const SettingsAccountRoute = SettingsAccountRouteImport.update({
   id: '/settings/account',
   path: '/settings/account',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/platform/tenants': typeof PlatformTenantsRouteWithChildren
+  '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/platform/tenants': typeof PlatformTenantsRouteWithChildren
+  '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/platform/tenants': typeof PlatformTenantsRouteWithChildren
+  '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/workspaces'
     | '/platform/tenants'
+    | '/platform/users'
     | '/settings/account'
     | '/settings/invitations'
     | '/settings/members'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/workspaces'
     | '/platform/tenants'
+    | '/platform/users'
     | '/settings/account'
     | '/settings/invitations'
     | '/settings/members'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/workspaces'
     | '/platform/tenants'
+    | '/platform/users'
     | '/settings/account'
     | '/settings/invitations'
     | '/settings/members'
@@ -267,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformTenantsRouteImport
       parentRoute: typeof PlatformRoute
     }
+    '/platform/users': {
+      id: '/platform/users'
+      path: '/users'
+      fullPath: '/platform/users'
+      preLoaderRoute: typeof PlatformUsersRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/settings/account': {
       id: '/settings/account'
       path: '/settings/account'
@@ -326,10 +345,12 @@ const PlatformTenantsRouteWithChildren = PlatformTenantsRoute._addFileChildren(
 
 interface PlatformRouteChildren {
   PlatformTenantsRoute: typeof PlatformTenantsRouteWithChildren
+  PlatformUsersRoute: typeof PlatformUsersRoute
 }
 
 const PlatformRouteChildren: PlatformRouteChildren = {
   PlatformTenantsRoute: PlatformTenantsRouteWithChildren,
+  PlatformUsersRoute: PlatformUsersRoute,
 }
 
 const PlatformRouteWithChildren = PlatformRoute._addFileChildren(

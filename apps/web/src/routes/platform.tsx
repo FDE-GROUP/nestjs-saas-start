@@ -27,6 +27,13 @@ function PlatformShell() {
         >
           租户治理
         </Link>
+        <Link
+          to="/platform/users"
+          search={{ offset: 0 }}
+          className="text-slate-600 hover:text-slate-900"
+        >
+          用户治理
+        </Link>
       </nav>
       <Outlet />
     </div>
