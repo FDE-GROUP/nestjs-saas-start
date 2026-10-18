@@ -1,31 +1,52 @@
 import type { components } from '@saas/api-client';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Feedback, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { signOut } from '../lib/auth';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
+import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 
 type SubscriptionResponse = components['schemas']['SubscriptionResponse'];
+
+/** 透传面防御形（GET /tenants 返回 BA organization 列表·无 Nest typed 契约）。 */
+interface TenantOrg {
+  id?: string;
+  name?: string;
+  slug?: string;
+}
+function extractTenants(raw: unknown): TenantOrg[] {
+  if (Array.isArray(raw)) return raw as TenantOrg[];
+  if (raw && typeof raw === 'object' && 'organizations' in raw) {
+    const list = (raw as { organizations?: unknown }).organizations;
+    if (Array.isArray(list)) return list as TenantOrg[];
+  }
+  return [];
+}
 
 export const Route = createFileRoute('/')({
   // 未登录直接弹回登录页（deny-by-default 的前端映射·与后端会话墙同向）。
   loader: async () => {
     const session = await requireSession();
-    const { data, error } = await api.GET('/api/v1/subscriptions/current');
-    if (error) logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, error);
+    const { data: subData, error: subError } = await api.GET('/api/v1/subscriptions/current');
+    if (subError)
+      logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, subError);
+    const { data: tenantData, error: tenantError } = await api.GET('/api/v1/tenants');
+    if (tenantError) logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, tenantError);
     return {
       user: session.user,
-      subscription: error ? null : (data?.data ?? null),
-      note: error ? describeApiError(error) : null,
+      subscription: subError ? null : (subData?.data ?? null),
+      note: subError ? describeApiError(subError) : null,
+      tenants: tenantError ? [] : extractTenants(tenantData?.data),
     };
   },
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { user, subscription, note } = Route.useLoaderData();
+  const { user, subscription, note, tenants } = Route.useLoaderData();
   const navigate = useNavigate();
 
   async function onSignOut() {
@@ -54,6 +75,8 @@ function DashboardPage() {
         </div>
       </section>
 
+      <TenantSwitchSection tenants={tenants} />
+
       <section className="flex flex-col gap-3">
         <SectionHeading>订阅摘要</SectionHeading>
         {note ? <ErrorPanel message={note} /> : <SubscriptionView subscription={subscription} />}
@@ -78,5 +101,48 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
         {subscription.used} / {subscription.remaining}
       </dd>
     </dl>
+  );
+}
+
+/** 租户切换区域（操作面）。 */
+function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
+  const switchAction = useAction();
+
+  async function handleSwitch(orgId: string, orgName: string) {
+    await switchAction.run({
+      path: '/api/v1/tenants/active',
+      method: 'POST',
+      scope: 'tenant.switch',
+      successMessage: `已切换到「${orgName}」`,
+      thunk: () =>
+        api.POST('/api/v1/tenants/active', {
+          body: { organizationId: orgId },
+        }),
+    });
+  }
+
+  if (tenants.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <SectionHeading>我的租户</SectionHeading>
+      <div className="flex flex-col gap-2">
+        {tenants.map((t) => (
+          <div
+            key={t.id}
+            className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm"
+          >
+            <span className="font-medium text-slate-800">{t.name ?? t.id}</span>
+            <SubmitButton
+              pending={switchAction.pending}
+              onClick={() => t.id && handleSwitch(t.id, t.name ?? t.id)}
+            >
+              切换到此租户
+            </SubmitButton>
+          </div>
+        ))}
+      </div>
+      <Feedback error={switchAction.error} success={switchAction.success} />
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { type SignInOutcome, signInEmail } from '../lib/auth';
 
@@ -62,6 +62,12 @@ function LoginPage() {
       >
         {pending ? '登录中…' : '登录'}
       </button>
+      <p className="text-center text-sm text-slate-500">
+        没有账号？
+        <Link to="/register" className="ml-1 text-blue-600 hover:underline">
+          注册
+        </Link>
+      </p>
     </form>
   );
 }

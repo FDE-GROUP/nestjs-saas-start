@@ -13,7 +13,7 @@ export interface SessionUser {
 
 export interface SessionResult {
   user: SessionUser;
-  session: { id: string; expiresAt: string };
+  session: { id: string; expiresAt: string; activeOrganizationId?: string };
 }
 
 async function post(path: string, body: unknown): Promise<Response> {
@@ -46,6 +46,18 @@ export async function signInEmail(email: string, password: string): Promise<Sign
   if (res.ok) return { ok: true, status: res.status };
   const detail = (await res.json().catch(() => ({}))) as { message?: string };
   return { ok: false, status: res.status, error: detail.message ?? `登录失败（${res.status}）` };
+}
+
+/** 注册（dev only·NODE_ENV !== 'production' 时后端 emailAndPassword.enabled）。 */
+export async function signUpEmail(
+  email: string,
+  password: string,
+  name: string,
+): Promise<SignInOutcome> {
+  const res = await post('/sign-up/email', { email, password, name });
+  if (res.ok) return { ok: true, status: res.status };
+  const detail = (await res.json().catch(() => ({}))) as { message?: string };
+  return { ok: false, status: res.status, error: detail.message ?? `注册失败（${res.status}）` };
 }
 
 export async function signOut(): Promise<void> {

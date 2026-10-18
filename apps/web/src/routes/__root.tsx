@@ -19,6 +19,18 @@ function RootLayout() {
             <Link to="/settings/members" className="hover:text-slate-900">
               成员
             </Link>
+            <Link to="/settings/roles" className="hover:text-slate-900">
+              角色权限
+            </Link>
+            <Link to="/settings/invitations" className="hover:text-slate-900">
+              邀请管理
+            </Link>
+            <Link to="/invitations" className="hover:text-slate-900">
+              我的邀请
+            </Link>
+            <Link to="/settings/account" className="hover:text-slate-900">
+              账号
+            </Link>
           </nav>
         </div>
         <span className="text-xs text-slate-400">F2 自助面 · apps/web</span>

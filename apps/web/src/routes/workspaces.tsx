@@ -1,12 +1,16 @@
 import type { components } from '@saas/api-client';
 import { createFileRoute } from '@tanstack/react-router';
+import { useState } from 'react';
+import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
+import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 
 type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
+type WorkspaceItem = WorkspacePageResponse['items'][number];
 
 export const Route = createFileRoute('/workspaces')({
   loader: async () => {
@@ -23,8 +27,121 @@ export const Route = createFileRoute('/workspaces')({
 
 function WorkspacesPage() {
   const result = Route.useLoaderData();
+  const create = useAction();
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
-  return <WorkspacesView page={result.page} />;
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = await create.run({
+      path: '/api/v1/workspaces',
+      method: 'POST',
+      scope: 'workspace.create',
+      successMessage: `已创建「${name}」`,
+      thunk: () => api.POST('/api/v1/workspaces', { body: { name, slug } }),
+    });
+    if (ok) {
+      setName('');
+      setSlug('');
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <WorkspacesView page={result.page} />
+
+      <section className="flex flex-col gap-3">
+        <SectionHeading>新建 Workspace</SectionHeading>
+        <FormWrap onSubmit={handleCreate}>
+          <Field label="名称" name="name" value={name} onChange={setName} required />
+          <Field label="Slug" name="slug" value={slug} onChange={setSlug} required />
+          <SubmitButton pending={create.pending}>创建</SubmitButton>
+        </FormWrap>
+        <Feedback error={create.error} success={create.success} />
+      </section>
+
+      {result.page?.items?.length ? (
+        <section className="flex flex-col gap-3">
+          <SectionHeading>操作</SectionHeading>
+          {result.page.items.map((ws) => (
+            <WorkspaceRow key={ws.id} ws={ws} />
+          ))}
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+/** 单行 Workspace 的改名/删除操作。 */
+function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(ws.name);
+  const rename = useAction();
+  const del = useAction();
+
+  async function handleRename(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = await rename.run({
+      path: `/api/v1/workspaces/${ws.id}`,
+      method: 'PATCH',
+      scope: 'workspace.rename',
+      successMessage: '已重命名',
+      thunk: () =>
+        api.PATCH('/api/v1/workspaces/{id}', {
+          params: { path: { id: ws.id } },
+          body: { name: editName },
+        }),
+    });
+    if (ok) setEditing(false);
+  }
+
+  async function handleDelete() {
+    await del.run({
+      path: `/api/v1/workspaces/${ws.id}`,
+      method: 'DELETE',
+      scope: 'workspace.delete',
+      successMessage: `已删除「${ws.name}」`,
+      thunk: () => api.DELETE('/api/v1/workspaces/{id}', { params: { path: { id: ws.id } } }),
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
+      {editing ? (
+        <FormWrap onSubmit={handleRename} className="flex items-end gap-2">
+          <Field label="新名称" name="editName" value={editName} onChange={setEditName} />
+          <SubmitButton pending={rename.pending}>保存</SubmitButton>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="text-xs text-slate-500 hover:text-slate-700"
+          >
+            取消
+          </button>
+        </FormWrap>
+      ) : (
+        <span className="flex-1 font-medium text-slate-800">
+          {ws.name}
+          <span className="ml-2 text-xs text-slate-400">({ws.slug})</span>
+        </span>
+      )}
+      {!editing && (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          改名
+        </button>
+      )}
+      <DangerButton pending={del.pending} onClick={handleDelete}>
+        删除
+      </DangerButton>
+      <Feedback error={rename.error ?? del.error} success={rename.success ?? del.success} />
+    </div>
+  );
 }
 
 /** 纯展示（收 typed 分页形·可脱离 router 组件测：typed 渲染 / 空态）。 */

@@ -10,13 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvitationsRouteImport } from './routes/invitations'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
+import { Route as SettingsAccountRouteImport } from './routes/settings.account'
+import { Route as SettingsInvitationsRouteImport } from './routes/settings.invitations'
 import { Route as SettingsMembersRouteImport } from './routes/settings.members'
+import { Route as SettingsRolesRouteImport } from './routes/settings.roles'
+import { Route as SettingsRolesRoleKeyRouteImport } from './routes/settings.roles.$roleKey'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvitationsRoute = InvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -24,9 +35,24 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkspacesRoute = WorkspacesRouteImport.update({
   id: '/workspaces',
   path: '/workspaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsAccountRoute = SettingsAccountRouteImport.update({
+  id: '/settings/account',
+  path: '/settings/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsInvitationsRoute = SettingsInvitationsRouteImport.update({
+  id: '/settings/invitations',
+  path: '/settings/invitations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsMembersRoute = SettingsMembersRouteImport.update({
@@ -34,39 +60,103 @@ const SettingsMembersRoute = SettingsMembersRouteImport.update({
   path: '/settings/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRolesRoute = SettingsRolesRouteImport.update({
+  id: '/settings/roles',
+  path: '/settings/roles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRolesRoleKeyRoute = SettingsRolesRoleKeyRouteImport.update({
+  id: '/$roleKey',
+  path: '/$roleKey',
+  getParentRoute: () => SettingsRolesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
+  '/settings/account': typeof SettingsAccountRoute
+  '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
+  '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
+  '/settings/account': typeof SettingsAccountRoute
+  '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
+  '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
+  '/settings/account': typeof SettingsAccountRoute
+  '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
+  '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/workspaces' | '/settings/members'
+  fullPaths:
+    | '/'
+    | '/invitations'
+    | '/login'
+    | '/register'
+    | '/workspaces'
+    | '/settings/account'
+    | '/settings/invitations'
+    | '/settings/members'
+    | '/settings/roles'
+    | '/settings/roles/$roleKey'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/workspaces' | '/settings/members'
-  id: '__root__' | '/' | '/login' | '/workspaces' | '/settings/members'
+  to:
+    | '/'
+    | '/invitations'
+    | '/login'
+    | '/register'
+    | '/workspaces'
+    | '/settings/account'
+    | '/settings/invitations'
+    | '/settings/members'
+    | '/settings/roles'
+    | '/settings/roles/$roleKey'
+  id:
+    | '__root__'
+    | '/'
+    | '/invitations'
+    | '/login'
+    | '/register'
+    | '/workspaces'
+    | '/settings/account'
+    | '/settings/invitations'
+    | '/settings/members'
+    | '/settings/roles'
+    | '/settings/roles/$roleKey'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InvitationsRoute: typeof InvitationsRoute
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   WorkspacesRoute: typeof WorkspacesRoute
+  SettingsAccountRoute: typeof SettingsAccountRoute
+  SettingsInvitationsRoute: typeof SettingsInvitationsRoute
   SettingsMembersRoute: typeof SettingsMembersRoute
+  SettingsRolesRoute: typeof SettingsRolesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +168,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invitations': {
+      id: '/invitations'
+      path: '/invitations'
+      fullPath: '/invitations'
+      preLoaderRoute: typeof InvitationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workspaces': {
@@ -92,6 +196,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/account': {
+      id: '/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof SettingsAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/invitations': {
+      id: '/settings/invitations'
+      path: '/settings/invitations'
+      fullPath: '/settings/invitations'
+      preLoaderRoute: typeof SettingsInvitationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/members': {
       id: '/settings/members'
       path: '/settings/members'
@@ -99,14 +217,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsMembersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/roles': {
+      id: '/settings/roles'
+      path: '/settings/roles'
+      fullPath: '/settings/roles'
+      preLoaderRoute: typeof SettingsRolesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/roles/$roleKey': {
+      id: '/settings/roles/$roleKey'
+      path: '/$roleKey'
+      fullPath: '/settings/roles/$roleKey'
+      preLoaderRoute: typeof SettingsRolesRoleKeyRouteImport
+      parentRoute: typeof SettingsRolesRoute
+    }
   }
 }
 
+interface SettingsRolesRouteChildren {
+  SettingsRolesRoleKeyRoute: typeof SettingsRolesRoleKeyRoute
+}
+
+const SettingsRolesRouteChildren: SettingsRolesRouteChildren = {
+  SettingsRolesRoleKeyRoute: SettingsRolesRoleKeyRoute,
+}
+
+const SettingsRolesRouteWithChildren = SettingsRolesRoute._addFileChildren(
+  SettingsRolesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InvitationsRoute: InvitationsRoute,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   WorkspacesRoute: WorkspacesRoute,
+  SettingsAccountRoute: SettingsAccountRoute,
+  SettingsInvitationsRoute: SettingsInvitationsRoute,
   SettingsMembersRoute: SettingsMembersRoute,
+  SettingsRolesRoute: SettingsRolesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
