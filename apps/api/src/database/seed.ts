@@ -4,9 +4,10 @@ dotenv.config();
 
 import { pathToFileURL } from 'node:url';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
-import type { EntityManager } from '@mikro-orm/core';
-import * as bcrypt from 'bcryptjs';
-import { Organization, User } from './mikro/entities';
+import type { EntityManager, MikroORM } from '@mikro-orm/core';
+import { betterAuth } from 'better-auth';
+import { Account, Organization, Session, User, Verification } from './mikro/entities';
+import { mikroAuthAdapter } from './mikro/mikro-auth-adapter';
 import { initMikroOrm } from './mikro/orm';
 import { MIKRO_APP_ENTITIES, Post } from './mikro/post.entity';
 
@@ -32,6 +33,12 @@ import { MIKRO_APP_ENTITIES, Post } from './mikro/post.entity';
  *   （`MIKRO_APP_ENTITIES` 涵盖 User/Organization/Post）→ fork em → `runSeed` → `orm.close()`。
  */
 
+/**
+ * 切片补记（module-db-seed-ba-loginable-accounts·待审计门 GO 后实施）：上方保真律（`em.insert(User)` 直插）
+ * 自本切片起**仅适用于 `createPosts`**——用户创建改由 `ensureLoginableUser` 经 Better Auth `signUpEmail`
+ * 产出（user + `account` credential + session），故运营者/演示用户现可密码登录；`role/name` 等于 signUp 后
+ * 以 `nativeUpdate` 补写（BA 不管理这些 app 字段·`role` 落 DB 默认 'USER'）。id 采 BA 原生格式（非 uuidv7）。
+ */
 interface SeedOptions {
   includeTestData?: boolean;
   userCount?: number;
@@ -42,14 +49,6 @@ interface PostData {
   title: string;
   content: string;
   published: boolean;
-}
-
-interface UserData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: 'USER' | 'ADMIN';
 }
 
 // Parse command line arguments
@@ -105,78 +104,118 @@ export function enforceSeedPasswordPolicy(env: NodeJS.ProcessEnv = process.env):
   );
 }
 
-export async function createUsers(em: EntityManager, options: SeedOptions): Promise<void> {
-  console.log('👥 Creating users...');
+/**
+ * seed 直调 Better Auth 所需的最小 API 面（仅 `signUpEmail`）·结构型而非导入 BA 具体类型——
+ * 便于镜测桩注入且不耦合 BA 版本泛型。
+ */
+interface LoginableAuth {
+  api: {
+    signUpEmail: (args: {
+      body: { email: string; password: string; name: string };
+    }) => Promise<unknown>;
+  };
+}
 
-  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+/** 幂等 reconcile 单账号到「可登录」态所需的字段（运营者与演示共用）。 */
+interface LoginableUserSpec {
+  email: string;
+  password: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  role: 'USER' | 'ADMIN';
+}
+
+/**
+ * 以 seed 现持有的同一 `orm` 构造可登录账号产出器（切片 A·复用自持 `mikroAuthAdapter`·范式佐证
+ * `auth-adapter.consistency.spec.ts:75-107`）。要点：
+ * - `emailAndPassword.minPasswordLength: 1`——放行 dev 兜底 `admin123`(8)/`user123`(7)·登录只验哈希不验长度。
+ * - `secret` 与 app 同源（`JWT_SECRET`·见 `auth.implement.ts:219`）；哈希走 BA 默认 scrypt·与运行态 app BA 互验。
+ * - 返回结构上收敛为 `LoginableAuth`（本模块只调 `signUpEmail`），避免耦合 BA 重载泛型。
+ */
+export function createLoginableAuth(orm: MikroORM): LoginableAuth {
+  return betterAuth({
+    database: mikroAuthAdapter(orm),
+    emailAndPassword: { enabled: true, minPasswordLength: 1 },
+    secret: process.env.JWT_SECRET || 'your-secret-key',
+  } as never) as unknown as LoginableAuth;
+}
+
+/**
+ * 三分支：① 有 user 有 credential account → 仅 nativeUpdate 补 app 字段（幂等·不重签）；
+ * ② 有 user 无 account（legacy 直插残留）→ 先删该身份 session/account/user 孤儿再 signUp；
+ * ③ 无 user → 直接 signUp。signUp 后统一 nativeUpdate 补 `role/name/firstName/lastName`（`role` 非 BA
+ * 字段·BA 建的 user 落 DB 默认 'USER'·见 entities.ts:41·故运营者须显式改 'ADMIN'）。返回供日志/测断言。
+ */
+export async function ensureLoginableUser(
+  em: EntityManager,
+  auth: LoginableAuth,
+  spec: LoginableUserSpec,
+): Promise<'signed-up' | 'updated'> {
+  const appFields = {
+    role: spec.role,
+    name: spec.name,
+    firstName: spec.firstName,
+    lastName: spec.lastName,
+    updatedAt: new Date(),
+  };
+  const existing = await em.findOne(User, { email: spec.email });
+  if (existing) {
+    const uid = (existing as { id: string }).id;
+    const credential = await em.findOne(Account, { userId: uid, providerId: 'credential' });
+    if (credential) {
+      await em.nativeUpdate(User, { email: spec.email }, appFields);
+      return 'updated';
+    }
+    // 孤儿（有 user 无 credential）：清该身份 BA 行 + user·再走 signUp 重建（接受 BA 原生 id·plan §4-②）。
+    await em.nativeDelete(Session, { userId: uid });
+    await em.nativeDelete(Account, { userId: uid });
+    await em.nativeDelete(User, { id: uid });
+  }
+  await auth.api.signUpEmail({
+    body: { email: spec.email, password: spec.password, name: spec.name },
+  });
+  await em.nativeUpdate(User, { email: spec.email }, appFields);
+  return 'signed-up';
+}
+
+export async function createUsers(
+  em: EntityManager,
+  options: SeedOptions,
+  auth: LoginableAuth,
+): Promise<void> {
+  console.log('👥 Ensuring loginable users (via Better Auth signUp)…');
+
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
   // FR-13 / S5: the Platform Operator is the GLOBAL-UNIQUE cross-tenant identity, resolved by
-  // the guard via DB email === platform.operatorEmail. Seed MUST guarantee that email's row
-  // exists, else a non-default operator email would fail closed with no operator at all.
+  // the guard via DB email === platform.operatorEmail. Seed MUST guarantee a **loginable** row
+  // (user + BA account credential), else a non-default operator email would fail closed.
   const operatorEmail = process.env.PLATFORM_OPERATOR_EMAIL || 'admin@example.com';
-
-  const existingAdmin = await em.findOne(User, { email: operatorEmail });
-
-  if (existingAdmin) {
-    // 镜像旧实现 `db.update(user).set({...}).where(eq(user.email, ...))`：原生 UPDATE·显式盖 updatedAt
-    // （旧实现 `$onUpdate` 在查询构建期自动 bump updatedAt·此处如实还原该可观测行为）。
-    await em.nativeUpdate(
-      User,
-      { email: operatorEmail },
-      {
-        password: adminPassword,
-        name: 'Admin User',
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'ADMIN',
-        updatedAt: new Date(),
-      },
-    );
-  } else {
-    // `em.insert` 只发给定列·`createdAt`/`emailVerified` 省略落 DB 默认；`updatedAt` NOT NULL 无 DB 默认须显式写。
-    // 类型层 Mikro 要求非空列（emailVerified/createdAt）·本 seed 刻意不写（落 DB 默认）·按本仓既有 Mikro 逃生惯用法 `as never` 收口。
-    await em.insert(User, {
-      id: uuidv7(),
-      name: 'Admin User',
-      email: operatorEmail,
-      password: adminPassword,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'ADMIN',
-      updatedAt: new Date(),
-    } as never);
-  }
-
-  console.log(`✅ Seeded platform operator: ${operatorEmail}`);
+  await ensureLoginableUser(em, auth, {
+    email: operatorEmail,
+    password: adminPassword,
+    name: 'Admin User',
+    firstName: 'Admin',
+    lastName: 'User',
+    role: 'ADMIN',
+  });
+  console.log(`✅ Seeded loginable platform operator: ${operatorEmail}`);
 
   const userCount = options.userCount || 2;
   if (options.includeTestData && userCount > 1) {
-    const userPassword = await bcrypt.hash(process.env.USER_PASSWORD || 'user123', 10);
-
-    const usersToCreate: (UserData & { id: string; name: string; updatedAt: Date })[] = [];
+    const userPassword = process.env.USER_PASSWORD || 'user123';
     for (let i = 1; i < userCount; i++) {
-      usersToCreate.push({
-        id: uuidv7(),
-        name: `User ${i}`,
+      await ensureLoginableUser(em, auth, {
         email: `user${i}@example.com`,
         password: userPassword,
+        name: `User ${i}`,
         firstName: 'User',
         lastName: `${i}`,
-        role: 'USER' as const,
-        updatedAt: new Date(),
+        role: 'USER',
       });
     }
-
-    if (usersToCreate.length > 0) {
-      try {
-        await em.insert(User, usersToCreate as never);
-        console.log(`✅ Created ${usersToCreate.length} additional users`);
-        for (const u of usersToCreate) console.log(`   - ${u.email}`);
-      } catch (error) {
-        console.error('❌ Error creating users:', error);
-        throw error;
-      }
-    }
+    console.log(`✅ Ensured ${userCount - 1} loginable demo user(s)`);
   }
 }
 
@@ -253,7 +292,11 @@ export async function cleanup(em: EntityManager): Promise<void> {
   if (process.env.SEED_CLEANUP === 'true') {
     console.log('🧹 Cleaning up existing data...');
     try {
-      // 全表删·删序 post→user（post FK 引用 user·先删子表·与旧实现 `db.delete` 一致）。
+      // 删序 session→account→verification→post→user（BA 行 + post 均引用 user·先删子表·再删 user）。
+      // 扩删 account/session/verification 系本切片 signUp 编排所需：避免重跑 seed 撞残留 credential/邮箱占用。
+      await em.nativeDelete(Session, {});
+      await em.nativeDelete(Account, {});
+      await em.nativeDelete(Verification, {});
       await em.nativeDelete(Post, {});
       await em.nativeDelete(User, {});
       console.log('✅ Cleanup completed');
@@ -264,10 +307,14 @@ export async function cleanup(em: EntityManager): Promise<void> {
   }
 }
 
-/** seed 三段编排（可注入 em·供镜测直调）：cleanup → createUsers → createPosts。 */
-export async function runSeed(em: EntityManager, options: SeedOptions): Promise<void> {
+/** seed 三段编排（可注入 em/auth·供镜测直调）：cleanup → createUsers → createPosts。 */
+export async function runSeed(
+  em: EntityManager,
+  options: SeedOptions,
+  auth: LoginableAuth,
+): Promise<void> {
   await cleanup(em);
-  await createUsers(em, options);
+  await createUsers(em, options, auth);
   await createPosts(em, options);
 }
 
@@ -282,8 +329,9 @@ async function main() {
   console.log('📋 Seed options:', options);
 
   const orm = await initMikroOrm(process.env.DATABASE_URL as string, MIKRO_APP_ENTITIES);
+  const auth = createLoginableAuth(orm);
   try {
-    await runSeed(orm.em.fork(), options);
+    await runSeed(orm.em.fork(), options, auth);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`✅ Database seeding completed successfully in ${duration}s!`);

@@ -1,17 +1,26 @@
-import { Organization, User } from '@app/database/mikro/entities';
+import { Account, Organization, Session, User, Verification } from '@app/database/mikro/entities';
 import { Post } from '@app/database/mikro/post.entity';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, createPosts, createUsers, enforceSeedPasswordPolicy, runSeed } from './seed';
+import {
+  cleanup,
+  createPosts,
+  createUsers,
+  enforceSeedPasswordPolicy,
+  ensureLoginableUser,
+  runSeed,
+} from './seed';
 
 /**
- * ORM 修宪案 B · 切片 4-α（S-d6）——seed 数据面旧 ORM→Mikro 换轨的**镜像断言**（非弱化）。
- * 用假 `em`（`findOne/insert/nativeUpdate/nativeDelete/find`）直调导出的 `createUsers/createPosts/
- * cleanup/runSeed`，逐例钉：① 操作形态（findFirst→findOne·insert→em.insert·update→nativeUpdate·
- * delete→nativeDelete）；② **保真红线**——insert 载荷**不含 createdAt/emailVerified**（靠 DB 默认填充），
- * 但**必含 updatedAt**（真库 `user/post.updatedAt` NOT NULL 无 DB 默认·须显式写）；③ role 文本；
- * ④ cleanup 删序 post→user（FK 依赖）；⑤ `SEED_CLEANUP` 门控；⑥ runSeed 编排次序 cleanup→createUsers→createPosts。
- * 入口守卫确保 import 本模块不触发 `main()` 建连。
+ * seed 镜像断言（假 `em` + BA `signUpEmail` 桩·不触库/不触真 BA）。
+ * - `createUsers` 自 module-db-seed-ba-loginable-accounts 切片 A 起走 `ensureLoginableUser`：按 email 三分支
+ *   reconcile（无 user→signUp·有 user 有 credential→仅 nativeUpdate·有 user 无 credential→删孤儿再 signUp），
+ *   **不再 `em.insert(User)`**（BA 亲自建 user+account+session·哈希与运行态 app BA 互验）。断言钉：
+ *   ① signUp 调用次数与 body（email/password 明文·不再 bcrypt·name）；② nativeUpdate 补 `role`（运营者 ADMIN）
+ *   且载荷不含 `password`；③ 删孤儿序列 `session→account→user`。
+ * - `createPosts` 保真红线不变（insert 载荷不含 createdAt·必含 updatedAt·organizationId 归属）。
+ * - `cleanup` 删序扩至 `session→account→verification→post→user`·`SEED_CLEANUP` 门控。
+ * - `runSeed` 编排次序 cleanup→createUsers→createPosts（auth 注入）·入口守卫确保 import 不触发 `main()` 建连。
  */
 function makeEm() {
   const findOne = vi.fn().mockResolvedValue(null);
@@ -21,6 +30,12 @@ function makeEm() {
   const find = vi.fn().mockResolvedValue([]);
   const em = { findOne, insert, nativeUpdate, nativeDelete, find } as unknown as EntityManager;
   return { em, spies: { findOne, insert, nativeUpdate, nativeDelete, find } };
+}
+
+/** BA signUp 桩（不触真库/真 BA）·返回可断言的调用记录。结构上兼容 seed 的 LoginableAuth。 */
+function makeAuth() {
+  const signUpEmail = vi.fn().mockResolvedValue({ user: { id: 'ba-native-id' } });
+  return { auth: { api: { signUpEmail } }, spies: { signUpEmail } };
 }
 
 /** 取针对某实体的 insert 调用（区分 User / Post）。 */
@@ -53,40 +68,19 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('seed createUsers (S-d6)', () => {
-  it('operator 不存在 → em.insert(User, {role:"ADMIN",updatedAt}) 单条·不写时间戳 createdAt/emailVerified（落 DB 默认）', async () => {
+describe('seed createUsers (BA signUp·可登录)', () => {
+  it('operator 不存在（findOne User→null）→ signUpEmail 一次 + nativeUpdate role=ADMIN·绥不 em.insert(User)', async () => {
     const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
     spies.findOne.mockResolvedValueOnce(null);
 
-    await createUsers(em, { includeTestData: false, userCount: 1, postCount: 0 });
+    await createUsers(em, { includeTestData: false, userCount: 1, postCount: 0 }, auth);
 
-    expect(spies.findOne).toHaveBeenCalledTimes(1);
-    expect(spies.findOne.mock.calls[0][0]).toBe(User);
-    expect(spies.findOne.mock.calls[0][1]).toEqual({ email: 'op@example.com' });
-    expect(spies.nativeUpdate).not.toHaveBeenCalled();
-
-    const userInserts = insertsFor(spies.insert, User);
-    expect(userInserts).toHaveLength(1);
-    const payload = userInserts[0] as Record<string, unknown>;
-    expect(payload.email).toBe('op@example.com');
-    expect(payload.role).toBe('ADMIN');
-    expect(typeof payload.password).toBe('string');
-    expect(payload.password).not.toBe('secret-admin'); // bcrypt 已散列
-    // 保真红线：createdAt/emailVerified 交由 DB 默认（对齐旧实现 insert）；updatedAt NOT NULL 无默认须显式。
-    expect(payload).not.toHaveProperty('createdAt');
-    expect(payload).not.toHaveProperty('emailVerified');
-    expect(payload.updatedAt).toBeInstanceOf(Date);
-    expect(payload.id).toMatch(/^[0-9a-f-]{36}$/); // randomUUID
-  });
-
-  it('operator 已存在 → em.nativeUpdate(User,{email},{role:"ADMIN",updatedAt:Date})·不 insert 主账号', async () => {
-    const { em, spies } = makeEm();
-    spies.findOne.mockResolvedValueOnce({ id: 'x', email: 'op@example.com' });
-
-    await createUsers(em, { includeTestData: false, userCount: 1, postCount: 0 });
-
-    expect(spies.insert).not.toHaveBeenCalled();
-    expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+    expect(as.signUpEmail).toHaveBeenCalledTimes(1);
+    expect(as.signUpEmail.mock.calls[0][0]).toEqual({
+      body: { email: 'op@example.com', password: 'secret-admin', name: 'Admin User' },
+    });
+    expect(spies.insert).not.toHaveBeenCalled(); // 不再直插 user
     const [entity, where, set] = spies.nativeUpdate.mock.calls[0] as [
       unknown,
       Record<string, unknown>,
@@ -95,23 +89,130 @@ describe('seed createUsers (S-d6)', () => {
     expect(entity).toBe(User);
     expect(where).toEqual({ email: 'op@example.com' });
     expect(set.role).toBe('ADMIN');
-    expect(set.updatedAt).toBeInstanceOf(Date); // 镜像旧实现 $onUpdate 自动 bump
-    expect(typeof set.password).toBe('string');
+    expect(set.updatedAt).toBeInstanceOf(Date);
+    expect(set).not.toHaveProperty('password'); // BA credential 落 account·user.password 不再手写
   });
 
-  it('includeTestData & userCount>1 → 批量 em.insert(User, [...]) 每人 role:"USER"', async () => {
+  it('operator 已存在且有 credential account → 不 signUp·仅 nativeUpdate（幂等）', async () => {
     const { em, spies } = makeEm();
-    spies.findOne.mockResolvedValueOnce({ id: 'x', email: 'op@example.com' }); // 走 update 路径·不掺主账号 insert
+    const { auth, spies: as } = makeAuth();
+    spies.findOne
+      .mockResolvedValueOnce({ id: 'u1', email: 'op@example.com' }) // user 存在
+      .mockResolvedValueOnce({ id: 'a1', providerId: 'credential' }); // account 存在
 
-    await createUsers(em, { includeTestData: true, userCount: 3, postCount: 0 });
+    await createUsers(em, { includeTestData: false, userCount: 1, postCount: 0 }, auth);
 
-    const userInserts = insertsFor(spies.insert, User);
-    expect(userInserts).toHaveLength(1);
-    const batch = userInserts[0] as (Record<string, unknown> & { role: string })[];
-    expect(batch).toHaveLength(2); // i = 1,2
-    expect(batch.every((u) => u.role === 'USER')).toBe(true);
-    expect(batch.every((u) => !('createdAt' in u))).toBe(true);
-    expect(batch.every((u) => u.updatedAt instanceof Date)).toBe(true);
+    expect(as.signUpEmail).not.toHaveBeenCalled();
+    expect(spies.nativeDelete).not.toHaveBeenCalled();
+    expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+    expect(spies.nativeUpdate.mock.calls[0][1]).toEqual({ email: 'op@example.com' });
+  });
+
+  it('operator 已存在但无 credential（legacy 直插残留）→ 先删该身份 session/account/user 孤儿，再 signUp + update', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne
+      .mockResolvedValueOnce({ id: 'u1', email: 'op@example.com' }) // user 存在
+      .mockResolvedValueOnce(null); // account 不存在
+
+    await createUsers(em, { includeTestData: false, userCount: 1, postCount: 0 }, auth);
+
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(3);
+    expect(spies.nativeDelete.mock.calls.map((c) => c[0])).toEqual([Session, Account, User]);
+    expect(as.signUpEmail).toHaveBeenCalledTimes(1);
+    expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('includeTestData & userCount=3 → operator/user1/user2 各 ensureLoginableUser（均无→各 signUp·各 update）', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne.mockResolvedValue(null); // 全部不存在 → 全走 signUp
+
+    await createUsers(em, { includeTestData: true, userCount: 3, postCount: 0 }, auth);
+
+    expect(as.signUpEmail).toHaveBeenCalledTimes(3);
+    const emails = as.signUpEmail.mock.calls.map(
+      (c) => (c[0] as { body: { email: string } }).body.email,
+    );
+    expect(emails).toEqual(['op@example.com', 'user1@example.com', 'user2@example.com']);
+    expect(spies.insert).not.toHaveBeenCalled();
+    expect(spies.nativeUpdate).toHaveBeenCalledTimes(3); // 每次 signUp 后一次补字段
+  });
+
+  it('ensureLoginableUser 直调：无 user → signUpEmail 恰一次·返 signed-up', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne.mockResolvedValueOnce(null);
+
+    const result = await ensureLoginableUser(em, auth, {
+      email: 'x@example.com',
+      password: 'p',
+      name: 'X',
+      firstName: 'X',
+      lastName: '',
+      role: 'USER',
+    });
+
+    expect(result).toBe('signed-up');
+    expect(as.signUpEmail).toHaveBeenCalledTimes(1);
+    expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('ensureLoginableUser 直调：有 user 有 credential → 返 updated·不 signUp·不删', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne.mockResolvedValueOnce({ id: 'u1', email: 'op@example.com' });
+    spies.findOne.mockResolvedValueOnce({ id: 'a1', providerId: 'credential' });
+
+    const result = await ensureLoginableUser(em, auth, {
+      email: 'op@example.com',
+      password: 'p',
+      name: 'X',
+      firstName: 'X',
+      lastName: '',
+      role: 'ADMIN',
+    });
+
+    expect(result).toBe('updated');
+    expect(as.signUpEmail).not.toHaveBeenCalled();
+    expect(spies.nativeDelete).not.toHaveBeenCalled();
+    expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('ensureLoginableUser 直调：有 user 无 credential → 删孤儿 session→account→user 后 signUp·返 signed-up', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne.mockResolvedValueOnce({ id: 'u1', email: 'x@example.com' });
+    spies.findOne.mockResolvedValueOnce(null);
+
+    const result = await ensureLoginableUser(em, auth, {
+      email: 'x@example.com',
+      password: 'p',
+      name: 'X',
+      firstName: 'X',
+      lastName: '',
+      role: 'USER',
+    });
+
+    expect(result).toBe('signed-up');
+    expect(spies.nativeDelete.mock.calls.map((c) => c[0])).toEqual([Session, Account, User]);
+    expect(as.signUpEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('演示密码明文透传：userCount=2 → user1 的 signUp body.password === env USER_PASSWORD（不 bcrypt）', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.findOne
+      .mockResolvedValueOnce({ id: 'u1', email: 'op@example.com' }) // operator 有
+      .mockResolvedValueOnce({ id: 'a1', providerId: 'credential' }) // 有 account → 不 signUp
+      .mockResolvedValueOnce(null); // user1 不存在 → signUp
+
+    await createUsers(em, { includeTestData: true, userCount: 2, postCount: 0 }, auth);
+
+    expect(as.signUpEmail).toHaveBeenCalledTimes(1); // 仅 user1
+    expect(as.signUpEmail.mock.calls[0][0]).toEqual({
+      body: { email: 'user1@example.com', password: 'secret-user', name: 'User 1' },
+    });
   });
 });
 
@@ -152,18 +253,22 @@ describe('seed createPosts (S-d6)', () => {
   });
 });
 
-describe('seed cleanup (S-d6)', () => {
-  it('SEED_CLEANUP=true → 全表 nativeDelete 且删序 post→user（FK 依赖）', async () => {
+describe('seed cleanup（BA 表随 user 清·切片 A）', () => {
+  it('SEED_CLEANUP=true → 删序 session→account→verification→post→user', async () => {
     vi.stubEnv('SEED_CLEANUP', 'true');
     const { em, spies } = makeEm();
 
     await cleanup(em);
 
-    expect(spies.nativeDelete).toHaveBeenCalledTimes(2);
-    expect(spies.nativeDelete.mock.calls[0][0]).toBe(Post);
-    expect(spies.nativeDelete.mock.calls[0][1]).toEqual({});
-    expect(spies.nativeDelete.mock.calls[1][0]).toBe(User);
-    expect(spies.nativeDelete.mock.calls[1][1]).toEqual({});
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(5);
+    expect(spies.nativeDelete.mock.calls.map((c) => c[0])).toEqual([
+      Session,
+      Account,
+      Verification,
+      Post,
+      User,
+    ]);
+    for (const call of spies.nativeDelete.mock.calls) expect(call[1]).toEqual({});
   });
 
   it('SEED_CLEANUP≠true → 不删', async () => {
@@ -174,22 +279,26 @@ describe('seed cleanup (S-d6)', () => {
   });
 });
 
-describe('seed runSeed 编排 (S-d6)', () => {
-  it('按 cleanup → createUsers → createPosts 次序用同一 em', async () => {
+describe('seed runSeed 编排', () => {
+  it('按 cleanup → createUsers → createPosts 次序用同一 em（含 auth 注入）', async () => {
     vi.stubEnv('SEED_CLEANUP', 'true');
     const { em, spies } = makeEm();
-    spies.findOne.mockResolvedValueOnce({ id: 'x', email: 'op@example.com' });
+    const { auth, spies: as } = makeAuth();
+    spies.findOne.mockResolvedValueOnce({ id: 'x', email: 'op@example.com' }); // operator 存在
+    spies.findOne.mockResolvedValueOnce({ id: 'a', providerId: 'credential' }); // 有 account → 不 signUp
     spies.find.mockResolvedValueOnce([{ id: 'org-1' }]);
 
-    await runSeed(em, { includeTestData: true, userCount: 1, postCount: 1 });
+    await runSeed(em, { includeTestData: true, userCount: 1, postCount: 1 }, auth);
 
-    // cleanup 的两条 nativeDelete 必先于任何 insert（编排次序钉死）。
+    // cleanup 的五条 nativeDelete 必先于任何 insert（编排次序钉死）。
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(5);
     const order = [
       ...spies.nativeDelete.mock.calls.map(() => 'delete'),
       ...spies.insert.mock.calls.map(() => 'insert'),
     ];
     expect(order[0]).toBe('delete');
-    // createUsers（nativeUpdate·operator 存在）与 createPosts（insert Post）均发生。
+    // operator 有 account → 仅 nativeUpdate（不 signUp）；createPosts 插 Post。
+    expect(as.signUpEmail).not.toHaveBeenCalled();
     expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
     expect(insertsFor(spies.insert, Post)).toHaveLength(1);
   });

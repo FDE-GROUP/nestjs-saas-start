@@ -14,7 +14,7 @@
 | Postgres（dev） | `postgres:16-alpine` @ `5432` · db `nestjs_practice` · user/pass `postgres` | `docker-compose.dev.yml` |
 | pgadmin 调试台 | `dpage/pgadmin4:8` @ `:5050` · UI 登录 `admin@example.com`/`admin` · 连库口令 `postgres` | `docker-compose.dev.yml` + `docker/pgadmin/servers.json` |
 | 连接串 | `postgres://postgres:postgres@localhost:5432/nestjs_practice` | `.env` `DATABASE_URL` |
-| seed 兜底账号（仅开发） | `admin@example.com` / `admin123` · `user{i}@example.com` / `user123` | `apps/api/src/database/seed.ts` |
+| seed 兜底账号（仅开发·现可密码登录·见 §7） | `admin@example.com` / `admin123` · `user{i}@example.com` / `user123` | `apps/api/src/database/seed.ts` |
 | BA 会话面 | `/api/v1/auth/{sign-in,email}` · `/sign-up/email` · `/get-session`（Cookie+DB Session） | `apps/web/src/lib/auth.ts` |
 
 > ⚠️ 迁移/种子（步 2）属 **AGENTS §2 高危**——须人自行执行，Agent 不代跑。
@@ -101,18 +101,19 @@ curl -s -b /tmp/ck.txt http://localhost:5173/api/v1/tenants/members | head -c 30
 - DevTools → Network：请求命中 `/api/v1/*`（相对同源）、`credentials` 携带 cookie、响应 200/403 与页面渲染一致。
 - 登出按钮 → 回 `/login`（会话墙同向）。
 
-## 7. 登录兜底（若 §5② 返回 401）
+## 7. 登录说明（seed 号现可密码登录）
 
-**seed 号不能密码登录**：`db:seed` 只直插 `user` 表、**不建 Better Auth 的 `account`（credential）**，故 `admin@example.com`/`user1@example.com` 走 §5② 必 `401 User not found`——属设计（seed/BA 分离），非缺陷。且 `apps/web` 无注册页（F2a 只读）。dev 下邮箱密码面已开（`auth.implement.ts:213`·`NODE_ENV!=='production'`），**先经反代注册一个全新邮箱**（勿用已被 `user.email` 唯一占用的 admin@/user1@）：
+自 `module-db-seed-ba-loginable-accounts` 切片起，`db:seed` 经 Better Auth `signUpEmail` 亲自建 `user` + `account`（credential），故 **§5② 可直接用 seed 兜底号 `admin@example.com` / `admin123` 登录**（该邮箱即缺省 `platform.operatorEmail`·运营者身份·可进 `/platform/*` 平台治理面），不再需要注册绕行。
+
+> 若 §5② 仍返回 `401`（库早于本片 seed·或 `db:seed` 未重跑）：重跑 `pnpm run db:setup`（reconcile 会补齐缺失的 `account` credential·幂等），或按下述经反代注册一个全新邮箱兜底（`apps/web` 无注册页·dev 邮箱密码面已开·`auth.implement.ts:213`·`NODE_ENV!=='production'`·勿用已被 `user.email` 唯一占用的 admin@/user1@）：
 
 ```bash
 curl -s -X POST http://localhost:5173/api/v1/auth/sign-up/email \
   -H 'Content-Type: application/json' \
   -d '{"email":"dev@example.com","password":"Passw0rd!","name":"Dev User"}' -w "\nHTTP %{http_code}\n"
-# 用 dev@example.com / Passw0rd! 重跑 §5② 及 §6 浏览器 /login 登录
 ```
 
-> 新注册号 `activeOrganizationId:null`（无租户/成员关系）→ §6 只读页（`/workspaces`、`/` 订阅）会显 **403/空态**，即 deny-by-default 的预期渲染，非登录失败；要看真实租户数据须先有 organization + membership（属 F2b 操作面·本只读片不覆盖）。
+> 新注册的**非运营者**号（如 dev@）进 `/platform/*` 会 403（`PlatformOperatorGuard` 靠 email === `platform.operatorEmail`）；平台治理面须用运营者 `admin@example.com`（或 `PLATFORM_OPERATOR_EMAIL` 所指邮箱）。另：无租户/成员关系的账号 → `/workspaces`、`/` 订阅等只读页会显 403/空态，属 deny-by-default 预期渲染，非登录失败。
 
 ## 8. 收尾（用完即焚）
 
