@@ -16,6 +16,9 @@ function RootLayout() {
             <Link to="/workspaces" className="hover:text-slate-900">
               Workspaces
             </Link>
+            <Link to="/posts" className="hover:text-slate-900">
+              文章
+            </Link>
             <Link to="/settings/members" className="hover:text-slate-900">
               成员
             </Link>

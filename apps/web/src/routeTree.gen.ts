@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvitationsRouteImport } from './routes/invitations'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PostsRouteImport } from './routes/posts'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as SettingsAccountRouteImport } from './routes/settings.account'
@@ -33,6 +34,11 @@ const InvitationsRoute = InvitationsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostsRoute = PostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/posts': typeof PostsRoute
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/settings/account': typeof SettingsAccountRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/posts': typeof PostsRoute
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/settings/account': typeof SettingsAccountRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/invitations': typeof InvitationsRoute
   '/login': typeof LoginRoute
+  '/posts': typeof PostsRoute
   '/register': typeof RegisterRoute
   '/workspaces': typeof WorkspacesRoute
   '/settings/account': typeof SettingsAccountRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/invitations'
     | '/login'
+    | '/posts'
     | '/register'
     | '/workspaces'
     | '/settings/account'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/invitations'
     | '/login'
+    | '/posts'
     | '/register'
     | '/workspaces'
     | '/settings/account'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/invitations'
     | '/login'
+    | '/posts'
     | '/register'
     | '/workspaces'
     | '/settings/account'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InvitationsRoute: typeof InvitationsRoute
   LoginRoute: typeof LoginRoute
+  PostsRoute: typeof PostsRoute
   RegisterRoute: typeof RegisterRoute
   WorkspacesRoute: typeof WorkspacesRoute
   SettingsAccountRoute: typeof SettingsAccountRoute
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posts': {
+      id: '/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof PostsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -250,6 +270,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InvitationsRoute: InvitationsRoute,
   LoginRoute: LoginRoute,
+  PostsRoute: PostsRoute,
   RegisterRoute: RegisterRoute,
   WorkspacesRoute: WorkspacesRoute,
   SettingsAccountRoute: SettingsAccountRoute,
