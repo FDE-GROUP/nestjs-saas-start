@@ -4,6 +4,7 @@ import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { signOut } from '../lib/auth';
 import { describeApiError } from '../lib/format';
+import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
 type SubscriptionResponse = components['schemas']['SubscriptionResponse'];
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/')({
   loader: async () => {
     const session = await requireSession();
     const { data, error } = await api.GET('/api/v1/subscriptions/current');
+    if (error) logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, error);
     return {
       user: session.user,
       subscription: error ? null : (data?.data ?? null),

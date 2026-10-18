@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
+import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
 /** Better Auth `auth.api.listMembers` 透传成员项（非 Nest 契约类型·形参真相源见下）。 */
@@ -15,7 +16,10 @@ export const Route = createFileRoute('/settings/members')({
   loader: async () => {
     await requireSession();
     const { data, error } = await api.GET('/api/v1/tenants/members');
-    if (error) return { kind: 'error' as const, body: error };
+    if (error) {
+      logApiError({ path: '/api/v1/tenants/members', scope: 'members' }, error);
+      return { kind: 'error' as const, body: error };
+    }
     return { kind: 'ok' as const, raw: data?.data };
   },
   component: MembersPage,

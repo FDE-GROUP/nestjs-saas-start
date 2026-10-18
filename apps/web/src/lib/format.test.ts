@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeApiError, formatDate } from './format';
+import { apiErrorDetail, describeApiError, formatDate } from './format';
 
 describe('formatDate', () => {
   it('ISO → YYYY-MM-DD', () => {
@@ -26,5 +26,28 @@ describe('describeApiError（据 @core 单源窄化错误码）', () => {
   });
   it('空体 → 兜底文案', () => {
     expect(describeApiError({})).toBe('请求失败');
+  });
+});
+
+describe('apiErrorDetail（结构化提取·供前端日志对映后端）', () => {
+  it('抽 requestId/statusCode/path/errorCode/message', () => {
+    expect(
+      apiErrorDetail({
+        message: '禁止访问',
+        errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+        requestId: 'req-42',
+        statusCode: 403,
+        path: '/api/v1/workspaces',
+      }),
+    ).toEqual({
+      message: '禁止访问',
+      errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+      requestId: 'req-42',
+      statusCode: 403,
+      path: '/api/v1/workspaces',
+    });
+  });
+  it('缺字段不写入键', () => {
+    expect(apiErrorDetail({ message: '仅文案' })).toEqual({ message: '仅文案' });
   });
 });

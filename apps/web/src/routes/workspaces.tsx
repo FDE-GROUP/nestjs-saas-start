@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { describeApiError, formatDate } from '../lib/format';
+import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
 type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
@@ -11,7 +12,10 @@ export const Route = createFileRoute('/workspaces')({
   loader: async () => {
     await requireSession();
     const { data, error } = await api.GET('/api/v1/workspaces');
-    if (error) return { kind: 'error' as const, body: error };
+    if (error) {
+      logApiError({ path: '/api/v1/workspaces', scope: 'workspaces' }, error);
+      return { kind: 'error' as const, body: error };
+    }
     return { kind: 'ok' as const, page: data?.data };
   },
   component: WorkspacesPage,
