@@ -53,12 +53,7 @@ export interface WriteException {
 }
 
 export const WRITE_EXCEPTIONS: readonly WriteException[] = [
-  {
-    // FR-10：暂停用户即时失权——suspend 治理动作硬删该用户全部 session 行。
-    // session 属 auth core，但失权链是租户治理职责（global-tenancy §9.4/D4），
-    // 属结构性接缝而非腐化，故声明例外而非重构（重构挪出 auth 端口超出就绪切片非目标）。
-    file: 'modules/tenants/application/commands/handlers/suspend-user.command-handler.ts',
-    table: 'session',
-    reason: 'FR-10 deny-list 即时失权（治理失权链硬删 session·归因 global-tenancy）',
-  },
+  // 架构精度修宪 S3 后例外清零：suspend 治理失权链的 session 硬删已收编
+  // `modules/auth/infrastructure/session-store.adapter.ts`（AUTH_SESSION_STORE 端口·属主
+  // auth 上下文目录内写·守卫自然放行）——原 suspend-user 直捅例外随之摘除。
 ];

@@ -9,6 +9,8 @@ import type { AuthInstance } from './auth.interface';
 import { AuthService } from './auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { SessionGuard } from './guards/session.guard';
+import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
+import { AUTH_SESSION_STORE } from './session-store.port';
 
 @Module({})
 export class AuthModule {
@@ -47,8 +49,10 @@ export class AuthModule {
         // module-auth-csrf-defense 甲：CSRF Origin/Referer 校验墙（全局·排 SessionGuard 之后，401 先 403）。
         // 依赖 ConfigService（@Global）+ Reflector（内置）均可解析。
         { provide: APP_GUARD, useExisting: CsrfOriginGuard },
+        // 架构精度修宪 S3：治理面对 session 表的受控写入口（原 suspend-user 直捅 em 越界收编）。
+        { provide: AUTH_SESSION_STORE, useClass: MikroSessionStoreAdapter },
       ],
-      exports: [AuthService, SessionGuard, authProvider],
+      exports: [AuthService, SessionGuard, authProvider, AUTH_SESSION_STORE],
       global: true,
     };
   }

@@ -125,7 +125,7 @@
 - [x] S1 删除物全仓 grep 零引用；users 仓储返回 record 与其他上下文同构（2026-10-20 落地·连带孤儿 Email VO 与 AggregateRoot 基类一并删除·port 收敛 findById/findByEmail/remove·save 随聚合退役·668 测全绿·基线 151→147）。
 - [x] core 生产码零 `HttpException/HttpStatus`（纯度守卫 `libs/core/src/core-purity.test.ts` 双锁：@nestjs/common import ⊆ DI 最小面 + HttpException/HttpStatus 零出现·2026-10-20 落地·适配器角色文件按命名豁免）。
 - [x] `Quota` VO 落地（2026-10-20）：`quota.vo.ts` 非负安全整数不变量·原生 Error fail-loud；接线 = 档位目录（tenant-plans 常量定义期）+ QuotaService.effectiveSeatsLimit/snapshot 摄入（含 DB 腐行 fail-loud 测）+ create-subscription 两源统一摄入；`assertSeats` 402 删除·翻译归 QuotaGuard/auth hook（P1）。
-- [ ] suspend-user 状态写与 session 删同事务（gated e2e 证）。
+- [x] suspend-user 状态写与 session 删同事务（S3 落地 2026-10-20）：关键段包 uow.run（transition 重入复用外层）+ 新 AUTH_SESSION_STORE 端口/适配器（fork ALS 感知自动入事务）——单测以时序序断言锁「tx-begin→transition→session-delete→tx-end」同关键段；表所有权 WRITE_EXCEPTIONS 例外清零（写面归位 auth 属主目录·守卫自然放行）。gated e2e 回滚证：UoW 同生共死语义已由既有 transaction-scope/outbox 测试锁·失败注入 e2e 留待真实回归需求再立。
 - [ ] 四治理 handler 收敛为共享迁移用例薄壳。
 - [ ] README / architecture.md(+zh) 新宣称 + P1–P4 + 上下文矩阵落笔；ES Phase C 改口。
 - [ ] `pnpm run ci` 全绿 + `ci:db` gated e2e 全绿 + `fallow architecture` 绿。

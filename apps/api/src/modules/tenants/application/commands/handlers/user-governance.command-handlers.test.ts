@@ -1,10 +1,11 @@
-import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import type { AuthSessionStore } from '@app/modules/auth/session-store.port';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import {
   USER_STATUS,
   type UserStatusService,
 } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
+import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { ResumeUserCommand } from '../resume-user.command';
@@ -15,18 +16,37 @@ import { SuspendUserCommandHandler } from './suspend-user.command-handler';
 function deps(result: unknown) {
   const transition = vi.fn().mockResolvedValue(result);
   const audit = { logUserGovernance: vi.fn() };
-  // mikro.fork() → em.nativeDelete(...) → awaitable（FR-10 session 硬删改走 MikroORM）
-  const nativeDelete = vi.fn().mockResolvedValue(1);
-  const fork = vi.fn(async () => ({ nativeDelete }));
-  const mikro = { fork } as unknown as MikroOrmService;
+  // 架构精度修宪 S3：session 删走 AUTH_SESSION_STORE 端口；uow fake 记录作用域时序
+  // （锁「状态迁移与 session 删同事务关键段」——删除必须在 tx-begin/tx-end 之间）。
+  const order: string[] = [];
+  transition.mockImplementation(async () => {
+    order.push('transition');
+    return result;
+  });
+  const deleteAllForUser = vi.fn(async () => {
+    order.push('session-delete');
+    return 1;
+  });
+  const sessions = { deleteAllForUser } as unknown as AuthSessionStore;
+  const uow = {
+    run: async <T>(fn: () => Promise<T>): Promise<T> => {
+      order.push('tx-begin');
+      try {
+        return await fn();
+      } finally {
+        order.push('tx-end');
+      }
+    },
+  } as unknown as UnitOfWork;
   return {
     transition,
     status: { transition } as unknown as UserStatusService,
     audit: audit as unknown as PlatformAuditService,
     auditSpy: audit.logUserGovernance,
-    nativeDelete,
-    fork,
-    mikro,
+    deleteAllForUser,
+    sessions,
+    uow,
+    order,
   };
 }
 
@@ -37,7 +57,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
       previous: TENANT_STATUS.ACTIVE,
       status: USER_STATUS.SUSPENDED,
     });
-    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.mikro);
+    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.uow, d.sessions);
     await expect(handler.execute(new SuspendUserCommand('u1', 'op-1', 'fraud'))).resolves.toEqual({
       userId: 'u1',
       status: USER_STATUS.SUSPENDED,
@@ -46,7 +66,9 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
       reason: 'fraud',
       actorId: 'op-1',
     });
-    expect(d.nativeDelete).toHaveBeenCalledTimes(1); // FR-10 immediate session invalidation
+    expect(d.deleteAllForUser).toHaveBeenCalledWith('u1'); // FR-10 immediate session invalidation
+    // S3 原子性锁：迁移与 session 删同处一个 uow 关键段（时序 tx-begin → transition → session-delete → tx-end）
+    expect(d.order).toEqual(['tx-begin', 'transition', 'session-delete', 'tx-end']);
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'u1', 'op-1', {
       from: TENANT_STATUS.ACTIVE,
       to: USER_STATUS.SUSPENDED,
@@ -55,9 +77,9 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
 
   it('returns null on not-found without deleting sessions or auditing', async () => {
     const d = deps({ kind: 'not-found' });
-    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.mikro);
+    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.uow, d.sessions);
     await expect(handler.execute(new SuspendUserCommand('ghost', 'op-1'))).resolves.toBeNull();
-    expect(d.nativeDelete).not.toHaveBeenCalled();
+    expect(d.deleteAllForUser).not.toHaveBeenCalled();
     expect(d.auditSpy).not.toHaveBeenCalled();
   });
 
@@ -67,11 +89,11 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
       from: TENANT_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
     });
-    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.mikro);
+    const handler = new SuspendUserCommandHandler(d.status, d.audit, d.uow, d.sessions);
     await expect(handler.execute(new SuspendUserCommand('u1', 'op-1'))).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(d.nativeDelete).not.toHaveBeenCalled();
+    expect(d.deleteAllForUser).not.toHaveBeenCalled();
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'u1', 'op-1', {
       from: TENANT_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
