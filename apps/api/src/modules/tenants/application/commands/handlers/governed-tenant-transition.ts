@@ -17,7 +17,7 @@ export interface GovernedTransitionDeps {
 export interface GovernedTransitionInput {
   readonly action: GovernedTransitionAction;
   readonly organizationId: string;
-  readonly operatorId: string | undefined;
+  readonly operatorId: string;
   readonly target: TenantStatus;
 }
 

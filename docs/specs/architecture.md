@@ -4,11 +4,11 @@
 
 ## Core Design Principles
 
-- **Clean Architecture (CA)**: every bounded context is split into four layers with a strict inward dependency direction: `api → application → domain ← infrastructure`. The domain depends on nothing but the shared kernel.
-- **Domain-Driven Design (DDD)**: business logic lives in framework-free aggregates with value objects, domain events and repository ports. Infrastructure supplies adapters (MikroORM) for those ports.
-- **CQRS**: writes go through `Command → CommandHandler`, reads through `Query → QueryHandler`, dispatched over `@nestjs/cqrs` buses. Controllers never call a service directly.
+- **Hexagonal / Clean Architecture** (same dependency rule): ports & adapters with a strict inward direction (`api → application → domain ← infrastructure`); the domain depends on nothing but the shared kernel (enforced by the core purity guard test).
+- **Functional core, imperative shell** (architecture precision amendment, 2026-10-20): domain decisions are pure functions over immutable data returning result-unions (reference: `canTransition`). Aggregate-first tactical DDD is **not** adopted (the only natural aggregate — User — has its lifecycle owned by Better Auth; the dead pipeline was removed). Value objects on demand (only `Quota` in this domain).
+- **CQRS on demand (P4)**: contexts with cross-aggregate orchestration / transaction boundaries / event publishing use `Command/Query → Handler` (`@nestjs/cqrs`); simple contexts (controller + service + repository) are a **legal end state**, not unfinished work (e.g. users/posts/workspaces).
 - **Vertical slices**: contexts are packaged by feature (`apps/api/src/modules/<context>`; shared-contract contexts live under `libs/core/src/modules/<context>`), not by technical tier. Cross-context coupling only happens through domain events, never by importing another context's `domain/` or `infrastructure/`.
-- **Event Sourcing (committed, phased)**: confirmed architectural goal (human clarification 2026-10-14) — no longer gated on "a context actually needs it", while phasing and audit/migration gates stand. This phase (A) dispatches domain events in-process only. The command handler + aggregate `recordEvent/pullDomainEvents` seam and the event envelope are already ES-shaped. See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
+- **Event Sourcing (committed, phased)**: confirmed architectural goal (human clarification 2026-10-14) — no longer gated on "a context actually needs it", while phasing and audit/migration gates stand. Phase B shadow-append is current (event-table audit; CRUD remains the single source of truth). Events are published from the service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). **Phase C (projections/sagas) is downgraded to a trigger-criteria-driven optional evolution** — default end state = audit log + integration events. See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
 - **EDA (event-driven architecture, committed)**: domain events are the **only** cross-context integration mechanism; evolution path = in-process dispatch (landed) → transactional outbox for durable publish (Phase B) → cross-process broker subscription (only after microservice triggers fire, see [microservice-readiness.md](../plans/microservice-readiness.md)).
 
 ## Directory Structure
@@ -134,8 +134,9 @@ The three-layer permission chain: `PlatformOperatorGuard` (platform layer) →
 
 Contexts never import each other's internals. Side effects that span contexts are
 expressed as domain events subscribed via `@EventsHandler`. `auth`, `stripe` and
-`storage` are kept as thin adapters today; `auth` is the designated slot to be
-DDD/ES-ified later without disturbing the `users` pattern.
+`storage` stay thin adapters/glue (a legal P4 end state); should a context develop
+real aggregate needs later, that goes through a trigger-criteria-gated plan (no
+more "designated slots").
 
 ## Context Boundary: Authentication ↔ Users
 

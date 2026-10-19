@@ -2,11 +2,11 @@
 
 ## 核心设计原则
 
-- **整洁架构（Clean Architecture）**：每个限界上下文内部划分为四层，依赖方向严格向内：`api → application → domain ← infrastructure`。domain 层除共享内核外不依赖任何框架。
-- **领域驱动设计（DDD）**：业务逻辑封装在零框架依赖的聚合根中，配合值对象、领域事件与仓储端口（port）；infrastructure 层提供端口的适配器（MikroORM）。
-- **CQRS**：写操作走 `Command → CommandHandler`，读操作走 `Query → QueryHandler`，经由 `@nestjs/cqrs` 的总线分发。Controller 绝不直接调用 service。
+- **六边形架构 / 整洁架构（Hexagonal = Clean Architecture·同一依赖规则）**：端口-适配器 + 依赖方向严格向内（`api → application → domain ← infrastructure`）；domain 除共享内核外零框架依赖（core 纯度守卫测试可执行化锁定）。
+- **函数式领域内核（functional core, imperative shell·架构精度修宪 2026-10-20）**：领域裁决 = 纯函数 + 不可变数据 + result-union（基准样例 `canTransition`）；**不采用聚合优先的战术 DDD**（唯一天然聚合 User 的生命周期归 Better Auth·死管道已删），值对象按需（本域仅 `Quota`）。
+- **CQRS 按需（P4 判据）**：存在跨聚合编排/事务边界/事件发布的上下文走 `Command/Query → Handler`（`@nestjs/cqrs`）；简单上下文（controller + service + repository）是**合法终态**而非「没做完」（如 users/posts/workspaces）。
 - **垂直切片（Vertical Slice）**：按功能而非技术分层组织（`apps/api/src/modules/<context>`；共享契约侧居 `libs/core/src/modules/<context>`）。上下文之间只能通过领域事件耦合，禁止 import 另一个上下文的 `domain/` 或 `infrastructure/`。
-- **Event Sourcing（确定采纳·分期递进）**：人澄清 2026-10-14——ES 为确定的架构目标，不再以「某上下文真需要才做」为前提；分期节奏与审计/迁移门禁维持。当前阶段（Phase A）领域事件仅进程内派发；Command→Handler 写路径、聚合的 `recordEvent/pullDomainEvents` 钩子与事件信封字段均已按 ES 形态预留。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
+- **Event Sourcing（确定采纳·分期递进）**：人澄清 2026-10-14——ES 为确定的架构目标，不再以「某上下文真需要才做」为前提；分期节奏与审计/迁移门禁维持。当前 Phase B 影子追加（event 表审计·CRUD 仍为唯一真相源）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于架构精度修宪 S1 删除）。**Phase C（投影/saga）降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
 
 ## 目录结构
@@ -124,8 +124,8 @@ checker、经 D 片不再自住平台治理。
 ## 上下文间通信
 
 上下文之间绝不互相 import 内部实现。跨上下文的副作用通过领域事件表达，用
-`@EventsHandler` 订阅。`auth`、`stripe`、`storage` 目前保持为薄适配层；`auth` 是
-后续在不影响 `users` 模式的前提下进行 DDD/ES 化的指定位置。
+`@EventsHandler` 订阅。`auth`、`stripe`、`storage` 保持为薄适配/胶水层（P4 合法终态）；未来若某上下文
+出现真聚合需求，经触发判据立项再引入（不再有「指定预留位」）。
 
 ## 上下文边界：认证（authentication）↔ 用户（users）
 

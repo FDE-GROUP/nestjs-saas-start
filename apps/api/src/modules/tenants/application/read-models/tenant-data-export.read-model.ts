@@ -1,3 +1,4 @@
+/** 返回形状（read shape）：query handler 的出参类型——**非** CQRS 物化投影（读写同库同模型·架构精度修宪 S5 正名）。 */
 /**
  * 租户级数据导出 read-model（NFR-6 · vision 阶段 3 开段首切片）。
  *

@@ -38,7 +38,7 @@
 
 - **运行时**：[Node LTS ≥22](https://nodejs.org/)（ESM，`"type": "module"`；开发经 `nest start --watch`、生产运行 SWC 编译产物）+ [pnpm](https://pnpm.io/)（包管理·workspace）
 - **框架**：[NestJS 12](https://nestjs.com/) + [Fastify 5](https://www.fastify.io/)
-- **架构范式**：Clean Architecture + DDD + CQRS（[`@nestjs/cqrs`](https://docs.nestjs.com/recipes/cqrs)）垂直切片，叠加分阶段 **ES + EDA**（Phase A 进程内事件派发 · Phase B event store 影子追加（缺省关）· Phase C 投影/saga 待排，路线见[事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)）
+- **架构范式**：六边形架构（= Clean Architecture 依赖规则·ports & adapters）的模块化单体 + **函数式领域内核**（functional core, imperative shell·治理/订阅域）——CQRS 按需（简单上下文 service 直调为合法终态），叠加 **EDA**（领域事件 = 集成契约 + 审计日志·Phase B 影子追加；投影/saga 为触发判据驱动的可选项，见[事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)）
 - **数据库**：[PostgreSQL](https://www.postgresql.org/) + [MikroORM](https://mikro-orm.io/)（迁移与种子）
 - **认证**：[Better Auth](https://github.com/better-auth/better-auth)（邮箱 + OAuth、会话/CSRF）——保留海外 OAuth（Google/GitHub）；**新增境内登录：微信、企业微信、钉钉、飞书**（自定义 provider；不做手机验证码登录）
 - **校验**：[zod](https://zod.dev/)（经 Nest 官方 standard-schema 件 `@Body/@Param/@Query({ schema })` + `@SerializeOptions({ schema })`）；跨端共享契约单源居 `libs/contracts`（class-validator/class-transformer/Joi 已换轨摘除）
@@ -57,7 +57,7 @@
 
 ## 架构
 
-采用 **Clean Architecture + DDD + CQRS 的垂直切片**与**分阶段 ES + EDA**（范式定义与阶段现状见 §技术栈·架构范式及[事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)：写路径统一 Command/Handler，跨上下文经领域事件通信，当前处 Phase B 影子追加）组织业务，并以 **pnpm workspace**（`apps/*` · `libs/*` · `packages/*`）组织为共享内核、参考后端应用、前端自助面与类型契约客户端（后端目录按行业惯例命名 `apps/api`，“参考实现”语义由文档承担）：
+采用**六边形架构（ports & adapters · 即 Clean Architecture 依赖规则）的垂直切片**组织业务：治理/订阅域用函数式领域内核（纯函数 + result-union·基准样例 `canTransition`），简单上下文保持 service 直调（P4 合法终态）；跨上下文经领域事件通信（P3·操作记录语义，当前处 Phase B 影子追加）。目录层**有内容才存在**。以 **pnpm workspace**（`apps/*` · `libs/*` · `packages/*`）组织为共享内核、参考后端应用、前端自助面与类型契约客户端（后端目录按行业惯例命名 `apps/api`，“参考实现”语义由文档承担）：
 
 ```
 libs/core/src/              # @core 共享内核：领域事件/聚合基类、tenancy 契约、subscriptions/workspaces 领域层

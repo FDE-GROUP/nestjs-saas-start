@@ -10,8 +10,8 @@ import {
   type SubscriptionRepository,
 } from '../../../domain/repositories/subscription.repository';
 import { QuotaService } from '../../../quota/quota.service';
-import { resolvePlanDef } from '../../../quota/tenant-plans';
 import { Quota } from '../../../quota/quota.vo';
+import { resolvePlanDef } from '../../../quota/tenant-plans';
 import type { TenantSubscriptionView } from '../../read-models/subscription.read-model';
 import { CreateSubscriptionCommand } from '../create-subscription.command';
 

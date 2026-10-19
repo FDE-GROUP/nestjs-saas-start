@@ -21,7 +21,7 @@
 | 语言/类型系统 | **TypeScript** | ^5.9.3 | 类型检查；`emitDecoratorMetadata` 必需 | 强制 |
 | 应用框架 | **NestJS** | ^12.1.3 | 模块化 DI、装饰器 | 强制 |
 | HTTP 适配 | **Fastify**（platform-fastify） | ^5.12.5 | 替代 Express 的平台层 | 强制 |
-| CQRS 总线 | **@nestjs/cqrs** | ^12.1.0 | Command/Query/EventBus | 强制（架构约束） |
+| CQRS 总线 | **@nestjs/cqrs** | ^12.1.0 | Command/Query/EventBus | 按需（P4 判据：存在跨聚合编排/事务/事件发布的上下文；简单上下文 service 直调·架构精度修宪） |
 | ORM | **MikroORM** | 7.2.5 | Data Mapper / UoW / 类型安全实体映射 | 强制 |
 | 数据库驱动 | **`@mikro-orm/postgresql`**（底层 `pg`） | 7.2.5 | Mikro 的 Postgres 驱动（随包自带 `pg`，无需顶层驱动包） | 强制 |
 | 迁移/CLI | **`@mikro-orm/migrations`**（`Migrator`） | 7.2.5 | `migrator.create()` 生成 / `migrator.up()` 执行（经 `tsx` 脚本驱动·无独立 CLI bin） | 强制 |

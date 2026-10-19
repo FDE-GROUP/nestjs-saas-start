@@ -2,7 +2,7 @@ import { User as UserEntity } from '@app/database/mikro/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { InferEntity } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
-import type { UserRepository, UserRecord } from '../../domain/repositories/user.repository';
+import type { UserRecord, UserRepository } from '../../domain/repositories/user.repository';
 
 /**
  * 运行时 Mikro `User` 实体 → `UserRecord`（架构精度修宪 S1：原 `entityToState` 逐字段镜像——

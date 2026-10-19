@@ -17,6 +17,8 @@
 
 > **首切片已落地（shadow append·2026-10-14·[module-users-es-append](./module-users-es-append.md)）**：users 域事件经双模开关耐久落 `event` 表（迁移 0009·camelCase 列名 + `eventId` 保真列·见其 §6），CRUD 仍为唯一真相源；下述 schema 即其形态，回放/投影/同事务化待续。
 >
+> **架构精度修宪改口（2026-10-20）**：① 注册流事件随 User 聚合死管道删除（S1）——users 聚合流现存 `user.status.transitioned`；② 事件语义正名为「操作记录」（P3·service/handler 发布为正式模式，非聚合事件妥协）；③ **Phase C 降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件，ES 转真相源须有具体触发判据（如订阅计费对账重放）另立专项过审。
+>
 > **第二切片已落地（2026-10-14·[module-tenancy-es-lifecycle-events](./module-tenancy-es-lifecycle-events.md)）**：租户治理动作（approve/suspend/resume/delete）经 `TenantStatusService.transition` 单点产出 `tenant.status.transitioned` 同表耐久（无新迁移）；`EventStore.deleteByAggregate` 收口 PIPL 硬删级联补删（§6-④ 定向关闭）。
 >
 > **第三切片已落地（2026-10-14·[module-tenancy-es-user-status-events](./module-tenancy-es-user-status-events.md)）**：平台用户 suspend/resume 经 `UserStatusService.transition` 产出 `user.status.transitioned`，与 `user.registered` **同聚合流**（version 跨事件类型连续·PIPL 补删零额外代码覆盖）。至此 event store 覆盖：注册流 + 租户/用户两级治理动作。
@@ -62,7 +64,7 @@ CREATE INDEX event_aggregate_idx ON event (aggregate_type, aggregate_id);
 - 从事件流构建**投影（projections）**写入读表；现有 `Query` handler 继续读这些表——其契约不变。
 - 当某条流的重放成本开始要紧时加**快照（snapshots）**（存 `aggregate_type='snapshot'` 或独立表；从最近快照回放）。
 
-## Phase C — Sagas（流程编排）
+## Phase C — Sagas（流程编排）【触发判据驱动·可选项·架构精度修宪改口】
 
 `@nestjs/cqrs` 自带 Sagas：一个响应事件、发出命令的 `@Saga()` 生成器，支撑跨上下文的**补偿事务**（如 register → create profile → 失败则删除 auth user）。在需要多步编排之处替代 Phase A 中临时的 `@EventsHandler` 反应。无 DB 变更；Saga 放在 `application/`。
 

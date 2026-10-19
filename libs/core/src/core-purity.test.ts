@@ -19,7 +19,14 @@ import { describe, expect, it } from 'vitest';
 const CORE_SRC = resolve(fileURLToPath(import.meta.url), '..');
 const SCAN_ROOTS = ['modules', 'shared-kernel'];
 const ADAPTER_ROLE = /\.(guard|decorator|middleware)\.ts$/;
-const DI_ALLOWLIST = new Set(['Inject', 'Injectable', 'SetMetadata', 'Optional', 'forwardRef', 'Logger']);
+const DI_ALLOWLIST = new Set([
+  'Inject',
+  'Injectable',
+  'SetMetadata',
+  'Optional',
+  'forwardRef',
+  'Logger',
+]);
 
 function walk(dir: string, acc: string[]): void {
   for (const name of readdirSync(dir)) {
@@ -43,7 +50,11 @@ function nestCommonIdentifiers(source: string): Set<string> {
   const ids = new Set<string>();
   for (const m of source.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+'@nestjs\/common'/g)) {
     for (const part of m[1].split(',')) {
-      const id = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]?.trim();
+      const id = part
+        .trim()
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/)[0]
+        ?.trim();
       if (id) ids.add(id);
     }
   }

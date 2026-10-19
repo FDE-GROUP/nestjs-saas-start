@@ -166,7 +166,7 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     createdOrgIds.push(orgId);
 
     // creator 已占 1 席；免费档限额 = FREE_PLAN.seatsLimit
-    const limit = FREE_PLAN.seatsLimit;
+    const limit = FREE_PLAN.seatsLimit.value; // S2：TenantPlan.seatsLimit 已 Quota VO 化
     expect(await countMembers(orgId)).toBe(1);
 
     // 塞满：再入 (limit - 1) 人，逐个 invite→accept，全部应成功（未超限零误伤）

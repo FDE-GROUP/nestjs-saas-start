@@ -127,9 +127,10 @@
 - [x] `Quota` VO 落地（2026-10-20）：`quota.vo.ts` 非负安全整数不变量·原生 Error fail-loud；接线 = 档位目录（tenant-plans 常量定义期）+ QuotaService.effectiveSeatsLimit/snapshot 摄入（含 DB 腐行 fail-loud 测）+ create-subscription 两源统一摄入；`assertSeats` 402 删除·翻译归 QuotaGuard/auth hook（P1）。
 - [x] suspend-user 状态写与 session 删同事务（S3 落地 2026-10-20）：关键段包 uow.run（transition 重入复用外层）+ 新 AUTH_SESSION_STORE 端口/适配器（fork ALS 感知自动入事务）——单测以时序序断言锁「tx-begin→transition→session-delete→tx-end」同关键段；表所有权 WRITE_EXCEPTIONS 例外清零（写面归位 auth 属主目录·守卫自然放行）。gated e2e 回滚证：UoW 同生共死语义已由既有 transaction-scope/outbox 测试锁·失败注入 e2e 留待真实回归需求再立。
 - [x] 治理 handler 收敛（S4 落地 2026-10-20）：approve/suspend/resume 三同构 handler（45/44/43 行）收敛至 `governedTenantTransition` 共用用例（薄壳 31/30/29 行·三分支语义逐字一致）；delete-permanently 为异构用例（终态闸+事件补删+硬删）保留独立实现；既有三分支 handler 测试**原样全绿**（行为锁）。
-- [ ] README / architecture.md(+zh) 新宣称 + P1–P4 + 上下文矩阵落笔；ES Phase C 改口。
-- [ ] `pnpm run ci` 全绿 + `ci:db` gated e2e 全绿 + `fallow architecture` 绿。
-- [ ] `verify:type-escape` 不越界（若 S1 删码致降，经 `--update` 下调留 diff 人审）。
+- [x] 宣称与宪法落笔（S5·2026-10-20）：README 技术栈/架构两处、architecture.md(+zh) 三支柱改写（六边形=Clean 同族 + 函数式内核 + CQRS 按需 P4）、tooling-standards CQRS 强制→按需、ES roadmap Phase C 改口（触发判据驱动·注册流事件删除留痕）·read-models 头注正名 ×N。
+- [x] `pnpm run ci` 全绿（check+ratchet+build+drift 三向对拍+web typecheck+tests+fallow 0 违规·2026-10-20 终跑 PASSED）+ `test:fullstack` gated e2e 9 文件 31 测 + BA 一致性 9 测全绿（EXIT=0）。
+- [x] `verify:type-escape` 棘轮不越界：基线 151→147（S1 删码下调留 diff）→148（S3 适配器正当胶水 +1 留 diff）。
+- [x] **S6 不做**（未决③条件裁定·2026-10-20 实查）：payment `amount` 纯透传 Stripe 零本地运算——P2 判据不过，不为 VO 而 VO。
 
 ## 9. 演变记录
 
@@ -137,6 +138,7 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版：函数式内核六边形单体修宪提案（P1–P4 范式 + S1–S6 切片 + 四未决项） |
 | 2026-10-20 | 0.1.1 | 评审补强（用户认可） | P1 增两条纯度硬约束：效果=返回值非回调注入；时钟/随机源经参数注入——挡住「效果参数化冒充纯内核」误区 |
+| 2026-10-20 | 0.2.0 | S5 收官 | 宣称/宪法五文件落笔（README/architecture±zh/tooling/ES roadmap Phase C 改口）·read-models 头注正名 ×9·S6 条件裁定不做（amount 纯透传·P2 判据不过）·终跑 ci+fullstack 全绿——**方案 S1–S5 全部落地·结项** |
 | 2026-10-20 | 0.1.3 | S1 执行留痕 | 执行时连带删除两项孤儿：Email VO（唯一消费者为被删聚合·零引用）与 AggregateRoot 基类（零消费者）——e2e 夹具换同聚合流 UserStatusTransitionedEvent |
 | 2026-10-20 | 0.1.2 | 消歧（用户认可） | §3.1 宣称补「即 Clean Architecture 依赖规则」等价注 + 命名说明（六边形=Clean 同族综合重述·非架构更换·放弃的仅是聚合 DDD 与全覆盖 CQRS 宣称） |
 
