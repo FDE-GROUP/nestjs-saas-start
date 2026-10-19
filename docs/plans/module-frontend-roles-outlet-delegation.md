@@ -57,7 +57,7 @@
 
 - [x] `settings.roles.tsx` `RolesPage` 命中 `/settings/roles/$roleKey` 时 `return <Outlet />`；列表路由自身渲染不变（nesting 测锁：列表页不含矩阵 h1）。
 - [x] 真父子挂载回归测试：`settings.roles.nesting.test.tsx` 导航 `/settings/roles/editor` → 子页 h1「权限矩阵」+ `角色：Editor` 出现（缺陷反证转正证）。
-- [ ] `pnpm run ci` 全绿·web 测试数只增不减·Biome 净·`tsc --noEmit` 0 issue。
+- [x] `pnpm run ci` 全绿·web 测试数只增不减（606→608/31·116 files）·Biome 净·`tsc --noEmit` 0 issue。
 - [x] `platform.tenants`/后端/契约制品零触动。
 
 ## 6. 演变记录
@@ -65,7 +65,7 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-19 | 0.1.0 | 起草 | 首版：settings.roles 缺 Outlet 致 $roleKey 权限矩阵页不渲染——代码+实跑双证·单文件委托修复方案 |
-| 2026-10-19 | 0.2.0 | 审计 GO + 实施 | 人令「同意」（§4①补测②接受双取）；settings.roles.tsx 加 Outlet 委托 + nesting 回归锁（+2 tests）；ci 待绿 |
+| 2026-10-19 | 0.2.0 | 审计 GO + 实施 | 人令「同意」（§4①补测②接受双取）；settings.roles.tsx 加 Outlet 委托 + nesting 回归锁（+2 tests）；ci 606→608/31 全绿·已推 origin/main（`ab6bbfe`） |
 
 ---
 
