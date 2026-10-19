@@ -1,19 +1,13 @@
+import type { ResponseErrorDetail } from '@saas/contracts/index';
 import type { ValidationError } from 'class-validator';
 
 /**
- * 结构化错误明细（就绪预备 §2.3 #3 · 切片 A · 丙裁）：校验/业务失败**共用**的扁平明细。
- *
+ * 结构化错误明细（就绪预备 §2.3 #3 · 切片 A · 丙裁）：契约单源已上移 `@saas/contracts`
+ * （S7a·③ 裁定）——本处只留类型再导出（消费方 import 路径不变）与 class-validator 展平器。
  * RFC 9457 `errors` 思想，但**不换响应壳**——`ErrorResponse.errors?` 为可选加法字段，
- * 顶层 `message`（string | string[]）逐字保留以兼容既有消费者。明细用于字段级定位：
- * - `path`：字段路径（校验失败=class-validator `property`；业务失败可缺省）
- * - `code`：细分机器码（可选·业务子错误给；校验面留空，靠 statusCode+path 已可辨型）
- * - `message`：人面可读（随 i18n 译文）
+ * 顶层 `message`（string | string[]）逐字保留以兼容既有消费者。
  */
-export interface ResponseErrorDetail {
-  path?: string;
-  code?: string;
-  message: string;
-}
+export type { ResponseErrorDetail } from '@saas/contracts/index';
 
 /**
  * 把 class-validator 的 `ValidationError` 树展平为字段级明细（与 nestjs-i18n

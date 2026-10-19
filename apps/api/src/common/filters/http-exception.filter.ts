@@ -8,22 +8,15 @@ import {
   HttpStatus,
   Inject,
 } from '@nestjs/common';
+import type { ErrorResponse as ErrorResponseContract } from '@saas/contracts/index';
 import type { FastifyReply } from 'fastify';
 import type { ResponseErrorDetail } from '../errors/response-error-detail';
 
-interface ErrorResponse {
-  statusCode: number;
-  message: string | string[];
-  error: string;
-  timestamp: string;
-  path: string;
-  /** 请求关联 id：与 x-request-id 响应头、日志、领域事件 correlationId 同源（兜底链见 LoggingInterceptor）。 */
-  requestId: string;
-  /** 业务错误码：仅当异常以 object response 形态携带 `errorCode` 时透传（不引入自定义异常类）。 */
-  errorCode?: string;
-  /** 结构化字段级明细：仅当异常以 object response 形态携带 `errors[]` 时透传（与校验面同形·可选加法）。 */
-  errors?: ResponseErrorDetail[];
-}
+/**
+ * 错误响应体形状：单源已上移 `@saas/contracts`（S7a·③ 裁定），本处取派生型——
+ * 外形换轨前后逐字不变；逐字段语义见 contracts `envelope.ts`。
+ */
+type ErrorResponse = ErrorResponseContract;
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {

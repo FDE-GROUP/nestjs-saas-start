@@ -1,4 +1,9 @@
 import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import type {
+  ApiEnvelope as ApiEnvelopeContract,
+  ErrorResponse as ErrorResponseContract,
+  ResponseErrorDetail,
+} from '@saas/contracts/index';
 
 /**
  * HTTP 响应契约公共面（前端 F1 · module-frontend-api-client §2.1）。
@@ -152,3 +157,18 @@ export function apiOkPassthrough(opts: { status?: number; description: string; s
     },
   };
 }
+
+// —— 编译期双向对拍（S7a·③ envelope/error-detail 上移 contracts）：文档面类形状 ≡ contracts
+// zod 派生形互可赋值，任一侧漂移则 tsc 红（实跑形另由 api-contracts.test.ts 的 safeParse 锁兜底）。——
+const _detailFwd: ResponseErrorDetail = {} as ApiErrorDetail;
+const _detailBwd: ApiErrorDetail = {} as ResponseErrorDetail;
+const _errFwd: ErrorResponseContract = {} as ApiErrorResponse;
+const _errBwd: ApiErrorResponse = {} as ErrorResponseContract;
+const _envFwd: ApiEnvelopeContract = {} as ApiEnvelope;
+const _envBwd: ApiEnvelope = {} as ApiEnvelopeContract;
+void _detailFwd;
+void _detailBwd;
+void _errFwd;
+void _errBwd;
+void _envFwd;
+void _envBwd;
