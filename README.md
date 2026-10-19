@@ -98,6 +98,7 @@ packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安�
 
 **指南**（`docs/` — 操作手册）
 
+- [函数式领域内核指南](./docs/functional-core.md)（概念·判据·地图·FAQ）
 - [安装与运行](./docs/install&run.md)
 - [前端 dev 反代真跑手册](./docs/frontend-dev-proxy-runbook.md)
 - [Docker 部署](./docs/docker-deployment.md)

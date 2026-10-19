@@ -21,6 +21,7 @@ P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度
 | `core/modules/subscriptions/quota/tenant-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota 非负整数不变量（P2 唯一认定 VO） | 零 import |
 
+> 概念/判据/配方/FAQ 的完整展开见 [函数式领域内核指南](../functional-core.md)（讲解性·非规范）。
 > 体积小（合计约数百行）是**域的真相**而非缺陷：复杂度在隔离/治理/配额的技术架构，不在业务规则密度——多数代码是外壳（端口/适配器/守卫/UoW）。内核的可复用性见 `user-status.service` 对 `canTransition` 的直接复用（一表服务两条生命周期）。
 
 ## 目录结构

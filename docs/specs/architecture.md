@@ -23,6 +23,7 @@ P1 is a pattern, not a folder — kernel pieces live across contexts. Admission 
 | `core/modules/subscriptions/quota/tenant-plans.ts` | Plan catalog + `resolvePlanDef` | self-owned VO only |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota non-negative-integer invariant (the single P2 VO) | zero imports |
 
+> Full exposition (concepts, criteria, recipe, FAQ) lives in the [functional-core guide](../functional-core.md) (expository, non-normative).
 > Its small size (a few hundred lines total) reflects **the domain's truth**, not a gap: complexity lives in the technical architecture of isolation/governance/quota, not in business-rule density — most code is shell (ports/adapters/guards/UoW). For kernel reuse see `user-status.service` reusing `canTransition` directly (one table serving two lifecycles).
 
 ## Directory Structure
