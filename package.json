@@ -49,7 +49,7 @@
     "db:setup": "tsx scripts/mikro-migrate.ts && pnpm run db:seed",
     "openapi:export": "pnpm run build && node dist/apps/api/src/openapi-codegen.js",
     "openapi:codegen": "node dist/apps/api/src/openapi-codegen.js",
-    "openapi:drift": "pnpm run openapi:codegen && git diff --exit-code -- openapi/openapi.yaml"
+    "openapi:drift": "pnpm run openapi:codegen && pnpm --filter @saas/api-client run gen:types && git diff --exit-code -- openapi/openapi.yaml packages/api-client/src/schema.d.ts"
   },
   "keywords": [],
   "author": {
