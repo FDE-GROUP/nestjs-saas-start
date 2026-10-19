@@ -21,13 +21,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   type ListPlatformUsersQuery as ListPlatformUsersQueryDto,
   listPlatformUsersQuerySchema,
+  platformUserPageSchema,
   type SuspendUser,
   suspendUserSchema,
+  userGovernanceResultSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -68,6 +71,7 @@ export class PlatformUsersController {
   ) {}
 
   @Get()
+  @SerializeOptions({ schema: platformUserPageSchema })
   @ApiOperation({ summary: 'List all platform users with lifecycle status (operator only)' })
   @ApiResponse(
     apiEnvelopeShape(PlatformUserPageResponse, {
@@ -84,6 +88,7 @@ export class PlatformUsersController {
   }
 
   @Patch(':id/suspend')
+  @SerializeOptions({ schema: userGovernanceResultSchema })
   @ApiOperation({
     summary:
       'Suspend a platform user (active → suspended · sessions invalidated · fail-closed失能)',
@@ -105,6 +110,7 @@ export class PlatformUsersController {
   }
 
   @Patch(':id/resume')
+  @SerializeOptions({ schema: userGovernanceResultSchema })
   @ApiOperation({ summary: 'Resume a suspended platform user (suspended → active)' })
   @ApiResponse(apiEnvelopeShape(UserGovernanceResultResponse, { description: 'User resumed.' }))
   @ApiResponse(apiError(404, 'User not found.'))

@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type {
+  paymentCheckoutRefSchema,
+  paymentCustomerRefSchema,
+  paymentRefundRefSchema,
+  paymentStatusSchema,
+  webhookAckSchema,
+} from '@saas/contracts/index';
+import type { z } from 'zod';
+import type {
   PaymentCheckoutRef,
   PaymentCustomerRef,
   PaymentProviderId,
@@ -110,3 +118,23 @@ export class WebhookAckResponse {
   @ApiProperty({ description: '回调是否已接收处理。' })
   received!: boolean;
 }
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源/内联字面形。——
+const _pkc1: z.infer<typeof paymentCustomerRefSchema> = {} as PaymentCustomerRef;
+const _pkc2: PaymentCustomerRef = {} as z.infer<typeof paymentCustomerRefSchema>;
+const _pko1: z.infer<typeof paymentCheckoutRefSchema> = {} as PaymentCheckoutRef;
+const _pko2: PaymentCheckoutRef = {} as z.infer<typeof paymentCheckoutRefSchema>;
+const _pkr1: z.infer<typeof paymentRefundRefSchema> = {} as PaymentRefundRef;
+const _pkr2: PaymentRefundRef = {} as z.infer<typeof paymentRefundRefSchema>;
+const _pks1: z.infer<typeof paymentStatusSchema> = {} as PaymentStatusResponse;
+const _pks2: PaymentStatusResponse = {} as z.infer<typeof paymentStatusSchema>;
+const _pkw1: z.infer<typeof webhookAckSchema> = {} as WebhookAckResponse;
+void _pkc1;
+void _pkc2;
+void _pko1;
+void _pko2;
+void _pkr1;
+void _pkr2;
+void _pks1;
+void _pks2;
+void _pkw1;

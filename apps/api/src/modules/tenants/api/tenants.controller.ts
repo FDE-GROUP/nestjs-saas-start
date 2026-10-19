@@ -15,9 +15,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type CreateTenantApplication, createTenantApplicationSchema } from '@saas/contracts/index';
+import {
+  type CreateTenantApplication,
+  createTenantApplicationSchema,
+  tenantApplicationViewSchema,
+} from '@saas/contracts/index';
 import {
   ApiEnvelope,
   ApiErrorResponse,
@@ -54,6 +59,7 @@ export class TenantsController {
   @Post('applications')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.CREATED)
+  @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Apply to create a tenant (user-level · lands pending_approval)' })
   @ApiResponse(
     apiEnvelopeShape(TenantApplicationResponse, {
@@ -73,6 +79,7 @@ export class TenantsController {
 
   @Post('applications/:id/approve')
   @UseGuards(PlatformOperatorGuard)
+  @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Approve a pending tenant (platform operator · pending → active)' })
   @ApiResponse(apiEnvelopeShape(TenantApplicationResponse, { description: 'Tenant activated.' }))
   @ApiResponse(apiError(403, 'Not a platform operator.'))

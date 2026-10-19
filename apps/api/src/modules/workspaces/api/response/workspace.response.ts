@@ -1,6 +1,7 @@
 import type { WorkspaceReadModel } from '@core/saas-kit/modules/workspaces/application/read-models/workspace.read-model';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
+import type { WorkspacePage, WorkspaceView } from '@saas/contracts/index';
 
 /**
  * workspaces 上下文响应契约（F1 甲①）——schema 源，纯文档面零运行时。
@@ -60,3 +61,11 @@ const _wpfwd: WorkspacePageResponse = {} as Page<WorkspaceReadModel>;
 const _wpbwd: Page<WorkspaceReadModel> = {} as WorkspacePageResponse;
 void _wpfwd;
 void _wpbwd;
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源（缺字段红；多字段由 strip 剥落）。——
+const _ws1: WorkspaceView = {} as WorkspaceReadModel;
+const _ws2: WorkspaceReadModel = {} as WorkspaceView;
+const _ws3: Page<WorkspaceReadModel> = {} as WorkspacePage;
+void _ws1;
+void _ws2;
+void _ws3;

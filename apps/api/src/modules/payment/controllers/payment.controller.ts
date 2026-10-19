@@ -2,6 +2,7 @@ import { Public } from '@core/saas-kit/tenancy/public.decorator';
 import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
 import type { RawBodyRequest } from '@nestjs/common';
 import { Body, Controller, Get, Headers, Inject, Param, Post, Req } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import {
   ApiExtraModels,
   ApiHeader,
@@ -15,8 +16,13 @@ import {
   type CreateCustomer,
   createCheckoutSchema,
   createCustomerSchema,
+  paymentCheckoutRefSchema,
+  paymentCustomerRefSchema,
+  paymentRefundRefSchema,
+  paymentStatusSchema,
   type RefundPayment,
   refundPaymentSchema,
+  webhookAckSchema,
 } from '@saas/contracts/index';
 import type { FastifyRequest } from 'fastify';
 import {
@@ -52,6 +58,7 @@ export class PaymentController {
   constructor(@Inject(PaymentService) private readonly payment: PaymentService) {}
 
   @Get('test')
+  @SerializeOptions({ schema: paymentStatusSchema })
   @ApiOperation({ summary: 'Payment integration status' })
   @ApiResponse(
     apiEnvelopeShape(PaymentStatusResponse, {
@@ -63,6 +70,7 @@ export class PaymentController {
   }
 
   @Post('customers')
+  @SerializeOptions({ schema: paymentCustomerRefSchema })
   @ApiOperation({ summary: 'Create a payment customer' })
   @ApiResponse(
     apiEnvelopeShape(PaymentCustomerRefResponse, {
@@ -75,6 +83,7 @@ export class PaymentController {
   }
 
   @Post('checkouts')
+  @SerializeOptions({ schema: paymentCheckoutRefSchema })
   @ApiOperation({ summary: 'Create a checkout (payment intent)' })
   @ApiResponse(
     apiEnvelopeShape(PaymentCheckoutRefResponse, {
@@ -88,6 +97,7 @@ export class PaymentController {
   }
 
   @Get('checkouts/:id')
+  @SerializeOptions({ schema: paymentCheckoutRefSchema })
   @ApiOperation({ summary: 'Retrieve a checkout' })
   @ApiParam({ name: 'id', description: 'Checkout (payment intent) ID' })
   @ApiResponse(
@@ -101,6 +111,7 @@ export class PaymentController {
   }
 
   @Post('refunds')
+  @SerializeOptions({ schema: paymentRefundRefSchema })
   @ApiOperation({ summary: 'Refund a checkout' })
   @ApiResponse(
     apiEnvelopeShape(PaymentRefundRefResponse, {
@@ -116,6 +127,7 @@ export class PaymentController {
   @Post('webhooks')
   // 入站回调靠 Stripe 签名校验而非会话·S11 显式旁路全局会话墙（deny-by-default 下的例外）。
   @Public()
+  @SerializeOptions({ schema: webhookAckSchema })
   @ApiOperation({ summary: 'Handle payment webhook events' })
   @ApiHeader({ name: 'stripe-signature', description: 'Payment provider webhook signature' })
   @ApiResponse(

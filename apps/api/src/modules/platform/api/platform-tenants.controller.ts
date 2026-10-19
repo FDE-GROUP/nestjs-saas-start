@@ -34,11 +34,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   type ListPlatformTenantsQuery as ListPlatformTenantsQueryDto,
   listPlatformTenantsQuerySchema,
+  platformTenantPageSchema,
+  platformTenantRowSchema,
+  tenantApplicationViewSchema,
+  tenantDiagnosticsSchema,
+  tenantHardDeleteResultSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -88,6 +94,7 @@ export class PlatformTenantsController {
   ) {}
 
   @Get()
+  @SerializeOptions({ schema: platformTenantPageSchema })
   @ApiOperation({ summary: 'List all tenants across the platform (operator only)' })
   @ApiResponse(
     apiEnvelopeShape(PlatformTenantPageResponse, {
@@ -104,6 +111,7 @@ export class PlatformTenantsController {
   }
 
   @Get(':id')
+  @SerializeOptions({ schema: platformTenantRowSchema })
   @ApiOperation({ summary: 'Get one tenant (operator only)' })
   @ApiResponse(apiEnvelopeShape(PlatformTenantRowResponse, { description: 'Tenant row.' }))
   @ApiResponse(apiError(404, 'Tenant not found.'))
@@ -117,6 +125,7 @@ export class PlatformTenantsController {
   }
 
   @Get(':id/diagnostics')
+  @SerializeOptions({ schema: tenantDiagnosticsSchema })
   @ApiOperation({ summary: 'Per-tenant diagnostics: member/invitation/workspace/post counts' })
   @ApiResponse(apiEnvelopeShape(TenantDiagnosticsResponse, { description: 'Diagnostics bundle.' }))
   @ApiResponse(apiError(404, 'Tenant not found.'))
@@ -148,6 +157,7 @@ export class PlatformTenantsController {
   }
 
   @Patch(':id/suspend')
+  @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Suspend an active tenant (active → suspended · fail-closed失能)' })
   @ApiResponse(apiEnvelopeShape(TenantApplicationResponse, { description: 'Tenant suspended.' }))
   @ApiResponse(apiError(404, 'Tenant not found.'))
@@ -166,6 +176,7 @@ export class PlatformTenantsController {
   }
 
   @Patch(':id/resume')
+  @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Resume a suspended tenant (suspended → active)' })
   @ApiResponse(apiEnvelopeShape(TenantApplicationResponse, { description: 'Tenant resumed.' }))
   @ApiResponse(apiError(404, 'Tenant not found.'))
@@ -185,6 +196,7 @@ export class PlatformTenantsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Soft-delete a tenant (→ deleted terminal · row kept for export)' })
   @ApiResponse(
     apiEnvelopeShape(TenantApplicationResponse, { description: 'Tenant marked deleted.' }),
@@ -206,6 +218,7 @@ export class PlatformTenantsController {
 
   @Delete(':id/permanent')
   @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ schema: tenantHardDeleteResultSchema })
   @ApiOperation({
     summary:
       'Hard-delete a deleted-terminal tenant (irreversible · FK cascade + event purge · NFR-6)',

@@ -23,6 +23,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
@@ -32,6 +33,8 @@ import {
   listPageQuerySchema,
   type UpdateWorkspace,
   updateWorkspaceSchema,
+  workspacePageSchema,
+  workspaceViewSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -65,6 +68,7 @@ export class WorkspacesController {
 
   @Get()
   @Can('read', 'Workspace')
+  @SerializeOptions({ schema: workspacePageSchema })
   @ApiOperation({ summary: 'List workspaces in the active tenant' })
   @ApiResponse(
     apiEnvelopeShape(WorkspacePageResponse, {
@@ -83,6 +87,7 @@ export class WorkspacesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Can('create', 'Workspace')
+  @SerializeOptions({ schema: workspaceViewSchema })
   @ApiOperation({ summary: 'Create a workspace (owner/admin)' })
   @ApiResponse(
     apiEnvelopeShape(WorkspaceResponse, {
@@ -101,6 +106,7 @@ export class WorkspacesController {
 
   @Patch(':id')
   @Can('update', 'Workspace')
+  @SerializeOptions({ schema: workspaceViewSchema })
   @ApiOperation({ summary: 'Update a workspace (owner/admin)' })
   @ApiResponse(apiEnvelopeShape(WorkspaceResponse, { description: 'Updated workspace.' }))
   @ApiResponse(apiError(404, 'Workspace not found in the active tenant.'))

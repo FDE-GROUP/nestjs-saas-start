@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { storageDeleteSchema, storageUrlSchema } from '@saas/contracts/index';
+import type { z } from 'zod';
 
 /**
  * 存储面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
@@ -14,3 +16,13 @@ export class StorageUrlResponse {
   @ApiProperty({ description: '签名访问 URL。' })
   url!: string;
 }
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 内联字面形。——
+const _std1: z.infer<typeof storageDeleteSchema> = {} as StorageDeleteResponse;
+const _std2: StorageDeleteResponse = {} as z.infer<typeof storageDeleteSchema>;
+const _stu1: z.infer<typeof storageUrlSchema> = {} as StorageUrlResponse;
+const _stu2: StorageUrlResponse = {} as z.infer<typeof storageUrlSchema>;
+void _std1;
+void _std2;
+void _stu1;
+void _stu2;

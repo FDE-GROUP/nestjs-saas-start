@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
@@ -18,6 +19,8 @@ import {
   createPostSchema,
   type ListCursorQuery,
   listCursorQuerySchema,
+  postCursorPageSchema,
+  postViewSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -48,6 +51,7 @@ export class PostsController {
   ) {}
 
   @Get()
+  @SerializeOptions({ schema: postCursorPageSchema })
   @ApiOperation({ summary: 'List posts in the active tenant (cursor-paginated)' })
   @ApiResponse(
     apiEnvelopeShape(PostCursorPageResponse, {
@@ -66,6 +70,7 @@ export class PostsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @SerializeOptions({ schema: postViewSchema })
   @ApiOperation({ summary: 'Create a post in the active tenant' })
   @ApiResponse(
     apiEnvelopeShape(PostResponse, {

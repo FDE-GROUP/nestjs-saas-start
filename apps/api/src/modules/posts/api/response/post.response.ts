@@ -1,5 +1,6 @@
 import type { CursorPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
+import type { PostCursorPage, PostView } from '@saas/contracts/index';
 import type { PostReadModel } from '../../application/read-models/post.read-model';
 
 /**
@@ -56,3 +57,11 @@ export class PostCursorPageResponse {
 // CursorPage 的 items 为 readonly，故取「类→接口」单向锁（拓字段缺失/多余）。
 const _cpbwd: CursorPage<PostReadModel> = {} as PostCursorPageResponse;
 void _cpbwd;
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源（缺字段红；多字段由 strip 剥落兜底）。——
+const _ps1: PostView = {} as PostReadModel;
+const _ps2: PostReadModel = {} as PostView;
+const _pcp: CursorPage<PostReadModel> = {} as PostCursorPage;
+void _ps1;
+void _ps2;
+void _pcp;

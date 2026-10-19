@@ -1,5 +1,6 @@
 import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { ApiProperty } from '@nestjs/swagger';
+import type { TenantApplicationView } from '@saas/contracts/index';
 import type { TenantApplicationReadModel } from '../../application/read-models/tenant-application.read-model';
 
 /** 生命周期状态机取值（SSOT = @core TENANT_STATUS·枚举形为文档投影·与字段 union 同文法）。 */
@@ -22,3 +23,9 @@ const _tfwd: TenantApplicationResponse = {} as TenantApplicationReadModel;
 const _tbwd: TenantApplicationReadModel = {} as TenantApplicationResponse;
 void _tfwd;
 void _tbwd;
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源。——
+const _tav1: TenantApplicationView = {} as TenantApplicationReadModel;
+const _tav2: TenantApplicationReadModel = {} as TenantApplicationView;
+void _tav1;
+void _tav2;

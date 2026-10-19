@@ -12,6 +12,7 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import {
   ApiBody,
   ApiConsumes,
@@ -22,6 +23,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  fileUploadResultSchema,
+  storageDeleteSchema,
+  storageUrlSchema,
+} from '@saas/contracts/index';
 import type { FastifyRequest } from 'fastify';
 import {
   ApiEnvelope,
@@ -49,6 +55,7 @@ export class StorageController {
   constructor(@Inject(StorageService) private readonly storageService: StorageService) {}
 
   @Post('upload')
+  @SerializeOptions({ schema: fileUploadResultSchema })
   @ApiOperation({ summary: 'Upload a single file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -101,6 +108,7 @@ export class StorageController {
   }
 
   @Delete(':key')
+  @SerializeOptions({ schema: storageDeleteSchema })
   @ApiOperation({ summary: 'Delete a file' })
   @ApiParam({ name: 'key', description: 'Unique identifier of the file' })
   @ApiResponse(apiEnvelopeShape(StorageDeleteResponse, { description: 'Delete result.' }))
@@ -111,6 +119,7 @@ export class StorageController {
   }
 
   @Get(':key/url')
+  @SerializeOptions({ schema: storageUrlSchema })
   @ApiOperation({ summary: 'Get a signed URL for a file' })
   @ApiParam({ name: 'key', description: 'Unique identifier of the file' })
   @ApiQuery({

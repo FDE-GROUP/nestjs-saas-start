@@ -14,9 +14,14 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type CreateSubscription, createSubscriptionSchema } from '@saas/contracts/index';
+import {
+  type CreateSubscription,
+  createSubscriptionSchema,
+  subscriptionViewSchema,
+} from '@saas/contracts/index';
 import {
   ApiEnvelope,
   ApiErrorResponse,
@@ -50,6 +55,7 @@ export class SubscriptionsController {
 
   @Get('current')
   @UseGuards(TenantScopeGuard)
+  @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({
     summary: 'Current tenant subscription: plan, seat quota, usage, customer mapping',
   })
@@ -69,6 +75,7 @@ export class SubscriptionsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(TenantScopeGuard, TenantPermissionGuard)
   @Can('update', 'Organization')
+  @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({
     summary: 'Provision/upgrade the tenant subscription (creates the provider customer)',
   })

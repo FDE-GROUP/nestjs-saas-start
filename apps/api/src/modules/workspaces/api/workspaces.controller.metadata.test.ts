@@ -1,6 +1,11 @@
 import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { listPageQuerySchema } from '@saas/contracts/index';
+import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serializer.constants.js';
+import {
+  listPageQuerySchema,
+  workspacePageSchema,
+  workspaceViewSchema,
+} from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
 import { WorkspacesController } from './workspaces.controller';
 
@@ -14,5 +19,30 @@ describe('WorkspacesController query schema metadata', () => {
       { schema?: unknown }
     >;
     expect(Object.values(args).some((v) => v.schema === listPageQuerySchema)).toBe(true);
+  });
+});
+
+// S7b 序列化白名单·offsetPage 形状锁：workspaces.list 返回 `Page<T>`（整体对象含 items/total/…），
+// 故挂包数组的 offsetPage schema（区别于 authorization.listRoles 的元素数组）。
+describe('WorkspacesController @SerializeOptions 元数据（S7b 序列化白名单）', () => {
+  const proto = WorkspacesController.prototype as unknown as Record<string, unknown>;
+  const serializeSchema = (method: string) =>
+    (
+      Reflect.getMetadata(CLASS_SERIALIZER_OPTIONS, proto[method] as object) as {
+        schema?: unknown;
+      }
+    )?.schema;
+
+  it('list() 携 offsetPage schema workspacePageSchema', () => {
+    expect(serializeSchema('list')).toBe(workspacePageSchema);
+  });
+
+  it('create/update() 携单对象 schema workspaceViewSchema', () => {
+    expect(serializeSchema('create')).toBe(workspaceViewSchema);
+    expect(serializeSchema('update')).toBe(workspaceViewSchema);
+  });
+
+  it('remove()（void）不挂序列化', () => {
+    expect(serializeSchema('remove')).toBeUndefined();
   });
 });

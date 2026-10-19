@@ -3,6 +3,16 @@ import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-l
 import type { UserStatus } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
+import type {
+  PlatformTenantRowView,
+  PlatformUserRowView,
+  platformTenantPageSchema,
+  platformUserPageSchema,
+  tenantDiagnosticsSchema,
+  tenantHardDeleteResultSchema,
+  userGovernanceResultSchema,
+} from '@saas/contracts/index';
+import type { z } from 'zod';
 import type { TenantHardDeleteResult } from '../../../tenants/application/commands/delete-tenant-permanently.command';
 import type { UserGovernanceResult } from '../../../tenants/application/read-models/platform-user.read-model';
 import type {
@@ -151,3 +161,29 @@ const _ugrf: UserGovernanceResultResponse = {} as UserGovernanceResult;
 const _ugrb: UserGovernanceResult = {} as UserGovernanceResultResponse;
 void _ugrf;
 void _ugrb;
+
+// —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源（缺字段红；多字段由 strip 剥落）。——
+const _pt1: PlatformTenantRowView = {} as PlatformTenantRow;
+const _pt2: PlatformTenantRow = {} as PlatformTenantRowView;
+const _gv1: PlatformUserRowView = {} as PlatformUserRow;
+const _gv2: PlatformUserRow = {} as PlatformUserRowView;
+const _td1: z.infer<typeof tenantDiagnosticsSchema> = {} as TenantDiagnostics;
+const _td2: TenantDiagnostics = {} as z.infer<typeof tenantDiagnosticsSchema>;
+const _hd1: z.infer<typeof tenantHardDeleteResultSchema> = {} as TenantHardDeleteResult;
+const _hd2: TenantHardDeleteResult = {} as z.infer<typeof tenantHardDeleteResultSchema>;
+const _hg1: z.infer<typeof userGovernanceResultSchema> = {} as UserGovernanceResult;
+const _hg2: UserGovernanceResult = {} as z.infer<typeof userGovernanceResultSchema>;
+const _tpg: Page<PlatformTenantRow> = {} as z.infer<typeof platformTenantPageSchema>;
+const _upg: Page<PlatformUserRow> = {} as z.infer<typeof platformUserPageSchema>;
+void _pt1;
+void _pt2;
+void _gv1;
+void _gv2;
+void _td1;
+void _td2;
+void _hd1;
+void _hd2;
+void _hg1;
+void _hg2;
+void _tpg;
+void _upg;

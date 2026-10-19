@@ -13,6 +13,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   type CreateRole,
@@ -25,6 +26,8 @@ import {
   type RevokeRolePermission,
   renameRoleSchema,
   revokeRolePermissionSchema,
+  tenantRoleGrantViewSchema,
+  tenantRoleViewSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -60,6 +63,7 @@ export class AuthorizationAdminController {
 
   @Get()
   @Can('read', 'Role')
+  @SerializeOptions({ schema: tenantRoleViewSchema })
   @ApiOperation({ summary: 'List roles of the active tenant (system + custom)' })
   @ApiResponse(apiOkArray(TenantRoleViewResponse, 'Role views.'))
   @ApiResponse(apiError(403, 'CASL deny (no Role read).'))
@@ -70,6 +74,7 @@ export class AuthorizationAdminController {
   @Post()
   @Can('create', 'Role')
   @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ schema: tenantRoleViewSchema })
   @ApiOperation({ summary: 'Create a custom role (owner/admin)' })
   @ApiResponse(apiEnvelopeShape(TenantRoleViewResponse, { description: 'Created role view.' }))
   @ApiResponse(apiError(400, 'Invalid/reserved role key.'))
@@ -102,6 +107,7 @@ export class AuthorizationAdminController {
 
   @Get('grants')
   @Can('read', 'RoleGrant')
+  @SerializeOptions({ schema: tenantRoleGrantViewSchema })
   @ApiOperation({ summary: 'List grant rows of a role (echo checked state)' })
   @ApiResponse(apiOkArray(TenantRoleGrantViewResponse, 'Grant views (subject/action/conditions).'))
   @ApiResponse(apiError(404, 'Role not found.'))

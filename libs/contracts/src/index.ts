@@ -9,8 +9,10 @@
  * S3（契约上移·增量）：请求入参 zod schema 单源落此（apps/api 各 context 经
  * `@Body/@Param/@Query({ schema })` 逐片消费；class DTO 暂留·待各 context 翻转后 S9 摘除）。
  * S7a（③ 裁定）：envelope/error-detail 响应信封契约上移为 zod 单源（`./envelope`）。
+ * S7b：响应视图 schema 上移（`./response/*`）供官方序列化器白名单消费。
  */
 
 export * from './envelope';
 export * from './request/index';
+export * from './response/index';
 export { strictObject } from './strict';

@@ -1,6 +1,7 @@
 import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import { type ExecutionContext, Global, Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { StandardSchemaSerializerInterceptor } from '@nestjs/common/serializer/index.js';
+import { APP_FILTER, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import { type I18nValidationException, I18nValidationExceptionFilter } from 'nestjs-i18n';
 import { LoggerModule } from '../logger/logger.module';
 import { fromValidationErrors, type ResponseErrorDetail } from './errors/response-error-detail';
@@ -67,6 +68,15 @@ const validationErrorBodyFormatter = (
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    // S7b 响应白名单序列化（官方 standard-schema 件·global-validation-zod §4 S7）：
+    // 注册在 Transform **之后**（最内层）——只对 controller 返回的 data 载荷生效（出线前），
+    // 信封包裹与日志仍在外层不受波及；无 @SerializeOptions({schema}) 的端点原样透传（逐端点 opt-in）。
+    // ⚠ 路径取 `@nestjs/common/serializer/index.js`：Node-ESM 下裸目录子路径不可解析（exports 通配无 index 回退）。
+    {
+      provide: APP_INTERCEPTOR,
+      useFactory: (reflector: Reflector) => new StandardSchemaSerializerInterceptor(reflector),
+      inject: [Reflector],
     },
   ],
   exports: [],

@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 import { CAN_KEY, type CanRequirement } from '@core/saas-kit/authorization/can.decorator';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serializer.constants.js';
 import {
   createRoleSchema,
   grantRolePermissionSchema,
   revokeRolePermissionSchema,
+  tenantRoleGrantViewSchema,
+  tenantRoleViewSchema,
 } from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
 import { AuthorizationAdminController } from './authorization-admin.controller';
@@ -54,5 +57,33 @@ describe('AuthorizationAdminController @Body schema 元数据（S4 schema 路径
   it('grant/revoke 的 @Body 携真实授权 schema', () => {
     expect(argSchemas('grant')).toContain(grantRolePermissionSchema);
     expect(argSchemas('revoke')).toContain(revokeRolePermissionSchema);
+  });
+});
+
+// S7b 序列化白名单·数组形状锁：listRoles/listGrants 返回 `T[]`，官方拦截器 Array 分支**逐元素**
+// 过 schema——故 @SerializeOptions 挂的是**元素 schema**（tenantRoleView/GrantViewSchema）而非包数组的
+// page schema（区别于 workspaces.list 的 offsetPage）。锁错挂 page schema 会使逐元素校验全红。
+describe('AuthorizationAdminController @SerializeOptions 元数据（S7b 数组逐元素）', () => {
+  const serializeSchema = (method: string) =>
+    (
+      Reflect.getMetadata(CLASS_SERIALIZER_OPTIONS, proto[method] as object) as {
+        schema?: unknown;
+      }
+    )?.schema;
+
+  it('listRoles/createRole 携元素 schema tenantRoleViewSchema', () => {
+    expect(serializeSchema('listRoles')).toBe(tenantRoleViewSchema);
+    expect(serializeSchema('createRole')).toBe(tenantRoleViewSchema);
+  });
+
+  it('listGrants 携元素 schema tenantRoleGrantViewSchema', () => {
+    expect(serializeSchema('listGrants')).toBe(tenantRoleGrantViewSchema);
+  });
+
+  it('void 端点（renameRole/deleteRole/grant/revoke）不挂序列化（无载荷·fail-open 透传）', () => {
+    expect(serializeSchema('renameRole')).toBeUndefined();
+    expect(serializeSchema('deleteRole')).toBeUndefined();
+    expect(serializeSchema('grant')).toBeUndefined();
+    expect(serializeSchema('revoke')).toBeUndefined();
   });
 });
