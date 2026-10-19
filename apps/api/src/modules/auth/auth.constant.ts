@@ -29,3 +29,10 @@ export const AUTH_BYPASS_PATHS = [
   '/openapi.yaml',
   '/openapi.json',
 ];
+
+/**
+ * Better Auth HTTP 面挂载段（module-tenancy-session-path-match）：锚定 `auth.implement` basePath
+ * `/${apiPrefix}/v1/auth`。AuthSessionReader 廉价旁路据此做**完整路径段对齐**匹配（勿用子串
+ * `includes`——会误撞 `/authors` 等含 `auth` 子串的业务路由）。
+ */
+export const AUTH_SURFACE_PATH = '/auth';

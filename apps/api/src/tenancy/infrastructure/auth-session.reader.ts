@@ -1,4 +1,8 @@
-import { AUTH_BYPASS_PATHS, AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
+import {
+  AUTH_BYPASS_PATHS,
+  AUTH_SURFACE_PATH,
+  AuthInstanceInjectKey,
+} from '@app/modules/auth/auth.constant';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { resolveRequestSession } from '@app/modules/auth/session-resolver';
 import type { TenantRole } from '@core/saas-kit/authorization/tenant-rules';
@@ -52,17 +56,32 @@ async function resolveActiveRole(
   return toTenantRole((hit as { role?: unknown } | undefined)?.role);
 }
 
+/**
+ * 完整路径段对齐匹配（module-tenancy-session-path-match）：先剥 query/hash，再按斜杠切段，
+ * 仅当 needle 的段序列**连续且段边界对齐**出现在路径段中才命中。修子串地雷——
+ * `/api/v1/auth/*` 命中 `/auth`，但 `/api/v1/authors`、`?next=/auth` 均不命中。
+ */
+export function pathSegmentMatch(url: string, needle: string): boolean {
+  const segs = url.split(/[?#]/, 1)[0].split('/').filter(Boolean);
+  const nsegs = needle.split('/').filter(Boolean);
+  if (nsegs.length === 0 || segs.length < nsegs.length) return false;
+  for (let i = 0; i <= segs.length - nsegs.length; i++) {
+    if (nsegs.every((s, j) => segs[i + j] === s)) return true;
+  }
+  return false;
+}
+
 @Injectable()
 export class AuthSessionReader implements RequestSessionReader {
   constructor(@Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance) {}
 
   async read(req: SessionRequestLike): Promise<SessionView | null> {
     const url = (req?.originalUrl || req?.url || '') as string;
-    // 廉价路径：无 cookie / 认证 / 旁路 / health 路由 → 不做任何会话查询。
+    // 廉价路径：无 cookie / 认证 / 旁路 / health 路由 → 不做任何会话查询（段对齐·防子串误撞）。
     if (
       !req?.headers?.cookie ||
-      AUTH_BYPASS_PATHS.some((p) => url.includes(p)) ||
-      url.includes('/auth')
+      AUTH_BYPASS_PATHS.some((p) => pathSegmentMatch(url, p)) ||
+      pathSegmentMatch(url, AUTH_SURFACE_PATH)
     ) {
       return null;
     }
