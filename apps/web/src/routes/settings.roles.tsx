@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
@@ -33,6 +33,11 @@ function RolesPage() {
   const create = useAction();
   const [key, setKey] = useState('');
   const [name, setName] = useState('');
+  const matchRoute = useMatchRoute();
+
+  // 权限矩阵页 `/settings/roles/$roleKey` 是本路由的文件式子路由——命中子路由时交由 Outlet 委托渲染
+  // （镜像 platform.tenants.tsx L54；缺此委托则子页永不挂载·见 module-frontend-roles-outlet-delegation）。
+  if (matchRoute({ to: '/settings/roles/$roleKey' })) return <Outlet />;
 
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 

@@ -46,26 +46,28 @@
 
 > 无已审方案不写码。行为改动 → 人签核。
 
-- 结论：**待审**。建议：切片 A 一行委托 + 切片 B 回归锁一并放行（改动极小·范式已在本仓 `platform.tenants` 验证）。
-- 未决项（请裁）：
-  1. 是否同片补切片 B 真父子挂载回归测试（防再次退化），或仅修渲染。
-  2. `$roleKey` 命中时父页 loader（`settings.roles` 的 `GET /roles`）会与子页 loader 各跑一次 `GET /roles`——是否接受双取（列表 loader 与矩阵 loader 独立），抑或本阶段只修可达性、去重缓行。
-- 审计人 / 日期：______
+- 结论：**已审 GO·已实施**（人「同意」·2026-10-19）；§4 两条未决项按推荐档自裁（整体同意非逐条裁）：① 同片补回归测试 ② 接受父/子双取。
+- 实施回执：切片 A—`settings.roles.tsx` `RolesPage` 添 `useMatchRoute`（值导入）+ 命中 `/settings/roles/$roleKey` 时 `return <Outlet />`（镜像 platform.tenants L54）；切片 B—新增 `settings.roles.nesting.test.tsx`（真父子挂载回归锁·子页 h1「权限矩阵」+ `角色：Editor`·修复前此断言为探针反证 `false`）。§4② 双取 `/roles` 未去重（本阶段只修可达性）。
+- 未决项（已裁）：
+  1. ~~是否同片补回归测试~~ → **采**（已新增 nesting 测）。
+  2. ~~父/子 loader 双取是否接受~~ → **接受**（只修可达性·去重缓行）。
+- 审计人 / 日期：用户（令「同意」·GO + 实施）/ 2026-10-19
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] `settings.roles.tsx` `RolesPage` 命中 `/settings/roles/$roleKey` 时 `return <Outlet />`；列表路由自身渲染不变。
-- [ ] 内存路由探针（或切片 B 在册测试）：导航 `/settings/roles/{key}` → 子页 h1「权限矩阵」出现（缺陷反证转正证）。
+- [x] `settings.roles.tsx` `RolesPage` 命中 `/settings/roles/$roleKey` 时 `return <Outlet />`；列表路由自身渲染不变（nesting 测锁：列表页不含矩阵 h1）。
+- [x] 真父子挂载回归测试：`settings.roles.nesting.test.tsx` 导航 `/settings/roles/editor` → 子页 h1「权限矩阵」+ `角色：Editor` 出现（缺陷反证转正证）。
 - [ ] `pnpm run ci` 全绿·web 测试数只增不减·Biome 净·`tsc --noEmit` 0 issue。
-- [ ] `platform.tenants`/后端/契约制品零触动。
+- [x] `platform.tenants`/后端/契约制品零触动。
 
 ## 6. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-19 | 0.1.0 | 起草 | 首版：settings.roles 缺 Outlet 致 $roleKey 权限矩阵页不渲染——代码+实跑双证·单文件委托修复方案 |
+| 2026-10-19 | 0.2.0 | 审计 GO + 实施 | 人令「同意」（§4①补测②接受双取）；settings.roles.tsx 加 Outlet 委托 + nesting 回归锁（+2 tests）；ci 待绿 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-19 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-19 / v0.2.0 变更，以当前正文内容为准。
