@@ -30,7 +30,7 @@
   - `grep "from '@app/" libs/core/src`（排除 node_modules）→ **0 处**（core 不反向依赖 apps）。
   - `grep "@core/saas-kit" apps/api/src`（排除 node_modules）→ 366 处（apps→core **单向**，方向正确）。
   - `fallow architecture`（`pnpm run ci` 尾段）→ **No issues found · 0 boundary violations**。
-- **处置**：**断言不成立·无需动作**。依赖方向经 grep + fallow 双重坐实为正确单向。若评审所指系 core **内部**层序（如 domain→infrastructure 越层），则属另一具体命题，须给出具体文件对再核；当前无此证据，不臆测扩大处置面。
+- **处置**：**依赖方向无失守**（grep + fallow 双坐实单向）。评审真正分歧在 core **内部「层位移」**（shared-kernel/kit/域模块叠加）——属**架构定位问题非质量问题**，已另出明确裁决：见 [module-core-position-kernel-vs-kit](./module-core-position-kernel-vs-kit.md)（**裁定 core = 分层 saas-kit·内含 shared-kernel 子层·非纯 DDD kernel**；三不变式当前全守·“层位移”为 kit 本征设计；唯一真问题=宪法目录图漂移·高危#5 待签）。
 
 ## 3. `as never` 74 / `any` 93 类型击穿
 
