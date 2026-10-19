@@ -10,6 +10,14 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import {
+  type CreateCheckout,
+  type CreateCustomer,
+  createCheckoutSchema,
+  createCustomerSchema,
+  type RefundPayment,
+  refundPaymentSchema,
+} from '@saas/contracts/index';
 import type { FastifyRequest } from 'fastify';
 import {
   ApiEnvelope,
@@ -17,9 +25,6 @@ import {
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { CreateCheckoutDto } from '../dto/create-checkout.dto';
-import { CreateCustomerDto } from '../dto/create-customer.dto';
-import { RefundPaymentDto } from '../dto/refund-payment.dto';
 import { PaymentService } from '../services/payment.service';
 import {
   PaymentCheckoutRefResponse,
@@ -65,7 +70,7 @@ export class PaymentController {
       description: 'Customer created successfully',
     }),
   )
-  async createCustomer(@Body() createCustomerDto: CreateCustomerDto) {
+  async createCustomer(@Body({ schema: createCustomerSchema }) createCustomerDto: CreateCustomer) {
     return this.payment.createCustomer(createCustomerDto);
   }
 
@@ -78,7 +83,7 @@ export class PaymentController {
     }),
   )
   @ApiResponse(apiError(400, 'Bad request'))
-  async createCheckout(@Body() createCheckoutDto: CreateCheckoutDto) {
+  async createCheckout(@Body({ schema: createCheckoutSchema }) createCheckoutDto: CreateCheckout) {
     return this.payment.createCheckout(createCheckoutDto);
   }
 
@@ -104,7 +109,7 @@ export class PaymentController {
     }),
   )
   @ApiResponse(apiError(400, 'Bad request'))
-  async refund(@Body() refundPaymentDto: RefundPaymentDto) {
+  async refund(@Body({ schema: refundPaymentSchema }) refundPaymentDto: RefundPayment) {
     return this.payment.refund(refundPaymentDto);
   }
 

@@ -19,13 +19,20 @@ import {
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type InvitationId,
+  invitationIdSchema,
+  type LeaveTenant,
+  leaveTenantSchema,
+  type SetActiveTenant,
+  setActiveTenantSchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
 import { mapBaError } from './ba-error.mapping';
-import { InvitationIdDto, LeaveTenantDto, SetActiveTenantDto } from './dto/tenants-org.dto';
 
 /**
  * 租户**个人通道门面**（module-rbac-casl §2.3.1·甲裁严格拆·self 侧）。
@@ -102,7 +109,7 @@ export class TenantsSelfController {
   @ApiResponse(apiError(403, 'Not a member of the target organization (BA).'))
   async setActive(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: SetActiveTenantDto,
+    @Body({ schema: setActiveTenantSchema }) dto: SetActiveTenant,
   ): Promise<unknown> {
     try {
       return await this.ba().setActiveOrganization({ headers, body: dto });
@@ -125,7 +132,7 @@ export class TenantsSelfController {
   @ApiResponse(apiError(400, 'Not a member / sole owner leaving the tenant (BA data guard).'))
   async leave(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: LeaveTenantDto,
+    @Body({ schema: leaveTenantSchema }) dto: LeaveTenant,
   ): Promise<unknown> {
     try {
       return await this.ba().leaveOrganization({ headers, body: dto });
@@ -150,7 +157,7 @@ export class TenantsSelfController {
   )
   async acceptInvitation(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: InvitationIdDto,
+    @Body({ schema: invitationIdSchema }) dto: InvitationId,
   ): Promise<unknown> {
     try {
       return await this.ba().acceptInvitation({ headers, body: dto });
@@ -173,7 +180,7 @@ export class TenantsSelfController {
   @ApiResponse(apiError(400, 'Invitation not found/expired/not the invitee (BA).'))
   async rejectInvitation(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: InvitationIdDto,
+    @Body({ schema: invitationIdSchema }) dto: InvitationId,
   ): Promise<unknown> {
     try {
       return await this.ba().rejectInvitation({ headers, body: dto });

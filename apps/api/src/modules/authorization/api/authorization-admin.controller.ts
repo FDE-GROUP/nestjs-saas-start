@@ -15,6 +15,18 @@ import {
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type CreateRole,
+  createRoleSchema,
+  type DeleteRole,
+  deleteRoleSchema,
+  type GrantRolePermission,
+  grantRolePermissionSchema,
+  type RenameRole,
+  type RevokeRolePermission,
+  renameRoleSchema,
+  revokeRolePermissionSchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
@@ -26,13 +38,6 @@ import type {
   TenantRoleGrantView,
   TenantRoleView,
 } from '../domain/repositories/tenant-rbac.repository';
-import {
-  CreateRoleDto,
-  DeleteRoleDto,
-  GrantRolePermissionDto,
-  RenameRoleDto,
-  RevokeRolePermissionDto,
-} from './dto/authorization.dto';
 import { TenantRoleGrantViewResponse, TenantRoleViewResponse } from './response/role.response';
 
 /**
@@ -69,7 +74,7 @@ export class AuthorizationAdminController {
   @ApiResponse(apiEnvelopeShape(TenantRoleViewResponse, { description: 'Created role view.' }))
   @ApiResponse(apiError(400, 'Invalid/reserved role key.'))
   @ApiResponse(apiError(409, 'Role key already exists.'))
-  createRole(@Body() dto: CreateRoleDto): Promise<TenantRoleView> {
+  createRole(@Body({ schema: createRoleSchema }) dto: CreateRole): Promise<TenantRoleView> {
     return this.rbac.createRole(dto.key, dto.name);
   }
 
@@ -80,7 +85,7 @@ export class AuthorizationAdminController {
   @ApiResponse({ status: 200, description: 'Renamed.' })
   @ApiResponse(apiError(404, 'Role not found.'))
   @ApiResponse(apiError(409, 'System role protected.'))
-  async renameRole(@Body() dto: RenameRoleDto): Promise<void> {
+  async renameRole(@Body({ schema: renameRoleSchema }) dto: RenameRole): Promise<void> {
     await this.rbac.renameRole(dto.key, dto.name);
   }
 
@@ -91,7 +96,7 @@ export class AuthorizationAdminController {
   @ApiResponse({ status: 200, description: 'Deleted.' })
   @ApiResponse(apiError(404, 'Role not found.'))
   @ApiResponse(apiError(409, 'System role protected.'))
-  async deleteRole(@Body() dto: DeleteRoleDto): Promise<void> {
+  async deleteRole(@Body({ schema: deleteRoleSchema }) dto: DeleteRole): Promise<void> {
     await this.rbac.deleteRole(dto.key);
   }
 
@@ -115,7 +120,9 @@ export class AuthorizationAdminController {
   @ApiResponse(apiError(400, 'Invalid conditions (whitelist-only).'))
   @ApiResponse(apiError(404, 'Role not found.'))
   @ApiResponse(apiError(409, 'Duplicate grant.'))
-  async grant(@Body() dto: GrantRolePermissionDto): Promise<void> {
+  async grant(
+    @Body({ schema: grantRolePermissionSchema }) dto: GrantRolePermission,
+  ): Promise<void> {
     await this.rbac.grant(dto.roleKey, {
       subject: dto.subject,
       action: dto.action,
@@ -131,7 +138,9 @@ export class AuthorizationAdminController {
   })
   @ApiResponse({ status: 200, description: 'Revoked.' })
   @ApiResponse(apiError(404, 'Role or matching grant not found.'))
-  async revoke(@Body() dto: RevokeRolePermissionDto): Promise<void> {
+  async revoke(
+    @Body({ schema: revokeRolePermissionSchema }) dto: RevokeRolePermission,
+  ): Promise<void> {
     await this.rbac.revoke(dto.roleKey, dto.subject, dto.action, dto.conditions ?? null);
   }
 }

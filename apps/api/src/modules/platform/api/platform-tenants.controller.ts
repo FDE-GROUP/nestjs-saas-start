@@ -37,6 +37,10 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type ListPlatformTenantsQuery as ListPlatformTenantsQueryDto,
+  listPlatformTenantsQuerySchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
@@ -44,7 +48,6 @@ import {
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
 import { TenantApplicationResponse } from '../../tenants/api/response/tenant-application.response';
-import { ListPlatformTenantsDto } from './dto/list-platform-tenants.dto';
 import {
   PlatformTenantPageResponse,
   PlatformTenantRowResponse,
@@ -92,7 +95,9 @@ export class PlatformTenantsController {
     }),
   )
   @ApiResponse(apiError(403, 'Not the platform operator.'))
-  list(@Query() dto: ListPlatformTenantsDto): Promise<PlatformTenantPage> {
+  list(
+    @Query({ schema: listPlatformTenantsQuerySchema }) dto: ListPlatformTenantsQueryDto,
+  ): Promise<PlatformTenantPage> {
     return this.queryBus.execute<ListPlatformTenantsQuery, PlatformTenantPage>(
       new ListPlatformTenantsQuery(dto.limit, dto.offset, dto.search),
     );

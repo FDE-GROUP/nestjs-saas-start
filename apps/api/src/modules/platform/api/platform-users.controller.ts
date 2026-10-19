@@ -24,13 +24,17 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type ListPlatformUsersQuery as ListPlatformUsersQueryDto,
+  listPlatformUsersQuerySchema,
+  type SuspendUser,
+  suspendUserSchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { ListPlatformUsersDto } from './dto/list-platform-users.dto';
-import { SuspendUserDto } from './dto/suspend-user.dto';
 import {
   PlatformUserPageResponse,
   UserGovernanceResultResponse,
@@ -71,7 +75,9 @@ export class PlatformUsersController {
     }),
   )
   @ApiResponse(apiError(403, 'Not the platform operator.'))
-  list(@Query() dto: ListPlatformUsersDto): Promise<PlatformUserPage> {
+  list(
+    @Query({ schema: listPlatformUsersQuerySchema }) dto: ListPlatformUsersQueryDto,
+  ): Promise<PlatformUserPage> {
     return this.queryBus.execute<ListPlatformUsersQuery, PlatformUserPage>(
       new ListPlatformUsersQuery(dto.limit, dto.offset, dto.search),
     );
@@ -88,7 +94,7 @@ export class PlatformUsersController {
   async suspend(
     @Param('id') id: string,
     @CurrentUser() user: SessionUser,
-    @Body() dto: SuspendUserDto,
+    @Body({ schema: suspendUserSchema }) dto: SuspendUser,
   ): Promise<UserGovernanceResult> {
     const result = await this.commandBus.execute<SuspendUserCommand, UserGovernanceResult | null>(
       new SuspendUserCommand(id, user.id, dto?.reason),

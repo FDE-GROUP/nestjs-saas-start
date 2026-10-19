@@ -17,6 +17,7 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { type CreateTenantApplication, createTenantApplicationSchema } from '@saas/contracts/index';
 import {
   ApiEnvelope,
   ApiErrorResponse,
@@ -27,7 +28,6 @@ import { ApproveTenantCommand } from '../application/commands/approve-tenant.com
 import { RejectTenantCommand } from '../application/commands/reject-tenant.command';
 import { SubmitTenantApplicationCommand } from '../application/commands/submit-tenant-application.command';
 import type { TenantApplicationReadModel } from '../application/read-models/tenant-application.read-model';
-import { CreateTenantApplicationDto } from './dto/create-tenant-application.dto';
 import { TenantApplicationResponse } from './response/tenant-application.response';
 
 /**
@@ -64,7 +64,7 @@ export class TenantsController {
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
   apply(
     @CurrentUser() user: SessionUser,
-    @Body() dto: CreateTenantApplicationDto,
+    @Body({ schema: createTenantApplicationSchema }) dto: CreateTenantApplication,
   ): Promise<TenantApplicationReadModel> {
     return this.commandBus.execute<SubmitTenantApplicationCommand, TenantApplicationReadModel>(
       new SubmitTenantApplicationCommand(user.id, dto.name, dto.slug),

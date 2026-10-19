@@ -16,13 +16,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { type CreateSubscription, createSubscriptionSchema } from '@saas/contracts/index';
 import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { SubscriptionResponse } from './response/subscription.response';
 
 /**
@@ -80,7 +80,9 @@ export class SubscriptionsController {
   )
   @ApiResponse(apiError(403, 'Not allowed to update the organization.'))
   @ApiResponse(apiError(503, 'No payment provider configured.'))
-  create(@Body() dto: CreateSubscriptionDto): Promise<TenantSubscriptionView> {
+  create(
+    @Body({ schema: createSubscriptionSchema }) dto: CreateSubscription,
+  ): Promise<TenantSubscriptionView> {
     return this.commandBus.execute<CreateSubscriptionCommand, TenantSubscriptionView>(
       new CreateSubscriptionCommand(
         dto.plan,

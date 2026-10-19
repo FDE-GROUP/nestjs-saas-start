@@ -14,16 +14,20 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type CreatePost,
+  createPostSchema,
+  type ListCursorQuery,
+  listCursorQuerySchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { ListCursorDto } from '../../../common/dto/list-cursor.dto';
 import { CreatePostCommand } from '../application/commands/create-post.command';
 import { ListPostsQuery } from '../application/queries/list-posts.query';
 import type { PostReadModel } from '../application/read-models/post.read-model';
-import { CreatePostDto } from './dto/create-post.dto';
 import { PostCursorPageResponse, PostResponse } from './response/post.response';
 
 /**
@@ -52,7 +56,9 @@ export class PostsController {
   )
   @ApiResponse(apiError(400, 'Malformed cursor.'))
   @ApiResponse(apiError(403, 'No active tenant context.'))
-  list(@Query() request: ListCursorDto): Promise<CursorPage<PostReadModel>> {
+  list(
+    @Query({ schema: listCursorQuerySchema }) request: ListCursorQuery,
+  ): Promise<CursorPage<PostReadModel>> {
     return this.queryBus.execute<ListPostsQuery, CursorPage<PostReadModel>>(
       new ListPostsQuery(request),
     );
@@ -68,7 +74,7 @@ export class PostsController {
     }),
   )
   @ApiResponse(apiError(403, 'No active tenant context.'))
-  create(@Body() dto: CreatePostDto): Promise<PostReadModel> {
+  create(@Body({ schema: createPostSchema }) dto: CreatePost): Promise<PostReadModel> {
     return this.commandBus.execute<CreatePostCommand, PostReadModel>(
       new CreatePostCommand(dto.title, dto.content ?? null, dto.published),
     );

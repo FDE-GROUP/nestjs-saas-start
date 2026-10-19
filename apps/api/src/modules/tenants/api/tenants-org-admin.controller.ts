@@ -23,18 +23,22 @@ import {
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type CreateInvitation,
+  createInvitationSchema,
+  type InvitationId,
+  invitationIdSchema,
+  type RemoveMember,
+  removeMemberSchema,
+  type UpdateMemberRole,
+  updateMemberRoleSchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
 import { mapBaError } from './ba-error.mapping';
-import {
-  CreateInvitationDto,
-  InvitationIdDto,
-  RemoveMemberDto,
-  UpdateMemberRoleDto,
-} from './dto/tenants-org.dto';
 
 /**
  * 租户成员/邀请**管理门面**（module-rbac-casl §2.3.1·甲裁严格拆）。
@@ -123,7 +127,7 @@ export class TenantsOrgAdminController {
   @ApiResponse(apiError(403, 'CASL deny (member role) / last-owner guard (BA).'))
   async updateMemberRole(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: UpdateMemberRoleDto,
+    @Body({ schema: updateMemberRoleSchema }) dto: UpdateMemberRole,
   ): Promise<unknown> {
     await this.assertRoleAssignable(dto.role);
     try {
@@ -146,7 +150,7 @@ export class TenantsOrgAdminController {
   @ApiResponse(apiError(403, 'CASL deny (member role) / self-removal guard (BA).'))
   async removeMember(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: RemoveMemberDto,
+    @Body({ schema: removeMemberSchema }) dto: RemoveMember,
   ): Promise<unknown> {
     try {
       return await this.ba().removeMember({ headers, body: dto });
@@ -186,7 +190,7 @@ export class TenantsOrgAdminController {
   @ApiResponse(apiError(403, 'CASL deny (member role).'))
   async createInvitation(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: CreateInvitationDto,
+    @Body({ schema: createInvitationSchema }) dto: CreateInvitation,
   ): Promise<unknown> {
     await this.assertRoleAssignable(dto.role);
     try {
@@ -209,7 +213,7 @@ export class TenantsOrgAdminController {
   @ApiResponse(apiError(403, 'CASL deny (member role) / not cancellable (BA).'))
   async cancelInvitation(
     @Headers() headers: Record<string, unknown>,
-    @Body() dto: InvitationIdDto,
+    @Body({ schema: invitationIdSchema }) dto: InvitationId,
   ): Promise<unknown> {
     try {
       return await this.ba().cancelInvitation({ headers, body: dto });

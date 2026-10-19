@@ -10,7 +10,7 @@ export const createCheckoutSchema = strictObject({
   amount: z.coerce.number().min(1),
   currency: z.string().min(1),
   description: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 export type CreateCheckout = z.infer<typeof createCheckoutSchema>;
 
@@ -18,7 +18,7 @@ export type CreateCheckout = z.infer<typeof createCheckoutSchema>;
 export const createCustomerSchema = strictObject({
   email: z.string().email(),
   name: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
 });
 export type CreateCustomer = z.infer<typeof createCustomerSchema>;
 

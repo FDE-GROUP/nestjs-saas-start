@@ -26,14 +26,19 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type CreateWorkspace,
+  createWorkspaceSchema,
+  type ListPageQuery,
+  listPageQuerySchema,
+  type UpdateWorkspace,
+  updateWorkspaceSchema,
+} from '@saas/contracts/index';
+import {
   ApiEnvelope,
   ApiErrorResponse,
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { ListPageDto } from '../../../common/dto/list-page.dto';
-import { CreateWorkspaceDto } from './dto/create-workspace.dto';
-import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.response';
 
 /**
@@ -67,7 +72,9 @@ export class WorkspacesController {
     }),
   )
   @ApiResponse(apiError(403, 'No active tenant, or missing workspace:read.'))
-  list(@Query() request: ListPageDto): Promise<Page<WorkspaceReadModel>> {
+  list(
+    @Query({ schema: listPageQuerySchema }) request: ListPageQuery,
+  ): Promise<Page<WorkspaceReadModel>> {
     return this.queryBus.execute<ListWorkspacesQuery, Page<WorkspaceReadModel>>(
       new ListWorkspacesQuery(request),
     );
@@ -84,7 +91,9 @@ export class WorkspacesController {
     }),
   )
   @ApiResponse(apiError(403, 'Missing workspace:create (members are rejected).'))
-  create(@Body() dto: CreateWorkspaceDto): Promise<WorkspaceReadModel> {
+  create(
+    @Body({ schema: createWorkspaceSchema }) dto: CreateWorkspace,
+  ): Promise<WorkspaceReadModel> {
     return this.commandBus.execute<CreateWorkspaceCommand, WorkspaceReadModel>(
       new CreateWorkspaceCommand(dto.name, dto.slug),
     );
@@ -97,7 +106,7 @@ export class WorkspacesController {
   @ApiResponse(apiError(404, 'Workspace not found in the active tenant.'))
   async update(
     @Param('id') id: string,
-    @Body() dto: UpdateWorkspaceDto,
+    @Body({ schema: updateWorkspaceSchema }) dto: UpdateWorkspace,
   ): Promise<WorkspaceReadModel> {
     const result = await this.commandBus.execute<UpdateWorkspaceCommand, WorkspaceReadModel | null>(
       new UpdateWorkspaceCommand(id, dto.name, dto.slug),
