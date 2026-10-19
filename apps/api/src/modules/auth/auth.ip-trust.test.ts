@@ -45,6 +45,8 @@ const createAuthWithOptions = () =>
     { createAuthAdapter: async () => () => ({ id: 'test-adapter' }) } as never,
     minimalConfigService(),
     { checkSeats: async () => {} } as never,
+    // magic-link 无条件挂载（含生产）：sendMagicLink 闭包仅运行期触达、挂载不求解，此处桩仅为签名完备。
+    { sendMagicLinkEmail: async () => {} } as never,
   );
 
 describe('CreateAuth ip-trust wiring', () => {
@@ -73,6 +75,9 @@ describe('CreateAuth ip-trust wiring', () => {
   it('乙1：production 未配 → 启动 warn 一响；已配 → 不响', async () => {
     const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
     process.env.NODE_ENV = 'production';
+    // 隔离 magic-link 「prod 缺 APP_URL」warn（非本测焦点·module-auth-magic-link-production）：
+    // 置 APP_URL 使本测只观察 AUTH_TRUSTED_PROXIES 一响。
+    process.env.APP_URL = 'http://localhost:7009';
 
     delete process.env.AUTH_TRUSTED_PROXIES;
     await createAuthWithOptions();
@@ -83,5 +88,15 @@ describe('CreateAuth ip-trust wiring', () => {
     process.env.AUTH_TRUSTED_PROXIES = '172.16.0.0/12';
     await createAuthWithOptions();
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('生产环境仍无条件挂载 magic-link（module-auth-magic-link-production 乙·仅存量登录）', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.APP_URL = 'http://app.test';
+    const { auth } = await createAuthWithOptions();
+    const plugins = ((auth.options as Record<string, unknown>).plugins ?? []) as Array<{
+      id: string;
+    }>;
+    expect(plugins.some((p) => p.id === 'magic-link')).toBe(true);
   });
 });

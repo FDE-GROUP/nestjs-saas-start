@@ -76,8 +76,9 @@ function LoginPage() {
 }
 
 /**
- * 魔法链接登录分区（module-auth-magic-link）：输邮箱→`POST /sign-in/magic-link`（后端仅非生产挂载）→
- * 提示已发信；用户点邮件链接后由 BA `/magic-link/verify` 落会话并重定向回本站（callbackURL）。
+ * 魔法链接登录分区（module-auth-magic-link + module-auth-magic-link-production）：输邮箱→`POST /sign-in/magic-link`
+ * （后端**无条件挂载**·含生产）→提示已发信；用户点邮件链接后由 BA `/magic-link/verify` 落会话并重定向回本站（callbackURL）。
+ * 形态采乙（`disableSignUp:true`）：仅存量账号可免密登录·陌生邮箱 verify 时被拒（不新增公开注册口）。
  */
 function MagicLinkSection() {
   const [email, setEmail] = useState('');
@@ -101,7 +102,9 @@ function MagicLinkSection() {
       onSubmit={onSubmit}
       className="flex flex-col gap-4 rounded-lg border border-slate-200 p-6 shadow-sm"
     >
-      <h2 className="text-sm font-semibold text-slate-700">或使用魔法链接登录（一次性邮件）</h2>
+      <h2 className="text-sm font-semibold text-slate-700">
+        已有账号免密登录（魔法链接·一次性邮件）
+      </h2>
       <label className="flex flex-col gap-1 text-sm">
         邮箱（接收登录邮件）
         <input

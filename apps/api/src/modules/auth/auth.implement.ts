@@ -102,6 +102,16 @@ export async function CreateAuth(
     );
   }
 
+  // module-auth-magic-link-production：magic-link 已无条件挂载（含生产），邮件内一次性链接
+  // 的绝对 URL 依赖 canonical `baseURL`（=APP_URL·见下 betterAuth 配置）。生产缺 APP_URL 时 BA
+  // 回退请求 origin——反代部署下常得内网 host/错域→链接不可点。采 warn 非 fail-closed（镜上方
+  // trustedProxies 先例：直连部署未必需 canonical，不拦启动）；真值归运维（§2 密钥/env 不由 Agent 臆造）。
+  if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
+    new Logger('CreateAuth').warn(
+      'APP_URL 未配置：magic-link 免密登录邮件内的一次性链接将回退请求 origin（反代后易为内网 host/错域而不可点）——生产请设 canonical 公网 URL（与 CORS_ORIGIN 前端源协同·originCheck 才放行回跳）',
+    );
+  }
+
   // ORM 修宪案 B · 切片 4（contract）：BA 数据面**唯自持 Mikro adapter**（全站 BA 读写唯此一处出口）。
   // `原 BA adapter` 分支与 `schema` import 已随旧 ORM 依赖一并退场（双轨收口·不再保留回滚阀）。
   // `createAuthAdapter()` 内部 `await ensure()` 懒建·`app-boot.smoke` 只 `compile()` 不触发本钩子故仍 DB-free。
@@ -203,19 +213,19 @@ export async function CreateAuth(
       // HTTP 通道）经插件级 before-hook 走 seats 配额前置校验，超限 402（详 seats-quota.hook.ts）。
       // ORM 修宪案 B 切片 3d（S-d3）：invitation 读改走 Mikro（懒 fork·DB-free 不变量保持）。
       createSeatsQuotaPlugin({ quota, mikro: mikroOrmService }),
-      // module-auth-magic-link：免密邮件登录。**仅非生产挂载**（镜像 emailAndPassword 生产关
-      // posture·未决项①人裁保守默认）——发信经既有 MailerService（MJML + i18n）。生产启用属登录面
-      // 安全裁决，须单独签核后方可移出门禁。
-      ...(process.env.NODE_ENV !== 'production'
-        ? [
-            magicLink({
-              expiresIn: 300,
-              async sendMagicLink({ email, url }) {
-                await mailer.sendMagicLinkEmail(email, url);
-              },
-            }),
-          ]
-        : []),
+      // module-auth-magic-link + module-auth-magic-link-production（人令「你自行裁定」·§2 auth
+      // 高危问责归签核人）：免密邮件登录**无条件挂载**（含生产）。形态采**乙·仅存量用户登录**
+      // （`disableSignUp:true`·better-auth@1.7.7 源码坐实默认 false→陌生邮箱 verify 时自动
+      // createUser(emailVerified:true)=新增公开 signup 口；自主裁下取最小风险档不新开注册面）。
+      // 发信经既有 MailerService（MJML + i18n）。生产依赖 APP_URL canonical（见上方 warn）
+      // 与 CORS_ORIGIN∈trustedOrigins（originCheck 放行回跳）——真值归运维。零迁移（token 存 verification 表）。
+      magicLink({
+        expiresIn: 300,
+        disableSignUp: true,
+        async sendMagicLink({ email, url }) {
+          await mailer.sendMagicLinkEmail(email, url);
+        },
+      }),
     ],
     account: {
       accountLinking: {
