@@ -7,6 +7,7 @@ import { AuthBootstrapService } from './auth.bootstrap';
 import { AuthInstanceInjectKey } from './auth.constant';
 import type { AuthInstance } from './auth.interface';
 import { AuthService } from './auth.service';
+import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { SessionGuard } from './guards/session.guard';
 
 @Module({})
@@ -33,6 +34,7 @@ export class AuthModule {
       providers: [
         AuthService,
         SessionGuard,
+        CsrfOriginGuard,
         authProvider,
         // BA HTTP 面接线（module-auth-http-surface·甲1/丙）：装配 BA handler 并以 Fastify
         // 实例级通配路由暴露 /api/v1/auth/*；原 AuthMiddleware（forRoutes 无路由可绑·整面 404）
@@ -42,6 +44,9 @@ export class AuthModule {
         // 其依赖（AuthInstanceInjectKey 本地 · UserStatusService 经 @Global TenancyModule）均可解析；
         // useExisting 复用同一实例。@Public() 路由经 Reflector 旁路。
         { provide: APP_GUARD, useExisting: SessionGuard },
+        // module-auth-csrf-defense 甲：CSRF Origin/Referer 校验墙（全局·排 SessionGuard 之后，401 先 403）。
+        // 依赖 ConfigService（@Global）+ Reflector（内置）均可解析。
+        { provide: APP_GUARD, useExisting: CsrfOriginGuard },
       ],
       exports: [AuthService, SessionGuard, authProvider],
       global: true,

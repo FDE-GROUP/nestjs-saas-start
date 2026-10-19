@@ -1,4 +1,4 @@
-# CSRF 显式防线（auth 纵深防御）— 方案选项 · 待裁
+# CSRF 显式防线（auth 纵深防御）— 已定档·丁（甲+丙）落地
 
 > 适用范围: `模块(auth·会话墙)` ← 可能新增全局守卫（高危#4 signed decision）+ BA cookie 配置
 > 关联: 外部评审报告 🟡「无显式 CSRF 防护，非 auth 端点仅靠 cookie SameSite 默认值」· `session.guard.ts`（APP_GUARD）· `getCorsConfig().origin`（ALLOWED_ORIGINS SSOT）· `ERROR_CODES`
@@ -42,23 +42,33 @@
 
 ## 4. 审计记录
 
-- 结论：**待裁**——推荐 **丁（甲+丙）**；若求最小落地则 **甲**。乙留作跨源前端终态升级。
-- 未决项：① 选甲/乙/丙/丁；② prod 拓扑（同源 or 跨源）是否本片一并定档（影响 `ALLOWED_ORIGINS` 是否须含本站 origin）。
-- 审计人 / 日期：待用户裁定 · 2026-10-19
+- 结论：**已定档·丁（甲+丙）**——人签核通过（用户明示「全部由你自行裁定」= 高危#4 新增全局守卫 + errorCode 契约变更的授权到位）；**prod 拓扑定为同源**（与 dev 反代一致·最贴仓库既有事实），故 SameSite 显式钉 `lax`、不引入跨源适配与新 env 键。乙（`@fastify/csrf` token）留作「确需跨源前端」时的终态升级，本阶段不做。
 
-## 5. 完成判据（择案后回填）
+## 5. 落地记录（丁）
 
-- [ ] 按所选方案实现；新增 errorCode 过 `ERROR_CODE_PATTERN` 文法闸与契约测。
-- [ ] 守卫矩阵测：`@Public` 跳过 / 安全方法跳过 / 白名单内 Origin 放行 / 白名单外 Origin 403+码 / 无 Origin warn 放行。
-- [ ] `pnpm run ci` 全绿；（如涉前端 token）前端面冒烟。
+- **甲·Origin/Referer 校验守卫**：新增 `apps/api/src/modules/auth/guards/csrf-origin.guard.ts`（`@Injectable`·`@Inject(Reflector)`/`@Inject(ConfigService)` 显式注入对齐 session.guard 惯例·守 DI 值导入铁律）：`@Public` 跳过 → 安全方法（GET/HEAD/OPTIONS）跳过 → 取 `Origin`（缺失回退 `Referer` 的 origin）：**同源放行**（Origin 的 host 命中请求 `Host`/`X-Forwarded-Host`·scheme 无关·免登记本站 origin）→ 否则命中 `getCorsConfig().origin`（= `ALLOWED_ORIGINS` 单一真源·覆盖跨源合法前端）或白名单含 `*` 放行；无 Origin（服务直连）放行 + warn（非 fail-closed·镜 IP-trust）；有 Origin 且既非同源亦不在白名单 → 403 `ERROR_CODES.AUTH_CSRF_ORIGIN_MISMATCH`。经 `AuthModule` 注册为全局 `APP_GUARD`，排在 `SessionGuard` 之后（401 先于 403）。
+- **errorCode 契约**：`libs/core/src/shared-kernel/errors/error-codes.ts` 追加 `AUTH_CSRF_ORIGIN_MISMATCH: 'AUTH:CSRF_ORIGIN_MISMATCH'`（append-only·合 `ERROR_CODE_PATTERN` 与 key=value.replace 契约测）。
+- **丙·显式钉 SameSite**：`auth.implement.ts` 的 `advanced.defaultCookieAttributes` 显式 `{ sameSite: 'lax' }`（部分合并·不冲掉 httpOnly/secure/path；BA 覆盖语义已核 `dist/cookies/index.mjs`）。
+- **测试**：`csrf-origin.guard.test.ts`（10 例：@Public/安全方法/白名单内/同源放行（白名单空）/X-Forwarded-Host 同源/白名单外 403+码/同源 host 不同且白名单外 403/Referer 回退/无 Origin warn 放行/`*` 通配）；error-codes 契约测覆盖新码。
+- **门禁**：`pnpm run ci`（check→build→647 test→fallow 0 边界违规）PASSED；app-boot smoke 解析新增全局守卫 DI 链通过。
+- **运维注意**：同源部署（prod 定档）无需把本站 origin 登记进 `ALLOWED_ORIGINS`——守卫自动识别同源放行；`ALLOWED_ORIGINS` 只需登记**跨源**合法前端源（若未来引入独立域前端）。
+- 未决项：无（①方案已定丁；② prod 拓扑已定同源·同源自动放行无需登记本站 origin）。
+- 审计人 / 日期：用户授权「全部自行裁定」· Agent 落地 · 2026-10-19
 
-## 6. 演变记录
+## 6. 完成判据（已达成）
+
+- [x] 按丁（甲+丙）实现；新增 errorCode 过 `ERROR_CODE_PATTERN` 文法闸与契约测。
+- [x] 守卫矩阵测：`@Public` 跳过 / 安全方法跳过 / 白名单内 Origin 放行 / 白名单外 Origin 403+码 / Referer 回退 / 无 Origin warn 放行 / `*` 通配。
+- [x] `pnpm run ci` 全绿（647 test）；未触前端（丁不需 token），无前端冒烟。
+
+## 7. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-19 | 0.1.0 | 起草 | 首版（含甲乙丙丁四选项·推荐丁/甲·停待裁） |
+| 2026-10-19 | 0.2.0 | 定档·落地 | 用户授权自行裁定→选丁（甲+丙）·prod 同源；守卫+errorCode+SameSite 钉 lax+测落地·门禁绿 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-19 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-19 / v0.2.0 变更，以当前正文内容为准。

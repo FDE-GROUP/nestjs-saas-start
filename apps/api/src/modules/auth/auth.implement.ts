@@ -259,6 +259,9 @@ export async function CreateAuth(
     // 限流由库默认开启（登录类路径 3 次/10s）；结构在场=显式意图（丙），窗值跟库默认不预调。
     rateLimit: { enabled: true },
     advanced: {
+      // CSRF 纵深防御（module-auth-csrf-defense · 丙）：把「靠 BA 缺省」的 lax 显式钉死（部分合并·
+      // 不冲掉 httpOnly/secure/path）；跨源前端需求出现时经此翻 none（叠 secure）。
+      defaultCookieAttributes: { sameSite: 'lax' },
       ipAddress: {
         ...(trustedProxies ? { trustedProxies } : {}),
       },
