@@ -21,6 +21,7 @@
     "build:web": "pnpm --filter web build",
     "start:debug": "pnpm run build:libs && nest start --debug --watch",
     "start:prod": "node dist/apps/api/src/main.js",
+    "kill:dev": "pkill -f 'dist/apps/api/src/mai[n]' || true; pkill -f 'nest.js start --watc[h]' || true; pkill -f 'pnpm run start:de[v]' || true; pkill -f 'build:libs && nest star[t]' || true",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "check": "biome check .",
