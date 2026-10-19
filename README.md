@@ -41,7 +41,7 @@
 - **架构范式**：Clean Architecture + DDD + CQRS（[`@nestjs/cqrs`](https://docs.nestjs.com/recipes/cqrs)）垂直切片，叠加分阶段 **ES + EDA**（Phase A 进程内事件派发 · Phase B event store 影子追加（缺省关）· Phase C 投影/saga 待排，路线见[事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)）
 - **数据库**：[PostgreSQL](https://www.postgresql.org/) + [MikroORM](https://mikro-orm.io/)（迁移与种子）
 - **认证**：[Better Auth](https://github.com/better-auth/better-auth)（邮箱 + OAuth、会话/CSRF）——保留海外 OAuth（Google/GitHub）；**新增境内登录：微信、企业微信、钉钉、飞书**（自定义 provider；不做手机验证码登录）
-- **校验**：[class-validator](https://github.com/typestack/class-validator) + class-transformer（DTO）
+- **校验**：[zod](https://zod.dev/)（经 Nest 官方 standard-schema 件 `@Body/@Param/@Query({ schema })` + `@SerializeOptions({ schema })`）；跨端共享契约单源居 `libs/contracts`（class-validator/class-transformer/Joi 已换轨摘除）
 - **构建**：SWC（`nest build --builder swc`）
 - **测试**：[Vitest](https://vitest.dev/)
 - **规范**：[Biome](https://biomejs.dev/)（lint + format）
@@ -64,7 +64,7 @@ libs/core/src/              # @core 共享内核：领域事件/聚合基类、t
 apps/api/src/               # 后端参考应用（NestJS + Fastify）
 ├─ modules/<上下文>/        # 限界上下文（users / auth / authorization / tenants / workspaces / platform / payment / storage / subscriptions / posts）
 │  ├─ domain/               # 实体、值对象、领域事件、仓储接口
-│  ├─ application/          # 用例（command/query + handler）、DTO 编排
+│  ├─ application/          # 用例（command/query + handler）、入参/命令编排
 │  ├─ infrastructure/       # 仓储实现、外部集成（MikroORM 等）
 │  └─ api/                  # controller / HTTP 边界
 ├─ tenancy/                 # 租户边界：生命周期 / RBAC / 配额 / 会话 / 平台治理 / 隔离
@@ -112,7 +112,7 @@ packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安�
 ## 功能特性
 
 - **分层架构**：关注点分离的模块化 / 垂直切片结构
-- **配置管理**：`@nestjs/config` + [Joi](https://joi.dev/) 校验，分环境（`config/envs`）
+- **配置管理**：`@nestjs/config` + [zod](https://zod.dev/) 校验（原生 `StandardSchemaV1`），分环境（`config/envs`）
 - **异常与响应**：全局异常过滤 + 响应转换拦截器 + 日志拦截器
 - **数据库**：MikroORM + PostgreSQL，含迁移（`migration:generate/migration:run`）与种子
 - **认证**：Better Auth——邮箱登录/注册 + 社交登录（Google、GitHub + 境内企微/钉钉/飞书 genericOAuth 通道）、会话与 CSRF；全局会话墙（deny-by-default + `@Public` 旁路）

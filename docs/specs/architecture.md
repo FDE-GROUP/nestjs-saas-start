@@ -18,7 +18,7 @@
 ```
 src/
 ├── app.module.ts            # Root module (imports shared infra + feature contexts)
-├── main.ts                  # Bootstrap: Fastify, ValidationPipe, Swagger, versioning
+├── main.ts                  # Bootstrap: Fastify, StandardSchemaValidationPipe, Swagger, versioning
 ├── shared-kernel/           # Cross-context primitives
 │   ├── domain/              #   AggregateRoot, DomainEvent (pure, framework-free)
 │   └── cqrs/types.ts        #   BaseCommand / BaseQuery over @nestjs/cqrs
@@ -43,7 +43,7 @@ src/
 │                            #   (deny-list status machine relocated to `tenants`, seat quota to `subscriptions` —
 │                            #   open item 4 landed); CONSUMES authorization's ruling ports
 ├── database/                # Global infra: MikroORM client, entities, migrations, seed
-├── config/                  # Global infra: typed config + Joi validation
+├── config/                  # Global infra: typed config + zod validation
 ├── logger/  mailer/  common/  i18n/   # Cross-cutting infrastructure
 ```
 
@@ -193,10 +193,13 @@ directory centralization.
 
 ## Validation Note
 
-DTOs are imported **by value** in controllers (not `import type`) so SWC preserves
-`design:paramtypes` for the global `ValidationPipe`. A `useImportType` override in
-`biome.json` disables the auto-fix that would otherwise rewrite these imports back to
-`import type` and silently break validation.
+Controllers validate via the **official standard-schema path** (`@Body/@Param/@Query({ schema })`)
+and serialize via `@SerializeOptions({ schema })`; the zod schema **must be imported by value**
+(not `import type`) so the parameter decorator can read it — otherwise validation/serialization is
+silently skipped. The shared request/response schemas live in `@saas/contracts` (single source).
+`biome.json` keeps a `useImportType` override on the relevant files to disable the auto-fix that
+would rewrite these value imports back to `import type`. (class-validator / class-transformer / Joi
+were retired by the global-validation-zod constitution amendment — see tooling-standards §3.)
 
 ## Pagination Contract
 

@@ -26,8 +26,8 @@
 | 数据库驱动 | **`@mikro-orm/postgresql`**（底层 `pg`） | 7.2.5 | Mikro 的 Postgres 驱动（随包自带 `pg`，无需顶层驱动包） | 强制 |
 | 迁移/CLI | **`@mikro-orm/migrations`**（`Migrator`） | 7.2.5 | `migrator.create()` 生成 / `migrator.up()` 执行（经 `tsx` 脚本驱动·无独立 CLI bin） | 强制 |
 | 认证 | **Better Auth** | ^1.7.7 | 会话/凭证（自持 Mikro adapter `mikroAuthAdapter`·非社区预置 adapter）；社交/企业渠道经 `genericOAuth`（见 §2.1） | 强制 |
-| 校验 | **class-validator + class-transformer** | ^0.15.1 / ^0.5.1 | DTO 校验 + ValidationPipe | 强制 |
-| 配置校验 | **Joi + @nestjs/config** | ^18.2.9 / ^12.0.1 | env schema 校验 | 强制 |
+| 校验 | **zod（经 Nest 官方 standard-schema 集成）** | ^4.6.7 | `@Body/@Param/@Query({ schema })` + 官方 `StandardSchemaValidationPipe`（请求）/ `StandardSchemaSerializerInterceptor` + `@SerializeOptions({ schema })`（响应白名单序列化）；契约单源居 `@saas/contracts` | 强制 |
+| 配置校验 | **zod + @nestjs/config** | ^4.6.7 / ^12.0.1 | env schema 校验（zod v4 原生 `StandardSchemaV1`·一等消费 `validationSchema`） | 强制 |
 | 编译/构建 | **@nestjs/cli + SWC** | cli ^12.0.8 / @swc/core ^1.16.18 | `nest build --builder swc` | 强制 |
 | 测试运行器 | **Vitest** | ^5.0.4 | 单元/集成测试 | 强制（唯一） |
 | 测试元数据 | **unplugin-swc** | ^1.5.5 | Vitest 下保留装饰器元数据 | 强制 |
@@ -59,7 +59,7 @@
 | **支付通道** | Stripe（海外）+ 微信支付 + 支付宝（大陆） | **部分落地**：统一 `PaymentProvider` 端口 + Stripe 收敛已落地（P1，`apps/api/src/modules/payment`）；微信/支付宝 **劣后暂缓**（D9，`PaymentProviderId` 接口位 `alipay`/`wechat_pay` 保留、实现待资质择机开发） | 与存储同构，`PaymentModule.register()` 依配置装配、未配即降级；周期扣款随资质（FR-1/FR-2 · D1 · D9） |
 | **登录渠道** | Google/GitHub（保留）+ 微信 / 企业微信 / 钉钉 / 飞书 | 海外现行；**飞书已落地（A1，`genericOAuth`）**；微信/钉钉/企微 **仅留接口·劣后暂缓**（D8） | Better Auth `genericOAuth`；方案 C 邮箱为体、社交为用（`disableSignUp:true`）；**不做**手机验证码登录（FR-3/D2/D3） |
 | **依赖镜像** | npm→npmmirror（`.npmrc` + pnpm registry）+ Docker 国内基础镜像 | **已落地**（M1，commit `9e27d63`） | 纯配置；Dockerfile 基础镜像经 ARG 可覆盖（FR-4/D4）。**corepack 不吃 `.npmrc`**：拉 `pnpm` tarball 只认 `COREPACK_NPM_REGISTRY`，境内化须与该 ENV **分别注入**（见 §4.10） |
-| **默认语言** | i18n 默认 / fallback 置 `zh`（保留 en/ja）；`nestjs-i18n@10` | **已落地**（L1 分阶 A+B：全局单源 `AppI18nModule`、**邮件正文/主题 + 校验消息均按 locale 本地化**） | 文档中文为准（FR-5/D4）；locale 取 `accept-language`、回退 zh；校验保形由 `I18nValidationExceptionFilter`+`responseBodyFormatter`；无生成类型时 `translate` key 为 `never`、测试处断言松类型 |
+| **默认语言** | i18n 默认 / fallback 置 `zh`（保留 en/ja）；`nestjs-i18n@10` | **已落地**（L1 分阶 A+B：全局单源 `AppI18nModule`、**邮件正文/主题 + 校验消息均按 locale 本地化**） | 文档中文为准（FR-5/D4）；locale 取 `accept-language`、回退 zh；校验保形由 `StandardSchemaValidationExceptionFilter`（`Issue[]`→`ErrorResponse` 逐字同形 + i18n 译文）；无生成类型时 `translate` key 为 `never`、测试处断言松类型 |
 | **日志后端** | pino 默认落文件；**移除** `pino-datadog-transport` | **已落地**（G1，commit `9e27d63`） | 本期**不引**集中监控（SLS/Loki 留后）（FR-6/D6） |
 | **对象存储默认** | 默认阿里云 OSS，COS/S3 经 env 切换 | provider 现行；**默认已切 OSS**（S1，境内 region 默认） | 已有 OSS/COS/S3 provider（D5） |
 | **合规（PIPL）** | consent 留痕 + 按 user 导出/删除 + 数据驻留境内 region | **已落地**：C1（`consent` 表 + `GET /users/me/data-export` + `DELETE /users/me`，硬删 user + consent `set null` 匿名保留）+ C2（`config/data-residency.ts` 启动校验，DB host 与 storage region 境内 allowlist、strict/warn 分环境） | ICP 归部署、不进代码门禁；导出剔除口令/令牌；Stripe/OAuth 不在驻留范围（FR-7/D7） |
@@ -70,6 +70,7 @@
 - **禁止** 引入 ESLint / Prettier 及任一 `eslint-*`/`prettier` 插件 —— 已由 Biome 全量承担。
 - **禁止** 使用 `jest` / `mocha` / `bun test`（`bun:test`）—— 测试统一 Vitest。
 - **禁止** Prisma / TypeORM / MongoDB 等第二套 ORM/DB，亦**禁止回迁已退役 ORM** —— 统一 MikroORM + PostgreSQL。
+- **禁止** 引入 class-validator / class-transformer / Joi（及任何 `whitelist`/`forbidNonWhitelisted` DTO 装饰器路径）—— 请求/响应校验与配置/env 校验一律 **zod 单源**（global-validation-zod-constitution-amendment 修宪定稿）；Nest 集成只走**官方 standard-schema 件**（`@Body/@Param/@Query({ schema })` / `@SerializeOptions({ schema })`·禁 nestjs-zod/自研 pipe）；跨端共享契约居 `@saas/contracts`。
 - **禁止** schema 自动同步（`schema:sync` / push 类隐式对齐）进入 CI/生产做 schema 同步 —— 生产只走显式 `migration:generate`（生成工件）+ `migration:run`（应用迁移）。
 - **禁止** 在依赖注入构造函数里对被注入类使用 `import type`（见 §4.3）。
 - **禁止** 未经二次人工核验即按 fallow（或任何前置分析器）的结论删除代码/依赖或重构 —— 其输出为候选线索而非判决（见 §4.7）。
@@ -84,16 +85,16 @@
 - 本地运行只通过 `package.json` scripts（经 `pnpm run …`），不裸调 `node dist/…/main.js` 之外的源码入口（会绕过 i18n/模块加载顺序约定）。
 - 服务端口 **7009**，全局前缀 `/api`，URI 版本 `v1`（如 `POST /api/v1/workspaces`）。
 - 常用：`pnpm install`、`pnpm run start`、`pnpm run start:dev`（`nest start --watch`）、`pnpm run build`（先 `build:libs` 再 `build:nest`）。
-- **Node-ESM 源兼容纪律**（运行时修宪 R-η）：Node 不会像 Bun 静默兜底多类 ESM 不兼容——CJS 默认导出（如 `joi` 需默认 import 而非 `import * as`）、`__dirname`（ESM 无，用 `fileURLToPath(import.meta.url)` 等价推导）、dotenv 装载时序（`main.ts` 入口**首个 import** 必为 `./load-env`，令 env 先于 `config/envs/*` 顶层求值注入）。
+- **Node-ESM 源兼容纪律**（运行时修宪 R-η）：Node 不会像 Bun 静默兜底多类 ESM 不兼容——CJS 默认导出（需默认 import 而非 `import * as`）、`__dirname`（ESM 无，用 `fileURLToPath(import.meta.url)` 等价推导）、子路径目录不可裸解（如 `@nestjs/common/serializer` exports 通配无 index 回退→需显式 `@nestjs/common/serializer/index.js`）、dotenv 装载时序（`main.ts` 入口**首个 import** 必为 `./load-env`，令 env 先于 `config/envs/*` 顶层求值注入）。
 
 ### 4.2 TypeScript / 构建
 - `target`/`module` = `ES2022`，`moduleResolution` = `node`。
-- **必须** 同时开启 `experimentalDecorators` 与 `emitDecoratorMetadata`（Nest DI / ValidationPipe 依赖）。
+- **必须** 同时开启 `experimentalDecorators` 与 `emitDecoratorMetadata`（Nest DI 构造注入依赖）。（校验已换官方 standard-schema 路由参数 schema·对 `design:paramtypes` 依赖下降，但 DI 仍靠元数据，见 §4.3。）
 - 构建走 SWC（快）而非 tsc emit；类型检查由 `nest build` 内嵌 TSC 完成（目标 0 issues）。
 - `*.test.ts` 不得进入 `dist`（`tsconfig.build.json` 已 exclude）。
 
 ### 4.3 装饰器元数据与导入形态（关键陷阱）
-- **Controller 的 DTO**：出现在 `@Body/@Param/@Query` 参数位置时必须**值导入**（`import { CreateUserDto }`），否则 `design:paramtypes` 退化为 `Object`，ValidationPipe 静默跳过校验。
+- **Controller 的请求/响应契约**：校验与序列化凭 `@Body/@Param/@Query({ schema })` / `@SerializeOptions({ schema })` 的 zod schema 生效——**schema 常量必须值导入**（`import { createPostSchema }`），否则参数装饰器拿不到 schema、校验/序列化整链静默跳过；参数的 TS 载荷型可 `import type`（`z.infer<typeof …>` 或 `@saas/contracts` 派生型），不再依赖旧 class DTO 的 `design:paramtypes`（换轨后 class 请求 DTO 已废·见 §3 红线）。
 - **被构造函数注入的类/Provider**（如 `@nestjs/cqrs` 的 `EventBus`/`CommandBus`/`QueryBus`、全局的 `MikroOrmService`）：使用**值导入 + 显式 `@Inject(Class)`** token；仅靠类型注解的隐式注入在 `import type` 下会于**运行时启动**才暴露 `UnknownDependenciesException`。
 - 上述两类文件依赖 §5 的 Biome 豁免，防止 auto-fix 回滚。
 
@@ -154,7 +155,7 @@
 ### 4.11 分页契约纪律
 - **两种信封为列表结果唯一合法形**（单源 `libs/core/src/shared-kernel/domain/pagination.ts`·纯 TS 零依赖）：`CursorPage<T>`（游标）与 `Page<T>`（offset）；绝不临时自造 `{rows, count}`。
 - **新列表端点缺省用游标**（兑现 [global-readiness-error-pagination](../plans/global-readiness-error-pagination.md) 切 B·立 readiness §4-④「游标默认」标准）：键集分页基于确定性全序 `(createdAt DESC, id DESC)`，`nextCursor` 为排序键的**不透明 base64url**（防实现细节泄漏·**非授权替代**·租户守卫照旧）。`Page<T>`（offset）仅作需全量计数/任意跳页的治理面例外，不删除。
-- **只经 `createPage` / `createCursorPage` 构造**（唯一形状纪律点·对 `items` 浅复制）；入参走应用侧 `ListPageDto`/`ListCursorDto`（校验/默认值属 class-validator 依赖·core 不引），port 只收已裁决的 `PageRequest`/`CursorPageRequest`。
+- **只经 `createPage` / `createCursorPage` 构造**（唯一形状纪律点·对 `items` 浅复制）；入参走 `@saas/contracts` 的 `listPageQuerySchema`/`listCursorQuerySchema`（zod 单源·query 数字转换用 `z.coerce`·core 不引校验），port 只收已裁决的 `PageRequest`/`CursorPageRequest`。
 - **畸形游标 = 400**：DTO 先闸 base64url 字符集，适配层 `decodeCursor` 再拦「合法编码但载荷不合法」→`BadRequestException`（先于取 em、不查库）。
 
 ### 4.12 前端使用规范（apps/web · 2026-10-17 入宪）

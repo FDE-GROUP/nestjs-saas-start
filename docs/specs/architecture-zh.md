@@ -16,7 +16,7 @@
 ```
 src/
 ├── app.module.ts            # 根模块（引入全局基础设施 + 各功能上下文）
-├── main.ts                  # 启动：Fastify、ValidationPipe、Swagger、URI 版本化
+├── main.ts                  # 启动：Fastify、StandardSchemaValidationPipe、Swagger、URI 版本化
 ├── shared-kernel/           # 跨上下文原语
 │   ├── domain/              #   AggregateRoot、DomainEvent（纯净，零框架依赖）
 │   └── cqrs/types.ts        #   BaseCommand / BaseQuery（封装 @nestjs/cqrs）
@@ -41,7 +41,7 @@ src/
 │                            #   （deny-list 状态机已归位 `tenants`、席位配额已归位 `subscriptions`·未决项 4 已落地）；
 │                            #   消费 authorization 的裁决端口
 ├── database/                # 全局基础设施：MikroORM 客户端、实体、迁移、seed
-├── config/                  # 全局基础设施：类型安全配置 + Joi 校验
+├── config/                  # 全局基础设施：类型安全配置 + zod 校验
 ├── logger/  mailer/  common/  i18n/   # 横切基础设施
 ```
 
@@ -171,9 +171,12 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
 
 ## 校验注意事项
 
-Controller 中的 DTO 必须**按值导入**（而非 `import type`），SWC 才会为全局
-`ValidationPipe` 保留 `design:paramtypes`。`biome.json` 中已对 `*.controller.ts`
-关闭 `useImportType`，防止 auto-fix 把这些导入改回 `import type` 而悄悄摧毁校验。
+Controller 经**官方 standard-schema 路径**校验（`@Body/@Param/@Query({ schema })`）、经
+`@SerializeOptions({ schema })` 序列化；zod schema **必须按值导入**（而非 `import type`），
+否则参数装饰器读不到 schema、校验/序列化整链静默跳过。跨端共享的请求/响应 schema 居
+`@saas/contracts`（单源）。`biome.json` 已对相关文件关闭 `useImportType`，防止 auto-fix 把
+这些值导入改回 `import type`。（class-validator / class-transformer / Joi 已由全栈校验换轨 zod
+修宪摘除——见 tooling-standards §3。）
 
 ## 分页契约
 
