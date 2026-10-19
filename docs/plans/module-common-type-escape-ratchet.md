@@ -47,24 +47,33 @@
 
 > 无已审方案不写码。本 plan 系含机制设计的审前方案，命中高危#4 → 须人签核。
 
-- 结论：**推荐落地**「只紧不扫」棘轮（切片 A→B），初值 grandfather 现网 151/31，之后只拦新增、鼓励下调。是 triage §3「收紧须另立增量门禁 plan 过人签核」的兑现件。
-- 未决项：① 是否签核实施（高危#4）；② 越界是否 `--strict-lower` 强制同步下调基线（v1 建议 advisory）；③ v1 行级口径 vs 直接上 AST（v1 建议行级·够用且零依赖）。
-- 审计人 / 日期：**待裁**（高危#4 须人签）· Agent 起草 · 2026-10-20
+- 结论：**已签核（用户 GO）并实施**。「只紧不扫」棘轮（切片 A→B）已落地：基线初值 grandfather 现网 151 处/31 文件，之后只拦新增、鼓励下调。是 triage §3「收紧须另立增量门禁 plan 过人签核」的兑现件。
+- 未决项（均已定）：① 高危#4 已由用户 GO 签核实施；② `--strict-lower` 已实现为默认关闭的可选 flag（v1 越下仅提示不阻断）；③ v1 采行级口径（零依赖·够用），AST 精确化留 v2。
+- 审计人 / 日期：用户 GO 签核（高危#4）· Agent 实施 · 2026-10-20
 
-## 5. 完成判据（实施后回填）
+## 5. 完成判据（已达成）
 
-- [ ] `scripts/type-escape-baseline.json` 初值 = 现网实测（31 文件·151 处）·提交入库。
-- [ ] 单测：植入越界逃逸 → 脚本 exit≠0；撤除 → exit 0；`--update` 精确重生成。
-- [ ] `pnpm run ci` / `ci:quick` 含该硬门禁步且全绿；pre-push 生效。
-- [ ] `.env`/密钥·DB·其余门禁零改动。
+- [x] `scripts/type-escape-baseline.json` 初值 = 现网实测（31 文件·151 处）·已提交入库。
+- [x] 回归测：`scripts/verify-type-escape-ratchet.test.ts`（8 例·`shouldScan` 口径 + `evaluate` 越界/新文件/下调/相等/stale）·全绿。
+- [x] 行为验证：向 `logger.service.ts`（基线 3）注入一处 `: any` → 脚本 exit≠0 且报 `当前 4/基线 3（+1）`；`git restore` 后 exit 0。（临时探针未入库）
+- [x] `pnpm run ci` / `ci:quick` 含 `Type-escape ratchet` 硬门禁步且全绿（658 测·fallow 0 违规）；pre-push 随之生效。
+- [x] `.env`/密钥·DB·其余门禁零改动（仅 `vitest.config.ts` 拓一条 `scripts/**/*.test.ts` 收录·纯加测试面）。
+
+### 5.1 落地纪要
+
+- 新增 `scripts/verify-type-escape-ratchet.ts`（可导入纯函数 `shouldScan`/`computeCounts`/`evaluate` + CLI 入口仅直接执行时跑）·`scripts/type-escape-baseline.json`·`scripts/verify-type-escape-ratchet.test.ts`。
+- `package.json` 新增 `verify:type-escape` / `verify:type-escape:update`；`scripts/ci.ts` 在 biome 后、build 前插硬门禁步（full/quick 均跑）。
+- 口径修正：脚本自身 `let st` 隐式 any 已显式 `Stats` 类型饰正（管逃逸者自身零无理由逃逸）。
+- 局限如方案③：行级正则非 AST（字符串/注释偶现会虚高·基线同口径单调比较影响极小）；v2 可升 `ts.createSourceFile`。
 
 ## 6. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版：类型逃逸只紧不扫棘轮门禁机制 + 插桩 + 切片（停待签·高危#4） |
+| 2026-10-20 | 0.2.0 | 签核·落地 | 用户 GO 签高危#4 → 脚本+基线（31/151）+回归测（8例）+ci.ts 接线均落地·`pnpm run ci` 658 测全绿·行为验证越界 exit≠0 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。

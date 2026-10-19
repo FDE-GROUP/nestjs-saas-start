@@ -34,6 +34,8 @@
     "verify:i18n-assets": "node scripts/verify-i18n-assets.ts",
     "verify:compose-contract": "node scripts/verify-compose-contract.ts",
     "verify:config-contract": "node scripts/verify-config-contract.ts",
+    "verify:type-escape": "node scripts/verify-type-escape-ratchet.ts",
+    "verify:type-escape:update": "node scripts/verify-type-escape-ratchet.ts --update",
     "prepare": "husky",
     "test": "vitest run",
     "test:watch": "vitest",

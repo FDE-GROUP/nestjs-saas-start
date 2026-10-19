@@ -42,6 +42,9 @@ console.log(`${BOLD}── Local CI (${quick ? 'quick' : 'full'}) ──${RST}`)
 console.log(`${DIM}Node ${process.version} · ${new Date().toLocaleString()}${RST}\n`);
 
 step('Lint & format (biome)', run('run', 'check'));
+// 类型逃逸「只紧不扫」棘轮（module-common-type-escape-ratchet·高危#4 经人签核落地）：
+// 存量入基线单源，新增超基线即 fail。纯文本扫描、便宜，故 full/quick 均跑、尽早失败。
+step('Type-escape ratchet', run('run', 'verify:type-escape'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 契约对拍（前端 F1 · module-frontend-api-client 丁裁）：以 build 产物直出 openapi.yaml，

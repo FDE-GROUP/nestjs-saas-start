@@ -42,6 +42,7 @@ export default defineConfig({
       'apps/**/*.test.tsx',
       'libs/**/*.test.ts',
       'packages/**/*.test.ts',
+      'scripts/**/*.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**'],
     env: {

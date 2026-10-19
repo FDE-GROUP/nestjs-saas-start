@@ -39,7 +39,7 @@
   - `as never` 高度集中于 **MikroORM 仓储/事件面**：`mikro-tenant-governance.repository.ts`(15)、`mikro-user.repository.ts`(7)、`outbox-relay.ts`(7)、`seed.ts`(6)、`mikro-workspace.repository.ts`(5)……多为 MikroORM 类型化 `FilterQuery`/`em.insert` 对对象字面量的边界逃逸（上游类型不完备的**正当用法**）。
   - `any` 高度集中于：**`auth.implement.ts`(50)**（Better Auth adapter 胶水·BA 侧类型本就宽）、`apps/web/src/routeTree.gen.ts`(15)（**TanStack 生成物**·非手写码）、`database/mikro/column-meta.ts`(8)、`main.ts`(4)（Nest+Fastify 插件 `register()` 泛型不流转的已知缺口）。
 - **分析**：绝大多数落点在**三方边界胶水**（MikroORM / Better Auth / Fastify 插件 / 代码生成物）。对这些做「消除逃逸」的盲扫会破坏可编译性或强塞无谓适配层，属负收益；`routeTree.gen.ts` 更非可改对象。
-- **处置**：**不做盲扫式 sweep**。此项「债」的定性证据不足（多数系合理逃逸）。若确要收紧，唯一安全路径是**「只紧不扫」增量门禁**：立一条检查防**新增无理由** `as any`/`as never`，存量按文件白名单豁免并逐步收敛——但该门禁须改 `biome.json` / `scripts/ci.ts`（**高危#4 改门禁·Biome**），且逐文件豁免清单本身需审，**另开专项 plan 过审计门 + 人签核**，本片不实施。
+- **处置**：**不做盲扫式 sweep**。此项「债」的定性证据不足（多数系合理逃逸）。若确要收紧，唯一安全路径是**「只紧不扫」增量门禁**：立一条检查防**新增无理由** `as any`/`as never`，存量按文件白名单豁免并逐步收敛。**→ 后续已兑现**：该门禁已成方案并经用户 GO 签高危#4 落地（见 [module-common-type-escape-ratchet](./module-common-type-escape-ratchet.md)·基线 grandfather 151/31·接进 `ci.ts` 硬门禁）。
 
 ## 4. `nextVersion` 无锁 max+1（并发）
 
@@ -59,7 +59,7 @@
 > 无已审方案不写码。本 plan 系处置留痕（零代码），非开发依据。
 
 - 结论：**四项架构债逐条处置完毕**——① 远程 CI 违宪维持；② core 边界断言不成立（fallow 0 + 单向 366/0）；③ 类型逃逸多为三方胶水正当用法、拒绝盲扫、收紧须另立增量门禁 plan 过人签核；④ `nextVersion` 系已审 fail-loud 有意取舍、维持。
-- 未决项（均需人签核·归 P2 问责）：③ 是否值得建「只紧不扫」类型门禁；④ ES 是否演进至需保序追加。二者当前**均不动**。
+- 未决项（均需人签核·归 P2 问责）：~~③ 是否值得建「只紧不扫」类型门禁~~→**已建已落地**（module-common-type-escape-ratchet·用户 GO）；④ ES 是否演进至需保序追加→当前**不动**（条件性未来项）。
 - 审计人 / 日期：用户授权「全部由你自行裁定」· Agent 取证裁定 · 2026-10-20
 
 ## 7. 完成判据（已达成）
