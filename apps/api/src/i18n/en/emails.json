@@ -22,5 +22,13 @@
     "message": "We received a request to reset your password. Click the button below to create a new password. This link will expire in {expireTime} minutes.",
     "button": "Reset Password",
     "footer": "If you didn't request this password reset, please ignore this email or contact support if you have concerns."
+  },
+  "magic-link": {
+    "title": "Sign In with Magic Link",
+    "subject": "Your Sign In Link",
+    "greeting": "Hello,",
+    "message": "Click the button below to sign in. This link will expire in 5 minutes.",
+    "button": "Sign In",
+    "footer": "If you didn't request this email, you can safely ignore it."
   }
 }

@@ -1,5 +1,6 @@
 import { ConfigModule } from '@app/config/config.module';
 import { DatabaseModule } from '@app/database/database.module';
+import { MailerModule } from '@app/mailer/mailer.module';
 import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthBootstrapService } from './auth.bootstrap';
@@ -28,7 +29,7 @@ export class AuthModule {
 
     return {
       module: AuthModule,
-      imports: [ConfigModule, DatabaseModule],
+      imports: [ConfigModule, DatabaseModule, MailerModule],
       providers: [
         AuthService,
         SessionGuard,

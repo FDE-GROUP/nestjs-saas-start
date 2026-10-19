@@ -49,4 +49,37 @@ describe('登录页（F0 最小闭环）', () => {
     fireEvent.click(screen.getByRole('button', { name: '登录' }));
     await vi.waitFor(() => expect(screen.getByText('邮箱或密码错误')).toBeTruthy());
   });
+
+  it('渲染魔法链接分区（独立邮箱 label）', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) }),
+    );
+    renderLoginAt();
+    await vi.waitFor(() =>
+      expect(screen.getByRole('button', { name: '发送登录邮件' })).toBeTruthy(),
+    );
+    // 魔法链接邮箱 label 与密码登录邮箱 label 文案不同，防 getByLabelText('邮箱') 破唯一性。
+    expect(screen.getByLabelText('邮箱（接收登录邮件）')).toBeTruthy();
+  });
+
+  it('发起魔法链接登录：POST /sign-in/magic-link 并回执已发信', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    renderLoginAt();
+    await vi.waitFor(() => expect(screen.getByLabelText('邮箱（接收登录邮件）')).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('邮箱（接收登录邮件）'), {
+      target: { value: 'a@b.c' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '发送登录邮件' }));
+    await vi.waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/auth/sign-in/magic-link',
+        expect.objectContaining({ method: 'POST' }),
+      ),
+    );
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status').textContent).toContain('登录邮件已发送'),
+    );
+  });
 });

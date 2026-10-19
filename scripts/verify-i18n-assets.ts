@@ -71,7 +71,7 @@ for (const { key, lang, expect } of cases) {
 }
 
 // 2) 邮件模板在产物布局下可读且非空
-for (const tpl of ['welcome', 'verification', 'forgot-password']) {
+for (const tpl of ['welcome', 'verification', 'forgot-password', 'magic-link']) {
   const file = path.join(assetsRoot, 'emails', `${tpl}.mjml`);
   try {
     const content = await readFile(file, 'utf8');

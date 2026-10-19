@@ -76,6 +76,20 @@ describe('MailerService (i18n localization)', () => {
     expect(sendMail.mock.calls[0][0].subject).toBe('T[emails.forgot-password.subject|ja]');
   });
 
+  it('sendMagicLinkEmail localizes subject + carries magicLinkUrl context', async () => {
+    await service.sendMagicLinkEmail('a@b.com', 'http://x/magic-link/verify?token=t', 'en');
+    expect(i18n.translate).toHaveBeenCalledWith('emails.magic-link.subject', { lang: 'en' });
+    // Body localization pulls the magic-link message key through I18nService with lang,
+    // and the sign-in URL handed down by Better Auth flows into the interpolation args.
+    const messageCall = i18n.translate.mock.calls.find((c) => c[0] === 'emails.magic-link.message');
+    expect(messageCall?.[1]?.args).toMatchObject({
+      magicLinkUrl: 'http://x/magic-link/verify?token=t',
+    });
+    const mail = sendMail.mock.calls[0][0];
+    expect(mail.to).toBe('a@b.com');
+    expect(mail.subject).toBe('T[emails.magic-link.subject|en]');
+  });
+
   it('loads real zh/en translations from src/i18n through the wired I18nModule', async () => {
     // Guards the loader path (__dirname/../i18n) + real JSON assets against regressions.
     const moduleRef = await Test.createTestingModule({

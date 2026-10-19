@@ -63,3 +63,15 @@ export async function signUpEmail(
 export async function signOut(): Promise<void> {
   await post('/sign-out', {});
 }
+
+/**
+ * 魔法链接登录（module-auth-magic-link·仅非生产后端挂载）：向 `email` 发一次性登录邮件，
+ * 用户点链接后由 BA `/magic-link/verify` 落会话并 `redirect` 到 `callbackURL`（前端落地页·
+ * 承 dashboard 落租/onboarding loader）。此处只发起请求，返回是否已投递（非登录成功）。
+ */
+export async function signInMagicLink(email: string, callbackURL: string): Promise<SignInOutcome> {
+  const res = await post('/sign-in/magic-link', { email, callbackURL });
+  if (res.ok) return { ok: true, status: res.status };
+  const detail = (await res.json().catch(() => ({}))) as { message?: string };
+  return { ok: false, status: res.status, error: detail.message ?? '邮件发送失败' };
+}

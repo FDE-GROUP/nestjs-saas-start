@@ -122,6 +122,35 @@ export class MailerService {
     }
   }
 
+  async sendMagicLinkEmail(
+    email: string,
+    magicLinkUrl: string,
+    lang: string = 'zh',
+  ): Promise<void> {
+    try {
+      const context = {
+        magicLinkUrl,
+        siteUrl: this.configService.get('APP_URL'),
+      };
+
+      const html = await this.renderTemplate('magic-link', context, lang);
+
+      const subject = this.getEmailSubject('magic-link', lang);
+
+      await this.transporter.sendMail({
+        from: this.configService.get('MAIL_FROM'),
+        to: email,
+        subject,
+        html,
+      });
+
+      this.logger.log(`Magic link email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send magic link email to ${email}`, error);
+      throw error;
+    }
+  }
+
   async sendWelcomeEmail(email: string, name: string, lang: string = 'zh'): Promise<void> {
     try {
       const context = {

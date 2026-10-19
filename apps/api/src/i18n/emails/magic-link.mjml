@@ -1,0 +1,23 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{ 'emails.magic-link.title' | translate }}</mj-title>
+  </mj-head>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" color="#333">
+          {{ 'emails.magic-link.greeting' | translate }}
+        </mj-text>
+        <mj-text color="#555" font-size="16px">
+          {{ 'emails.magic-link.message' | translate }}
+        </mj-text>
+        <mj-button background-color="#4CAF50" color="white" href="{{magicLinkUrl}}">
+          {{ 'emails.magic-link.button' | translate }}
+        </mj-button>
+        <mj-text color="#666" font-size="14px">
+          {{ 'emails.magic-link.footer' | translate }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -8,13 +8,19 @@ import {
 } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { toNodeHandler } from 'better-auth/node';
-import { type GenericOAuthConfig, genericOAuth, organization } from 'better-auth/plugins';
+import {
+  type GenericOAuthConfig,
+  genericOAuth,
+  magicLink,
+  organization,
+} from 'better-auth/plugins';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // 限流信任链解析单源已出至 common/trusted-proxies（module-common-rate-limit 乙裁：
 // 同一 env 喂 BA 限流 + Nest 限流墙双链，防双链漂移）。
 import { parseTrustedProxies } from '../../common/trusted-proxies';
 import type { ConfigService } from '../../config/config.service';
 import type { MikroOrmService } from '../../database/mikro/mikro-orm.service';
+import type { MailerService } from '../../mailer/mailer.service';
 import { createSeatsQuotaPlugin } from './seats-quota.hook';
 
 export type AuthRequest = FastifyRequest & { originalUrl?: string; url?: string };
@@ -76,6 +82,7 @@ export async function CreateAuth(
   mikroOrmService: MikroOrmService,
   configService: ConfigService,
   quota: Pick<QuotaService, 'checkSeats'>,
+  mailer: MailerService,
 ): Promise<CreateAuthResult> {
   const appConfig = configService.getAppConfig();
   const authConfig = configService.getAuthConfig();
@@ -104,6 +111,9 @@ export async function CreateAuth(
     database,
     socialProviders: providers,
     basePath: basePath,
+    // magic-link 等需绝对 URL 的面（邮件内一次性链接）依赖 canonical base；复用既有 `APP_URL`
+    // raw env（与 mailer 同源），未配则 undefined → BA 回退请求 origin（既有行为不变）。
+    baseURL: process.env.APP_URL || undefined,
     trustedOrigins: Array.isArray(corsConfig.origin)
       ? corsConfig.origin
       : corsConfig.origin?.split(',') || [],
@@ -193,6 +203,19 @@ export async function CreateAuth(
       // HTTP 通道）经插件级 before-hook 走 seats 配额前置校验，超限 402（详 seats-quota.hook.ts）。
       // ORM 修宪案 B 切片 3d（S-d3）：invitation 读改走 Mikro（懒 fork·DB-free 不变量保持）。
       createSeatsQuotaPlugin({ quota, mikro: mikroOrmService }),
+      // module-auth-magic-link：免密邮件登录。**仅非生产挂载**（镜像 emailAndPassword 生产关
+      // posture·未决项①人裁保守默认）——发信经既有 MailerService（MJML + i18n）。生产启用属登录面
+      // 安全裁决，须单独签核后方可移出门禁。
+      ...(process.env.NODE_ENV !== 'production'
+        ? [
+            magicLink({
+              expiresIn: 300,
+              async sendMagicLink({ email, url }) {
+                await mailer.sendMagicLinkEmail(email, url);
+              },
+            }),
+          ]
+        : []),
     ],
     account: {
       accountLinking: {
