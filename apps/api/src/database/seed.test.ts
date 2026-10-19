@@ -1,4 +1,11 @@
-import { Account, Organization, Session, User, Verification } from '@app/database/mikro/entities';
+import {
+  Account,
+  Member,
+  Organization,
+  Session,
+  User,
+  Verification,
+} from '@app/database/mikro/entities';
 import { Post } from '@app/database/mikro/post.entity';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +15,7 @@ import {
   createUsers,
   enforceSeedPasswordPolicy,
   ensureLoginableUser,
+  ensureTenantContext,
   runSeed,
 } from './seed';
 
@@ -35,7 +43,11 @@ function makeEm() {
 /** BA signUp 桩（不触真库/真 BA）·返回可断言的调用记录。结构上兼容 seed 的 LoginableAuth。 */
 function makeAuth() {
   const signUpEmail = vi.fn().mockResolvedValue({ user: { id: 'ba-native-id' } });
-  return { auth: { api: { signUpEmail } }, spies: { signUpEmail } };
+  const createOrganization = vi.fn().mockResolvedValue({ id: 'org-ba' });
+  return {
+    auth: { api: { signUpEmail, createOrganization } },
+    spies: { signUpEmail, createOrganization },
+  };
 }
 
 /** 取针对某实体的 insert 调用（区分 User / Post）。 */
@@ -280,13 +292,21 @@ describe('seed cleanup（BA 表随 user 清·切片 A）', () => {
 });
 
 describe('seed runSeed 编排', () => {
-  it('按 cleanup → createUsers → createPosts 次序用同一 em（含 auth 注入）', async () => {
+  it('按 cleanup → createUsers → ensureSeedTenants → createPosts 次序（含 auth 注入）', async () => {
     vi.stubEnv('SEED_CLEANUP', 'true');
     const { em, spies } = makeEm();
     const { auth, spies: as } = makeAuth();
-    spies.findOne.mockResolvedValueOnce({ id: 'x', email: 'op@example.com' }); // operator 存在
-    spies.findOne.mockResolvedValueOnce({ id: 'a', providerId: 'credential' }); // 有 account → 不 signUp
-    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]);
+    spies.findOne.mockImplementation((entity: unknown) => {
+      if (entity === Account) return Promise.resolve({ id: 'a', providerId: 'credential' });
+      if (entity === User) return Promise.resolve({ id: 'u-op', email: 'op@example.com' });
+      return Promise.resolve(null);
+    });
+    spies.find.mockImplementation((entity: unknown, where?: Record<string, unknown>) => {
+      // ensureTenantContext 按 slug 查 → 空（走 createOrganization）；createPosts 无 where → 命中 org-1。
+      if (entity === Organization && where?.slug) return Promise.resolve([]);
+      if (entity === Organization) return Promise.resolve([{ id: 'org-1' }]);
+      return Promise.resolve([]);
+    });
 
     await runSeed(em, { includeTestData: true, userCount: 1, postCount: 1 }, auth);
 
@@ -297,10 +317,76 @@ describe('seed runSeed 编排', () => {
       ...spies.insert.mock.calls.map(() => 'insert'),
     ];
     expect(order[0]).toBe('delete');
-    // operator 有 account → 仅 nativeUpdate（不 signUp）；createPosts 插 Post。
+    // operator 有 account → 仅 nativeUpdate（不 signUp）；ensureSeedTenants 建租（createOrganization）；createPosts 插 Post。
     expect(as.signUpEmail).not.toHaveBeenCalled();
     expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
+    expect(as.createOrganization).toHaveBeenCalledTimes(1);
+    expect(as.createOrganization.mock.calls[0][0]).toEqual({
+      body: { name: 'Acme (Seed)', slug: 'seed-acme', userId: 'u-op' },
+    });
     expect(insertsFor(spies.insert, Post)).toHaveLength(1);
+  });
+});
+
+describe('seed ensureTenantContext（预建活跃 org+owner）', () => {
+  it('无同 slug org → createOrganization 系统动作（body.userId=owner）·返 created·不直插', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find.mockResolvedValueOnce([]); // 无 org
+
+    const result = await ensureTenantContext(em, auth, {
+      slug: 'seed-acme',
+      name: 'Acme (Seed)',
+      ownerUserId: 'u1',
+    });
+
+    expect(result).toBe('created');
+    expect(as.createOrganization).toHaveBeenCalledTimes(1);
+    expect(as.createOrganization.mock.calls[0][0]).toEqual({
+      body: { name: 'Acme (Seed)', slug: 'seed-acme', userId: 'u1' },
+    });
+    expect(insertsFor(spies.insert, Member)).toHaveLength(0); // BA 自带 owner member
+  });
+
+  it('有同 slug org 但无 owner member → 直插 owner member·返 exists·不 createOrganization', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]); // 有 org
+    spies.findOne.mockResolvedValueOnce(null); // 无 member
+
+    const result = await ensureTenantContext(em, auth, {
+      slug: 'seed-acme',
+      name: 'Acme (Seed)',
+      ownerUserId: 'u1',
+    });
+
+    expect(result).toBe('exists');
+    expect(as.createOrganization).not.toHaveBeenCalled();
+    const memberInserts = insertsFor(spies.insert, Member);
+    expect(memberInserts).toHaveLength(1);
+    expect(memberInserts[0]).toMatchObject({
+      organizationId: 'org-1',
+      userId: 'u1',
+      role: 'owner',
+    });
+    expect((memberInserts[0] as { createdAt: unknown }).createdAt).toBeInstanceOf(Date);
+  });
+
+  it('有同 slug org 且 owner member 已存在 → 不重插·返 exists（幂等）', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]);
+    spies.findOne.mockResolvedValueOnce({ id: 'm1', role: 'owner' }); // member 存在
+
+    const result = await ensureTenantContext(em, auth, {
+      slug: 'seed-acme',
+      name: 'Acme (Seed)',
+      ownerUserId: 'u1',
+    });
+
+    expect(result).toBe('exists');
+    expect(insertsFor(spies.insert, Member)).toHaveLength(0);
+    expect(as.createOrganization).not.toHaveBeenCalled();
   });
 });
 

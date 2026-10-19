@@ -6,7 +6,8 @@ import { pathToFileURL } from 'node:url';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { betterAuth } from 'better-auth';
-import { Account, Organization, Session, User, Verification } from './mikro/entities';
+import { organization } from 'better-auth/plugins';
+import { Account, Member, Organization, Session, User, Verification } from './mikro/entities';
 import { mikroAuthAdapter } from './mikro/mikro-auth-adapter';
 import { initMikroOrm } from './mikro/orm';
 import { MIKRO_APP_ENTITIES, Post } from './mikro/post.entity';
@@ -105,13 +106,18 @@ export function enforceSeedPasswordPolicy(env: NodeJS.ProcessEnv = process.env):
 }
 
 /**
- * seed 直调 Better Auth 所需的最小 API 面（仅 `signUpEmail`）·结构型而非导入 BA 具体类型——
- * 便于镜测桩注入且不耦合 BA 版本泛型。
+ * seed 直调 Better Auth 所需的最小 API 面（`signUpEmail` + `createOrganization`）·结构型而非导入 BA 具体类型——
+ * 便于镜测桩注入且不耦合 BA 版本泛型。`createOrganization` 走**服务端系统动作**（无 session + `body.userId` →
+ * `isSystemAction`·不受 `allowUserToCreateOrganization:false` 限·BA 原生把创建者置首名 `owner` member），
+ * 供 `module-db-seed-tenant-context` 为 demo 号预建活跃组织（见 `tenant-isolation.e2e.test.ts:131-147` 同款范式）。
  */
 interface LoginableAuth {
   api: {
     signUpEmail: (args: {
       body: { email: string; password: string; name: string };
+    }) => Promise<unknown>;
+    createOrganization: (args: {
+      body: { name: string; slug: string; userId: string };
     }) => Promise<unknown>;
   };
 }
@@ -131,12 +137,14 @@ interface LoginableUserSpec {
  * `auth-adapter.consistency.spec.ts:75-107`）。要点：
  * - `emailAndPassword.minPasswordLength: 1`——放行 dev 兜底 `admin123`(8)/`user123`(7)·登录只验哈希不验长度。
  * - `secret` 与 app 同源（`JWT_SECRET`·见 `auth.implement.ts:219`）；哈希走 BA 默认 scrypt·与运行态 app BA 互验。
- * - 返回结构上收敛为 `LoginableAuth`（本模块只调 `signUpEmail`），避免耦合 BA 重载泛型。
+ * - `plugins: [organization()]`：与运行态 app BA 同插件（`auth.implement.ts:189`）·令本实例具备 `createOrganization`（C 片建租）。
+ * - 返回结构上收敛为 `LoginableAuth`（本模块只调 `signUpEmail`/`createOrganization`），避免耦合 BA 重载泛型。
  */
 export function createLoginableAuth(orm: MikroORM): LoginableAuth {
   return betterAuth({
     database: mikroAuthAdapter(orm),
     emailAndPassword: { enabled: true, minPasswordLength: 1 },
+    plugins: [organization()],
     secret: process.env.JWT_SECRET || 'your-secret-key',
   } as never) as unknown as LoginableAuth;
 }
@@ -216,6 +224,91 @@ export async function createUsers(
       });
     }
     console.log(`✅ Ensured ${userCount - 1} loginable demo user(s)`);
+  }
+}
+
+/**
+ * 为某个 persona 幂等预建一个**活跃组织** + 把其置为首名 `owner` 成员（module-db-seed-tenant-context C-2）。
+ * - 走 BA `createOrganization` 系统动作（无 session + `body.userId` → `isSystemAction`·不受
+ *   `allowUserToCreateOrganization:false` 限·BA 原生把创建者置首名 `owner` member·FR-12），
+ *   **不经**我方 `submit` 那段强制 `metadata.status=pending_approval` 的门面 → 落得 `metadata` 空、
+ *   `TenantMiddleware` 视为 legacy/seeded 放行（活跃·非 pending）。
+ * - 幂等：按 `slug` find；命中则确保该 user 为 owner member（按 (org,userId) find·缺则直插），返 `'exists'`；
+ *   未命中则 `createOrganization`（BA 自带 owner member），返 `'created'`。
+ * - **不**在此 `setActiveOrganization`（逐会话事实、对浏览器新会话无效·见 plan 证据链）。
+ */
+export async function ensureTenantContext(
+  em: EntityManager,
+  auth: LoginableAuth,
+  spec: { slug: string; name: string; ownerUserId: string },
+): Promise<'created' | 'exists'> {
+  const orgs = await em.find(Organization, { slug: spec.slug } as never);
+  const org = (orgs as { id: string }[])[0];
+  if (org) {
+    const member = await em.findOne(Member, {
+      organizationId: org.id,
+      userId: spec.ownerUserId,
+    } as never);
+    if (!member) {
+      await em.insert(Member, {
+        id: uuidv7(),
+        organizationId: org.id,
+        userId: spec.ownerUserId,
+        role: 'owner',
+        createdAt: new Date(),
+      } as never);
+    }
+    return 'exists';
+  }
+  await auth.api.createOrganization({
+    body: { name: spec.name, slug: spec.slug, userId: spec.ownerUserId },
+  });
+  return 'created';
+}
+
+/** 按 email 回查 user id（供 `createOrganization.body.userId`·零改 `ensureLoginableUser` 返回契约）。 */
+async function resolveUserId(em: EntityManager, email: string): Promise<string | undefined> {
+  const user = await em.findOne(User, { email } as never);
+  return user ? (user as { id: string }).id : undefined;
+}
+
+/**
+ * 为实际存在的 seed persona（运营者 + 演示用户）各预建一个专属活跃组织（owner 各自）。
+ * persona 邮箱与 `createUsers` 严格同构（运营者 `PLATFORM_OPERATOR_EMAIL||admin@example.com`·演示
+ * `user{i}@example.com` for i in 1..userCount-1 仅 `includeTestData`），保证**任一** seed 号登录后恰有
+ * 唯一成员组织（A 片自动落租无歧义）。user 行不存在（如零号 demo）→ 回查失败→跳过（warn）。
+ */
+export async function ensureSeedTenants(
+  em: EntityManager,
+  auth: LoginableAuth,
+  options: SeedOptions,
+): Promise<void> {
+  const operatorEmail = process.env.PLATFORM_OPERATOR_EMAIL || 'admin@example.com';
+  const personas: { email: string; slug: string; name: string }[] = [
+    { email: operatorEmail, slug: 'seed-acme', name: 'Acme (Seed)' },
+  ];
+  const userCount = options.userCount || 2;
+  if (options.includeTestData && userCount > 1) {
+    for (let i = 1; i < userCount; i++) {
+      personas.push({
+        email: `user${i}@example.com`,
+        slug: `seed-tenant-${i}`,
+        name: `Tenant ${i} (Seed)`,
+      });
+    }
+  }
+  for (const p of personas) {
+    const ownerUserId = await resolveUserId(em, p.email);
+    if (!ownerUserId) {
+      console.warn(`⚠  跳过预建组织 ${p.slug}：owner ${p.email} 尚无 user 行`);
+      continue;
+    }
+    const result = await ensureTenantContext(em, auth, {
+      slug: p.slug,
+      name: p.name,
+      ownerUserId,
+    });
+    console.log(`🏢 Seeded active tenant (${result}): ${p.slug} · owner=${p.email}`);
   }
 }
 
@@ -307,7 +400,7 @@ export async function cleanup(em: EntityManager): Promise<void> {
   }
 }
 
-/** seed 三段编排（可注入 em/auth·供镜测直调）：cleanup → createUsers → createPosts。 */
+/** seed 四段编排（可注入 em/auth·供镜测直调）：cleanup → createUsers → ensureSeedTenants → createPosts。 */
 export async function runSeed(
   em: EntityManager,
   options: SeedOptions,
@@ -315,6 +408,7 @@ export async function runSeed(
 ): Promise<void> {
   await cleanup(em);
   await createUsers(em, options, auth);
+  await ensureSeedTenants(em, auth, options);
   await createPosts(em, options);
 }
 
