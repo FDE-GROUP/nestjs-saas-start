@@ -1,10 +1,10 @@
-> 用途: **已审方案 = 开发依据** | 状态: 已实施 v0.3.0 · 待实机端到端对拍（人验收） | 受众: 人（审计门）+ Agent
-> 定位: Better Auth [magic-link 插件](https://better-auth.com/docs/plugins/magic-link)（免密邮件登录）接入。**仅非生产挂载**（与 `emailAndPassword` 生产关的既有裁点对称）。
-> 铁律: 触 `AGENTS.md` §2 高危面（**auth 认证面**）→ 已人签核 GO；**生产启用与否仍归人**（本片刻意仅非生产挂载，未动生产登录面）。
+> 用途: **已审方案 = 开发依据** | 状态: 已实施 v0.4.0 · 待实机端到端对拍（人验收） | 受众: 人（审计门）+ Agent
+> 定位: Better Auth [magic-link 插件](https://better-auth.com/docs/plugins/magic-link)（免密邮件登录）接入。首版仅非生产挂载；**现状以子片为准**：[module-auth-magic-link-production](./module-auth-magic-link-production.md) 已改无条件挂载（乙·`disableSignUp:true`），本片 v0.4.0 另增 dev 控制台打印链接。
+> 铁律: 触 `AGENTS.md` §2 高危面（**auth 认证面**）→ 已人签核 GO；生产启用与否已由子片另裁落地（本片的初版保守默认「仅非生产」被子片解除·非本片回改）。
 
 ## 0. 一句话
 
-magic-link = 用户输邮箱 → 服务端发一次性链接 → 点链接即建会话登录。本仓**已接入（v0.3.0·仅非生产挂载）**：后端挂 `magicLink` 插件（`NODE_ENV!=='production'` 门）+ `MailerService.sendMagicLinkEmail` 发信（`baseURL` 复用 `APP_URL`）+ 前端登录页发起表单；verify 由 BA 自处理。**生产启用与否仍归人**（本片刻意不动生产登录面·与现有关密码面生产关对称）。
+magic-link = 用户输邮箱 → 服务端发一次性链接 → 点链接即建会话登录。本仓**已接入（v0.4.0）**：后端挂 `magicLink` 插件（初版非生产门·已由子片 production 改无条件挂载+`disableSignUp:true`）+ `MailerService.sendMagicLinkEmail` 发信（`baseURL` 复用 `APP_URL`）+ 前端登录页发起表单；verify 由 BA 自处理。**dev 便利（v0.4.0）**：非生产控制台打印一次性链接（未配 SMTP 亦可直用·发信失败非致命），生产绝不打链接且语义不变。
 
 ## 1. 现状取证（v0.1.0 起草时基线·全负向·现已闭合）
 
@@ -59,4 +59,5 @@ M-1 config base（**实装时折叠进 M-2**·复用 `APP_URL`·免新增契约�
 |------|------|----------|----------|
 | 2026-10-19 | 0.1.0 | 起草 | 首版：magic-link 现状全负向取证（无插件/无 email 配置/邮件基建未接线/无 baseURL/前端无落地路由）+ 四段接入方案 + 6 条未决项（核心=生产启用与否归人·触 auth/config/env 高危）·待审计 |
 | 2026-10-19 | 0.2.0 | 人签核 GO | §4 落审计结论=GO·保守档；6 未决项裁决（仅非生产挂载·复用 APP_URL 免新增契约键·BA 自处理 verify·仅 magic-link 不带 emailVerification·gated e2e 归人实机）；§2/§3 契约订正（1.7.7 是 `sendMagicLink` 非 `sendTo`） |
-| 2026-10-19 | 0.3.0 | 实施回执 | M-2/M-2b/M-3/M-4/M-5 落地：`auth.implement` 挂 `magicLink`（非生产门 spread）+ `baseURL=APP_URL`；`AuthModule` imports `MailerModule`·`AuthBootstrap` 值导入注入 `MailerService`·`CreateAuth` 加 mailer 形参；`MailerService.sendMagicLinkEmail` + `magic-link.mjml` + zh/en/ja `emails.magic-link.*` + 资产闸登记；前端 `signInMagicLink` + `MagicLinkSection`；测 mailer+1/前端+2（基线 616→619）；门禁 Biome/build/openapi-drift/test/i18n/web-tsc 全绿·config-contract 仅红于既存 `WEB_PROXY_TARGET`。实机端到端归人 |
+| 2026-10-19 | 0.3.0 | 实施回执 | M-2/M-2b/M-3/M-4/M-5 落地：`auth.implement` 挂 `magicLink`（非生产门 spread）+ `baseURL=APP_URL`；`AuthModule` imports `MailerModule`·`AuthBootstrap` 值导入注入 `MailerService`·`CreateAuth` 加 mailer 形参；`MailerService.sendMagicLinkEmail` + `magic-link.mjml` + zh/en/ja `emails.magic-link.*` + 资产闸登记；前端 `signInMagicLink` + `MagicLinkSection`；测 mailer+1/ 前端+2（基线 616→619）；门禁 Biome/build/openapi-drift/test/i18n/web-tsc 全绿·config-contract 仅红于既存 `WEB_PROXY_TARGET`。实机端到端归人 |
+| 2026-10-19 | 0.4.0 | 人令「dev 控制台打印邮件链接」+ 状态同步 | 新增具名导出 `createMagicLinkSender`（镜 `isSealedOrgHttpPath` 谓词先例·单测锁三态 620→623）：非生产打印一次性链接（未配 SMTP 亦可浏览器直用）+ 发信失败降 warn 非致命；**生产语义与原实现全等**（不打链接·上抛）。同步：本片「仅非生产挂载」头部/定位/一句话陈旧态订正为「已由子片 production（`b4ea991`）解除·无条件挂载+disableSignUp:true」 |

@@ -37,6 +37,30 @@ export function isSealedOrgHttpPath(url: string): boolean {
   return pathname.endsWith('/organization') || pathname.includes('/organization/');
 }
 
+/**
+ * magic-link 发信编排（module-auth-magic-link v0.4.0 · 人令「开发环境控制台打印链接」）：
+ * 非生产先把一次性链接打进日志（未配 SMTP / 发信失败也可直连浏览器点用·链接含一次性 token
+ * 故**生产绝不打**——泄露面即 NODE_ENV 门），发信失败降为 warn 非致命；生产语义与原实现全等
+ * （不发链接、发信失败上抛）。抽具名导出供单测锁形（镜 isSealedOrgHttpPath 谓词先例）。
+ */
+export function createMagicLinkSender(mailer: MailerService) {
+  const logger = new Logger('MagicLink');
+  return async ({ email, url }: { email: string; url: string }): Promise<void> => {
+    const isProd = process.env.NODE_ENV === 'production';
+    if (!isProd) {
+      logger.log(`开发模式 magic-link（未配 SMTP 亦可，浏览器直接打开）：${url}`);
+    }
+    try {
+      await mailer.sendMagicLinkEmail(email, url);
+    } catch (e) {
+      if (isProd) {
+        throw e;
+      }
+      logger.warn(`magic-link 发信失败（dev 非致命·链接已打印控制台）：${(e as Error).message}`);
+    }
+  };
+}
+
 export interface CreateAuthResult {
   handler: (req: AuthRequest, res: AuthResponse) => Promise<any>;
   auth: {
@@ -222,9 +246,8 @@ export async function CreateAuth(
       magicLink({
         expiresIn: 300,
         disableSignUp: true,
-        async sendMagicLink({ email, url }) {
-          await mailer.sendMagicLinkEmail(email, url);
-        },
+        // dev 控制台打印链接 + SMTP 失败非致命；生产语义不变（见 createMagicLinkSender）。
+        sendMagicLink: createMagicLinkSender(mailer),
       }),
     ],
     account: {
