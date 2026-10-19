@@ -1,17 +1,18 @@
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
-import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { ConflictException, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { TenantApplicationReadModel } from '../../read-models/tenant-application.read-model';
 import { ApproveTenantCommand } from '../approve-tenant.command';
+import { governedTenantTransition } from './governed-tenant-transition';
 
 /**
  * 审批通过（FR-1·平台级）：`pending_approval → active`，经 `TenantStatusService.transition`
  * 统一写回 `organization.metadata`（禁散点手搓对象·S5 起按迁移表严格裁决）。
  * 目标租户不存在 → null（控制层 404）；非法迁移（如已 deleted）→ 409。
- * 成功经 `PlatformAuditService` 产出结构化审计（FR-6·动作/租户/操作者/状态迁移）。
+ * 成功经 `PlatformAuditService` 产出结构化审计（FR-6）。
+ * 架构精度修宪 S4：三分支样板收敛至 `governedTenantTransition` 共用用例（薄壳）。
  */
 @CommandHandler(ApproveTenantCommand)
 export class ApproveTenantCommandHandler implements ICommandHandler<ApproveTenantCommand> {
@@ -21,25 +22,15 @@ export class ApproveTenantCommandHandler implements ICommandHandler<ApproveTenan
   ) {}
 
   async execute(command: ApproveTenantCommand): Promise<TenantApplicationReadModel | null> {
-    const result = await this.status.transition(command.organizationId, TENANT_STATUS.ACTIVE, {
-      actorId: command.operatorId,
-    });
-    if (result.kind === 'not-found') return null;
-    if (result.kind === 'illegal') {
-      this.audit.logTenantGovernance('approve', command.organizationId, command.operatorId, {
-        from: result.from,
-        to: result.to,
-        error: 'illegal_transition',
-      });
-      throw new ConflictException(
-        `Illegal tenant transition: ${result.from ?? 'active'} -> ${result.to}`,
-        { errorCode: ERROR_CODES.TENANCY_ILLEGAL_TRANSITION },
-      );
-    }
-    this.audit.logTenantGovernance('approve', command.organizationId, command.operatorId, {
-      from: result.previous,
-      to: result.status,
-    });
-    return { organizationId: command.organizationId, status: result.status };
+    const result = await governedTenantTransition(
+      { status: this.status, audit: this.audit },
+      {
+        action: 'approve',
+        organizationId: command.organizationId,
+        operatorId: command.operatorId,
+        target: TENANT_STATUS.ACTIVE,
+      },
+    );
+    return result;
   }
 }
