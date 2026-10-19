@@ -200,7 +200,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRoleDto'
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+                name:
+                  type: string
+                  minLength: 1
+              required:
+                - key
+                - name
+              additionalProperties: false
       responses:
         '200':
           description: Created role view.
@@ -236,7 +247,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RenameRoleDto'
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+                name:
+                  type: string
+                  minLength: 1
+              required:
+                - key
+                - name
+              additionalProperties: false
       responses:
         '200':
           description: Renamed.
@@ -263,7 +285,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeleteRoleDto'
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+              required:
+                - key
+              additionalProperties: false
       responses:
         '200':
           description: Deleted.
@@ -320,7 +349,36 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GrantRolePermissionDto'
+              type: object
+              properties:
+                roleKey:
+                  type: string
+                  minLength: 1
+                subject:
+                  type: string
+                  enum:
+                    - Organization
+                    - Member
+                    - Invitation
+                    - Workspace
+                    - Role
+                    - RoleGrant
+                action:
+                  type: string
+                  enum:
+                    - create
+                    - read
+                    - update
+                    - delete
+                    - cancel
+                conditions:
+                  type: object
+                  additionalProperties: {}
+              required:
+                - roleKey
+                - subject
+                - action
+              additionalProperties: false
       responses:
         '200':
           description: Granted.
@@ -353,7 +411,36 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RevokeRolePermissionDto'
+              type: object
+              properties:
+                roleKey:
+                  type: string
+                  minLength: 1
+                subject:
+                  type: string
+                  enum:
+                    - Organization
+                    - Member
+                    - Invitation
+                    - Workspace
+                    - Role
+                    - RoleGrant
+                action:
+                  type: string
+                  enum:
+                    - create
+                    - read
+                    - update
+                    - delete
+                    - cancel
+                conditions:
+                  type: object
+                  additionalProperties: {}
+              required:
+                - roleKey
+                - subject
+                - action
+              additionalProperties: false
       responses:
         '200':
           description: Revoked.
@@ -372,19 +459,22 @@ paths:
         - name: limit
           required: false
           in: query
-          description: Page size (1-100)
           schema:
-            example: 20
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
         - name: offset
           required: false
           in: query
-          description: Offset (rows to skip)
           schema:
-            example: 0
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
         - name: search
           required: false
           in: query
-          description: Match against tenant name or slug (substring)
           schema:
             type: string
       responses:
@@ -646,19 +736,22 @@ paths:
         - name: limit
           required: false
           in: query
-          description: Page size (1-100)
           schema:
-            example: 20
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
         - name: offset
           required: false
           in: query
-          description: Offset (rows to skip)
           schema:
-            example: 0
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
         - name: search
           required: false
           in: query
-          description: Against user name or email (substring)
           schema:
             type: string
       responses:
@@ -696,7 +789,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SuspendUserDto'
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+              additionalProperties: false
       responses:
         '200':
           description: User suspended.
@@ -810,18 +908,18 @@ paths:
         - name: limit
           required: false
           in: query
-          description: Page size (1-100)
           schema:
-            example: 20
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
         - name: cursor
           required: false
           in: query
-          description: >-
-            Opaque base64url cursor from a previous page (omit for the first
-            page).
           schema:
-            example: WyIyMDI2LTAxLTAyVDAzOjA0OjA1LjAwMFoiLCJ1dWlkLWFiYyJd
             type: string
+            maxLength: 512
+            pattern: ^[A-Za-z0-9_-]+$
       responses:
         '200':
           description: Cursor page of posts owned by the active tenant.
@@ -857,7 +955,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePostDto'
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                content:
+                  type: string
+                published:
+                  type: boolean
+              required:
+                - title
+              additionalProperties: false
       responses:
         '201':
           description: Created post stamped with the active tenant.
@@ -885,15 +994,19 @@ paths:
         - name: limit
           required: false
           in: query
-          description: Page size (1-100)
           schema:
-            example: 20
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
         - name: offset
           required: false
           in: query
-          description: Offset (rows to skip)
           schema:
-            example: 0
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
       responses:
         '200':
           description: Workspaces owned by the active tenant (offset page).
@@ -923,7 +1036,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWorkspaceDto'
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                slug:
+                  type: string
+                  minLength: 1
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+              required:
+                - name
+                - slug
+              additionalProperties: false
       responses:
         '201':
           description: Created workspace stamped with the active tenant.
@@ -958,7 +1083,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateWorkspaceDto'
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                slug:
+                  type: string
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+              additionalProperties: false
       responses:
         '200':
           description: Updated workspace.
@@ -1007,7 +1140,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateTenantApplicationDto'
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                slug:
+                  type: string
+                  minLength: 1
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+              required:
+                - name
+                - slug
+              additionalProperties: false
       responses:
         '201':
           description: Pending tenant created; inactive until approved.
@@ -1127,7 +1272,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateMemberRoleDto'
+              type: object
+              properties:
+                memberId:
+                  type: string
+                  minLength: 1
+                role:
+                  type: string
+                  minLength: 1
+              required:
+                - memberId
+                - role
+              additionalProperties: false
       responses:
         '200':
           description: Updated member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1158,7 +1314,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RemoveMemberDto'
+              type: object
+              properties:
+                memberId:
+                  type: string
+                  minLength: 1
+              required:
+                - memberId
+              additionalProperties: false
       responses:
         '200':
           description: Removed member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1215,7 +1378,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateInvitationDto'
+              type: object
+              properties:
+                email:
+                  type: string
+                  minLength: 1
+                role:
+                  type: string
+                  minLength: 1
+              required:
+                - email
+                - role
+              additionalProperties: false
       responses:
         '200':
           description: Created invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1246,7 +1420,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvitationIdDto'
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+              required:
+                - invitationId
+              additionalProperties: false
       responses:
         '200':
           description: Cancelled invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1305,7 +1486,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SetActiveTenantDto'
+              type: object
+              properties:
+                organizationId:
+                  type: string
+                  minLength: 1
+              required:
+                - organizationId
+              additionalProperties: false
       responses:
         '200':
           description: >-
@@ -1344,7 +1532,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LeaveTenantDto'
+              type: object
+              properties:
+                organizationId:
+                  type: string
+                  minLength: 1
+              required:
+                - organizationId
+              additionalProperties: false
       responses:
         '200':
           description: Membership removed（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1381,7 +1576,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvitationIdDto'
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+              required:
+                - invitationId
+              additionalProperties: false
       responses:
         '200':
           description: >-
@@ -1422,7 +1624,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvitationIdDto'
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+              required:
+                - invitationId
+              additionalProperties: false
       responses:
         '200':
           description: Invitation rejected（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
@@ -1511,7 +1720,34 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateSubscriptionDto'
+              type: object
+              properties:
+                plan:
+                  type: string
+                  enum:
+                    - free
+                    - pro
+                    - enterprise
+                customerEmail:
+                  type: string
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                seatsLimit:
+                  type: integer
+                  minimum: 1
+                  maximum: 9007199254740991
+                storageQuota:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                apiQuota:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+              required:
+                - plan
+                - customerEmail
+              additionalProperties: false
       responses:
         '201':
           description: Subscription created; returns the updated snapshot.
@@ -1652,7 +1888,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCustomerDto'
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                name:
+                  type: string
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required:
+                - email
+              additionalProperties: false
       responses:
         '201':
           description: Customer created successfully
@@ -1676,7 +1926,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCheckoutDto'
+              type: object
+              properties:
+                amount:
+                  type: number
+                  minimum: 1
+                currency:
+                  type: string
+                  minLength: 1
+                description:
+                  type: string
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required:
+                - amount
+                - currency
+              additionalProperties: false
       responses:
         '201':
           description: Checkout created successfully
@@ -1736,7 +2003,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RefundPaymentDto'
+              type: object
+              properties:
+                checkoutId:
+                  type: string
+                  minLength: 1
+                amount:
+                  type: number
+                  minimum: 1
+                reason:
+                  type: string
+              required:
+                - checkoutId
+              additionalProperties: false
       responses:
         '201':
           description: Refund created successfully
@@ -1927,105 +2206,6 @@ components:
         - subject
         - action
         - conditions
-    CreateRoleDto:
-      type: object
-      properties:
-        key:
-          type: string
-          description: Tenant-scoped role key (system key or custom key)
-          example: editor
-        name:
-          type: string
-          description: Human-readable role name
-          example: Editor
-      required:
-        - key
-        - name
-    RenameRoleDto:
-      type: object
-      properties:
-        key:
-          type: string
-          description: Tenant-scoped role key (system key or custom key)
-          example: editor
-        name:
-          type: string
-          description: New human-readable role name
-          example: Editors
-      required:
-        - key
-        - name
-    DeleteRoleDto:
-      type: object
-      properties:
-        key:
-          type: string
-          description: Tenant-scoped role key (system key or custom key)
-          example: editor
-      required:
-        - key
-    GrantRolePermissionDto:
-      type: object
-      properties:
-        roleKey:
-          type: string
-          description: Tenant-scoped role key (system key or custom key)
-          example: editor
-        subject:
-          type: string
-          description: Subject resource
-          enum: &ref_15
-            - Organization
-            - Member
-            - Invitation
-            - Workspace
-            - Role
-            - RoleGrant
-        action:
-          type: string
-          description: Action
-          enum: &ref_16
-            - create
-            - read
-            - update
-            - delete
-            - cancel
-        conditions:
-          type: object
-          description: >-
-            Instance-level conditions (whitelist-checked server-side; omit =
-            whole-subject grant)
-          example: &ref_17
-            ownerId: '{{userId}}'
-      required:
-        - roleKey
-        - subject
-        - action
-    RevokeRolePermissionDto:
-      type: object
-      properties:
-        roleKey:
-          type: string
-          description: Tenant-scoped role key (system key or custom key)
-          example: editor
-        subject:
-          type: string
-          description: Subject resource
-          enum: *ref_15
-        action:
-          type: string
-          description: Action
-          enum: *ref_16
-        conditions:
-          type: object
-          description: >-
-            Instance-level conditions (whitelist-checked server-side; omit =
-            whole-subject grant)
-          example: *ref_17
-      required:
-        - roleKey
-        - subject
-        - action
     PlatformTenantRowResponse:
       type: object
       properties:
@@ -2038,7 +2218,7 @@ components:
           type: string
         status:
           type: string
-          enum: &ref_18
+          enum: &ref_15
             - pending_approval
             - active
             - suspended
@@ -2140,7 +2320,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_18
+          enum: *ref_15
           description: 治理状态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2180,17 +2360,11 @@ components:
           description: 用户主键。
         status:
           type: string
-          enum: *ref_18
+          enum: *ref_15
           description: 迁移后的新状态。
       required:
         - userId
         - status
-    SuspendUserDto:
-      type: object
-      properties:
-        reason:
-          type: string
-          description: Free-text suspension reason (audit trail)
     PostResponse:
       type: object
       properties:
@@ -2244,23 +2418,6 @@ components:
       required:
         - items
         - hasMore
-    CreatePostDto:
-      type: object
-      properties:
-        title:
-          type: string
-          description: The title of the post
-          example: Hello tenant
-        content:
-          type: string
-          description: The post body
-          example: Content...
-        published:
-          type: boolean
-          description: Whether the post is published
-          example: false
-      required:
-        - title
     WorkspaceResponse:
       type: object
       properties:
@@ -2313,109 +2470,6 @@ components:
         - total
         - limit
         - offset
-    CreateWorkspaceDto:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Workspace display name
-          example: Design
-        slug:
-          type: string
-          description: URL-friendly slug (unique within the tenant)
-          example: design
-      required:
-        - name
-        - slug
-    UpdateWorkspaceDto:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Workspace display name
-          example: Design
-        slug:
-          type: string
-          description: URL-friendly slug
-          example: design
-    CreateTenantApplicationDto:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Tenant display name
-          example: Acme Inc.
-        slug:
-          type: string
-          description: Globally-unique tenant slug
-          example: acme
-      required:
-        - name
-        - slug
-    UpdateMemberRoleDto:
-      type: object
-      properties:
-        memberId:
-          type: string
-          description: Member id to update
-          example: member-1
-        role:
-          type: object
-          description: New tenant role (system key or existing custom role key)
-          example: admin
-      required:
-        - memberId
-        - role
-    RemoveMemberDto:
-      type: object
-      properties:
-        memberId:
-          type: string
-          description: Member id to remove
-          example: member-1
-      required:
-        - memberId
-    CreateInvitationDto:
-      type: object
-      properties:
-        email:
-          type: string
-          description: Invitee email
-          example: new@acme.com
-        role:
-          type: object
-          description: Role granted on accept (system key or existing custom role key)
-          example: member
-      required:
-        - email
-        - role
-    InvitationIdDto:
-      type: object
-      properties:
-        invitationId:
-          type: string
-          description: Invitation id
-          example: inv-1
-      required:
-        - invitationId
-    SetActiveTenantDto:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: Organization id to activate in session
-          example: org_1
-      required:
-        - organizationId
-    LeaveTenantDto:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: Organization id to leave
-          example: org_1
-      required:
-        - organizationId
     SubscriptionResponse:
       type: object
       properties:
@@ -2446,32 +2500,6 @@ components:
         - used
         - remaining
         - providerCustomerId
-    CreateSubscriptionDto:
-      type: object
-      properties:
-        plan:
-          type: string
-          description: Subscription plan/tier
-          enum:
-            - free
-            - pro
-            - enterprise
-          example: pro
-        customerEmail:
-          type: string
-          description: Billing contact email (creates the provider customer · FR-8)
-        seatsLimit:
-          type: number
-          description: Override the plan seat limit (defaults to the plan)
-        storageQuota:
-          type: number
-          description: Storage quota (bytes) placeholder
-        apiQuota:
-          type: number
-          description: API quota placeholder
-      required:
-        - plan
-        - customerEmail
     FileUploadResultDto:
       type: object
       properties:
@@ -2525,7 +2553,7 @@ components:
           description: 集成状态恒 "ok"。
         selected:
           type: string
-          enum: &ref_19
+          enum: &ref_16
             - stripe
             - alipay
             - wechat_pay
@@ -2535,7 +2563,7 @@ components:
           description: 可用通道集合。
           items:
             type: string
-            enum: *ref_19
+            enum: *ref_16
       required:
         - status
         - selected
@@ -2548,7 +2576,7 @@ components:
           description: 通道侧 customer id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_16
           description: 所属通道。
         email:
           type: string
@@ -2569,7 +2597,7 @@ components:
           description: checkout / payment intent id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_16
           description: 所属通道。
         status:
           type: string
@@ -2593,7 +2621,7 @@ components:
           description: refund id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_16
           description: 所属通道。
         status:
           type: string
@@ -2617,61 +2645,3 @@ components:
           description: 回调是否已接收处理。
       required:
         - received
-    CreateCustomerDto:
-      type: object
-      properties:
-        email:
-          type: string
-          description: Customer email address
-          example: customer@example.com
-        name:
-          type: string
-          description: Customer name
-          example: John Doe
-        metadata:
-          type: object
-          description: Set of key-value pairs for additional information
-          example:
-            userId: '1234'
-      required:
-        - email
-    CreateCheckoutDto:
-      type: object
-      properties:
-        amount:
-          type: number
-          description: Amount in smallest currency unit (e.g., cents for USD)
-          example: 2000
-        currency:
-          type: string
-          description: Three-letter ISO currency code
-          example: usd
-        description:
-          type: string
-          description: Description of the checkout
-          example: 'Payment for order #1234'
-        metadata:
-          type: object
-          description: Set of key-value pairs for additional information
-          example:
-            orderId: '1234'
-      required:
-        - amount
-        - currency
-    RefundPaymentDto:
-      type: object
-      properties:
-        checkoutId:
-          type: string
-          description: Checkout (payment intent) id to refund
-          example: pi_1AbcDef
-        amount:
-          type: number
-          description: Amount to refund (defaults to full amount when omitted)
-          example: 500
-        reason:
-          type: string
-          description: Refund reason
-          example: requested_by_customer
-      required:
-        - checkoutId
