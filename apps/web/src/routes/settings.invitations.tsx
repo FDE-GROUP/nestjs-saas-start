@@ -5,11 +5,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, Select, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
+import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { probeTenantContext } from '../lib/tenant-context-guide';
 
 interface InvitationRow {
   id?: string;
@@ -38,6 +40,8 @@ export const Route = createFileRoute('/settings/invitations')({
     const { data, error } = await api.GET('/api/v1/tenants/invitations');
     if (error) {
       logApiError({ path: '/api/v1/tenants/invitations', scope: 'invitations' }, error);
+      const guide = await probeTenantContext(error);
+      if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
     return { kind: 'ok' as const, raw: data?.data };
@@ -51,6 +55,8 @@ function InvitationsAdminPage() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
 
+  if (result.kind === 'guide')
+    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   const invitations = extractInvitations(result.raw);

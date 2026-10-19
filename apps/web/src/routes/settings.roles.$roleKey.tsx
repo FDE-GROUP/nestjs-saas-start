@@ -8,11 +8,13 @@ import {
   type TenantAction,
   type TenantSubject,
 } from '../components/rbac-matrix';
+import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /**
  * 权限矩阵页（前端 F3 · module-frontend-rbac-admin §2.2·A2）。
@@ -26,6 +28,8 @@ export const Route = createFileRoute('/settings/roles/$roleKey')({
     const { data: rolesData, error: rolesError } = await api.GET('/api/v1/tenants/roles');
     if (rolesError) {
       logApiError({ path: '/api/v1/tenants/roles', scope: 'role.matrix' }, rolesError);
+      const guide = await probeTenantContext(rolesError);
+      if (guide) return { kind: 'guide' as const, guide: guide.hasMemberships };
       return { kind: 'error' as const, body: describeApiError(rolesError) };
     }
     const role = (rolesData?.data ?? []).find((r) => r.key === roleKey);
@@ -49,6 +53,7 @@ function RoleMatrixPage() {
   const action = useAction();
   const [pendingCell, setPendingCell] = useState<string | null>(null);
 
+  if (result.kind === 'guide') return <TenantContextGuidePanel hasMemberships={result.guide} />;
   if (result.kind === 'error') return <ErrorPanel message={result.body} />;
   if (result.kind === 'notFound') return <ErrorPanel message={`角色不存在：${result.roleKey}`} />;
 

@@ -2,11 +2,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, FormWrap, Select, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
+import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /** Better Auth `auth.api.listMembers` 透传成员项（非 Nest 契约类型·形参真相源见下）。 */
 interface MemberRow {
@@ -21,6 +23,8 @@ export const Route = createFileRoute('/settings/members')({
     const { data, error } = await api.GET('/api/v1/tenants/members');
     if (error) {
       logApiError({ path: '/api/v1/tenants/members', scope: 'members' }, error);
+      const guide = await probeTenantContext(error);
+      if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
     return { kind: 'ok' as const, raw: data?.data, orgId: session.session.activeOrganizationId };
@@ -38,6 +42,8 @@ function MembersPage() {
   const result = Route.useLoaderData();
   const leave = useAction();
 
+  if (result.kind === 'guide')
+    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   const members = extractMembers(result.raw);

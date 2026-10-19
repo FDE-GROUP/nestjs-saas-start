@@ -2,11 +2,13 @@ import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-ro
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
+import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /**
  * 角色管理面（前端 F3 · module-frontend-rbac-admin §2.2·A1）。
@@ -21,6 +23,8 @@ export const Route = createFileRoute('/settings/roles')({
     const { data, error } = await api.GET('/api/v1/tenants/roles');
     if (error) {
       logApiError({ path: '/api/v1/tenants/roles', scope: 'roles' }, error);
+      const guide = await probeTenantContext(error);
+      if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
     return { kind: 'ok' as const, roles: data?.data ?? [] };
@@ -39,6 +43,8 @@ function RolesPage() {
   // （镜像 platform.tenants.tsx L54；缺此委托则子页永不挂载·见 module-frontend-roles-outlet-delegation）。
   if (matchRoute({ to: '/settings/roles/$roleKey' })) return <Outlet />;
 
+  if (result.kind === 'guide')
+    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   async function handleCreate(e: React.FormEvent) {
