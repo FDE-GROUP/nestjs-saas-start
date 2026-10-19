@@ -26,6 +26,7 @@ import {
 import {
   fileUploadResultSchema,
   storageDeleteSchema,
+  storageExpiresInQuerySchema,
   storageUrlSchema,
 } from '@saas/contracts/index';
 import type { FastifyRequest } from 'fastify';
@@ -131,7 +132,7 @@ export class StorageController {
   @ApiResponse(apiEnvelopeShape(StorageUrlResponse, { description: 'Signed URL payload.' }))
   async getFileUrl(
     @Param('key') key: string,
-    @Query('expiresIn') expiresIn?: number,
+    @Query('expiresIn', { schema: storageExpiresInQuerySchema }) expiresIn?: number,
   ): Promise<{ url: string }> {
     this.logger.log(`Getting signed URL for file with key: ${key}`);
     const url = await this.storageService.getFileUrl(key, expiresIn);
