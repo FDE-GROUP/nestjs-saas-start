@@ -1,4 +1,5 @@
 import type { components } from '@saas/api-client';
+import { createPostSchema } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
@@ -11,6 +12,20 @@ import { requireSession } from '../lib/session';
 
 /** 真相源 = `PostResponse`（`@saas/api-client` schema 派生·编译期契约锁定）。 */
 type Post = components['schemas']['PostResponse'];
+
+// S8 前后端共享契约单源：客户端前置校验直接用 `@saas/contracts` 的 `createPostSchema`（与后端
+// `@Body({ schema: createPostSchema })` 同一实例·一份 schema 两消费者）。i18n 键属服务端译文面，
+// 前端按字段路径给友好中文提示、未命中回落原始 message。
+const POST_FIELD_LABELS: Record<string, string> = {
+  title: '标题',
+  content: '正文',
+  published: '状态',
+};
+function friendlyIssueMessage(issue: { path: readonly PropertyKey[]; message: string }): string {
+  const field = issue.path.map(String).join('.');
+  const label = POST_FIELD_LABELS[field];
+  return label ? `请填写${label}` : issue.message;
+}
 
 const PAGE_LIMIT = 20;
 
@@ -43,6 +58,7 @@ function PostsPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [published, setPublished] = useState(false);
+  const [formErr, setFormErr] = useState<string | null>(null);
   const create = useAction();
 
   // 创建成功 → useAction 内 router.invalidate() 重跑 loader → firstPage 换新引用 →
@@ -76,15 +92,20 @@ function PostsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    // 共享 schema 前置校验：命中即本地拦截，免去无效往返（与后端同一 createPostSchema·S8）。
+    const draft = { title, content: content || undefined, published };
+    const parsed = createPostSchema.safeParse(draft);
+    if (!parsed.success) {
+      setFormErr(parsed.error.issues.map(friendlyIssueMessage).join('；'));
+      return;
+    }
+    setFormErr(null);
     const ok = await create.run({
       path: '/api/v1/posts',
       method: 'POST',
       scope: 'posts.create',
       successMessage: '文章已创建',
-      thunk: () =>
-        api.POST('/api/v1/posts', {
-          body: { title, content: content || undefined, published },
-        }),
+      thunk: () => api.POST('/api/v1/posts', { body: parsed.data }),
     });
     if (ok) {
       setTitle('');
@@ -138,7 +159,7 @@ function PostsPage() {
           </label>
           <div className="flex items-center gap-3">
             <SubmitButton pending={create.pending}>创建</SubmitButton>
-            <Feedback error={create.error} success={create.success} />
+            <Feedback error={formErr ?? create.error} success={create.success} />
           </div>
         </FormWrap>
       </section>
