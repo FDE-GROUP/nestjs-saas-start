@@ -101,9 +101,8 @@ function MemberActions({ member }: { member: MemberRow }) {
       scope: 'member.role',
       successMessage: `${member.userId} 角色已更新`,
       thunk: () =>
-        // role: Record<string,never> 系 codegen gap，实参真相源 = BA role key 字符串
         api.POST('/api/v1/tenants/members/role', {
-          body: { memberId: member.id ?? '', role: role as unknown as Record<string, never> },
+          body: { memberId: member.id ?? '', role },
         }),
     });
   }

@@ -862,85 +862,6 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        CreateRoleDto: {
-            /**
-             * @description Tenant-scoped role key (system key or custom key)
-             * @example editor
-             */
-            key: string;
-            /**
-             * @description Human-readable role name
-             * @example Editor
-             */
-            name: string;
-        };
-        RenameRoleDto: {
-            /**
-             * @description Tenant-scoped role key (system key or custom key)
-             * @example editor
-             */
-            key: string;
-            /**
-             * @description New human-readable role name
-             * @example Editors
-             */
-            name: string;
-        };
-        DeleteRoleDto: {
-            /**
-             * @description Tenant-scoped role key (system key or custom key)
-             * @example editor
-             */
-            key: string;
-        };
-        GrantRolePermissionDto: {
-            /**
-             * @description Tenant-scoped role key (system key or custom key)
-             * @example editor
-             */
-            roleKey: string;
-            /**
-             * @description Subject resource
-             * @enum {string}
-             */
-            subject: "Organization" | "Member" | "Invitation" | "Workspace" | "Role" | "RoleGrant";
-            /**
-             * @description Action
-             * @enum {string}
-             */
-            action: "create" | "read" | "update" | "delete" | "cancel";
-            /**
-             * @description Instance-level conditions (whitelist-checked server-side; omit = whole-subject grant)
-             * @example {
-             *       "ownerId": "{{userId}}"
-             *     }
-             */
-            conditions?: Record<string, never>;
-        };
-        RevokeRolePermissionDto: {
-            /**
-             * @description Tenant-scoped role key (system key or custom key)
-             * @example editor
-             */
-            roleKey: string;
-            /**
-             * @description Subject resource
-             * @enum {string}
-             */
-            subject: "Organization" | "Member" | "Invitation" | "Workspace" | "Role" | "RoleGrant";
-            /**
-             * @description Action
-             * @enum {string}
-             */
-            action: "create" | "read" | "update" | "delete" | "cancel";
-            /**
-             * @description Instance-level conditions (whitelist-checked server-side; omit = whole-subject grant)
-             * @example {
-             *       "ownerId": "{{userId}}"
-             *     }
-             */
-            conditions?: Record<string, never>;
-        };
         PlatformTenantRowResponse: {
             /** @description organization 主键（= 租户 id）。 */
             organizationId: string;
@@ -1021,10 +942,6 @@ export interface components {
              */
             status: "pending_approval" | "active" | "suspended" | "deleted";
         };
-        SuspendUserDto: {
-            /** @description Free-text suspension reason (audit trail) */
-            reason?: string;
-        };
         PostResponse: {
             /** @description UUIDv7。 */
             id: string;
@@ -1046,23 +963,6 @@ export interface components {
             hasMore: boolean;
             /** @description 不透明游标（hasMore=false 时缺省）。 */
             nextCursor?: string;
-        };
-        CreatePostDto: {
-            /**
-             * @description The title of the post
-             * @example Hello tenant
-             */
-            title: string;
-            /**
-             * @description The post body
-             * @example Content...
-             */
-            content?: string;
-            /**
-             * @description Whether the post is published
-             * @example false
-             */
-            published?: boolean;
         };
         WorkspaceResponse: {
             /** @description UUIDv7。 */
@@ -1087,94 +987,6 @@ export interface components {
             /** @description 回显偏移。 */
             offset: number;
         };
-        CreateWorkspaceDto: {
-            /**
-             * @description Workspace display name
-             * @example Design
-             */
-            name: string;
-            /**
-             * @description URL-friendly slug (unique within the tenant)
-             * @example design
-             */
-            slug: string;
-        };
-        UpdateWorkspaceDto: {
-            /**
-             * @description Workspace display name
-             * @example Design
-             */
-            name?: string;
-            /**
-             * @description URL-friendly slug
-             * @example design
-             */
-            slug?: string;
-        };
-        CreateTenantApplicationDto: {
-            /**
-             * @description Tenant display name
-             * @example Acme Inc.
-             */
-            name: string;
-            /**
-             * @description Globally-unique tenant slug
-             * @example acme
-             */
-            slug: string;
-        };
-        UpdateMemberRoleDto: {
-            /**
-             * @description Member id to update
-             * @example member-1
-             */
-            memberId: string;
-            /**
-             * @description New tenant role (system key or existing custom role key)
-             * @example admin
-             */
-            role: Record<string, never>;
-        };
-        RemoveMemberDto: {
-            /**
-             * @description Member id to remove
-             * @example member-1
-             */
-            memberId: string;
-        };
-        CreateInvitationDto: {
-            /**
-             * @description Invitee email
-             * @example new@acme.com
-             */
-            email: string;
-            /**
-             * @description Role granted on accept (system key or existing custom role key)
-             * @example member
-             */
-            role: Record<string, never>;
-        };
-        InvitationIdDto: {
-            /**
-             * @description Invitation id
-             * @example inv-1
-             */
-            invitationId: string;
-        };
-        SetActiveTenantDto: {
-            /**
-             * @description Organization id to activate in session
-             * @example org_1
-             */
-            organizationId: string;
-        };
-        LeaveTenantDto: {
-            /**
-             * @description Organization id to leave
-             * @example org_1
-             */
-            organizationId: string;
-        };
         SubscriptionResponse: {
             /** @description 是否已有生效订阅。 */
             hasSubscription: boolean;
@@ -1188,22 +1000,6 @@ export interface components {
             remaining: number;
             /** @description 支付通道 customer id；无订阅 = null。 */
             providerCustomerId: string | null;
-        };
-        CreateSubscriptionDto: {
-            /**
-             * @description Subscription plan/tier
-             * @example pro
-             * @enum {string}
-             */
-            plan: "free" | "pro" | "enterprise";
-            /** @description Billing contact email (creates the provider customer · FR-8) */
-            customerEmail: string;
-            /** @description Override the plan seat limit (defaults to the plan) */
-            seatsLimit?: number;
-            /** @description Storage quota (bytes) placeholder */
-            storageQuota?: number;
-            /** @description API quota placeholder */
-            apiQuota?: number;
         };
         FileUploadResultDto: {
             /** @description File unique identifier */
@@ -1292,66 +1088,6 @@ export interface components {
         WebhookAckResponse: {
             /** @description 回调是否已接收处理。 */
             received: boolean;
-        };
-        CreateCustomerDto: {
-            /**
-             * @description Customer email address
-             * @example customer@example.com
-             */
-            email: string;
-            /**
-             * @description Customer name
-             * @example John Doe
-             */
-            name?: string;
-            /**
-             * @description Set of key-value pairs for additional information
-             * @example {
-             *       "userId": "1234"
-             *     }
-             */
-            metadata?: Record<string, never>;
-        };
-        CreateCheckoutDto: {
-            /**
-             * @description Amount in smallest currency unit (e.g., cents for USD)
-             * @example 2000
-             */
-            amount: number;
-            /**
-             * @description Three-letter ISO currency code
-             * @example usd
-             */
-            currency: string;
-            /**
-             * @description Description of the checkout
-             * @example Payment for order #1234
-             */
-            description?: string;
-            /**
-             * @description Set of key-value pairs for additional information
-             * @example {
-             *       "orderId": "1234"
-             *     }
-             */
-            metadata?: Record<string, never>;
-        };
-        RefundPaymentDto: {
-            /**
-             * @description Checkout (payment intent) id to refund
-             * @example pi_1AbcDef
-             */
-            checkoutId: string;
-            /**
-             * @description Amount to refund (defaults to full amount when omitted)
-             * @example 500
-             */
-            amount?: number;
-            /**
-             * @description Refund reason
-             * @example requested_by_customer
-             */
-            reason?: string;
         };
     };
     responses: never;
@@ -1554,7 +1290,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateRoleDto"];
+                "application/json": {
+                    key: string;
+                    name: string;
+                };
             };
         };
         responses: {
@@ -1598,7 +1337,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RenameRoleDto"];
+                "application/json": {
+                    key: string;
+                    name: string;
+                };
             };
         };
         responses: {
@@ -1638,7 +1380,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeleteRoleDto"];
+                "application/json": {
+                    key: string;
+                };
             };
         };
         responses: {
@@ -1711,7 +1455,16 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GrantRolePermissionDto"];
+                "application/json": {
+                    roleKey: string;
+                    /** @enum {string} */
+                    subject: "Organization" | "Member" | "Invitation" | "Workspace" | "Role" | "RoleGrant";
+                    /** @enum {string} */
+                    action: "create" | "read" | "update" | "delete" | "cancel";
+                    conditions?: {
+                        [key: string]: unknown;
+                    };
+                };
             };
         };
         responses: {
@@ -1760,7 +1513,16 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RevokeRolePermissionDto"];
+                "application/json": {
+                    roleKey: string;
+                    /** @enum {string} */
+                    subject: "Organization" | "Member" | "Invitation" | "Workspace" | "Role" | "RoleGrant";
+                    /** @enum {string} */
+                    action: "create" | "read" | "update" | "delete" | "cancel";
+                    conditions?: {
+                        [key: string]: unknown;
+                    };
+                };
             };
         };
         responses: {
@@ -1785,11 +1547,8 @@ export interface operations {
     PlatformTenantsController_list_v1: {
         parameters: {
             query?: {
-                /** @description Page size (1-100) */
-                limit?: unknown;
-                /** @description Offset (rows to skip) */
-                offset?: unknown;
-                /** @description Match against tenant name or slug (substring) */
+                limit?: number;
+                offset?: number;
                 search?: string;
             };
             header?: never;
@@ -2092,11 +1851,8 @@ export interface operations {
     PlatformUsersController_list_v1: {
         parameters: {
             query?: {
-                /** @description Page size (1-100) */
-                limit?: unknown;
-                /** @description Offset (rows to skip) */
-                offset?: unknown;
-                /** @description Against user name or email (substring) */
+                limit?: number;
+                offset?: number;
                 search?: string;
             };
             header?: never;
@@ -2138,7 +1894,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SuspendUserDto"];
+                "application/json": {
+                    reason?: string;
+                };
             };
         };
         responses: {
@@ -2278,9 +2036,7 @@ export interface operations {
     PostsController_list_v1: {
         parameters: {
             query?: {
-                /** @description Page size (1-100) */
-                limit?: unknown;
-                /** @description Opaque base64url cursor from a previous page (omit for the first page). */
+                limit?: number;
                 cursor?: string;
             };
             header?: never;
@@ -2329,7 +2085,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreatePostDto"];
+                "application/json": {
+                    title: string;
+                    content?: string;
+                    published?: boolean;
+                };
             };
         };
         responses: {
@@ -2358,10 +2118,8 @@ export interface operations {
     WorkspacesController_list_v1: {
         parameters: {
             query?: {
-                /** @description Page size (1-100) */
-                limit?: unknown;
-                /** @description Offset (rows to skip) */
-                offset?: unknown;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -2400,7 +2158,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateWorkspaceDto"];
+                "application/json": {
+                    name: string;
+                    slug: string;
+                };
             };
         };
         responses: {
@@ -2466,7 +2227,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateWorkspaceDto"];
+                "application/json": {
+                    name?: string;
+                    slug?: string;
+                };
             };
         };
         responses: {
@@ -2501,7 +2265,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateTenantApplicationDto"];
+                "application/json": {
+                    name: string;
+                    slug: string;
+                };
             };
         };
         responses: {
@@ -2649,7 +2416,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateMemberRoleDto"];
+                "application/json": {
+                    memberId: string;
+                    role: string;
+                };
             };
         };
         responses: {
@@ -2686,7 +2456,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RemoveMemberDto"];
+                "application/json": {
+                    memberId: string;
+                };
             };
         };
         responses: {
@@ -2756,7 +2528,10 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateInvitationDto"];
+                "application/json": {
+                    email: string;
+                    role: string;
+                };
             };
         };
         responses: {
@@ -2793,7 +2568,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InvitationIdDto"];
+                "application/json": {
+                    invitationId: string;
+                };
             };
         };
         responses: {
@@ -2863,7 +2640,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetActiveTenantDto"];
+                "application/json": {
+                    organizationId: string;
+                };
             };
         };
         responses: {
@@ -2909,7 +2688,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LeaveTenantDto"];
+                "application/json": {
+                    organizationId: string;
+                };
             };
         };
         responses: {
@@ -2955,7 +2736,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InvitationIdDto"];
+                "application/json": {
+                    invitationId: string;
+                };
             };
         };
         responses: {
@@ -3001,7 +2784,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InvitationIdDto"];
+                "application/json": {
+                    invitationId: string;
+                };
             };
         };
         responses: {
@@ -3111,7 +2896,15 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateSubscriptionDto"];
+                "application/json": {
+                    /** @enum {string} */
+                    plan: "free" | "pro" | "enterprise";
+                    /** Format: email */
+                    customerEmail: string;
+                    seatsLimit?: number;
+                    storageQuota?: number;
+                    apiQuota?: number;
+                };
             };
         };
         responses: {
@@ -3262,7 +3055,14 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCustomerDto"];
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                    name?: string;
+                    metadata?: {
+                        [key: string]: string;
+                    };
+                };
             };
         };
         responses: {
@@ -3288,7 +3088,14 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateCheckoutDto"];
+                "application/json": {
+                    amount: number;
+                    currency: string;
+                    description?: string;
+                    metadata?: {
+                        [key: string]: string;
+                    };
+                };
             };
         };
         responses: {
@@ -3357,7 +3164,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RefundPaymentDto"];
+                "application/json": {
+                    checkoutId: string;
+                    amount?: number;
+                    reason?: string;
+                };
             };
         };
         responses: {

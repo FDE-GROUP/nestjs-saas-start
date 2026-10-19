@@ -70,7 +70,7 @@ function InvitationsAdminPage() {
       successMessage: `已邀请 ${email}`,
       thunk: () =>
         api.POST('/api/v1/tenants/invitations', {
-          body: { email, role: role as unknown as Record<string, never> },
+          body: { email, role },
         }),
     });
     if (ok) setEmail('');
