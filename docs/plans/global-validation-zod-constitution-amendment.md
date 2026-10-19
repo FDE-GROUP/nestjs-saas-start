@@ -52,8 +52,8 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 - **S2** 配置层 Joi→zod：改 `config.module.ts`（`StandardSchemaV1`/`validate`）+ 移除 `as any`。
 - **S3** 契约上移：将 16 个请求 DTO **及响应 envelope/error-detail** 的 zod schema 均落 `libs/contracts`；apps/api 侧经 `@Body/@Param/@Query({schema})` 消费请求、`@SerializeOptions({schema})` 消费响应（无需 class DTO 包装·类型取 `z.infer`）；`api-contracts.ts` 的 `ApiEnvelope/ApiErrorDetail/ApiErrorResponse` `@ApiProperty` 类退为 contracts 派生。**契约提供 `strictObject()` helper（默认严格）**，开放输入端点逐 schema 显式 `.passthrough()`+注释（见 §8 ④）。
 - **S4** 校验管换轨：`validation-pipe.ts` 工厂由 `I18nValidationPipe` 改**官方 `StandardSchemaValidationPipe`**（含 `exceptionFactory`·保持 SSOT 单源·main.ts/e2e 装配点不动）。
-- **S5** 错误契约 + i18n：`ResponseErrorDetail`/`ErrorResponse` 契约**上移 `libs/contracts` 为 zod 单源**；`response-error-detail.ts` 出 `Issue[]`→明细 展平（不再依赖 class-validator）；`Issue[]`→i18n 本地化过滤器；`ErrorResponse` 外形逐字不变。
-- **S6** OpenAPI SSOT 重生成：经 `@nestjs/swagger` 内置 standard-schema 转换（必要时薄封装 `z.toJSONSchema`）、重生成 `openapi.yaml`（**yaml 本体漂移须人审 diff**）、重生成 api-client typed、`openapi:drift` 转绿。
+- **S5** 错误契约 + i18n：`ResponseErrorDetail`/`ErrorResponse` 契约**上移 `libs/contracts` 为 zod 单源**；`response-error-detail.ts` 出 `Issue[]`→明细 展平（不再依赖 class-validator）；`Issue[]`→i18n 本地化过滤器；`ErrorResponse` 外形逐字不变。**⚠ S0-G3 发现**：`exceptionFactory` 产出的 `Issue.message` **仅当字段显式设了 `error:` 才是 i18n key**，未设的节点会漏 zod 默认英文（如 `Invalid input: expected boolean`）——故**每个 schema 节点必须挂 i18n key**（`strictObject` helper 配套默认文案）或过滤器加 translate-fallback（未命中 key 则回退），否则原始英文泄漏。
+- **S6** OpenAPI SSOT 重生成：经 `@nestjs/swagger` 内置 standard-schema 转换（必要时薄封装 `z.toJSONSchema`）、重生成 `openapi.yaml`（**yaml 本体漂移须人审 diff**）、重生成 api-client typed、`openapi:drift` 转绿。**⚠ S0-G4 发现**：官方件**零配置**即可将 `@Body({schema})` 的 zod 直出 openapi requestBody（strict→`additionalProperties:false`），但 schema 走 **inline 而非 `$ref`**（`components.schemas` 为空）——现 yaml 由 `@ApiProperty` 类产 `$ref` 组件，换轨后为 **结构性大 diff**（非逐字段小改）→ S6 人审需按结构迁移口径验收。
 - **S7** 响应序列化/PII：取官方 **`@SerializeOptions({schema})` + 全局 `StandardSchemaSerializerInterceptor`** 做每端点响应**白名单序列化**（= @ZodResponse 的序列化面·不引 nestjs-zod）。⚠ 实查：现 `TransformInterceptor` **仅做成功 envelope 包裹**（`{data,meta?,statusCode,message}`·含分页特例）、**不做字段白名单**——故 `@SerializeOptions` 为**新增能力**（fail-closed 剥未声明字段/PII）而非替换；`TransformInterceptor` **保留**，序列化只作用于 `data` 载荷（两拦截器嵌套次序 S0 判明）；文档面取 `@ApiResponse({standardSchema})`。
 - **S8** 前端接入：`apps/web` 复用 contracts 做表单校验。
 - **S9** 摘旧依赖：移除 `joi`、`class-validator`、`class-transformer`（及不再用的 nestjs-i18n 校验管件），全仓 grep 验无残留。
@@ -61,7 +61,7 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 
 ## 5. 完成判据（验收）
 
-- [ ] S0 四项 spike 真跑通过并留证。
+- [x] S0 四项 spike 真跑通过并留证（2026-10-20·DB-free 最小 app·6/6 绿·取证见 §8）。
 - [ ] `pnpm run ci` 全绿；`pnpm run ci:db` gated e2e 全绿（含 `validation-i18n.e2e`、`auth-http-surface.e2e`、`tenant-isolation.e2e`、`api-contracts.test`、controller 元数据回归）。
 - [ ] `pnpm run openapi:drift` 绿；`openapi.yaml` diff 经人审签字（契约漂移显式接受）。
 - [ ] `pnpm run verify:prod-boot` 绿（真起服 `/health` 200）。
@@ -78,6 +78,8 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 | DI 装饰器元数据铁律（`design:paramtypes`）| 正确性 | 官方路径改由 `@Body({schema})` 携 schema·对 metatype 依赖下降；S0.1 仍实测值导入不退化并复核影响面 |
 | 官方管无 whitelist/forbid 选项 | 行为语义 | 多余字段拒斥下沉 schema `.strict()`、转换走 `z.coerce`（S0.2 逐项对拍）|
 | i18n 校验本地化链路断裂 | 契约/体验 | S0.3 门·ZodError→key 映射专测·保 `validate.*` 目录 |
+| **S0-G3**：未设 `error:` 的 schema 节点漏 zod 默认英文（非 i18n）| 契约/体验 | **每节点必挂 i18n key**（`strictObject`+默认文案）或过滤器 translate-fallback·回归测断言无英文残留 |
+| **S0-G4**：官方件将 schema 以 inline 而非 `$ref` 写入 openapi | 公共契约/文档 | 接受结构漂移·S6 按「$ref→inline 结构迁移」口径人审 diff·必要时用 `resolver`/薄封装回填 `$ref` |
 | openapi.yaml SSOT 漂移波及前端 typed 面 | 公共契约 | S6 人审 diff·api-client 同片重生成·drift 闸兜底 |
 | 行为语义静默变（whitelist/forbid/数字转换）| 正确性 | S0.2/S4 逐项复刻 + 既有 DTO 行为测试平移 |
 | 「一次性全栈」单片过大不可回滚 | 过程 | 分支上按 S1→S10 小步提交·每步门禁绿； constitution/摘依赖殿后·可分点回退 |
@@ -94,7 +96,8 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 
 - 结论：方向经用户裁定采纳；范围=**一次性全栈（配置+请求+响应+前端）· 共享契约居新建 `libs/contracts`**；**唯一路径=官方 standard-schema 件（nestjs-zod 完全不采用·自研撤销）**。**审计门已过（用户 2026-10-20 签核审计通过·授权进 S0）**；S1–S10 实施阶段逐片仍遵高危签核（改宪法/摘依赖/改契约/CI）不自行越界。
 - 未决项（v0.3.1 已全部收敛）：① 响应序列化定官方 `@SerializeOptions({schema})`（@ZodResponse 能力映射）；② ~~自研 pipe~~ / ~~nestjs-zod 对照组~~ → **均撤销**；③ **已裁**：envelope/error-detail 一并上移 `libs/contracts`（与 `api-contracts.ts` 合并为 zod 单源）；④ **已裁（Agent 定）·strict-by-default + 显式 opt-out**：现管已配 `forbidNonWhitelisted:true`（今天多传未知字段本就 400），故 `.strict()` 为**行为保真非回归**（不加反而是静默放开）；每层对象（含嵌套）默认严格，由 `libs/contracts` 的 `strictObject()` helper 承为书写默认以消漏配 footgun；query 数字转换用 `z.coerce`（等价 `enableImplicitConversion`）；**仅**确需开放输入的端点（典型：Stripe webhook 签名原始体）显式 `.passthrough()`/`.loose()` 并注释——使宽松永远有意且可审计。
-- 审计人 / 日期：用户裁定范围与归属 · Agent 取证出案 · 2026-10-20
+- **S0 预检结果（2026-10-20·真跑通过）**：DB-free 最小 Nest+Fastify app + 全局 `StandardSchemaValidationPipe`（自定 `exceptionFactory`）+ 探针 controller `@Body/@Query({schema})`，**四门 6/6 全绿**（探针用后即焚·工作区已回净）。G1 官方管×{schema} 生效（coerce 落地）；G2 `.strict()` 顶层+嵌套均拒未知（`unrecognized_keys`）、`z.coerce` 复刻隐转、`.passthrough()` opt-out 可行；G3 `Issue[]`→`errors[{path,code,message}]` 同形 + key 透传（但需每节点挂 key·见 §6）；G4 swagger 零配置直出 inline schema（strict→`additionalProperties:false`·但走 inline 非 `$ref`·见 §6）。**→ 官方 standard-schema 路径可行性成立·无需回炉**。
+- 审计人 / 日期：用户裁定范围与归属·审计签核·Agent 取证出案与 S0 实跑 · 2026-10-20
 
 ## 9. 演变记录
 
@@ -104,8 +107,9 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 | 2026-10-20 | 0.2.0 | 用户修订（入 S0 前） | 主案改官方 standard-schema 路径（nestjs-zod 降为对照组·自研撤销）；S0 重排（S0.1 全局 StandardSchemaValidationPipe+@Body({schema})+exceptionFactory、S0.4 swagger 内置转换）；S1 依赖 zod@^4.6+pnpm why 单版本；新增官方管版本锁定对拍测判据 |
 | 2026-10-20 | 0.3.0 | 用户三裁 | ① 响应白名单序列化定官方 `@SerializeOptions({schema})`+`StandardSchemaSerializerInterceptor`（@ZodResponse 能力映射·经查 TransformInterceptor 仅包裹不做白名单·序列化系新增不替换）；② nestjs-zod 连对照组撤除·官方件为唯一路径；③ envelope/error-detail 上移 libs/contracts（与 api-contracts.ts 合并 zod 单源） |
 | 2026-10-20 | 0.3.1 | 审计通过 + ④ 裁定 | 审计门已过（用户签核·授权进 S0）；④ 裁为 strict-by-default（`strictObject()` helper）+ 开放输入端点显式 passthrough（与现 `forbidNonWhitelisted:true` 行为保真）；S3 补 helper 接线 |
+| 2026-10-20 | 0.3.2 | S0 实跑完成 | S0 四门真跑 6/6 全绿（DB-free 最小 app·探针用后焚）；回写两发现：G3 每节点需挂 i18n key（否则漏 zod 英文）→ S5/§6；G4 swagger 零配置但 schema 走 inline 非 `$ref`→ S6/§6 结构漂移人审；可行性成立·无需回炉 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.3.1 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.3.2 变更，以当前正文内容为准。
