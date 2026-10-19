@@ -11,6 +11,8 @@
 
 ## 目录结构
 
+> **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenancy/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces`/`tenants` 的 `domain/`+`application/`）实际位于 `libs/core`。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。
+
 ```
 src/
 ├── app.module.ts            # 根模块（引入全局基础设施 + 各功能上下文）
@@ -42,6 +44,33 @@ src/
 ├── config/                  # 全局基础设施：类型安全配置 + Joi 校验
 ├── logger/  mailer/  common/  i18n/   # 横切基础设施
 ```
+
+## 两包物理布局
+
+`libs/core` 是一个**分层的、可复用的 SaaS 域工具箱（`@core/saas-kit`）**——明确**不是** DDD 意义上的「共享内核（shared kernel）」：`shared-kernel/` 目录只是其最内层的原语子层，而该 kit 还额外发售跨上下文契约、以及可复用 SaaS 上下文的领域层 + 应用层。上方逻辑树按两个后端包实际映射如下：
+
+```
+libs/core   (@core/saas-kit)                 # kit——轻框架、可移植，**不含任何基础设施**
+├── shared-kernel/                           # L0 战术原语（domain/cqrs/context/errors/util）
+├── tenancy/  authorization/  platform/      # L1 跨上下文机制 + 已发布契约/端口
+└── modules/{subscriptions,workspaces,tenants}
+                                             # L2 随 kit 发售的上下文：domain/（实体 + 仓储**端口**）+ application/（CQRS 处理器）——仅端口
+
+apps/api                                     # 参考应用——所有具体实现物均在此
+├── modules/<ctx>/{api,infrastructure}       # HTTP controller + MikroORM 适配器，**绑定** core 端口（端口→适配器）
+├── database/  config/  main.ts  app.module.ts   # 全局基础设施 + DI 装配根
+└── modules/{users,auth,posts,payment,storage}   # 完整本地垂直切片（domain→application→infrastructure→api）
+
+apps/web            # 可部署前端壳（React + Vite）· F0
+packages/api-client # 由 openapi.yaml 生成的可交换类型化客户端· F1
+```
+
+**边界不变式（真正的红线——由 `fallow` + 下方逐层 import 矩阵共同守护）：**
+1. `libs/core` 任一层都**不含**基础设施 / ORM（`@mikro-orm`）/ HTTP（controller、DTO）具体物——端口在 core，适配器在 apps。
+2. 依赖方向恒为 `apps → core`；`libs/core` 绝不 import `apps/*`。
+3. 消费方（apps/api）只做 `端口 → 适配器` 绑定 + HTTP/装配。
+
+所谓「层位移」**仅当**具体实现物被塞进 `libs/core`（如 `modules/*/domain` 下出现 MikroORM 实体）时才构成违规；在 kit 内发售领域 + 应用层是本征设计、非违规。命名冻结：`@core/saas-kit` 包与 `shared-kernel/` 子层**均不重命名**（对入站 import blast radius 大、结构收益为零——kit/kernel 之辨现由文档界定、不再编码进目录名）。裁决详见：[module-core-position-kernel-vs-kit](../plans/module-core-position-kernel-vs-kit.md)。
 
 ## `users` 上下文（参考流程）
 

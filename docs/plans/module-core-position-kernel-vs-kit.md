@@ -36,18 +36,18 @@
 
 **命名结论**：保留现状、不重命名。包名 `@core/saas-kit` 已把真相说清（kit *内含* 一个 kernel），`shared-kernel/` 作子层名实相符。把 `shared-kernel/` 目录改名或整包再抽层属高 blast radius（触 366 入站 import 的公共契约）且**无收益**——歧义在「包级身份」，而包级身份已由 `saas-kit` 定名。
 
-## 4. 唯一待办：宪法对齐（高危#5 · 待签）
+## 4. 宪法对齐（高危#5 · 用户 GO 已落地）
 
-真正该修的是**文档漂移**，非代码：`architecture.md` 需
-- 把 §Directory Structure 的两包切分画准（core=L0 kernel+L1 契约+L2 域/应用端口；apps/api=infrastructure+api+装配），消除「树全在 apps/api」的旧表述；
-- 在 line 55 之外补一句 **core 身份 = 分层 saas-kit（内含 shared-kernel 子层）· 非纯 DDD kernel** 的定位声明，并写入 §3 的三不变式作为边界红线。
-
-改 `docs/specs/architecture.md`（含中英双份）= **高危#5 改宪法**，须人签核，本 plan 只出裁定与改动方案，**不自动落宪法**。
+真正修的是**文档漂移**，非代码。经用户 GO 签核，`architecture.md`（中英双份）已对齐：
+- 逻辑树顶部加「逻辑视图·非单一 apps/api/src」标注；新增 **§两包物理布局 / §Two-package physical layout** 小节，将 core（L0 kernel+L1 契约+L2 域/应用端口）与 apps/api（infra+api+装配）切分画准；
+- 写入 core 身份 = 分层 saas-kit（内含 shared-kernel 子层）·非纯 DDD kernel 的定位声明；
+- 明面三不变式（core 无 infra·方向恒 apps→core·消费方只绑适配器）作边界红线，并回链本裁决。
+代码零改动；宪法为纯文档，不触 fallow/ci 可执行链。
 
 ## 5. 审计记录
 
-- 结论：**core = saas-kit（分层工具箱，内含 shared-kernel 子层）**——裁决明确；「层位移」经取证为 kit 本征设计、三不变式当前全守；唯一真问题 = 宪法目录图漂移，修法为文档对齐（高危#5 待签）。
-- 未决项：① 是否签核落 architecture.md 对齐（高危#5·我可直接执行改法）；② 是否将 §3 三不变式补进 fallow/CI 作机制红线（当前 fallow 已覆盖方向与边界，不变式①「core 无 infra」可选加一条 grep 闸）。
+- 结论：**core = saas-kit（分层工具箱，内含 shared-kernel 子层）**——裁决明确；「层位移」经取证为 kit 本征设计、三不变式当前全守；唯一真问题 = 宪法目录图漂移，修法为文档对齐（已落地）。
+- 未决项：① 宪法对齐——**已落地**（用户 GO·architecture.md 中英双份已改）；② 是否将 §3 三不变式①「core 无 infra」另加一条 grep 闸进 CI（当前 fallow 已覆盖方向与边界，属可选加固·未做）。
 - 审计人 / 日期：用户提请「明确裁决」· Agent 取证裁定 · 2026-10-20
 
 ## 6. 演变记录
@@ -55,8 +55,9 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 裁决 | 首版：core=saas-kit 分层定位裁决 + 三不变式 + 宪法漂移待签对齐 |
+| 2026-10-20 | 0.2.0 | 用户 GO | 落宪法对齐：architecture.md 中英双份新增两包物理布局 + core 定位声明 + 三不变式红线（零代码） |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。

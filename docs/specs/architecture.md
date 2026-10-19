@@ -13,6 +13,8 @@
 
 ## Directory Structure
 
+> **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenancy/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`/`tenants`) physically live in `libs/core`. Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
+
 ```
 src/
 ├── app.module.ts            # Root module (imports shared infra + feature contexts)
@@ -45,16 +47,32 @@ src/
 ├── logger/  mailer/  common/  i18n/   # Cross-cutting infrastructure
 ```
 
-### Workspace-level layout
+### Two-package physical layout
 
-The tree above lives inside `apps/api/src`. At repo root the three-zone taxonomy covers the frontend as-is (adopted 2026-10-17, vision §4.7):
+`libs/core` is a **layered, reusable SaaS-domain kit (`@core/saas-kit`)** — explicitly **not** a DDD "shared kernel": the `shared-kernel/` folder is only its innermost primitive sub-layer, while the kit additionally ships cross-context contracts and the domain + application layers of reusable SaaS contexts. The logical tree above maps onto the two backend packages as:
 
 ```
-apps/api            # deployable: reference backend application
-apps/web            # deployable: frontend shell (React + Vite) — F0 skeleton
-libs/core           # private shared: @core/saas-kit domain/contracts
-packages/api-client # exchangeable artifact: typed client generated from openapi.yaml (F1)
+libs/core   (@core/saas-kit)                 # the kit — framework-light, portable, contains NO infrastructure
+├── shared-kernel/                           # L0 tactical primitives (domain/cqrs/context/errors/util)
+├── tenancy/  authorization/  platform/      # L1 cross-context mechanism + published contracts/ports
+└── modules/{subscriptions,workspaces,tenants}
+                                             # L2 shipped contexts: domain/ (entities + repository PORTS) + application/ (CQRS handlers) — ports only
+
+apps/api                                     # the reference application — all concretions live here
+├── modules/<ctx>/{api,infrastructure}       # HTTP controllers + MikroORM adapters that BIND core ports (ports→adapters)
+├── database/  config/  main.ts  app.module.ts   # global infra + DI composition root
+└── modules/{users,auth,posts,payment,storage}   # full local vertical slices (domain→application→infrastructure→api)
+
+apps/web            # deployable frontend shell (React + Vite) — F0
+packages/api-client # exchangeable typed client generated from openapi.yaml (F1)
 ```
+
+**Boundary invariants (the real red line — held by `fallow` + the per-layer import matrix below):**
+1. `libs/core`, at any layer, contains **no** infrastructure / ORM (`@mikro-orm`) / HTTP (controllers, DTOs) concretions — ports live in core, adapters in apps.
+2. Dependency direction is always `apps → core`; `libs/core` never imports from `apps/*`.
+3. Consumers (apps/api) only perform `ports → adapters` binding + HTTP/wiring.
+
+A "layer shift" is a violation **only** when concretions are pushed into `libs/core` (e.g. a MikroORM entity under `modules/*/domain`); shipping domain + application layers inside the kit is by design, not a violation. Naming is frozen: neither the `@core/saas-kit` package nor the `shared-kernel/` sub-layer will be renamed (large blast radius on inbound imports, zero structural gain — the kit/kernel distinction is now documented, not encoded in folder names). See the ruling: [module-core-position-kernel-vs-kit](../plans/module-core-position-kernel-vs-kit.md).
 
 ## The `users` Context (reference flow)
 
