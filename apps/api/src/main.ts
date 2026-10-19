@@ -93,8 +93,21 @@ async function bootstrap() {
 
   await fastifyInstance.register(compression as any);
   await fastifyInstance.register(helmet as any);
+  // CORS 白名单函数式回显（module-common-cors-whitelist）：`cors.origin` 现为 ALLOWED_ORIGINS
+  // 解析所得白名单。凭 `credentials:true` 必须回显**具体 origin**（非 `*`）才兼容 cookie 凭证——
+  // 无 Origin 头（同源/服务端调用）放行；命中白名单或含 `*` 回显自身；否则拒绝（不发头，浏览器阻断）。
+  const corsConfig = configService.getCorsConfig();
+  const corsAllowList = new Set<string>(
+    Array.isArray(corsConfig.origin) ? corsConfig.origin : [corsConfig.origin],
+  );
   await fastifyInstance.register(fastifyCors as any, {
-    ...configService.getCorsConfig(),
+    ...corsConfig,
+    origin: (origin: string, cb: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || origin === '*' || corsAllowList.has('*') || corsAllowList.has(origin)) {
+        return cb(null, true);
+      }
+      return cb(null, false);
+    },
     // 前端可读回关联 id（FR-2）；registry 配置无 exposedHeaders，此处只增不改。
     exposedHeaders: ['x-request-id'],
   });

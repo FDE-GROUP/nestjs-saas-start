@@ -1,3 +1,5 @@
+import { parseCorsOrigins } from './cors-origins';
+
 export default {
   app: {
     name: process.env.APP_NAME || 'NestJS SaaS Start',
@@ -20,7 +22,9 @@ export default {
   },
   cors: {
     enabled: true,
-    origin: '*',
+    // 生产 fail-closed：未配 ALLOWED_ORIGINS = 白名单空 = 拒所有跨源（同源反代不受影响）。
+    // 跨域前端必须由运维显式登记完整 origin（逗号分隔）；main.ts 函数式回显兼容 cookie 凭证。
+    origin: parseCorsOrigins(process.env.ALLOWED_ORIGINS),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   },
