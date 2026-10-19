@@ -1,0 +1,31 @@
+import { z } from 'zod';
+import { strictObject } from '../strict';
+
+// 旧 payment DTO 各字段均无自定义 message（校验失败走 class-validator 默认英文·原样透传），
+// 故此处不设 `error:`，保持「非 key 消息」语义不变；数值字段用 `z.coerce.number()` 复刻全局管的
+// `enableImplicitConversion`（@Body JSON 正常已为 number，coerce 仅对显式数字串宽容一档·与旧行为一致）。
+
+/** 创建 checkout（支付意图）入参（旧 `CreateCheckoutDto`）。 */
+export const createCheckoutSchema = strictObject({
+  amount: z.coerce.number().min(1),
+  currency: z.string().min(1),
+  description: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+export type CreateCheckout = z.infer<typeof createCheckoutSchema>;
+
+/** 创建 provider customer 入参（旧 `CreateCustomerDto`·`email` 旧 `@IsEmail` 校验格式）。 */
+export const createCustomerSchema = strictObject({
+  email: z.string().email(),
+  name: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+export type CreateCustomer = z.infer<typeof createCustomerSchema>;
+
+/** 退款入参（旧 `RefundPaymentDto`·amount 省略即全额退）。 */
+export const refundPaymentSchema = strictObject({
+  checkoutId: z.string().min(1),
+  amount: z.coerce.number().min(1).optional(),
+  reason: z.string().optional(),
+});
+export type RefundPayment = z.infer<typeof refundPaymentSchema>;
