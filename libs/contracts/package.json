@@ -1,0 +1,29 @@
+{
+  "name": "@saas/contracts",
+  "version": "0.0.0",
+  "description": "域无关的前后端共享传输契约单源（zod schema + 派生类型）·运行时/编译期/OpenAPI 文档三态同源（global-validation-zod-constitution-amendment S1）",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "zod": "^4.6.7"
+  }
+}

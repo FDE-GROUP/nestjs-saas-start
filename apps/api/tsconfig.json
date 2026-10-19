@@ -10,7 +10,9 @@
       "@common/*": ["src/common/*"],
       "@shared/*": ["src/shared/*"],
       "@shared-kernel/*": ["../../libs/core/src/shared-kernel/*"],
-      "@core/saas-kit/*": ["../../libs/core/src/*"]
+      "@core/saas-kit/*": ["../../libs/core/src/*"],
+      "@saas/contracts": ["../../libs/contracts/src/index.ts"],
+      "@saas/contracts/*": ["../../libs/contracts/src/*"]
     }
   },
   "include": ["src/**/*"],

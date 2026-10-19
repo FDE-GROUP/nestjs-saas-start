@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "prebuild": "rimraf dist",
-    "build:libs": "cd libs/core && nest build --builder swc && cd ../.. && tsc --project libs/core/tsconfig.build.json --emitDeclarationOnly",
+    "build:libs": "cd libs/core && nest build --builder swc && cd ../.. && tsc --project libs/core/tsconfig.build.json --emitDeclarationOnly && cd libs/contracts && tsc --project tsconfig.build.json && cd ../..",
     "build:client": "pnpm --filter @saas/api-client run build",
     "build:nest": "nest build --builder swc",
     "build": "pnpm run build:libs && pnpm run build:client && pnpm run build:nest",
@@ -84,6 +84,7 @@
     "@nestjs/swagger": "^12.0.2",
     "@nestjs/terminus": "^12.1.0",
     "@nestjs/throttler": "^6.7.1",
+    "@saas/contracts": "workspace:*",
     "ali-oss": "^6.23.0",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.7.7",
@@ -104,7 +105,8 @@
     "rxjs": "^7.8.2",
     "stripe": "^23.0.0",
     "tinyglobby": "0.2.17",
-    "uuid": "^14.0.3"
+    "uuid": "^14.0.3",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@better-auth/test-utils": "1.7.7",
