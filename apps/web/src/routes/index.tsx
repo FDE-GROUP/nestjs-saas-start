@@ -30,23 +30,52 @@ export const Route = createFileRoute('/')({
   // 未登录直接弹回登录页（deny-by-default 的前端映射·与后端会话墙同向）。
   loader: async () => {
     const session = await requireSession();
-    const { data: subData, error: subError } = await api.GET('/api/v1/subscriptions/current');
-    if (subError)
-      logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, subError);
+    // 先取「我可成员的组织」列表（GET /tenants）——用于判定是否需引导落租（须先于订阅取数）。
     const { data: tenantData, error: tenantError } = await api.GET('/api/v1/tenants');
     if (tenantError) logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, tenantError);
+    const tenants = tenantError ? [] : extractTenants(tenantData?.data);
+
+    // 引导落租（module-frontend-tenant-bootstrap-activation）：会话未带 activeOrganizationId 且
+    // **恰有一个**成员组织时自动 `POST /api/v1/tenants/active`（消订阅面冷 403·多组织交手动切换器·不自动择）。
+    let activeOrganizationId = session.session.activeOrganizationId;
+    let note: string | null = null;
+    if (!activeOrganizationId && tenants.length === 1 && tenants[0]?.id) {
+      const { error: activateError } = await api.POST('/api/v1/tenants/active', {
+        body: { organizationId: tenants[0].id },
+      });
+      if (activateError) {
+        logApiError({ path: '/api/v1/tenants/active', scope: 'tenant.bootstrap' }, activateError);
+        note = describeApiError(activateError);
+      } else {
+        activeOrganizationId = tenants[0].id;
+      }
+    }
+
+    // 订阅取数 gate 在「有活跃租户」之后：无活跃租户则不打（避免无谓 403）。
+    let subscription: SubscriptionResponse | null = null;
+    if (activeOrganizationId) {
+      const { data: subData, error: subError } = await api.GET('/api/v1/subscriptions/current');
+      if (subError) {
+        logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, subError);
+        note = describeApiError(subError);
+      } else {
+        subscription = subData?.data ?? null;
+      }
+    }
+
     return {
       user: session.user,
-      subscription: subError ? null : (subData?.data ?? null),
-      note: subError ? describeApiError(subError) : null,
-      tenants: tenantError ? [] : extractTenants(tenantData?.data),
+      hasActiveTenant: !!activeOrganizationId,
+      subscription,
+      note,
+      tenants,
     };
   },
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { user, subscription, note, tenants } = Route.useLoaderData();
+  const { user, hasActiveTenant, subscription, note, tenants } = Route.useLoaderData();
   const navigate = useNavigate();
 
   async function onSignOut() {
@@ -79,7 +108,19 @@ function DashboardPage() {
 
       <section className="flex flex-col gap-3">
         <SectionHeading>订阅摘要</SectionHeading>
-        {note ? <ErrorPanel message={note} /> : <SubscriptionView subscription={subscription} />}
+        {!hasActiveTenant ? (
+          <EmptyPanel
+            label={
+              tenants.length > 0
+                ? '尚无活跃租户，请在「我的租户」切换到一个组织。'
+                : '你尚未加入任何组织，请联系管理员为你分配一个租户。'
+            }
+          />
+        ) : note ? (
+          <ErrorPanel message={note} />
+        ) : (
+          <SubscriptionView subscription={subscription} />
+        )}
       </section>
     </div>
   );
