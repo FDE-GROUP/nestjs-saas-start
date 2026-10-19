@@ -6,8 +6,8 @@
  * `addMember` 为 server-only 不注册 HTTP 路由，teams 缺省未启用。 matcher 同时防御性预留
  * `add-member` / `add-team-member` 字面量（BA 若未来注册这些路由即自动覆盖，现网无路由不误伤）。
  *
- * 卡点语义：超限抛 402（Payment Required·语义=需升级档位），与 `QuotaService.assertSeats`
- * 的 S7 错误体口径一致。hook 校验与实际插入间的并发窄口按 plan §4-丙接受为软性商业限制。
+ * 卡点语义：超限抛 402（Payment Required·语义=需升级档位）——消费 `QuotaService.checkSeats`
+ * 判别结果后由本 hook 自行翻译（架构精度修宪 S2：core 不再抛 HTTP·assertSeats 已删·错误体口径不变）。hook 校验与实际插入间的并发窄口按 plan §4-丙接受为软性商业限制。
  * invitation 表查询为**读侧**（表所有权纪律条款②：读宽松·写卡 owner）。
  *
  * ORM 修宪案 B · 切片 3d（S-d3）：invitation 读由旧 ORM `select().from().where().limit()` 改走

@@ -14,6 +14,11 @@ import { describe, expect, it } from 'vitest';
  * ① `@nestjs/common` import 收缩到 **DI 最小面**（Inject/Injectable/SetMetadata/Optional/
  *    forwardRef/Logger）——框架渗入领域/应用即红；
  * ② `HttpException|HttpStatus` 字面**零出现**——HTTP 语义翻译永远归消费点/适配器（P1）。
+ *
+ * 豁免边界 rationale（评审留痕 2026-10-20）：豁免按**命名约定**（guard、decorator、middleware
+ * 三后缀）——防**事故性**污染由双锁全扫描承担（如 helper 抛 HTTP 不匹配豁免名即被第二锁拦截）；
+ * 把文件命名伪装成守卫后缀属**显式规避**而非事故，不在本守卫威胁模型内。若 kit 的 HTTP 接缝
+ * 继续增多，可演进为显式 `http` 子目录集中豁免（暂不重组·churn 无正当收益）。
  */
 
 const CORE_SRC = resolve(fileURLToPath(import.meta.url), '..');
@@ -72,7 +77,9 @@ describe('core 纯度守卫（S2 · P1/P2 可执行化）', () => {
     for (const rel of files) {
       const ids = nestCommonIdentifiers(readFileSync(join(CORE_SRC, rel), 'utf8'));
       const illegal = [...ids].filter((id) => !DI_ALLOWLIST.has(id));
-      if (illegal.length > 0) offenders.push(`${rel}: ${illegal.join(', ')}`);
+      if (illegal.length > 0) {
+        offenders.push(`${rel}: ${illegal.join(', ')}`);
+      }
     }
     expect(offenders).toEqual([]);
   });

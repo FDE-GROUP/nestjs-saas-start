@@ -89,7 +89,7 @@
 ## 4. 执行切片（依赖序 · 每片过门禁）
 
 - **S1 删 User 聚合死管道（纯收缩·无 expand 需求）**：删 `user.aggregate.ts` 行为面与事件缓冲使用、`user-registered.event.ts`、no-op dispatcher、`event-type-registry.ts` 的 `UserRegisteredEvent` 登记项；仓储返回 `UserRecord`（与其他上下文同构）。波及 users 查询 handler 返回类型（编译期可见）。README 的 ES「注册流」宣称同步修正（见未决①）。**完成判据**：删除物全仓 grep 零引用；`pnpm run ci` + `ci:db` 全绿。
-- **S2 配额函数式内核化 + core 去 HTTP 化**：`QuotaService.assertSeats` → `resolveSeats(...)` 返回 result-union，402 翻译上移消费点（含 auth `seats-quota.hook` 同片适配）；core 生产码对 `@nestjs/common` 的 import 收缩到 DI 装饰器最小面，并**新增 core 纯度守卫测试**（复用 users 正则锁范式，锁 `HttpException/HttpStatus` 零出现）；`Quota` VO（非负整数不变量）落 subscriptions 域并接入 repository 与 handler。**完成判据**：守卫测试绿；既有 seats 配额 e2e 绿。
+- **S2 配额函数式内核化 + core 去 HTTP 化**：删 `QuotaService.assertSeats`（402）——**保留既有 `checkSeats`**（本就是 result-union 判别·`SeatQuotaVerdict`·方案稿名 `resolveSeats` 未采以避免无谓改名 churn），402 翻译上移消费点（auth `seats-quota.hook` 原已消费 verdict 不受影响·QuotaGuard 新增自译）；core 生产码对 `@nestjs/common` 的 import 收缩到 DI 装饰器最小面，并**新增 core 纯度守卫测试**（复用 users 正则锁范式，锁 `HttpException/HttpStatus` 零出现）；`Quota` VO（非负整数不变量）落 subscriptions 域并接入 repository 与 handler。**完成判据**：守卫测试绿；既有 seats 配额 e2e 绿。
 - **S3 suspend-user 事务与端口修正**：session 批删改经 auth 上下文暴露的 session-store 端口，并入与状态写同一 `uow.run`。**完成判据**：状态写与 session 删同事务（gated e2e 可证：删除失败 → 状态回滚）。
 - **S4 治理迁移用例提取**：approve/suspend/resume/delete 四 handler 的三分支样板 → 共享 `transitionTenantStatus` 用例函数，handler 收敛为薄壳。**完成判据**：四 handler 体量收敛；既有治理 e2e 全绿（锁行为不漂移）。
 - **S5 宣称与宪法落笔（置于实现后·镜像纪律）**：README / architecture.md(+zh) / tooling-standards——新宣称、P1–P4 范式、上下文矩阵、目录原则；`read-models` 目录正名（read-shapes 或头注澄清「返回形状，非投影」）；**ES 路线图 Phase C 改口**：降为触发判据驱动的可选演进，终态缺省 = 审计日志 + 集成事件（Phase B shadow 即常态）。
@@ -138,6 +138,7 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版：函数式内核六边形单体修宪提案（P1–P4 范式 + S1–S6 切片 + 四未决项） |
 | 2026-10-20 | 0.1.1 | 评审补强（用户认可） | P1 增两条纯度硬约束：效果=返回值非回调注入；时钟/随机源经参数注入——挡住「效果参数化冒充纯内核」误区 |
+| 2026-10-20 | 0.2.3 | 评审小账清偿 | ①S2 落地名正名（方案稿 resolveSeats → 实采既有 checkSeats·语义等价·方案正文同步）；②seats-quota.hook 陈旧 assertSeats 注释改引 checkSeats 口径；③纯度守卫豁免边界 rationale 注明（命名约定防事故·不防伪装）；④users 端口「未来扩面禁绕行」边界提醒落注释 |
 | 2026-10-20 | 0.2.2 | 内核地图补笔 | architecture.md(+zh) 增「函数式内核件清单」表（五件·纯度判据·防退化守卫指引·体积小说明）——P1 的物理可见化 |
 | 2026-10-20 | 0.2.1 | S5 补笔 | vision.md §6 架构条对齐（宪法顶层·消除与改写后 architecture.md 的顶层矛盾）+ §7「聚合」措辞精度化——S5 宪法落笔面由五文件补齐为六 |
 | 2026-10-20 | 0.2.0 | S5 收官 | 宣称/宪法五文件落笔（README/architecture±zh/tooling/ES roadmap Phase C 改口）·read-models 头注正名 ×9·S6 条件裁定不做（amount 纯透传·P2 判据不过）·终跑 ci+fullstack 全绿——**方案 S1–S5 全部落地·结项** |

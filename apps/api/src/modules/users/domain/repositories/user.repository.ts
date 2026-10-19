@@ -28,6 +28,9 @@ export interface UserRecord {
 /**
  * Repository port defined by the domain（S1：`save` 随聚合死管道删除——用户创建走 Better Auth，
  * 生产无应用层 save 用例；端口收敛为读 + PIPL 硬删）。
+ *
+ * ⚠ 未来边界（评审留痕）：若出现应用内直接建号/改号用例（如平台侧手工建 user 行），须**扩本
+ * 端口**（如新增 create/update 语义），禁绕过端口直捅 ORM entity——那正是 S3 修掉的违规模式。
  */
 export interface UserRepository {
   findById(id: string): Promise<UserRecord | null>;
