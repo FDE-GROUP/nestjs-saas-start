@@ -4,7 +4,6 @@ import type {
   QuotaStore,
 } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
 import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -33,14 +32,19 @@ describe('QuotaService (S7 · FR-7 seat-quota choke-point)', () => {
     expect(await svc.currentSubscription('t1')).toBeNull();
   });
 
-  it('effectiveSeatsLimit takes the active subscription snapshot', async () => {
+  it('effectiveSeatsLimit takes the active subscription snapshot (Quota VO)', async () => {
     const { svc } = makeService({ sub: { plan: 'pro', seatsLimit: 42, providerCustomerId: null } });
-    expect(await svc.effectiveSeatsLimit('t1')).toBe(42);
+    expect((await svc.effectiveSeatsLimit('t1')).value).toBe(42);
+  });
+
+  it('effectiveSeatsLimit fails loud on a corrupt negative snapshot (P2 不变量·原生 Error)', async () => {
+    const { svc } = makeService({ sub: { plan: 'pro', seatsLimit: -3, providerCustomerId: null } });
+    await expect(svc.effectiveSeatsLimit('t1')).rejects.toThrow(/非负安全整数/);
   });
 
   it('effectiveSeatsLimit falls back to the FREE plan when no active subscription (裁②)', async () => {
     const { svc } = makeService({ sub: null });
-    expect(await svc.effectiveSeatsLimit('t1')).toBe(FREE_PLAN.seatsLimit);
+    expect((await svc.effectiveSeatsLimit('t1')).value).toBe(FREE_PLAN.seatsLimit.value);
   });
 
   it('currentSeats counts members as a number', async () => {
@@ -60,32 +64,6 @@ describe('QuotaService (S7 · FR-7 seat-quota choke-point)', () => {
       used: 2,
     });
     expect(await svc.checkSeats('t1', 1)).toEqual({ ok: false, used: 2, limit: 2 });
-  });
-
-  it('assertSeats throws 402 when over quota', async () => {
-    const { svc } = makeService({
-      sub: { plan: 'pro', seatsLimit: 1, providerCustomerId: null },
-      used: 1,
-    });
-    await expect(svc.assertSeats('t1', 1)).rejects.toBeInstanceOf(HttpException);
-  });
-
-  it('assertSeats rejection carries HTTP 402 (Payment Required)', async () => {
-    const { svc } = makeService({
-      sub: { plan: 'pro', seatsLimit: 1, providerCustomerId: null },
-      used: 1,
-    });
-    await expect(svc.assertSeats('t1', 1)).rejects.toMatchObject({
-      status: HttpStatus.PAYMENT_REQUIRED,
-    });
-  });
-
-  it('assertSeats resolves when within quota', async () => {
-    const { svc } = makeService({
-      sub: { plan: 'pro', seatsLimit: 10, providerCustomerId: null },
-      used: 1,
-    });
-    await expect(svc.assertSeats('t1', 1)).resolves.toBeUndefined();
   });
 
   it('snapshot assembles the view from the active subscription (plan/limit/used/remaining/mapping)', async () => {
@@ -108,9 +86,9 @@ describe('QuotaService (S7 · FR-7 seat-quota choke-point)', () => {
     expect(await svc.snapshot('t1')).toEqual({
       hasSubscription: false,
       plan: FREE_PLAN.plan,
-      seatsLimit: FREE_PLAN.seatsLimit,
+      seatsLimit: FREE_PLAN.seatsLimit.value,
       used: 0,
-      remaining: FREE_PLAN.seatsLimit,
+      remaining: FREE_PLAN.seatsLimit.value,
       providerCustomerId: null,
     });
   });

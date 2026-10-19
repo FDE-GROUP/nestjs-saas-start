@@ -11,6 +11,7 @@ import {
 } from '../../../domain/repositories/subscription.repository';
 import { QuotaService } from '../../../quota/quota.service';
 import { resolvePlanDef } from '../../../quota/tenant-plans';
+import { Quota } from '../../../quota/quota.vo';
 import type { TenantSubscriptionView } from '../../read-models/subscription.read-model';
 import { CreateSubscriptionCommand } from '../create-subscription.command';
 
@@ -38,7 +39,8 @@ export class CreateSubscriptionCommandHandler
     const customer = await this.customers.provisionCustomer(command.customerEmail);
     await this.subscriptions.create({
       plan: command.plan,
-      seatsLimit: command.seatsLimit ?? planDef.seatsLimit,
+      // P2：显式覆盖与档位默认两源统一经 Quota.of 摄入（非负整数不变量·违约 fail-loud）。
+      seatsLimit: Quota.of(command.seatsLimit ?? planDef.seatsLimit.value).value,
       storageQuota: command.storageQuota ?? planDef.storageQuota ?? null,
       apiQuota: command.apiQuota ?? planDef.apiQuota ?? null,
       provider: customer.providerId,

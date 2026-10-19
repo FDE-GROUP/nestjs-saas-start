@@ -1,5 +1,6 @@
 /**
  * S7 · FR-7/FR-8/D5 订阅档位与配额常量（纯值·无 IO）。
+ * 架构精度修宪 S2：seatsLimit 经 Quota VO 携带非负整数不变量（常量定义期即防护）。
  *
  * 配额值来自 Plan（§147）：每档位携带 `seatsLimit`（本片唯一落地维度），
  * `storageQuota`/`apiQuota` 为后续维度占位。订阅行也各自携带 `seatsLimit`
@@ -11,6 +12,8 @@
  * `suspended`：治理挂起的可恢复关闭（module-es-first-real-consumer 裁点丙·租户被 suspend ⇒ 当前行置
  * suspended，resume 回 active）；与 `cancelled`（不可逆终止·恢复新开行）并存不冲突。
  * quota 读面仅滤 `ACTIVE`，suspended/expired/cancelled 自然排除→回落 FREE_PLAN。 */
+import { Quota } from './quota.vo';
+
 export type SubscriptionStatus = 'active' | 'suspended' | 'expired' | 'cancelled';
 
 export const SUBSCRIPTION_STATUS = {
@@ -22,19 +25,20 @@ export const SUBSCRIPTION_STATUS = {
 
 export interface TenantPlan {
   readonly plan: string;
-  readonly seatsLimit: number;
+  /** 座位限额（P2 · Quota VO·非负安全整数不变量）；storage/api 为占位维度仍裸 number。 */
+  readonly seatsLimit: Quota;
   readonly storageQuota?: number;
   readonly apiQuota?: number;
 }
 
 /** 免费默认档：租户无 active 订阅时的回落（带 seats 限额·裁②）。 */
-export const FREE_PLAN: TenantPlan = { plan: 'free', seatsLimit: 5 };
+export const FREE_PLAN: TenantPlan = { plan: 'free', seatsLimit: Quota.of(5) };
 
 /** 档位目录（provisioning 缺省限额来源·可扩展）。 */
 export const TENANT_PLANS: Record<string, TenantPlan> = {
   [FREE_PLAN.plan]: FREE_PLAN,
-  pro: { plan: 'pro', seatsLimit: 50 },
-  enterprise: { plan: 'enterprise', seatsLimit: Number.MAX_SAFE_INTEGER },
+  pro: { plan: 'pro', seatsLimit: Quota.of(50) },
+  enterprise: { plan: 'enterprise', seatsLimit: Quota.of(Number.MAX_SAFE_INTEGER) },
 };
 
 /** 取档位定义（未知档位回落免费档）。 */
