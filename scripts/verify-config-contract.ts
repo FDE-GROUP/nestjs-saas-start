@@ -4,7 +4,7 @@
 // 三判据（全部**静态声明面**校验，与 compose 门禁 verify-compose-contract 互补不互替）：
 //   ① 样例生效键 ⊆（Joi schema 键 ∪ 代码读取键）→ 无死配置（声明有、实现无持有）；
 //   ② 代码读取键 ⊆（样例生效 ∪ 样例注释态 ∪ 显式白名单）→ 无隐藏必需项；
-//   ③ Joi `.required()` 键全部出现在 docker-compose.yml 的 services.app.environment → D4 已闭合判据不回潮。
+//   ③ schema 必填键（zod 语义：无 optional/default）全部出现在 docker-compose.yml 的 services.app.environment → D4 已闭合判据不回潮。
 //
 // 口径硬约束（config 片 §1 教训的制度化）：代码读取集必须双模式扫描——`process.env` 点属性直读
 // 与 config 服务 `get('键名')` 字面量取键——只扫其一会重演 MAIL_* 型假阳性与 F8 型陈旧账。
@@ -104,7 +104,7 @@ function parseEnvKeys(file: string, text: string) {
 const example = parseEnvKeys(ENV_EXAMPLE_FILE, readFileSync(ENV_EXAMPLE_FILE, 'utf8'));
 const realEnv = parseEnvKeys(ENV_FILE, readFileSync(ENV_FILE, 'utf8'));
 
-// ── Joi schema 键与 required 集：baseSchema 块行级静态解析 ──────────────────────
+// ── schema 键与 required 集：baseSchema 块行级静态解析（S2 换轨 zod·键解析口径不变） ──
 const schemaText = readFileSync(CONFIG_MODULE_FILE, 'utf8');
 const blockStart = schemaText.indexOf('const baseSchema = {');
 const blockEnd = schemaText.indexOf('const betterAuthSchema');
@@ -120,7 +120,9 @@ const joiRequiredKeys = new Set<string>();
   let current: string | null = null;
   let chunk = '';
   const flush = () => {
-    if (current && /\.required\(\)/.test(chunk)) joiRequiredKeys.add(current);
+    // zod 语义推断必需键：无 `.optional(` 且无 `.default(` 即必填（等价旧 Joi `.required()`·判据③强度不降）。
+    if (current && !/\.optional\(/.test(chunk) && !/\.default\(/.test(chunk))
+      joiRequiredKeys.add(current);
   };
   for (const line of lines) {
     const keyMatch = /^ {4}([A-Z][A-Z0-9_]*):\s*(.*)$/.exec(line);
@@ -176,7 +178,7 @@ else
 const missingInCompose = [...joiRequiredKeys].filter((k) => !composeKeys.has(k));
 if (missingInCompose.length === 0)
   ok(
-    `判据③ Joi .required() 键 ⊆ compose app environment（${joiRequiredKeys.size} 键全在编排·D4 不回潮）`,
+    `判据③ 必填键（无 optional/default）⊆ compose app environment（${joiRequiredKeys.size} 键全在编排·D4 不回潮）`,
   );
 else bad(`判据③ required 键未上编排: ${missingInCompose.join(', ')}`);
 
