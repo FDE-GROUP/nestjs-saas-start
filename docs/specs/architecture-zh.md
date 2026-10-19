@@ -9,6 +9,20 @@
 - **Event Sourcing（确定采纳·分期递进）**：人澄清 2026-10-14——ES 为确定的架构目标，不再以「某上下文真需要才做」为前提；分期节奏与审计/迁移门禁维持。当前 Phase B 影子追加（event 表审计·CRUD 仍为唯一真相源）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于架构精度修宪 S1 删除）。**Phase C（投影/saga）降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
 
+### 函数式内核件清单（P1 的物理地图·架构精度修宪补笔）
+
+P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度可证**（零 import 或仅词表/自家 VO）+ **被外壳驱动**（load → 裁决 → write 全程 UoW）。纯度由 `libs/core/src/core-purity.test.ts` 双锁强制（`@nestjs/common` import ⊆ DI 最小面 + `HttpException/HttpStatus` 零出现）。新裁决一律以此为形：
+
+| 内部件 | 职责 | 纯度 |
+|---|---|---|
+| `core/modules/tenants/lifecycle/tenant-lifecycle.ts` | 租户/用户**共用**状态机迁移表 + `canTransition`（result-union·旗舰样例） | 零 import |
+| `core/authorization/instance-predicate.ts` | RBAC 查询级谓词语法 → DB 谓词编译 | 零 import |
+| `apps/api …/authorization/domain/tenant-rbac-policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
+| `core/modules/subscriptions/quota/tenant-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
+| `core/modules/subscriptions/quota/quota.vo.ts` | Quota 非负整数不变量（P2 唯一认定 VO） | 零 import |
+
+> 体积小（合计约数百行）是**域的真相**而非缺陷：复杂度在隔离/治理/配额的技术架构，不在业务规则密度——多数代码是外壳（端口/适配器/守卫/UoW）。内核的可复用性见 `user-status.service` 对 `canTransition` 的直接复用（一表服务两条生命周期）。
+
 ## 目录结构
 
 > **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenancy/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces`/`tenants` 的 `domain/`+`application/`）实际位于 `libs/core`。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。

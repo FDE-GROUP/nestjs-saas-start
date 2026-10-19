@@ -11,6 +11,20 @@
 - **Event Sourcing (committed, phased)**: confirmed architectural goal (human clarification 2026-10-14) — no longer gated on "a context actually needs it", while phasing and audit/migration gates stand. Phase B shadow-append is current (event-table audit; CRUD remains the single source of truth). Events are published from the service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). **Phase C (projections/sagas) is downgraded to a trigger-criteria-driven optional evolution** — default end state = audit log + integration events. See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
 - **EDA (event-driven architecture, committed)**: domain events are the **only** cross-context integration mechanism; evolution path = in-process dispatch (landed) → transactional outbox for durable publish (Phase B) → cross-process broker subscription (only after microservice triggers fire, see [microservice-readiness.md](../plans/microservice-readiness.md)).
 
+### Functional-core inventory (physical map of P1 · precision amendment addendum)
+
+P1 is a pattern, not a folder — kernel pieces live across contexts. Admission criteria: **provable purity** (zero imports, or vocabulary/self-owned VO only) + **driven by the shell** (load → decide → write inside a UoW). Purity is enforced by `libs/core/src/core-purity.test.ts` (dual lock: `@nestjs/common` imports ⊆ DI minimal surface + zero `HttpException/HttpStatus`). New decisions follow this shape:
+
+| Kernel piece | Responsibility | Purity |
+|---|---|---|
+| `core/modules/tenants/lifecycle/tenant-lifecycle.ts` | Shared tenant/**user** state-machine transition table + `canTransition` (result-union · reference sample) | zero imports |
+| `core/authorization/instance-predicate.ts` | RBAC query-level predicate grammar → DB predicate compilation | zero imports |
+| `apps/api …/authorization/domain/tenant-rbac-policy.ts` | Role key/conditions policy gates | vocabulary only |
+| `core/modules/subscriptions/quota/tenant-plans.ts` | Plan catalog + `resolvePlanDef` | self-owned VO only |
+| `core/modules/subscriptions/quota/quota.vo.ts` | Quota non-negative-integer invariant (the single P2 VO) | zero imports |
+
+> Its small size (a few hundred lines total) reflects **the domain's truth**, not a gap: complexity lives in the technical architecture of isolation/governance/quota, not in business-rule density — most code is shell (ports/adapters/guards/UoW). For kernel reuse see `user-status.service` reusing `canTransition` directly (one table serving two lifecycles).
+
 ## Directory Structure
 
 > **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenancy/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`/`tenants`) physically live in `libs/core`. Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
