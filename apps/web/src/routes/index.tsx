@@ -1,6 +1,7 @@
 import type { components } from '@saas/api-client';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Feedback, SubmitButton } from '../components/forms';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { type FormEvent, useState } from 'react';
+import { Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { api } from '../lib/api';
 import { signOut } from '../lib/auth';
@@ -108,14 +109,10 @@ function DashboardPage() {
 
       <section className="flex flex-col gap-3">
         <SectionHeading>订阅摘要</SectionHeading>
-        {!hasActiveTenant ? (
-          <EmptyPanel
-            label={
-              tenants.length > 0
-                ? '尚无活跃租户，请在「我的租户」切换到一个组织。'
-                : '你尚未加入任何组织，请联系管理员为你分配一个租户。'
-            }
-          />
+        {!hasActiveTenant && tenants.length === 0 ? (
+          <TenantOnboardingPanel />
+        ) : !hasActiveTenant ? (
+          <EmptyPanel label="尚无活跃租户，请在「我的租户」切换到一个组织。" />
         ) : note ? (
           <ErrorPanel message={note} />
         ) : (
@@ -185,5 +182,50 @@ function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
       </div>
       <Feedback error={switchAction.error} success={switchAction.success} />
     </section>
+  );
+}
+
+/**
+ * 零组织新注册引导（module-frontend-tenant-onboarding）：承 A 片 §4 发现项，替此前纯文案死胡同。
+ * 两条**合规**出路——① 申请创建自有组织（走 `POST /api/v1/tenants/applications`·落 `pending_approval`
+ * 经平台审批·FR-1/FR-12）；② 经邀请链接加入既有组织（引导至既有 `/invitations` 页）。
+ * **不**自动建活跃组织（直冲 S4 审批制·见 plan §4-① 建议拒绝），MVP 以静态 pending 回执呈现。
+ */
+function TenantOnboardingPanel() {
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const applyAction = useAction();
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    await applyAction.run({
+      path: '/api/v1/tenants/applications',
+      method: 'POST',
+      scope: 'tenant.apply',
+      successMessage: '已提交，等待平台审批。',
+      thunk: () => api.POST('/api/v1/tenants/applications', { body: { name, slug } }),
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4">
+      <p className="text-sm text-slate-600">
+        你尚未加入任何组织。可申请创建自己的组织（提交后进入平台审批），或经由邀请链接加入既有组织。
+      </p>
+      <FormWrap onSubmit={onSubmit} className="flex flex-col gap-3">
+        <Field label="组织名称" name="name" value={name} onChange={setName} required />
+        <Field label="组织标识（slug）" name="slug" value={slug} onChange={setSlug} required />
+        <div>
+          <SubmitButton pending={applyAction.pending}>申请创建组织</SubmitButton>
+        </div>
+      </FormWrap>
+      <Feedback error={applyAction.error} success={applyAction.success} />
+      <p className="text-sm text-slate-500">
+        收到邀请？
+        <Link to="/invitations" className="ml-1 text-blue-600 hover:underline">
+          前往接受邀请
+        </Link>
+      </p>
+    </div>
   );
 }

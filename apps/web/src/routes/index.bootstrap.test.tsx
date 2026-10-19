@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { routeTree } from '../routeTree.gen';
 
@@ -11,7 +11,7 @@ import { routeTree } from '../routeTree.gen';
  * - 无 active + 恰一个成员组织 → 自动 `POST /tenants/active`（body=该 org）+ 订阅取数 → SubscriptionView；
  * - 已有 active → 不自动激活、直接订阅取数；
  * - 无 active + 多组织 → 不自动择（交手动切换器）·订阅面不打·呈现切换引导；
- * - 无 active + 零组织 → 不激活·订阅面不打·呈现「联系管理员」引导。
+ * - 无 active + 零组织 → 不激活·订阅面不打·呈现 onboarding 引导（申请入口 + 邀请链接）。
  */
 const mocks = vi.hoisted(() => ({
   GET: vi.fn(),
@@ -103,14 +103,40 @@ describe('dashboard loader 引导落租', () => {
     expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
   });
 
-  it('无 active + 零组织 → 不激活·订阅面不打·呈现「联系管理员」引导', async () => {
+  it('无 active + 零组织 → 不激活·订阅面不打·呈现 onboarding 引导（申请入口 + 邀请链接）', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
     stubGet([]);
     renderAt('/');
     await vi.waitFor(() =>
-      expect(screen.getByText('你尚未加入任何组织，请联系管理员为你分配一个租户。')).toBeTruthy(),
+      expect(screen.getByRole('button', { name: '申请创建组织' })).toBeTruthy(),
     );
+    expect(screen.getByText(/你尚未加入任何组织/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: '前往接受邀请' })).toBeTruthy();
     expect(mocks.POST).not.toHaveBeenCalled();
     expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
+  });
+
+  it('零组织 onboarding 提交申请 → POST /tenants/applications（body name+slug）·回执 pending 提示', async () => {
+    mocks.requireSession.mockResolvedValue(session(undefined));
+    stubGet([]);
+    const { container } = renderAt('/');
+    await vi.waitFor(() =>
+      expect(screen.getByRole('button', { name: '申请创建组织' })).toBeTruthy(),
+    );
+    fireEvent.change(container.querySelector('input[name="name"]') as HTMLInputElement, {
+      target: { value: 'Acme' },
+    });
+    fireEvent.change(container.querySelector('input[name="slug"]') as HTMLInputElement, {
+      target: { value: 'acme' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '申请创建组织' }));
+    await vi.waitFor(() =>
+      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/tenants/applications', {
+        body: { name: 'Acme', slug: 'acme' },
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status').textContent).toContain('已提交，等待平台审批'),
+    );
   });
 });
