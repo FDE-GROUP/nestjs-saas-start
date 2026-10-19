@@ -5,6 +5,7 @@ import { type I18nValidationException, I18nValidationExceptionFilter } from 'nes
 import { LoggerModule } from '../logger/logger.module';
 import { fromValidationErrors, type ResponseErrorDetail } from './errors/response-error-detail';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { StandardSchemaValidationExceptionFilter } from './filters/standard-schema-validation.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 
@@ -51,6 +52,13 @@ const validationErrorBodyFormatter = (
           detailedErrors: false,
           responseBodyFormatter: validationErrorBodyFormatter,
         }),
+    },
+    // S5 官方 standard-schema 校验渲染器（global-validation-zod-constitution-amendment）：
+    // 排在 HttpExceptionFilter（@Catch() 兜底）之后·与 i18n 校验过滤器并列·各自 @Catch 类型互斥
+    //（本类只捕 StandardSchemaValidationException·class-validator 路由仍由上方 i18n 过滤器接管）。
+    {
+      provide: APP_FILTER,
+      useClass: StandardSchemaValidationExceptionFilter,
     },
     {
       provide: APP_INTERCEPTOR,
