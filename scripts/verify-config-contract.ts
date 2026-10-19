@@ -2,7 +2,7 @@
 // 口径固化为可复算脚本（plan module-config-seed-fail-loud-and-contract-gate 切片 F·人裁②执行）。
 //
 // 三判据（全部**静态声明面**校验，与 compose 门禁 verify-compose-contract 互补不互替）：
-//   ① 样例生效键 ⊆（Joi schema 键 ∪ 代码读取键）→ 无死配置（声明有、实现无持有）；
+//   ① 样例生效键 ⊆（zod schema 键 ∪ 代码读取键）→ 无死配置（声明有、实现无持有）；
 //   ② 代码读取键 ⊆（样例生效 ∪ 样例注释态 ∪ 显式白名单）→ 无隐藏必需项；
 //   ③ schema 必填键（zod 语义：无 optional/default）全部出现在 docker-compose.yml 的 services.app.environment → D4 已闭合判据不回潮。
 //
@@ -10,7 +10,7 @@
 // 与 config 服务 `get('键名')` 字面量取键——只扫其一会重演 MAIL_* 型假阳性与 F8 型陈旧账。
 // （本段刻意不写这两种模式的字面形：本脚本自身在扫描面内，示例即毒例——首轮实跑已自捕。）
 // 扫描范围钉死 `apps/**` + `libs/**` + `scripts/**`（排除 node_modules/dist/.git/*.test.ts/*.d.ts）。
-// Joi 键取 `config.module.ts` 源内 `baseSchema` 块静态解析：`createSchemaForEnv` 未导出，
+// zod 键取 `config.module.ts` 源内 `baseSchema` 块静态解析：`createSchemaForEnv` 未导出，
 // 为门禁改源码导出属行为面变更，故口径写死在本脚本供后人复算（config 片 §4.6 同风）。
 // 白名单初始集 = config 片 §4.6 已甄别的 `scripts/` 面三键（脚本从不装载 .env，上图即制造 F3 同型缺陷）。
 //
@@ -113,8 +113,8 @@ if (blockStart < 0 || blockEnd < 0 || blockEnd < blockStart) {
     `${CONFIG_MODULE_FILE} 找不到 baseSchema/betterAuthSchema 边界（结构走样，口径需人工同步）`,
   );
 }
-const joiKeys = new Set<string>();
-const joiRequiredKeys = new Set<string>();
+const schemaKeys = new Set<string>();
+const requiredSchemaKeys = new Set<string>();
 {
   const lines = schemaText.slice(blockStart, blockEnd).split(/\r?\n/);
   let current: string | null = null;
@@ -122,7 +122,7 @@ const joiRequiredKeys = new Set<string>();
   const flush = () => {
     // zod 语义推断必需键：无 `.optional(` 且无 `.default(` 即必填（等价旧 Joi `.required()`·判据③强度不降）。
     if (current && !/\.optional\(/.test(chunk) && !/\.default\(/.test(chunk))
-      joiRequiredKeys.add(current);
+      requiredSchemaKeys.add(current);
   };
   for (const line of lines) {
     const keyMatch = /^ {4}([A-Z][A-Z0-9_]*):\s*(.*)$/.exec(line);
@@ -130,15 +130,15 @@ const joiRequiredKeys = new Set<string>();
       flush();
       current = keyMatch[1];
       chunk = keyMatch[2];
-      joiKeys.add(current);
+      schemaKeys.add(current);
     } else if (current) {
       chunk += line;
     }
   }
   flush();
 }
-if (joiKeys.size < 20) {
-  throw new Error(`Joi 键解析数 ${joiKeys.size} 异常偏低（解析口径与源码漂移？拒绝带病判卷）`);
+if (schemaKeys.size < 20) {
+  throw new Error(`zod 键解析数 ${schemaKeys.size} 异常偏低（解析口径与源码漂移？拒绝带病判卷）`);
 }
 
 // ── compose services.app.environment 键集（list/map 两形态统一） ─────────────────
@@ -159,9 +159,9 @@ const composeKeys = new Set<string>(
 // ── 三判据 ────────────────────────────────────────────────────────────────────
 console.log(`${BOLD}── Verify config contract (four-corner static check) ──${RST}`);
 
-const deadInExample = [...example.active].filter((k) => !joiKeys.has(k) && !codeKeys.has(k));
+const deadInExample = [...example.active].filter((k) => !schemaKeys.has(k) && !codeKeys.has(k));
 if (deadInExample.length === 0)
-  ok(`判据① 样例生效键 ⊆（Joi ∪ 代码读取）·无死配置（${example.active.size} 键全有持有）`);
+  ok(`判据① 样例生效键 ⊆（zod ∪ 代码读取）·无死配置（${example.active.size} 键全有持有）`);
 else bad(`判据① 死配置（样例声明、无人消费）: ${deadInExample.join(', ')}`);
 
 const declaredSet = new Set([...example.active, ...example.commented]);
@@ -175,20 +175,20 @@ else
     `判据② 代码读取但样例/白名单皆未声明: ${hiddenRequired.map((k) => `${k}@${codeKeyOrigin.get(k)}`).join(', ')}`,
   );
 
-const missingInCompose = [...joiRequiredKeys].filter((k) => !composeKeys.has(k));
+const missingInCompose = [...requiredSchemaKeys].filter((k) => !composeKeys.has(k));
 if (missingInCompose.length === 0)
   ok(
-    `判据③ 必填键（无 optional/default）⊆ compose app environment（${joiRequiredKeys.size} 键全在编排·D4 不回潮）`,
+    `判据③ 必填键（无 optional/default）⊆ compose app environment（${requiredSchemaKeys.size} 键全在编排·D4 不回潮）`,
   );
 else bad(`判据③ required 键未上编排: ${missingInCompose.join(', ')}`);
 
 // ── 四组集合存照（可复核·config 片 §4-1 口径） ──────────────────────────────────
 const bothLive = [...codeKeys].filter((k) => declaredSet.has(k)).length;
-const onlyExample = [...example.active].filter((k) => !codeKeys.has(k) && !joiKeys.has(k));
+const onlyExample = [...example.active].filter((k) => !codeKeys.has(k) && !schemaKeys.has(k));
 const onlyRealEnv = [...realEnv.active].filter((k) => !declaredSet.has(k));
 console.log(
   `${DIM}存照: 代码读取 ${codeKeys.size} · 样例生效 ${example.active.size}/注释态 ${example.commented.size} · ` +
-    `Joi ${joiKeys.size}(required ${joiRequiredKeys.size}) · compose ${composeKeys.size} · .env 生效 ${realEnv.active.size}`,
+    `zod ${schemaKeys.size}(required ${requiredSchemaKeys.size}) · compose ${composeKeys.size} · .env 生效 ${realEnv.active.size}`,
 );
 console.log(
   `${DIM}四角: 两皆 ${bothLive} | 仅样例(死配置) ${onlyExample.length || '-'} | ` +
