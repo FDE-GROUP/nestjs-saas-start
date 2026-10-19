@@ -2,7 +2,7 @@
 
 > 适用范围: `全局（宪法 · 工具红线 · 公共契约 · 新工作区包）` ← 校验技术栈换轨，覆盖配置层 + 后端请求/响应层 + 前端表单层
 > 关联: 外部评审后的技术栈裁定 · `docs/specs/architecture.md`(+zh) · `docs/specs/tooling-standards.md` §3 · `AGENTS.md` §3/§5 · 先例 `global-orm-mikro-constitution-amendment.md`（同量级换轨范式）· 本会话 nestjs-zod 评估
-> 性质: **修宪提案（审前方案·不写实现码）**；用户已裁定「zod 统一全栈校验 · 一次性全栈 · 共享契约居新包 libs/contracts」；v0.2.0 主案改**官方 standard-schema 路径**；**v0.3.0：完全不采用 nestjs-zod（连对照组亦撤）·官方 standard-schema 为唯一路径**；响应白名单序列化经官方 `@SerializeOptions({schema})`；envelope/error-detail 契约上移 libs/contracts
+> 性质: **修宪提案（审前方案·不写实现码）**；用户已裁定「zod 统一全栈校验 · 一次性全栈 · 共享契约居新包 libs/contracts」；v0.2.0 主案改**官方 standard-schema 路径**；**v0.3.0：完全不采用 nestjs-zod（连对照组亦撤）·官方 standard-schema 为唯一路径**；响应白名单序列化经官方 `@SerializeOptions({schema})`；envelope/error-detail 契约上移 libs/contracts；**v0.3.1：④ 已裁（strict-by-default + 显式 opt-out）·审计门已过·进 S0**
 > 状态**不在此**：审计 / 执行状态单源于 [`README.md`](./README.md) 索引表
 
 ## 1. 决定与动因（人裁）
@@ -50,7 +50,7 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
   4. `@nestjs/swagger` 内置 **standard-schema 转换**（`standardSchemaConverter`/`StandardJSONSchemaV1`）经 `openapi-codegen.js` 直出 `openapi.yaml`——判明 zod 侧是否**零配置**或仅需薄封装 `z.toJSONSchema` → `openapi:drift` 可绿。
 - **S1** 新建 `libs/contracts` 包骨架 + **直依赖 `zod@^4.6`**（与 better-auth 传递的 4.6.7 对齐）+ `pnpm why zod` **单一版本**判据（与 BA 共版·禁双 zod 实例）+ workspace/tsconfig/biome/fallow 接线（不引 nestjs-zod）。
 - **S2** 配置层 Joi→zod：改 `config.module.ts`（`StandardSchemaV1`/`validate`）+ 移除 `as any`。
-- **S3** 契约上移：将 16 个请求 DTO **及响应 envelope/error-detail** 的 zod schema 均落 `libs/contracts`；apps/api 侧经 `@Body/@Param/@Query({schema})` 消费请求、`@SerializeOptions({schema})` 消费响应（无需 class DTO 包装·类型取 `z.infer`）；`api-contracts.ts` 的 `ApiEnvelope/ApiErrorDetail/ApiErrorResponse` `@ApiProperty` 类退为 contracts 派生。
+- **S3** 契约上移：将 16 个请求 DTO **及响应 envelope/error-detail** 的 zod schema 均落 `libs/contracts`；apps/api 侧经 `@Body/@Param/@Query({schema})` 消费请求、`@SerializeOptions({schema})` 消费响应（无需 class DTO 包装·类型取 `z.infer`）；`api-contracts.ts` 的 `ApiEnvelope/ApiErrorDetail/ApiErrorResponse` `@ApiProperty` 类退为 contracts 派生。**契约提供 `strictObject()` helper（默认严格）**，开放输入端点逐 schema 显式 `.passthrough()`+注释（见 §8 ④）。
 - **S4** 校验管换轨：`validation-pipe.ts` 工厂由 `I18nValidationPipe` 改**官方 `StandardSchemaValidationPipe`**（含 `exceptionFactory`·保持 SSOT 单源·main.ts/e2e 装配点不动）。
 - **S5** 错误契约 + i18n：`ResponseErrorDetail`/`ErrorResponse` 契约**上移 `libs/contracts` 为 zod 单源**；`response-error-detail.ts` 出 `Issue[]`→明细 展平（不再依赖 class-validator）；`Issue[]`→i18n 本地化过滤器；`ErrorResponse` 外形逐字不变。
 - **S6** OpenAPI SSOT 重生成：经 `@nestjs/swagger` 内置 standard-schema 转换（必要时薄封装 `z.toJSONSchema`）、重生成 `openapi.yaml`（**yaml 本体漂移须人审 diff**）、重生成 api-client typed、`openapi:drift` 转绿。
@@ -92,8 +92,8 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 
 ## 8. 审计记录
 
-- 结论：方向经用户裁定采纳；范围=**一次性全栈（配置+请求+响应+前端）· 共享契约居新建 `libs/contracts`**；**唯一路径=官方 standard-schema 件（nestjs-zod 完全不采用·自研撤销）**。本 plan 为审前方案，含 S0 存在性预检门与 S1–S10 依赖序；**未过审计门 + 未逐片签核前不写实现码**。
-- 未决项（经 v0.3.0 收敛）：① 响应序列化定官方 `@SerializeOptions({schema})`（@ZodResponse 能力映射）；② ~~自研 pipe~~ / ~~nestjs-zod 对照组~~ → **均撤销**；③ **已裁**：envelope/error-detail 一并上移 `libs/contracts`（与 `api-contracts.ts` 合并为 zod 单源）；④ 待定：`.strict()` 全域启用与既有 `enableImplicitConversion` 宽松输入是否冲突（逐 schema 裁）。
+- 结论：方向经用户裁定采纳；范围=**一次性全栈（配置+请求+响应+前端）· 共享契约居新建 `libs/contracts`**；**唯一路径=官方 standard-schema 件（nestjs-zod 完全不采用·自研撤销）**。**审计门已过（用户 2026-10-20 签核审计通过·授权进 S0）**；S1–S10 实施阶段逐片仍遵高危签核（改宪法/摘依赖/改契约/CI）不自行越界。
+- 未决项（v0.3.1 已全部收敛）：① 响应序列化定官方 `@SerializeOptions({schema})`（@ZodResponse 能力映射）；② ~~自研 pipe~~ / ~~nestjs-zod 对照组~~ → **均撤销**；③ **已裁**：envelope/error-detail 一并上移 `libs/contracts`（与 `api-contracts.ts` 合并为 zod 单源）；④ **已裁（Agent 定）·strict-by-default + 显式 opt-out**：现管已配 `forbidNonWhitelisted:true`（今天多传未知字段本就 400），故 `.strict()` 为**行为保真非回归**（不加反而是静默放开）；每层对象（含嵌套）默认严格，由 `libs/contracts` 的 `strictObject()` helper 承为书写默认以消漏配 footgun；query 数字转换用 `z.coerce`（等价 `enableImplicitConversion`）；**仅**确需开放输入的端点（典型：Stripe webhook 签名原始体）显式 `.passthrough()`/`.loose()` 并注释——使宽松永远有意且可审计。
 - 审计人 / 日期：用户裁定范围与归属 · Agent 取证出案 · 2026-10-20
 
 ## 9. 演变记录
@@ -103,8 +103,9 @@ apps/web     → 复用同一 contracts schema 做表单校验（react-hook-form
 | 2026-10-20 | 0.1.0 | 审前提案 | 首版：全栈 zod 换轨修宪提案（范围一次性全栈·新包 libs/contracts·S0 预检门 + S1–S10 切片 + 高危清单）|
 | 2026-10-20 | 0.2.0 | 用户修订（入 S0 前） | 主案改官方 standard-schema 路径（nestjs-zod 降为对照组·自研撤销）；S0 重排（S0.1 全局 StandardSchemaValidationPipe+@Body({schema})+exceptionFactory、S0.4 swagger 内置转换）；S1 依赖 zod@^4.6+pnpm why 单版本；新增官方管版本锁定对拍测判据 |
 | 2026-10-20 | 0.3.0 | 用户三裁 | ① 响应白名单序列化定官方 `@SerializeOptions({schema})`+`StandardSchemaSerializerInterceptor`（@ZodResponse 能力映射·经查 TransformInterceptor 仅包裹不做白名单·序列化系新增不替换）；② nestjs-zod 连对照组撤除·官方件为唯一路径；③ envelope/error-detail 上移 libs/contracts（与 api-contracts.ts 合并 zod 单源） |
+| 2026-10-20 | 0.3.1 | 审计通过 + ④ 裁定 | 审计门已过（用户签核·授权进 S0）；④ 裁为 strict-by-default（`strictObject()` helper）+ 开放输入端点显式 passthrough（与现 `forbidNonWhitelisted:true` 行为保真）；S3 补 helper 接线 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.3.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.3.1 变更，以当前正文内容为准。
