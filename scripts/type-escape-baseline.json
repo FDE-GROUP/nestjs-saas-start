@@ -26,7 +26,7 @@
   "apps/api/src/modules/tenants/infrastructure/repositories/mikro-tenant-provisioning.repository.ts": 1,
   "apps/api/src/modules/tenants/infrastructure/repositories/mikro-user-governance.repository.ts": 3,
   "apps/api/src/modules/users/application/queries/handlers/export-user-data.query-handler.ts": 4,
-  "apps/api/src/modules/users/infrastructure/repositories/mikro-user.repository.ts": 7,
+  "apps/api/src/modules/users/infrastructure/repositories/mikro-user.repository.ts": 3,
   "apps/api/src/modules/workspaces/infrastructure/repositories/mikro-workspace.repository.ts": 5,
   "libs/core/src/authorization/instance-predicate.ts": 1,
   "libs/core/src/tenancy/tenant.middleware.ts": 1

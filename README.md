@@ -118,7 +118,7 @@ packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安�
 - **认证**：Better Auth——邮箱登录/注册 + 社交登录（Google、GitHub + 境内企微/钉钉/飞书 genericOAuth 通道）、会话与 CSRF；全局会话墙（deny-by-default + `@Public` 旁路）
 - **多租户**：审批制租户生命周期（状态机单点裁决）、租户→工作区两级边界、三层权限（平台/租户/Workspace RBAC）、仓储层行级隔离（ALS 卡点）、deny-list 即时失权
 - **平台治理与合规**：驳回/暂停/恢复/删除治理端点 + 结构化审计（FR-6）；PIPL 硬删级联清除（含事件流补删）
-- **事件溯源（Phase B 影子追加）**：领域事件耐久落 `event` 表（注册流 + 两级治理动作 + 驳回，治理事件面收口）；`EVENT_STORE_ENABLED` 缺省关，CRUD 仍为唯一真相源
+- **事件溯源（Phase B 影子追加）**：领域事件耐久落 `event` 表（两级治理动作 + 驳回，治理事件面收口；注册流事件随架构精度修宪 S1 移除）；`EVENT_PUBLISH_MODE` 缺省 inproc 不落库，CRUD 仍为唯一真相源
 - **存储**：多云统一接口（S3 / OSS / COS），抽象基类去重
 - **邮件**：MJML 模板化发送（多语言 `i18n`）
 - **支付**：Stripe 客户 / 支付意图集成（境内通道规划中·provider 抽象预留）

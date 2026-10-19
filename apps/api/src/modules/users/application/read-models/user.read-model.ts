@@ -1,4 +1,4 @@
-import type { UserRole } from '../../domain/entities/user.aggregate';
+import type { UserRole } from '../../domain/repositories/user.repository';
 
 /**
  * Read-model projection returned by query handlers (CQRS read side).

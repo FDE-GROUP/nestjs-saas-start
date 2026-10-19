@@ -2,18 +2,16 @@ import { User as UserEntity } from '@app/database/mikro/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { User } from '../../domain/entities/user.aggregate';
 import { MikroUserRepository } from './mikro-user.repository';
 
 /**
- * ORM 修宪案 B · 切片 3d（S-d1）双轨**镜像断言**：与 `原用户仓储镜像测试` 逐例对齐的
- * 非弱化断言，仅把旧 ORM 的 insert/update/delete/findFirst 换成 Mikro
- * `em.create+persist+flush` / `em.assign+flush` / `em.nativeDelete` / `em.findOne`。fake `em` 经
- * `MikroOrmService.fork()` 供给——每操作取独立 em（禁共享全局 em）。`user` 属 users 上下文，
- * 本类写自身 owned 表 → 表所有权写侧纪律天然合规（无跨上下文写）。
+ * 架构精度修宪 S1：聚合死管道删除后的镜像断言——仓储收敛为「只读 + PIPL 硬删」，
+ * fake `em` 经 `MikroOrmService.fork()` 供给（每操作独立 em·禁共享全局 em）。
+ * `user` 属 users 上下文，写自身 owned 表 → 表所有权写侧纪律天然合规。
  */
 function makeRepo() {
   const findOne = vi.fn().mockResolvedValue(null);
+  // 写面 spy 保留但断言恒不被调用——锁「save 已随聚合退役不回潮」。
   const create = vi.fn((_entity: unknown, data: Record<string, unknown>) => data);
   const flush = vi.fn().mockResolvedValue(undefined);
   const persist = vi.fn(() => ({ flush }));
@@ -43,46 +41,14 @@ const entityRow = {
   updatedAt: new Date('2026-01-02T00:00:00.000Z'),
 };
 
-describe('MikroUserRepository (S-d1)', () => {
+describe('MikroUserRepository（架构精度修宪 S1 · 只读 + PIPL 硬删）', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('save(new) inserts via create+persist+flush, marks existing, and reflects timestamps', async () => {
-    const { repo, spies } = makeRepo();
-    const user = User.register({
-      id: 'u-1',
-      email: 'ada@example.com',
-      passwordHash: 'hashed',
-      firstName: 'Ada',
-      lastName: 'Lovelace',
-    });
-    expect(user.isNew).toBe(true);
-
-    const saved = await repo.save(user);
-
-    expect(spies.fork).toHaveBeenCalledTimes(1);
-    expect(spies.create).toHaveBeenCalledTimes(1);
-    const [entity, data] = spies.create.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(entity).toBe(UserEntity);
-    expect(data).toMatchObject({
-      id: 'u-1',
-      email: 'ada@example.com',
-      role: 'USER',
-      name: 'Ada Lovelace',
-    });
-    expect(spies.persist).toHaveBeenCalledTimes(1);
-    expect(spies.flush).toHaveBeenCalledTimes(1);
-    expect(spies.assign).not.toHaveBeenCalled();
-    expect(saved).toBe(user);
-    expect(saved.isNew).toBe(false);
-    // 新建显式盖 now（无 DB 触发器）·落回聚合的 createdAt/updatedAt 均为有效 Date。
-    expect(saved.createdAt).toBeInstanceOf(Date);
-    expect(saved.updatedAt).toBeInstanceOf(Date);
-  });
-
-  it('save(existing) updates via findOne+assign+flush (never inserts)', async () => {
+  it('findById maps a record by id and returns null when no row matches', async () => {
     const { repo, spies } = makeRepo();
     spies.findOne.mockResolvedValueOnce({ ...entityRow });
-    const user = User.rehydrate({
+    const found = await repo.findById('u-1');
+    expect(found).toEqual({
       id: 'u-1',
       email: 'ada@example.com',
       firstName: 'Ada',
@@ -92,65 +58,24 @@ describe('MikroUserRepository (S-d1)', () => {
       createdAt: entityRow.createdAt,
       updatedAt: entityRow.updatedAt,
     });
-    user.rename('Ada', 'Byron');
-
-    const saved = await repo.save(user);
-
-    expect(spies.create).not.toHaveBeenCalled();
-    expect(spies.persist).not.toHaveBeenCalled();
-    expect(spies.findOne).toHaveBeenCalledTimes(1);
     expect(spies.findOne.mock.calls[0][0]).toBe(UserEntity);
-    expect(spies.findOne.mock.calls[0][1]).toEqual({ id: 'u-1' });
-    expect(spies.assign).toHaveBeenCalledTimes(1);
-    expect(spies.flush).toHaveBeenCalledTimes(1);
-    expect(saved).toBe(user);
-    // createdAt 取回实体原值（保留），updatedAt 新盖为有效 Date。
-    expect(saved.createdAt).toEqual(entityRow.createdAt);
-    expect(saved.updatedAt).toBeInstanceOf(Date);
-  });
-
-  it('save(existing) fails loud when the row is absent (镜像旧语义 update…returning 缺行崩溃语义·不静默新建)', async () => {
-    const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce(null);
-    const user = User.rehydrate({
-      id: 'ghost',
-      email: 'g@x.c',
-      firstName: null,
-      lastName: null,
-      role: 'USER',
-      passwordHash: 'h',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    await expect(repo.save(user)).rejects.toThrow(/not found for update/);
-    expect(spies.create).not.toHaveBeenCalled();
-  });
-
-  it('findByEmail rehydrates an aggregate from findOne (mapped state, no leak of new flag)', async () => {
-    const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce({ ...entityRow });
-    const user = await repo.findByEmail('ada@example.com');
-
-    expect(user).toBeInstanceOf(User);
-    expect(user?.email).toBe('ada@example.com');
-    expect(user?.passwordHash).toBe('hashed');
-    expect(user?.role).toBe('USER');
-    expect(user?.isNew).toBe(false);
-    expect(spies.findOne.mock.calls[0][1]).toEqual({ email: 'ada@example.com' });
-  });
-
-  it('findById rehydrates by id and returns null when no row matches', async () => {
-    const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce({ ...entityRow });
-    const found = await repo.findById('u-1');
-    expect(found).toBeInstanceOf(User);
     expect(spies.findOne.mock.calls[0][1]).toEqual({ id: 'u-1' });
 
     spies.findOne.mockResolvedValueOnce(null);
     await expect(repo.findById('missing')).resolves.toBeNull();
   });
 
-  it('entityToState maps nullable columns: firstName/lastName ?? null, password ?? "", updatedAt falls back to createdAt', async () => {
+  it('findByEmail queries by email predicate and maps the same record shape', async () => {
+    const { repo, spies } = makeRepo();
+    spies.findOne.mockResolvedValueOnce({ ...entityRow });
+    const user = await repo.findByEmail('ada@example.com');
+    expect(user?.email).toBe('ada@example.com');
+    expect(user?.passwordHash).toBe('hashed');
+    expect(user?.role).toBe('USER');
+    expect(spies.findOne.mock.calls[0][1]).toEqual({ email: 'ada@example.com' });
+  });
+
+  it('entityToRecord maps nullable columns: firstName/lastName ?? null, password ?? "", role 兜底 USER, updatedAt falls back to createdAt', async () => {
     const { repo, spies } = makeRepo();
     spies.findOne.mockResolvedValueOnce({
       id: 'u-2',
@@ -180,5 +105,16 @@ describe('MikroUserRepository (S-d1)', () => {
     expect(entity).toBe(UserEntity);
     expect(where).toEqual({ id: 'u-1' });
     expect(spies.fork).toHaveBeenCalledTimes(1);
+  });
+
+  it('写面收敛回归锁：create/persist/assign/flush 恒不被调用（save 已随聚合退役·不回潮）', async () => {
+    const { repo, spies } = makeRepo();
+    spies.findOne.mockResolvedValueOnce({ ...entityRow });
+    await repo.findById('u-1');
+    await repo.remove('u-1');
+    expect(spies.create).not.toHaveBeenCalled();
+    expect(spies.persist).not.toHaveBeenCalled();
+    expect(spies.assign).not.toHaveBeenCalled();
+    expect(spies.flush).not.toHaveBeenCalled();
   });
 });

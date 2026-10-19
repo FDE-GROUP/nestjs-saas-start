@@ -10,7 +10,7 @@ import type { UserStatusStore } from './user-status.store';
 /**
  * 治理状态迁移构造点 correlationId 穿透测（module-common-request-correlation · FR-4 样本②③）：
  * 真实 service + fake store/发布器，锁「请求上下文内非空·上下文外 undefined」两态
- * （reject-handler / user.aggregate 构造点同形，后者另有专测）。
+ * （reject-handler 构造点同形·专测另在）。
  */
 function makeRecorder(): {
   publishAll: (events: readonly unknown[]) => Promise<void>;
