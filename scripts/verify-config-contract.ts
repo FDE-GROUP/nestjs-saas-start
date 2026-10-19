@@ -28,12 +28,15 @@ const CONFIG_MODULE_FILE = 'apps/api/src/config/config.module.ts';
 const CODE_DIRS = ['apps', 'libs', 'scripts'];
 
 /** 显式白名单（刻意不上图的进程 env 键·config 片 §4.6 「scripts/ 面三键等」甄别在案）：
- * 四个 verify/ci 脚本与 ci-fullstack 均不装载 dotenv，写进样例即制造 F3 同型「声明有、实现无持有」。 */
+ * 四个 verify/ci 脚本与 ci-fullstack 均不装载 dotenv，写进样例即制造 F3 同型「声明有、实现无持有」。
+ * 同口径亦涵盖**前端 dev-only 覆盖键**（如 `WEB_PROXY_TARGET`·vite dev 反代目标·带硬编码兜底
+ * `http://localhost:7009`·从不需为启动而设·非部署契约）——纳管见 module-config-web-dev-proxy-key。 */
 const WHITELIST = new Set([
   'NO_COLOR',
   'VERIFY_PORT',
   'VERIFY_TIMEOUT_MS',
   'TESTCONTAINERS_RYUK_DISABLED',
+  'WEB_PROXY_TARGET',
 ]);
 
 const color = process.stdout.isTTY && !process.env.NO_COLOR;
