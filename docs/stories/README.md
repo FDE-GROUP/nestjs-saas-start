@@ -2,7 +2,7 @@
 
 > 定位: **讲解性指南（非规范）**——本目录以**当前代码**为依据逆向沉淀已实现能力的用户故事（取证日 2026-10-20）| 规范性单源: [`docs/specs/`](./specs/)（宪法/术语）与代码本身——**这些故事是对现状的描述，不是待建需求**；与代码/specs 冲突时以代码与规范为准
 > 缘起: 收权案与领域概念图（[`domain-concepts.md`](./domain-concepts.md)）结项后，需要一份「按用户/角色视角」的现能力清单，供模板使用者理解这套多租户 SaaS 框架**已经能做什么**
-> 受众: 人 + Agent | 版本: 0.1.0（2026-10-20）
+> 受众: 人 + Agent | 版本: 0.2.0（2026-10-20·深挖横切代码能力补齐 Epic 10 支撑面 14 条）
 
 ---
 
@@ -41,8 +41,9 @@
 | 07 | 平台治理 | platform（租户/用户治理） | 11 | [epic-07-platform-governance.md](./epic-07-platform-governance.md) |
 | 08 | 个人权益与 PIPL 合规 | users（导出/删除 + 同意台账） | 2 | [epic-08-user-rights-pipl.md](./epic-08-user-rights-pipl.md) |
 | 09 | 支撑面：对象存储与存活探针 | storage + health | 4 | [epic-09-storage-and-health.md](./epic-09-storage-and-health.md) |
+| 10 | 横切支撑面：响应契约·可观测·合规基线·事件集成 | common/logger/mailer/i18n/config/eventing + @saas/contracts | 14 | [epic-10-cross-cutting-support.md](./epic-10-cross-cutting-support.md) |
 
-合计 **64 条** as-built 故事，覆盖 13 controller / ~53 路由 + BA 原生认证面 + 状态机/配额/PIPL 跨面语义。
+合计 **78 条** as-built 故事：Epic 01–09（64 条）覆盖 13 controller / ~53 路由 + BA 原生认证面 + 状态机/配额/PIPL 跨面语义；Epic 10（14 条）深挖此前未承载的**横切支撑能力**（错误/成功信封契约·校验渲染+白名单序列化·requestId 关联链·结构化日志·PIPL 数据驻留守卫 C2·CORS 白名单·邮件本地化·事件发布三模+影子追加+Outbox 投递·版本化/OpenAPI）。
 
 ---
 
@@ -54,4 +55,4 @@
 - 能力沿革：[`plans/README.md`](./plans/README.md)（状态单源）——各故事溯源列出的 `module-*`/`global-*` plan 为其审方案出处
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 依当前代码逐路由取证成文。
+正文已于 2026-10-20 / v0.1.0 依当前代码逐路由取证成文（Epic 01–09 · 64 条）；v0.2.0（2026-10-20）按「深挖代码能力、补齐剩余用户故事」增 **Epic 10 横切支撑面 14 条**（响应契约/可观测/合规基线/事件集成·均据 `common`/`config`/`logger`/`mailer`/`i18n`/`database/eventing`/`@saas/contracts` 实存代码取证），合计数 64→78。
