@@ -48,6 +48,7 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.3.0 | 人验收同意·状态翻正 | README 索引行翻正「已完成·两片分笔提交并推送」；本文件 §4 结论→已结项 |
 | 2026-10-20 | 0.2.0 | 人签核「同意」后两片实施 | 切片 A：两件 `git mv` 入 `database/ba/`·BY_MODEL 死面删除（全仓 grep=0）·32 处 sweep+注释面 2 处·`vitest.consistency.config.ts` 路径同步（实跑命中 9/9）·`orm.ts` 留位只改 import——硬闸空 diff+ci+ci:db+prod-boot 全绿；切片 B：±zh 目录图 `ba/entities.ts` 行注成文 |
+| 2026-10-20 | 0.3.0 | **再裁决注**（global-ba-entity-domain-placement） | 本案「契约面存储视图集中（`database/ba/` 成区）」框架经 2026-10-20 人裁（CASL 类比：库约束接口·域拥有事实）**再裁决为按域归位**：身份机器族实体迁 auth、组织容器族迁 tenants、`ba/` 区消解；`ba/entities.ts` 头注「按表属主拆分会割裂单一契约单位」的论证经「八表两变更族·上游缝=域界」修正。本案历史留档不删——切片 A 的 BY_MODEL 死面清理与路径硬账成果由后案继承 |
 | 2026-10-20 | 0.1.0 | 用户问 entities.ts 拆分归属，否掉进 adapter 包后裁「乙」 | 首版两片方案（A 契约面成区+sweep+config 硬账 / B BY_MODEL 死面处置 / C 文档）；取证 32 消费面·BY_MODEL 零消费·consistency 路径硬编码 |
 
 ---

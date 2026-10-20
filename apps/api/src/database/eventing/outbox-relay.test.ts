@@ -186,7 +186,9 @@ describe('OutboxRelay（切片 C · 甲档：事务内 claim + 提交后投递 +
     };
     const published: DomainEvent[] = [];
     const relay = new OutboxRelay(
-      { getEventPublishConfig: () => ({ mode: 'outbox', pollMs: 1000 }) } as unknown as ConfigService,
+      {
+        getEventPublishConfig: () => ({ mode: 'outbox', pollMs: 1000 }),
+      } as unknown as ConfigService,
       { fork: async () => em } as unknown as MikroOrmService,
       { publishAll: (batch: DomainEvent[]) => published.push(...batch) } as unknown as EventBus,
     );

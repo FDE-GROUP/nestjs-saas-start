@@ -81,6 +81,7 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.3.0 | 人验收同意·状态翻正 | README 索引行翻正「已完成·三片分笔提交并推送」；本文件 §4 结论→已结项 |
+| 2026-10-20 | 0.4.0 | **勘误**（global-ba-entity-domain-placement §1 认知修正链） | 本案 §1 取证基线所引「BA 表面 `entities.ts` 含 `BY_MODEL`……跨三属主**不可切**」系**对 Better Auth 契约的误解**：BA adapter 契约为运行时 model 字符串寻址（官方 create-a-db-adapter 文档 + `mikro-auth-adapter.ts` 实码双证），对实体定义位置零意见；且 `BY_MODEL` 已于 global-ba-contract-surface 切片 A 作为死面删除（全仓 grep=0）。「BA 表面不拆」的存储归属经 global-ba-entity-domain-placement（2026-10-20 人裁 CASL 类比原则）**再裁决为按域归位**；本案该裁点的其余取证与切片 A/B/C 成果不受影响 |
 | 2026-10-20 | 0.2.0 | 人签核 GO（「GO，2、3、4 按建议」）后三片实施 | 切片 A：12 件 git mv `database/eventing/`+sweep+GATED_E2E_FILES 两径订正（ci PASSED）；切片 B：六实体文件归位四上下文+`eventing/entities/`，聚合点装配根化 `mikro/app-entities.ts`，migration-entities/seed 改指新家（全相对导入），BA 表面不拆（人裁②），硬闸全绿（空 diff+ci+ci:db+prod-boot）；切片 C：architecture ±zh 目录图翻账·AGENTS §5 核验无漂移不改 |
 | 2026-10-20 | 0.1.0 | 用户问「database 是否可进一步拆分」→ Agent 三向评估（抽包不可/垂直归位修宪级/目录整理口味级）→ 用户令「现在就可以考虑 B、C」→ 依「无已审方案不写码」起草 | 首版（**零代码·只提议**）：三片 A eventing 分包 / B 上下文专属实体归位（判据=table-ownership SSOT·BA 表面不拆·聚合点装配根化）/ C 宪法翻账；取证坐实零装饰器无 DI 风险、无关系对象无 FK 序风险、migration-entities 同源 import 面；四归人裁点留审计 |
 

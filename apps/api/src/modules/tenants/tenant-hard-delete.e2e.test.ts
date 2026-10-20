@@ -13,10 +13,14 @@ import type { EntityManager } from '@mikro-orm/core';
 import { CommandBus } from '@nestjs/cqrs';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../../app.module';
 import { DeleteTenantCommand } from '../tenants/application/commands/delete-tenant.command';
 import { DeleteTenantPermanentlyCommand } from '../tenants/application/commands/delete-tenant-permanently.command';
+import {
+  TENANT_GOVERNANCE_REPOSITORY,
+  type TenantGovernanceRepository,
+} from '../tenants/domain/repositories/tenant-governance.repository';
 
 /**
  * NFR-6 删除半 · env-gated 真库 e2e（module-tenancy-hard-delete §4-3）：
@@ -27,6 +31,9 @@ import { DeleteTenantPermanentlyCommand } from '../tenants/application/commands/
  *   真软删（DeleteTenantCommand → transition deleted）→ 真硬删（DeleteTenantPermanentlyCommand）
  *   → 断言六表 0 行 + `tenant` 聚合事件 0 行（先补删后主删）+ **user 行幸存**（自然人不连带）。
  * 另坐实前置闸：active 租户硬删 → 409 且不删。
+ *
+ * #2 甲档（module-p0-async-boundary-correctness 切片 D）：补一条**原子反证**——注入 ②删主行失败，
+ *   坐实①事件删除随之回滚（事件仍在、主行仍在）——无「主行已没、事件残留」的部分提交窗口（PIPL）。
  *
  * ORM 修宪案 B · Phase 2（彻底去旧 ORM）：夹具播种 / 级联读回 / 残净由旧 `原数据库服务.db` 换轨为
  * `MikroOrmService.fork()`——`em.insert`（只发给定列·DB 默认照旧）/`em.count`/`em.nativeDelete`，
@@ -47,6 +54,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
   const userId = `e2e-hd-user-${stamp}`;
   const orgId = `e2e-hd-org-${stamp}`;
   const activeOrgId = `e2e-hd-active-${stamp}`;
+  const atomicOrgId = `e2e-hd-atomic-${stamp}`;
 
   async function seedTenantOwned(em: EntityManager, id: string, withExtras: boolean) {
     await em.insert(Organization, { id, name: `HD ${id}`, slug: `hd-${id}` } as never);
@@ -133,6 +141,18 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
     } as never);
     await seedTenantOwned(em, orgId, true);
     await seedTenantOwned(em, activeOrgId, false);
+    // atomicOrgId：仅主行 + 一行 tenant 聚合事件（子表 id 取 stamp 固定值，与 orgId 全量 seed 会 pkey 互撞），
+    //  #2 甲档原子反证只需「deleted 态 org + ≥一行事件」。
+    await seedTenantOwned(em, atomicOrgId, false);
+    await em.insert(Event, {
+      eventId: randomUUID(),
+      aggregateId: atomicOrgId,
+      aggregateType: 'tenant',
+      version: 1,
+      eventType: 'tenant.status.transitioned',
+      payload: { from: null, to: 'active' },
+      occurredAt: new Date(),
+    } as never);
   }, 120000);
 
   afterAll(async () => {
@@ -141,6 +161,9 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
     const em = await mikro.fork();
     await em.nativeDelete(Organization, { id: { $in: [orgId, activeOrgId] } } as never);
     await em.nativeDelete(Event, { aggregateId: { $in: [orgId, activeOrgId] } } as never);
+    // atomicOrgId 回滚后仍在（事务未提交）——显式清净保证运行幂等
+    await em.nativeDelete(Event, { aggregateId: atomicOrgId } as never);
+    await em.nativeDelete(Organization, { id: atomicOrgId } as never);
     await em.nativeDelete(User, { id: userId } as never);
     await app?.close();
   });
@@ -187,6 +210,28 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
     const em = await mikro.fork();
     const rows = await em.count(Organization, { id: activeOrgId } as never);
     expect(rows).toBe(1);
+  });
+
+  it('#2 甲档 原子反证：②删主行失败注入 → ①事件删除一并回滚（无部分提交·org 仍在可整请求重试）', async () => {
+    // 先软删进 deleted 终态越过前置闸（否则 409 根本进不到 uow.run）
+    await commandBus.execute(new DeleteTenantCommand(atomicOrgId, userId));
+    const governance = app.get<TenantGovernanceRepository>(TENANT_GOVERNANCE_REPOSITORY);
+    const spy = vi
+      .spyOn(governance, 'destroy')
+      .mockRejectedValue(new Error('injected destroy failure'));
+    try {
+      await expect(
+        commandBus.execute(new DeleteTenantPermanentlyCommand(atomicOrgId, userId)),
+      ).rejects.toThrow('injected destroy failure');
+    } finally {
+      spy.mockRestore();
+    }
+    const em = await mikro.fork();
+    // ① 事件补删被同事务回滚：tenant 聚合事件仍在（若非原子则事件已没——即残窗）
+    const eventsLeft = await em.count(Event, { aggregateId: atomicOrgId } as never);
+    expect(eventsLeft).toBeGreaterThanOrEqual(1);
+    // ② 主行仍在（回滚后 org 未没·可整请求重试，不留「主行已没、事件残留」孤儿）
+    expect(await em.count(Organization, { id: atomicOrgId } as never)).toBe(1);
   });
 });
 

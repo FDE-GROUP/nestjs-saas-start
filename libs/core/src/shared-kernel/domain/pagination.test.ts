@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type CursorKey,
   createCursorPage,
   createPage,
-  type CursorKey,
   decodeCursor,
   encodeCursor,
   type Page,

@@ -55,8 +55,10 @@ src/
 │                            #   TenantScopeGuard + middleware + exempt/public；会话适配
 │                            #   （deny-list 状态机已归位 `tenants`、席位配额已归位 `subscriptions`·未决项 4 已落地）；
 │                            #   消费 authorization 的裁决端口
-├── database/                # 全局基础设施：MikroORM 客户端、BA 契约面（`ba/entities.ts`——Better Auth 表形的
-│                            #   存储视图·非领域模型·表属主跨三上下文·成区案 global-ba-contract-surface）、迁移、seed、
+├── database/                # 全局基础设施：MikroORM 客户端、迁移（DDL SSOT）、seed、eventing/（事件基建）；BA 实体
+│                            #   已按域归位（身份机器族→auth/infrastructure/entities·组织容器族→tenants 同理·形状受
+│                            #   BA 接口契约约束——global-ba-entity-domain-placement）⚠ 目录随该案切片 A/B 迁移中
+│                            #   （文档先行 2026-10-20·落地前 `database/ba/` 暂存）、迁移、seed、
 │                            #   eventing/（ES 存储/中继/UoW 基建）；上下文专属表实体随各自上下文落
 │                            #   modules/<ctx>/infrastructure/entities（属主 SSOT=database/table-ownership.ts）
 ├── config/                  # 全局基础设施：类型安全配置 + zod 校验
@@ -185,7 +187,7 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
 - **框架**：NestJS 12 + Fastify
 - **架构**：Clean Architecture + DDD + CQRS（`@nestjs/cqrs`）
 - **数据库**：PostgreSQL + MikroORM（显式迁移）
-- **认证**：Better Auth（**纯认证与成员数据源**：身份/会话/organization·member·invitation 表；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存自有户籍表 `tenant.status` 真列（global-tenant-entity-reclamation 收权案），BA `organization.metadata` 不再携任何我方寄居键——本条承诺自此逐字成立）
+- **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **tenants 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·改列=违契约），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存自有户籍表 `tenant.status` 真列（global-tenant-entity-reclamation 收权案），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
 - **授权**：CASL（`@casl/ability` v7）——租户级 RBAC 唯一裁决引擎。**授权事实 SSOT 在 DB grant 行**（`tenant_role`/`tenant_role_grant`·per-tenant 动态角色·module-rbac-dynamic-roles 丙裁取代旧「`tenant-rules` TS 表是 SSOT」裁），**代码词汇表 `tenant-rules` 是语言 SSOT**（仅编译期 `TenantSubject/TenantAction` 类型域），**CASL rules 是运行时投影**（checker 经仓储端口 per-tenant 懒投影 + 进程内版本缓存·`invalidateTenant` 热改生效）。端点以 `@Can(action, subject)` 声明、`TenantPermissionGuard` 经 ALS 预注入角色判定（无散点特判）；实例级授权走 check 级（`TenantPermissionCheck.resource` + conditions 行按 `{{userId}}` 模板交 CASL mongo 匹配）；query 级列表过滤为其同源延伸（`TenantPermissionChecker.listPredicate` 把受限 grant 下推为列表面实例谓词·与 tenantFilter 固定展开序合并·module-rbac-query-level-filtering）
 - **测试**：Vitest（+ `unplugin-swc` 输出装饰器元数据）
 - **Lint/格式化**：Biome
