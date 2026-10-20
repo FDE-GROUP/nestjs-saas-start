@@ -1,8 +1,12 @@
-import { Invitation, Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import {
+  Invitation,
+  Member,
+  Organization,
+} from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
   TENANT_STATUS,

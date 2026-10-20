@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
-import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
@@ -15,6 +14,7 @@ import {
   TenantRoleGrant,
   type TenantRoleRow,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
+import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { ListWorkspacesQueryHandler } from '@core/saas-kit/modules/workspaces/application/queries/handlers/list-workspaces.query-handler';
 import { ListWorkspacesQuery } from '@core/saas-kit/modules/workspaces/application/queries/list-workspaces.query';

@@ -16,8 +16,8 @@
  * `verify:prod-boot` 的 DB-free 不变量。`QuotaService.checkSeats` 早在 3c-ii-A 即已走 Mikro（本片不动）。
  */
 
-import { Invitation } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Invitation } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';

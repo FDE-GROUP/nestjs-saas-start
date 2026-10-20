@@ -1,5 +1,5 @@
-import { Invitation } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Invitation } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { APIError } from 'better-auth/api';
 import { describe, expect, it, vi } from 'vitest';

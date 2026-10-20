@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';

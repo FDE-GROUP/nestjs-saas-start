@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
-import { Invitation, Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
@@ -10,6 +9,11 @@ import {
   Session,
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  Invitation,
+  Member,
+  Organization,
+} from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';

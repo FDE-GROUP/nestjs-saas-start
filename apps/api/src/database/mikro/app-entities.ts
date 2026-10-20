@@ -1,3 +1,4 @@
+import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
 import {
   MIKRO_RBAC_TABLE_ENTITIES,
   TENANT_ROLE_AUDIT_META,
@@ -9,6 +10,7 @@ import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { MIKRO_ORG_ENTITIES } from '../../modules/tenants/infrastructure/entities/ba-org.entities';
 import { Tenant } from '../../modules/tenants/infrastructure/entities/tenant.entity';
 import {
   USER_STATUS_META,
@@ -18,8 +20,6 @@ import {
   WORKSPACE_META,
   Workspace,
 } from '../../modules/workspaces/infrastructure/entities/workspace.entity';
-import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
-import { MIKRO_ORG_ENTITIES } from '../../modules/tenants/infrastructure/entities/ba-org.entities';
 import { EVENT_META, Event } from '../eventing/entities/event.entity';
 
 /**

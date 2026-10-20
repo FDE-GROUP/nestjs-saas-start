@@ -1,7 +1,7 @@
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {

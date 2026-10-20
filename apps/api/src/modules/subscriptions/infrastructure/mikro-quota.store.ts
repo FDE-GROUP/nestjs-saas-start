@@ -1,6 +1,6 @@
-import { Member } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { Member } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type {
   ActiveSubscriptionView,
   QuotaStore,

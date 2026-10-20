@@ -1,4 +1,3 @@
-import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import {
   Account,
   Session,
@@ -6,6 +5,7 @@ import {
   Verification,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

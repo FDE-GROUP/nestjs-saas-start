@@ -1,6 +1,6 @@
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

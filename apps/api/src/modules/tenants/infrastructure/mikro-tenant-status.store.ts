@@ -1,5 +1,5 @@
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/tenants/infrastructure/entities/tenant.entity';
 import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import type { TenantStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
