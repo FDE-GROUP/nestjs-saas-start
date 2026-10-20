@@ -2,7 +2,7 @@
 
 > 适用范围: `多上下文(platform/eventing · tenants · posts · auth/session · common/filters)` ← blast radius 较大，逐片独立可验；审计深度=人签核（含 DB 迁移·PIPL 删除链·事件投递语义三类敏感面）
 > 关联: `docs/plans/module-common-error-response-contract.md`（错误契约）· `module-es-outbox-transactional`（relay 出处）· `global-readiness-error-pagination.md`（分页契约）· `global-tenant-entity-reclamation.md`（硬删链 O 系列观察）· `global-validation-zod-constitution-amendment.md`（序列化白名单）
-> 性质: 修复型（改实现·**待审计·零实现**）
+> 性质: 修复型（改实现·**A/B/C/D 已实施·待人类验收；E 待审·零实现**）
 > 来源: 四路并行深勘 + 逐条代码复核（本 plan 只纳入**已证实**条目·证据锚点见各片「现状」；复核已把 #11 降档、无一推翻，属外部审的处置不在本片）
 > 状态**不在此**：审计 / 执行状态单源于 [`README.md`](./README.md) 索引表
 
@@ -121,12 +121,12 @@
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] A：非 HttpException 500 → `message` 归一 `'Internal server error'`、原文入日志不入响应；单测锁（含原文样例）
-- [ ] B：游标不丢亚毫秒种子行；gated e2e 真库跨页**行数守恒**；`GATED_E2E_FILES` 登记
-- [ ] C：relay 提交后投递（回滚不产幻影）；at-least-once 措辞诚实化；去 mock 失真·单测锁既定语义
-- [ ] D：硬删 ①② 包单 UoW 原子；gated e2e 验中途失败回滚 + 零孤儿事件
-- [ ] E：`token` 唯一索引 + `expiresAt` 索引迁移（实体元数据对拍·`migration:generate` 空 diff 复跑）；过期清理任务（+依赖签核）；`verify:prod-boot` 绿
-- [ ] 各片 `pnpm run ci` 全绿·基线只增不减·Biome 净·fallow 0
+- [x] A：非 HttpException 500 → `message` 归一 `'Internal server error'`、原文入日志不入响应；单测锁（含原文样例）——`http-exception.filter.test.ts` 12 passed（注入 `SELECT…secret_table` 断言归一 + `logger.error` 一次含原文 + authored 5xx 透传）
+- [x] B：游标不丢亚毫秒种子行；gated e2e 真库跨页**行数守恒**；`GATED_E2E_FILES` 登记——`pagination.test.ts` 11 + repo 单测 16 passed；`posts-cursor-pagination.e2e.test.ts`（单语句 µs 同刻种子·六行守恒）`ci:db` 真库绿；既存文件无需新登
+- [x] C：relay 提交后投递（回滚不产幻影）；at-least-once 措辞诚实化；去 mock 失真·单测锁既定语义——`outbox-relay.test.ts` 10 passed（含「事务回滚→零投递」幻影回归锁）；`outbox-relay.e2e.test.ts` `ci:db` 真库绿
+- [x] D：硬删 ①② 包单 UoW 原子；gated e2e 验中途失败回滚 + 零孤儿事件——`delete-tenant-permanently.command-handler.test.ts` 6 passed（②失败传播 + uow 接线）；`tenant-hard-delete.e2e.test.ts` #2 甲档原子反证（注入 `destroy` 失败→事件回滚留存）`ci:db` 真库绿
+- [ ] E：`token` 唯一索引 + `expiresAt` 索引迁移（实体元数据对拍·`migration:generate` 空 diff 复跑）；过期清理任务（+依赖签核）；`verify:prod-boot` 绿——**高危#1·待人类亲签·本批零改动**
+- [x] 各片 `pnpm run ci` 全绿·基线只增不减·Biome 净·fallow 0（Local CI PASSED·701 passed）；`ci:db` 带库全链 PASSED（gated e2e 10 文件 36 passed + BA 一致性 9 passed）
 - [ ] 零越权：E 的迁移/新依赖经人签后方实施；余片过审计门后方落码
 
 ## 6. 演变记录
@@ -134,8 +134,9 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版（承四路深勘 + 🔴 逐条代码复核·纯方案·零实现·待审计） |
+| 2026-10-20 | 0.2.0 | A/B/C/D 甲档落码 | 承人类「A/B/C/D 一并甲档 GO」：A #4 500 message 收口·B #3 uuidv7 id 单键游标·C #1 post-commit 投递诚实化·D #2 硬删 ①② 包单 uow.run；各片单测 + gated e2e（B/C/D）真库绿·E 零改动待亲签 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 起草（候选稿·零实现·待审计），状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.2.0 落 A/B/C/D 甲档实现与验收（`pnpm run ci` + `ci:db` 双绿）；E 仍零改动·待人类亲签。状态以 README 索引表为单源。
