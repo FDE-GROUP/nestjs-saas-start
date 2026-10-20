@@ -2,8 +2,8 @@ import type { ConfigService } from '@app/config/config.service';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { EventBus } from '@nestjs/cqrs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Event } from '../mikro/four-tables';
 import type { MikroOrmService } from '../mikro/mikro-orm.service';
+import type { Event } from './entities/event.entity';
 import { OutboxRelay } from './outbox-relay';
 
 /**

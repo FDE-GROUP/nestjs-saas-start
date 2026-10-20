@@ -3,8 +3,8 @@ import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { TransactionScope } from '../eventing/transaction-scope';
+import { MIKRO_APP_ENTITIES } from './app-entities';
 import { initMikroOrm } from './orm';
-import { MIKRO_APP_ENTITIES } from './post.entity';
 
 /**
  * ORM 修宪案 B · 切片 2 —— app 侧 MikroORM v7 连接持有者（**懒建**）。

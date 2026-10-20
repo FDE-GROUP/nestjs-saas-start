@@ -1,5 +1,5 @@
-import { Workspace } from '@app/database/mikro/four-tables';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import type {
   WorkspaceDraft,
   WorkspaceRecord,

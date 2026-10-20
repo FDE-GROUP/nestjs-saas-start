@@ -1,11 +1,13 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { createValidationPipe } from '@app/common/validation-pipe';
+import { Event } from '@app/database/eventing/entities/event.entity';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { Invitation, Member, Organization, User } from '@app/database/mikro/entities';
-import { Event, TenantSubscription, Workspace } from '@app/database/mikro/four-tables';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/database/mikro/post.entity';
+import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { CommandBus } from '@nestjs/cqrs';

@@ -1,5 +1,5 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/database/mikro/post.entity';
+import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { encodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import type { EntityManager } from '@mikro-orm/core';

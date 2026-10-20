@@ -1,12 +1,14 @@
 import { defineEntity, p } from '@mikro-orm/core';
-import { buildMigrationEntity } from '../column-meta';
 import {
-  EVENT_META,
-  TENANT_SUBSCRIPTION_META,
-  USER_STATUS_META,
-  WORKSPACE_META,
-} from '../four-tables';
-import { TENANT_ROLE_AUDIT_META, TENANT_ROLE_GRANT_META, TENANT_ROLE_META } from '../rbac-tables';
+  TENANT_ROLE_AUDIT_META,
+  TENANT_ROLE_GRANT_META,
+  TENANT_ROLE_META,
+} from '../../../modules/authorization/infrastructure/entities/rbac.entities';
+import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { USER_STATUS_META } from '../../../modules/tenants/infrastructure/entities/user-status.entity';
+import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
+import { EVENT_META } from '../../eventing/entities/event.entity';
+import { buildMigrationEntity } from '../column-meta';
 
 /**
  * ORM 修宪案 B · 切片 3a —— **迁移专用·忠实全模型** 实体集（MikroORM v7 零装饰器 `defineEntity`）。
@@ -14,7 +16,7 @@ import { TENANT_ROLE_AUDIT_META, TENANT_ROLE_GRANT_META, TENANT_ROLE_META } from
  * 定位（归人裁定·多租户优先）：本文件**只服务 schema 迁移基线**，与两处刻意「扁平/有损」的实体集**解耦**——
  *  - `database/mikro/entities.ts`（切片 1·BA 运行时面）：为 `mikro-auth-adapter` 的 **raw SQL** 寻址服务，
  *    扁平标量列、不建关系对象（遵循 BA `createAdapterFactory` 契约）；本迁移集**不触碰、不导入**它。
- *  - `database/mikro/post.entity.ts`（切片 2·app 试迁移面）：同上。
+ *  - `modules/posts/infrastructure/entities/post.entity.ts`（切片 2·app 试迁移面）：同上。
  *  三套各自独立装进各自的 `MikroORM.init`（本集见 `mikro-migration.config.ts`），**零交集** ⇒ 切片 1/2 的
  *  一致性套件与默认 CI 基线不受本文件任何影响（爆炸半径隔离）。
  *

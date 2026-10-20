@@ -3,7 +3,9 @@ import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
+import { Event } from '@app/database/eventing/entities/event.entity';
 import { Organization } from '@app/database/mikro/entities';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
@@ -15,7 +17,6 @@ import { MikroEventStore } from '../eventing/mikro-event-store';
 import { MikroUnitOfWork } from '../eventing/mikro-unit-of-work';
 import { OutboxRelay } from '../eventing/outbox-relay';
 import { TransactionScope } from '../eventing/transaction-scope';
-import { Event, TenantSubscription } from './four-tables';
 import { MikroOrmService } from './mikro-orm.service';
 
 /**

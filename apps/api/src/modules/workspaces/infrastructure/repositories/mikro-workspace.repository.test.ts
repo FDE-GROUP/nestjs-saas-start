@@ -1,5 +1,8 @@
-import { WORKSPACE_META, Workspace } from '@app/database/mikro/four-tables';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import {
+  WORKSPACE_META,
+  Workspace,
+} from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';

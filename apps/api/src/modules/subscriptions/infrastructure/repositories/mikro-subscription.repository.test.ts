@@ -1,5 +1,5 @@
-import { TenantSubscription } from '@app/database/mikro/four-tables';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';

@@ -1,7 +1,7 @@
 import { Invitation, Member, Organization, User } from '@app/database/mikro/entities';
-import { Workspace } from '@app/database/mikro/four-tables';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/database/mikro/post.entity';
+import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';

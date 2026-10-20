@@ -8,9 +8,10 @@ import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { organization } from 'better-auth/plugins';
+import { Post } from '../modules/posts/infrastructure/entities/post.entity';
+import { MIKRO_APP_ENTITIES } from './mikro/app-entities';
 import { Account, Member, Organization, Session, User, Verification } from './mikro/entities';
 import { initMikroOrm } from './mikro/orm';
-import { MIKRO_APP_ENTITIES, Post } from './mikro/post.entity';
 
 /**
  * ORM 修宪案 B · 切片 4-α（S-d6）——seed 数据面由旧 ORM 换轨为 **MikroORM**（只换通道·不改行为）。

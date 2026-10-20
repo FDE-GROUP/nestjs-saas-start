@@ -2,8 +2,8 @@ import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-eve
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
-import { Event } from '../mikro/four-tables';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
+import { Event } from './entities/event.entity';
 
 /**
  * ORM 修宪案 B · 切片 3c-ii-C —— `EventStore` 端口的 **MikroORM 适配**（`EVENT_STORE` 绑定改指本类·MikroORM 为唯一实现）。

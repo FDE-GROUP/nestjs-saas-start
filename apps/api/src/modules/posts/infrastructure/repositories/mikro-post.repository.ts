@@ -1,5 +1,5 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/database/mikro/post.entity';
+import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import {
   type CursorKey,
   type CursorPage,

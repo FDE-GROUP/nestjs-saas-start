@@ -6,7 +6,7 @@ import {
   TenantRoleGrant,
   type TenantRoleGrantRow,
   type TenantRoleRow,
-} from '@app/database/mikro/rbac-tables';
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
 import { Inject, Injectable } from '@nestjs/common';
 import type {

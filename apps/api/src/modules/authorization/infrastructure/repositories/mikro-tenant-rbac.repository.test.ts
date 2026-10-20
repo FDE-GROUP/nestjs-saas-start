@@ -1,5 +1,9 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { TenantRole, TenantRoleAudit, TenantRoleGrant } from '@app/database/mikro/rbac-tables';
+import {
+  TenantRole,
+  TenantRoleAudit,
+  TenantRoleGrant,
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroTenantRbacRepository } from './mikro-tenant-rbac.repository';

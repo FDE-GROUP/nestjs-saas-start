@@ -1,6 +1,6 @@
 import { User } from '@app/database/mikro/entities';
-import { UserStatus } from '@app/database/mikro/four-tables';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { UserStatus } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import type { UserStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
 import { Inject, Injectable } from '@nestjs/common';
 

@@ -1,5 +1,5 @@
-import { TenantSubscription } from '@app/database/mikro/four-tables';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import type { SubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/ports/subscription-lifecycle.port';
 import type { SubscriptionStatus } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { QueryOrder } from '@mikro-orm/core';

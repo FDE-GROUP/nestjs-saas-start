@@ -6,7 +6,7 @@ import {
   User,
   Verification,
 } from '@app/database/mikro/entities';
-import { Post } from '@app/database/mikro/post.entity';
+import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

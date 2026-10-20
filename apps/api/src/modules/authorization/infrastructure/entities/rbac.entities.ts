@@ -1,11 +1,13 @@
 import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
 import type { EntitySchema } from '@mikro-orm/core';
-import { buildRuntimeEntity, type TableMeta } from './column-meta';
+import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
 
 /**
  * 租户 RBAC 动态化三表（module-rbac-dynamic-roles §2.2·甲裁「行式 grant + 审计表」）——
- * 列元数据单源 + 双变体派生（γ 惯例同 `four-tables.ts`：迁移忠实实体见 `migration-entities.ts`，
- * 本文件出运行时扁平实体入 `MIKRO_APP_ENTITIES`）。
+ * 列元数据单源 + 双变体派生（γ 惯例·global-entity-context-placement 切片 B 归位：原
+ * `database/mikro/rbac-tables.ts`·判据=`table-ownership.ts` 表属主 `tenantRole*→authorization`；
+ * 迁移忠实实体见 `migration-entities.ts`，本文件出运行时扁平实体入 `MIKRO_APP_ENTITIES`）。
+ * ⚠ tsx 消费链（迁移装配）文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  *
  * 新宪（丙裁）：**DB 是授权事实 SSOT**——
  *  - `tenant_role`：per-tenant 角色（系统三 key `isSystem=true` 由 lazy-ensure 落行·不可改删；
@@ -66,13 +68,6 @@ export const TENANT_ROLE_AUDIT_META: TableMeta = {
     { name: 'tenant_role_audit_org_created_idx', properties: ['organizationId', 'createdAt'] },
   ],
 };
-
-/** 三表元数据（迁移装配消费）。 */
-export const RBAC_TABLE_METAS: TableMeta[] = [
-  TENANT_ROLE_META,
-  TENANT_ROLE_GRANT_META,
-  TENANT_ROLE_AUDIT_META,
-];
 
 // —— 运行时扁平实体（companion interface + 工厂派生·入 MIKRO_APP_ENTITIES·app 仓储读写）——
 
