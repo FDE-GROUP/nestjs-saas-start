@@ -1,3 +1,6 @@
+import { SubscriptionBootstrappedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-bootstrapped.event';
+import { SubscriptionCreatedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-created.event';
+import { SubscriptionStatusTransitionedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-status-transitioned.event';
 import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
 import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
@@ -29,4 +32,7 @@ export const EVENT_TYPE_REGISTRY: ReadonlyMap<string, RegistrableEventClass> = n
   [TenantStatusTransitionedEvent.EVENT_TYPE, TenantStatusTransitionedEvent],
   [TenantRejectedEvent.EVENT_TYPE, TenantRejectedEvent],
   [TenantBootstrappedEvent.EVENT_TYPE, TenantBootstrappedEvent],
+  [SubscriptionStatusTransitionedEvent.EVENT_TYPE, SubscriptionStatusTransitionedEvent],
+  [SubscriptionCreatedEvent.EVENT_TYPE, SubscriptionCreatedEvent],
+  [SubscriptionBootstrappedEvent.EVENT_TYPE, SubscriptionBootstrappedEvent],
 ]);
