@@ -9,25 +9,25 @@
 ## Phase A — 今天已接好的钩子（本仓库现状）
 
 1. **写路径只有 Command → CommandHandler**。Controller 从不直接改状态。把某个 handler 的持久化从 CRUD 换成 append-event，只触及 handler + repository，不触及传输层。
-2. **聚合根记录领域事件**：经 `AggregateRoot.recordEvent(...)` 记录、`pullDomainEvents()` 暴露。仓储返回同一个聚合实例，使待派发事件活到 dispatch 点。见 `libs/core/src/shared-kernel/domain/aggregate-root.ts` 与 `apps/api/src/modules/users/domain/entities/user.aggregate.ts`。
-3. **`DomainEvent` 信封已是 ES 形状**——`eventId`、`aggregateId`、`aggregateType`、`eventType`、`eventVersion`、`occurredAt`、`correlationId`、`causationId`、`payload`。这些正是一张 append-only 存储表的全部列；`eventVersion` 就是未来 upcaster 的键。契约测试锁住这些字段（`apps/api/src/modules/users/domain/events/user-registered.event.test.ts`）。
+2. ~~**聚合根记录领域事件**：经 `AggregateRoot.recordEvent(...)` 记录、`pullDomainEvents()` 暴露。仓储返回同一个聚合实例，使待派发事件活到 dispatch 点。见 `libs/core/src/shared-kernel/domain/aggregate-root.ts` 与 `apps/api/src/modules/users/domain/entities/user.aggregate.ts`。~~ **（2026-10-20 R0 sweep·幻影订正）**聚合事件管道已随架构精度修宪 S1 删除，上述两文件不存在（从未存在）；事件现由 service/handler 层直接产出（P3「操作记录」正式模式）：`TenantStatusService/UserStatusService.transition`、reject/delete handlers 经 `EventBus.publishAll` + `EVENT_STORE` 端口。
+3. **`DomainEvent` 信封已是 ES 形状**——`eventId`、`aggregateId`、`aggregateType`、`eventType`、`eventVersion`、`occurredAt`、`correlationId`、`causationId`、`payload`。这些正是一张 append-only 存储表的全部列；`eventVersion` 就是未来 upcaster 的键。（原注契约测试 `user-registered.event.test.ts` 系幻影·从未入库（2026-10-20 R0 sweep）；现事件类契约由 `EventBus` 三实现一致性测等锁定，如 `TenantRejectedEvent`。）
 4. 事件当前**进程内派发**：`EventBus.publishAll(...)` + `@EventsHandler`（`apps/api/src/modules/users/infrastructure/dispatchers/`）。（Phase A 快照时点「什么都不持久化」；Phase B 后 event store（shadow append·0009）与 outbox+relay 已分别于 2026-10-14/17 落地——见下段与「当前明确不做」段校准；投影/快照/upcaster 仍无。）
 
 ## Phase B — 为选定上下文点亮 ES
 
-> **首切片已落地（shadow append·2026-10-14·[module-users-es-append](./module-users-es-append.md)）**：users 域事件经双模开关耐久落 `event` 表（迁移 0009·camelCase 列名 + `eventId` 保真列·见其 §6），CRUD 仍为唯一真相源；下述 schema 即其形态，回放/投影/同事务化待续。
+> **首切片已落地（shadow append·2026-10-14·[module-users-es-append](./module-users-es-append.md)）**：users 域事件经双模开关耐久落 `event` 表（迁移 0009·camelCase 列名 + `eventId` 保真列·见其 §6），CRUD 仍为唯一真相源（**切片时点口径·已被 2026-10-20 人定向 supersede**：被事件化聚合以 event store 为唯一真相源·读表降为可重建投影；本切片事实——shadow 追加不改写主表——仍成立）；下述 schema 即其形态，回放/投影/同事务化待续。
 >
-> **架构精度修宪改口（2026-10-20）**：① 注册流事件随 User 聚合死管道删除（S1）——users 聚合流现存 `user.status.transitioned`；② 事件语义正名为「操作记录」（P3·service/handler 发布为正式模式，非聚合事件妥协）；③ **Phase C 降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件，ES 转真相源须有具体触发判据（如订阅计费对账重放）另立专项过审。
+> **架构精度修宪改口（2026-10-20）**：① 注册流事件随 User 聚合死管道删除（S1）——users 聚合流现存 `user.status.transitioned`；② 事件语义正名为「操作记录」（P3·service/handler 发布为正式模式，非聚合事件妥协）；③ ~~**Phase C 降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件，ES 转真相源须有具体触发判据（如订阅计费对账重放）另立专项过审~~ **（该终态口径已被同日人定向「回放即真相」supersede——见 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md)：event store 为被事件化聚合唯一真相源·能力基线 + 逐模块按需实施；「另立专项过审」仍成立=R1 逐片审计）**。
 >
 > **第二切片已落地（2026-10-14·[module-tenancy-es-lifecycle-events](./module-tenancy-es-lifecycle-events.md)）**：租户治理动作（approve/suspend/resume/delete）经 `TenantStatusService.transition` 单点产出 `tenant.status.transitioned` 同表耐久（无新迁移）；`EventStore.deleteByAggregate` 收口 PIPL 硬删级联补删（§6-④ 定向关闭）。
 >
-> **第三切片已落地（2026-10-14·[module-tenancy-es-user-status-events](./module-tenancy-es-user-status-events.md)）**：平台用户 suspend/resume 经 `UserStatusService.transition` 产出 `user.status.transitioned`，与 `user.registered` **同聚合流**（version 跨事件类型连续·PIPL 补删零额外代码覆盖）。至此 event store 覆盖：注册流 + 租户/用户两级治理动作。
+> **第三切片已落地（2026-10-14·[module-tenancy-es-user-status-events](./module-tenancy-es-user-status-events.md)）**：平台用户 suspend/resume 经 `UserStatusService.transition` 产出 `user.status.transitioned`，（**2026-10-20 R0 sweep 订正**：注册流 `user.registered` 系幻影·从未入库，码中 event 流实为 `tenant.status.transitioned` / `tenant.rejected` / `user.status.transitioned` 三种。至此 event store 覆盖：租户/用户两级治理动作。）
 >
-> **第四切片已落地（2026-10-14·[module-tenancy-es-tenant-rejected-event](./module-tenancy-es-tenant-rejected-event.md)）**：reject 硬删成功产出 `tenant.rejected`（同 tenant 流·PII 最小：只留审计事实不留申请内容），治理事件面**收口**——含对第二切片 §6-①「需动迁移表」误判的忠实修正（reject 实为硬删路径不经状态机）。Phase B shadow-append 覆盖面无已知缺口；后半（同事务化/rehydrate）待专项方案。
+> **第四切片已落地（2026-10-14·[module-tenancy-es-tenant-rejected-event](./module-tenancy-es-tenant-rejected-event.md)）**：reject 硬删成功产出 `tenant.rejected`（同 tenant 流·PII 最小：只留审计事实不留申请内容），治理事件面**收口**——含对第二切片 §6-①「需动迁移表」误判的忠实修正（reject 实为硬删路径不经状态机）。Phase B shadow-append 覆盖面无已知缺口；后半（同事务化/rehydrate）待专项方案。（**后续校准 2026-10-20·R0 sweep**：其时 reject 路径缺事件，后由 E 片 `tenant.rejected` 补齐；同事务化 + relay 后已落地；「无缺口」仅指当时 shadow 覆盖面，回放/投影侧仍全缺——见 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md) §2。）
 >
 > **Phase B 后半已落地（2026-10-17·[module-es-outbox-transactional](./module-es-outbox-transactional.md)）**：经人再裁决（推翻「shadow append 即终态」既有裁决）同事务化 outbox + relay 耐久投递落地——`EVENT_PUBLISH_MODE: inproc|shadow|outbox` 三态旋钮（缺省 inproc·行为逐字节等价）；`UNIT_OF_WORK` ambient 事务使业务行与事件行**同生共死**（dual-write 窗口消灭）；app 内 `OutboxRelay` 以 `FOR UPDATE SKIP LOCKED` 批量投递、`eventVersion` 拒收、重试上限表内留痕、eventId 去重窗。**投递语义 at-least-once：重投必然发生，消费者幂等为硬要求**（裁点丙·`@EventsHandler` 消费方须按 `eventId` 或业务键幂等）。rehydrate/投影/快照仍待后续。**消费者兑现（2026-10-17·[module-es-first-real-consumer](./module-es-first-real-consumer.md) 治理档）**：首个真实业务消费者落地——`tenant.status.transitioned` → 订阅行终态收敛（suspend→suspended·resume→active·业务键收敛式幂等·gated 真库重投零重复效果实证），硬要求自此有真实兑现体；附带应用生成 id 切 UUIDv7（时序可排·零迁移）。
 
-只针对**需要审计轨迹的重状态上下文**（如 orders / ledger）。auth users 这类有状态身份数据**可能永远保持 CRUD**。
+只针对**实际需要审计轨迹/回放能力的重状态上下文**（如 orders / ledger）；经 2026-10-20 定向澄清（能力基线 + 逐模块按需实施），是否转「回放即真相」逐模块立项归人裁，简单 CRUD 可依法永不事件化（判据与 CQRS P4 同构·R0 已入 architecture §ES 条）。auth users 这类有状态身份数据**可能永远保持 CRUD**。
 
 ### Event store 表（MikroORM）
 
@@ -66,6 +66,8 @@ CREATE INDEX event_aggregate_idx ON event (aggregate_type, aggregate_id);
 
 ## Phase C — Sagas（流程编排）【触发判据驱动·可选项·架构精度修宪改口】
 
+> **口径校准（2026-10-20·R0）**：本节「可选」定位不变（Sagas 仍按判据触发）；但精度修宪段的「终态缺省 = 审计日志 + 集成事件」真相源口径已被同日人定向 supersede——见 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md)（event store 为被事件化聚合唯一真相源·能力基线 + 逐模块按需实施）。
+
 `@nestjs/cqrs` 自带 Sagas：一个响应事件、发出命令的 `@Saga()` 生成器，支撑跨上下文的**补偿事务**（如 register → create profile → 失败则删除 auth user）。在需要多步编排之处替代 Phase A 中临时的 `@EventsHandler` 反应。无 DB 变更；Saga 放在 `application/`。
 
 ## 当前明确不做（分期节奏，非方向保留）
@@ -80,6 +82,7 @@ CREATE INDEX event_aggregate_idx ON event (aggregate_type, aggregate_id);
 
 | 日期 | 变更 |
 |------|------|
+| 2026-10-20 | R0 修宪 sweep（事实订正 + supersede 注记·ES 真相源修宪案过审后首个非实现动作）：① 幻影清理——`aggregate-root.ts`/`user.aggregate.ts`/`user-registered.event.test.ts`/`user.registered` 四指针经磁盘实核均不存在（从未入库），Phase A 第 2/3 条与第三切片句订正为现状口径（事件面实为 tenant.transitioned/tenant.rejected/user.status.transitioned 三种）；第四切片「无已知缺口」补后续校准；② 「终态缺省=审计日志」口径挂 supersede 注（首切片句/改口块/Phase C 头·历史行不改写）；③ 「只针对」段挂能力基线+逐模块按需澄清 |
 | 2026-10-17 | 人签核（AskUserQuestion）：本路线图文档**整篇视同已审计**——方向确证（人澄清 2026-10-14）+ Phase A/B 各切片均已逐个过审计门落地·路线自身无待裁项；后续新切片仍逐片过审计门；README 索引行审计列同步翻牌 |
 | 2026-10-17 | 账目卫生扫描（事实订正留痕）：Phase A「本仓库现状」段三行引用路径校准至现布局（`packages/core→libs/core`·`apps/reference→apps/api`·逐条磁盘实存坐实）；第 4 条「什么都不持久化」现状句与 Phase B 已落地事实自相矛盾，改为带时点口径的如实描述（历史演变行不改写） |
 | 2026-10-17 | 消费者兑现留痕（module-es-first-real-consumer 治理档）：首个真实业务消费者（治理→订阅终态收敛·幂等真库实证）；附带应用生成 id 切 UUIDv7 |

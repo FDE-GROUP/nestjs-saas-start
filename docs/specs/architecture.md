@@ -6,9 +6,9 @@
 
 - **Hexagonal / Clean Architecture** (same dependency rule): ports & adapters with a strict inward direction (`api → application → domain ← infrastructure`); the domain depends on nothing but the shared kernel (enforced by the core purity guard test).
 - **Functional core, imperative shell** (architecture precision amendment, 2026-10-20): domain decisions are pure functions over immutable data returning result-unions (reference: `canTransition`). Aggregate-first tactical DDD is **not** adopted (the only natural aggregate — User — has its lifecycle owned by Better Auth; the dead pipeline was removed). Value objects on demand (only `Quota` in this domain).
-- **CQRS on demand (P4)**: contexts with cross-aggregate orchestration / transaction boundaries / event publishing use `Command/Query → Handler` (`@nestjs/cqrs`); simple contexts (controller + service + repository) are a **legal end state**, not unfinished work (e.g. users/posts/workspaces).
+- **CQRS on demand (P4)**: contexts with cross-aggregate orchestration / transaction boundaries / event publishing use `Command/Query → Handler` (`@nestjs/cqrs`); simple contexts (controller + service + repository) are a **legal end state**, not unfinished work. The capability baseline is mandatory while adoption is per-module (same rule for ES/EDA, see below); real handler examples: tenants governance commands, users delete/export.
 - **Vertical slices**: contexts are packaged by feature (`apps/api/src/modules/<context>`; shared-contract contexts live under `libs/core/src/modules/<context>`), not by technical tier. Cross-context coupling only happens through domain events, never by importing another context's `domain/` or `infrastructure/`.
-- **Event Sourcing (committed, phased)**: confirmed architectural goal (human clarification 2026-10-14) — no longer gated on "a context actually needs it", while phasing and audit/migration gates stand. Phase B shadow-append is current (event-table audit; CRUD remains the single source of truth). Events are published from the service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). **Phase C (projections/sagas) is downgraded to a trigger-criteria-driven optional evolution** — default end state = audit log + integration events. See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
+- **Event Sourcing (capability baseline · per-module adoption · phased)**: confirmed architectural goal (human clarification 2026-10-14; truth-source re-direction + capability/implementation separation, human 2026-10-20, supersedes the "Phase C optional / CRUD-as-default-end-state" wording of the 2026-10-20 precision amendment — see [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)). The architecture **must fully provide** CQRS/ES/EDA capabilities (ports, mechanism, reference demo); **adoption is decided per business module** on real needs — for eventized aggregates the event store is the single source of truth ("replay = truth", read tables are rebuildable projections); simple-CRUD / stateless data (sessions, verification, memberships…) may **legally remain CRUD forever**. Landed today: shadow-append + transactional outbox + relay (`EVENT_PUBLISH_MODE: inproc|shadow|outbox`, default inproc); events are published from service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). Replay-as-truth is being proven pilot-first (tenants governance state machine, R1). See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
 - **EDA (event-driven architecture, committed)**: domain events are the **only** cross-context integration mechanism; evolution path = in-process dispatch (landed) → transactional outbox for durable publish (Phase B) → cross-process broker subscription (only after microservice triggers fire, see [microservice-readiness.md](../plans/microservice-readiness.md)).
 
 ### Functional-core inventory (physical map of P1 · precision amendment addendum)
@@ -94,21 +94,29 @@ packages/api-client # exchangeable typed client generated from openapi.yaml (F1)
 
 A "layer shift" is a violation **only** when concretions are pushed into `libs/core` (e.g. a MikroORM entity under `modules/*/domain`); shipping domain + application layers inside the kit is by design, not a violation. Naming is frozen: neither the `@core/saas-kit` package nor the `shared-kernel/` sub-layer will be renamed (large blast radius on inbound imports, zero structural gain — the kit/kernel distinction is now documented, not encoded in folder names). See the ruling: [module-core-position-kernel-vs-kit](../plans/module-core-position-kernel-vs-kit.md).
 
-## The `users` Context (reference flow)
+## The `users` Context (write paths are Command → CommandHandler only)
+
+Controllers never mutate state directly. Illustrating with the real landed flow —
+tenants governance (`POST /tenants/:id/approve`), the R1 replay-as-truth pilot:
 
 ```
-POST /users
-  → UsersController (api)                 # builds CreateUserCommand from validated DTO
+POST /tenants/:id/approve
+  → Tenants/Platform controller (api)     # builds ApproveTenantCommand from validated DTO
   → CommandBus.execute                    # @nestjs/cqrs
-  → CreateUserCommandHandler (application)
-        repo.findByEmail → ConflictException if exists
-        User.register(...) (domain)       # invariants + recordEvent(UserRegisteredEvent)
-        repo.save(user)  (port → MikroUserRepository in infrastructure)
-        eventBus.publishAll(user.pullDomainEvents())   # in-process today, event store later
-  → returns PublicUser projection (201)
+  → ApproveTenantCommandHandler (application)
+        governedTenantTransition helper → canTransition pure adjudication (functional core)
+        TenantStatusService.transition    # status row via repo (port → infra adapter)
+        EventBus.publishAll([...])        # P3 operation-record events; UoW makes event row
+                                          # commit atomically with the business row
+                                          # (outbox mode); shadow append → event store
+  → returns read-only projection
 ```
 
-Reads (`GET /users`, `GET /users/:id`) use `Query` handlers that read the write store
+(The former example `POST /users` → `CreateUserCommandHandler` → `User.register(...)` →
+`pullDomainEvents()` was a phantom: no such handler/aggregate exists in code — removed by the
+2026-10-20 R0 amendment sweep.)
+
+Reads (e.g. `GET /users`, `GET /users/:id`) use `Query` handlers that read the write store
 directly via `MikroOrmService` (pragmatic CQRS read side, bypasses the domain).
 
 ## Layer Dependency Rules

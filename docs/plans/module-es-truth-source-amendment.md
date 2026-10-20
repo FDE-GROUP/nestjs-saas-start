@@ -1,8 +1,8 @@
-# ES 真相源修宪案：「回放即真相」的教科书 Event Sourcing（能力基线·逐模块按需实施 · 待审计 · 零实现）
+# ES 真相源修宪案：「回放即真相」的教科书 Event Sourcing（能力基线·逐模块按需实施 · **已审计·签发** · R0 已落地）
 
 > 适用范围: `docs/specs 宪法（architecture ±zh · vision）· event-sourcing-roadmap · database/eventing 全域 · 试点上下文写读路径 · PIPL 删除链` ← blast radius **极大**（存储范式换轨）；审计深度 = 人签核（高危#1 多轮 + 修宪）
 > 关联: [event-sourcing-roadmap](./event-sourcing-roadmap.md)（本案 supersede 其「终态缺省=审计日志」口径）· 母案 [module-p0-async-boundary-correctness](./module-p0-async-boundary-correctness.md)（C 片 best-effort 语义在此升级为端到端问题）· [module-es-outbox-transactional](./module-es-outbox-transactional.md)（claim 语义缺口在真相源下升格为数据丢失）· global-tenancy（租户状态机）· PIPL 基线（C1+C2）
-> 性质: **方向裁决落地案**（人明示定向·零实现·待审计门·通过后分片逐片再签）
+> 性质: **方向裁决落地案**（人明示定向·**已审计签发（2026-10-20·按推荐档 GO）**·后续实现逐片再签）
 > 状态**不在此**：单源于 [`README.md`](./README.md) 索引表
 
 ## 1. 背景与目标（人定向）
@@ -24,6 +24,8 @@
 - 真相源现为 CRUD：如租户态「读写链迁 tenant 户籍表真列」（module-tenancy-hard-delete 换轨片）；`QueryHandler` 直读业务表。
 
 ## 3. 硬问题清单（教科书 ES 的六道必答题 → 归人裁）
+
+> **审计签发（2026-10-20）**：人同意 = 六裁点**按推荐档全部 GO**（裁①乙/裁②甲+丙/裁③乙/裁④丙起步→甲终态/裁⑤甲/裁⑥甲）+ 首试点 **A·tenants 治理状态机**（B 降后备·C 否决）。
 
 | # | 硬问题 | 选项 | 推荐档（代裁待批） |
 |---|--------|------|-------------------|
@@ -57,8 +59,8 @@
 
 ## 6. 完成判据（本案审计过审后逐片细化·此处为案级）
 
-- [ ] 人对本 plan 六裁点 + 首试点选择签发（本案审计门）。
-- [ ] R0 落档后，architecture/zh/vision/roadmap 四文对「真相源」表述一致、无「CRUD 唯一真相源」残留（grep 零命中或带 supersede 注记）。
+- [x] 人对本 plan 六裁点 + 首试点选择签发（本案审计门）——2026-10-20 按推荐档 GO·首试点 A。
+- [x] R0 落档后，architecture/zh/vision/roadmap 四文对「真相源」表述一致、无「CRUD 唯一真相源」残留（grep 核验：specs 两文零残留；roadmap 仅余历史时点句均带 supersede 注）；死引用 sweep 同步完成（幻影四指针 aggregate-root.ts/user.aggregate.ts/user-registered 测/user.registered 事件——磁盘实核均从未入库——订正留痕；§9 写路径示例换真实 approve 链；§CQRS 举例勘误）。
 - [ ] R1 起每片：带库对拍（真库回放 == 投影逐字段相等·崩溃重放收敛）+ `ci:db` 全链 + prod-boot；高危片逐次人亲签留痕。
 - [ ] 本 plan 与 README/roadmap 状态单源同步。
 
@@ -68,8 +70,9 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 人定向「回放即真相教科书 ES」·supersede 降级旧裁 | 首版呈审案：现状取证（回放侧全缺·聚合管道已删）+ 六硬问题归人裁（聚合形态/存量迁移/写切换/PIPL 擦除死结/投影地位/契约演化）+ 首试点三选项（推荐 tenants 治理状态机）+ R0–R4 分期 ·零实现 |
 | 2026-10-20 | 0.2.0 | 人定向澄清：能力与实施分离 | 「架构应包含 CQRS/ES/EDA 能力·按业务模块实际需求按需实施」落档：§1 补澄清段（能力基线 = 框架完备可示范·R1 试点即能力示范片）；非目标/终态边界改挂澄清口径；R0 扩为三翼（真相源措辞翻正 + ES 按需判据与 CQRS P4 同构成文 + 死引用 sweep 并案） |
+| 2026-10-20 | 0.3.0 | 审计门通过·R0 落地 | 人同意=六裁点按推荐档全 GO+首试点 A（tenants 治理状态机）；R0 执行完毕：architecture.md/zh 的 ES 条改「能力基线·逐模块按需」+ supersede 注、CQRS 条举例勘误、写路径幻影示例换真实 approve 链（含幻影注记）、roadmap 幻影 sweep（新发现：`user.registered` 及其测从未入库——事件面实为三种）+ supersede 注×3+演变行、vision §7 挂注、README 同步；下一步 R1 细化另行呈审 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 修订（人定向澄清：能力基线 + 逐模块按需实施落档）。状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.3.0 修订（审计门通过·六裁点按推荐档 GO·R0 修宪落地完毕）。状态以 README 索引表为单源。

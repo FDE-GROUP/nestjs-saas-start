@@ -4,9 +4,9 @@
 
 - **六边形架构 / 整洁架构（Hexagonal = Clean Architecture·同一依赖规则）**：端口-适配器 + 依赖方向严格向内（`api → application → domain ← infrastructure`）；domain 除共享内核外零框架依赖（core 纯度守卫测试可执行化锁定）。
 - **函数式领域内核（functional core, imperative shell·架构精度修宪 2026-10-20）**：领域裁决 = 纯函数 + 不可变数据 + result-union（基准样例 `canTransition`）；**不采用聚合优先的战术 DDD**（唯一天然聚合 User 的生命周期归 Better Auth·死管道已删），值对象按需（本域仅 `Quota`）。
-- **CQRS 按需（P4 判据）**：存在跨聚合编排/事务边界/事件发布的上下文走 `Command/Query → Handler`（`@nestjs/cqrs`）；简单上下文（controller + service + repository）是**合法终态**而非「没做完」（如 users/posts/workspaces）。
+- **CQRS 按需（P4 判据）**：存在跨聚合编排/事务边界/事件发布的上下文走 `Command/Query → Handler`（`@nestjs/cqrs`）；简单上下文（controller + service + repository）是**合法终态**而非「没做完」。能力基线必含、实施逐模块裁（ES/EDA 同此规则，见下条）；handler 实证示例：tenants 治理命令、users delete/export。
 - **垂直切片（Vertical Slice）**：按功能而非技术分层组织（`apps/api/src/modules/<context>`；共享契约侧居 `libs/core/src/modules/<context>`）。上下文之间只能通过领域事件耦合，禁止 import 另一个上下文的 `domain/` 或 `infrastructure/`。
-- **Event Sourcing（确定采纳·分期递进）**：人澄清 2026-10-14——ES 为确定的架构目标，不再以「某上下文真需要才做」为前提；分期节奏与审计/迁移门禁维持。当前 Phase B 影子追加（event 表审计·CRUD 仍为唯一真相源）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于架构精度修宪 S1 删除）。**Phase C（投影/saga）降为触发判据驱动的可选演进**——终态缺省 = 审计日志 + 集成事件。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
+- **Event Sourcing（能力基线·逐模块按需·分期递进）**：确定的架构目标（人澄清 2026-10-14；2026-10-20 人再定向「回放即真相」+ 能力/实施分离，**supersede** 同日精度修宪的「Phase C 可选·终态缺省=审计日志」口径——见 [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)）。架构必须**完备提供** CQRS/ES/EDA 能力（端口、机制、参考示范）；**实施按业务模块实际需求逐模块裁**——被事件化的聚合以 event store 为唯一真相源（「回放即真相」·读表降为可重建投影）；简单 CRUD / 无状态数据（sessions、verification、成员关系等）**可依法永远不事件化**。已落地：shadow-append + 同事务 outbox + relay（`EVENT_PUBLISH_MODE: inproc|shadow|outbox`·缺省 inproc）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于精度修宪 S1 删除）。回放即真相以试点先行实证（tenants 治理状态机·R1）。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
 
 ### 函数式内核件清单（P1 的物理地图·架构精度修宪补笔）
@@ -91,21 +91,26 @@ packages/api-client # 由 openapi.yaml 生成的可交换类型化客户端· F1
 
 所谓「层位移」**仅当**具体实现物被塞进 `libs/core`（如 `modules/*/domain` 下出现 MikroORM 实体）时才构成违规；在 kit 内发售领域 + 应用层是本征设计、非违规。命名冻结：`@core/saas-kit` 包与 `shared-kernel/` 子层**均不重命名**（对入站 import blast radius 大、结构收益为零——kit/kernel 之辨现由文档界定、不再编码进目录名）。裁决详见：[module-core-position-kernel-vs-kit](../plans/module-core-position-kernel-vs-kit.md)。
 
-## `users` 上下文（参考流程）
+## `users` 上下文（写路径只有 Command → CommandHandler）
+
+Controller 从不直接改状态。以真实落地流示范——tenants 治理（`POST /tenants/:id/approve`·即 R1 回放即真相首试点）：
 
 ```
-POST /users
-  → UsersController（api 层）              # 由已校验的 DTO 构造 CreateUserCommand
+POST /tenants/:id/approve
+  → Tenants/Platform controller（api 层）  # 由已校验的 DTO 构造 ApproveTenantCommand
   → CommandBus.execute                     # @nestjs/cqrs
-  → CreateUserCommandHandler（application）
-        repo.findByEmail → 存在则抛 ConflictException
-        User.register(...)（domain）       # 不变量校验 + recordEvent(UserRegisteredEvent)
-        repo.save(user)（端口 → infrastructure 的 MikroUserRepository）
-        eventBus.publishAll(user.pullDomainEvents())   # 当前仅进程内派发，未来落事件存储
-  → 返回 PublicUser 投影（201）
+  → ApproveTenantCommandHandler（application）
+        governedTenantTransition 辅助 → canTransition 纯裁决（函数式内核）
+        TenantStatusService.transition     # 状态行经仓储（端口 → infrastructure 适配器）
+        EventBus.publishAll([...])         # P3 操作记录事件；UoW 使事件行业务行同事务原子
+                                           # （outbox 模式）；shadow 下影子追加落 event 表
+  → 返回只读投影
 ```
 
-读接口（`GET /users`、`GET /users/:id`）的 `Query` 处理器直接经 `MikroOrmService` 读写库
+（原示例 `POST /users` → `CreateUserCommandHandler` → `User.register(...)` →
+`pullDomainEvents()` 系幻影：码中无此 handler/聚合——由 2026-10-20 R0 修宪 sweep 移除。）
+
+读接口（如 `GET /users`、`GET /users/:id`）的 `Query` 处理器直接经 `MikroOrmService` 读写库
 （务实的 CQRS 读侧，绕过 domain）。
 
 ## 分层依赖规则

@@ -77,6 +77,7 @@
 > 每阶段的具体方案须落 `docs/plans/`（技术方案）并过**审计门**后方可实现（workflow §1/§3）；阶段推进是 `global` blast radius，须人签核。
 > **交付形态（D6）**：全程以 **core 库 + 参考应用两包** 推进；core 承载多租户横切能力、参考应用演示消费。包结构落地前须与 `architecture.md` 协调（另议）。
 > **命名分工（2026-10-14 补注）**：参考应用目录按行业惯例命名 `apps/api`；“参考实现”定位由本文档与 README 承担，不占用目录名。
+> **ES 定向注记（2026-10-20·R0 修宪）**：架构精度修宪段的「终态缺省=审计日志/Phase C 可选」口径已被同日人定向 supersede——**能力基线（CQRS/ES/EDA 必含）+ 逐模块按需实施**：被事件化聚合以 event store 为唯一真相源（回放即真相），简单 CRUD 可依法保持 CRUD。修宪案详情见 [module-es-truth-source-amendment](../plans/module-es-truth-source-amendment.md)（已审计·R0 落地）。
 
 ## 8. 待裁决 / 开放问题（请逐条 `✅ / ✏️ / ⏸`）
 
