@@ -69,8 +69,8 @@ import {
  * These handlers read/write WITHOUT a tenant scope on purpose: platform-level governance
  * spans all tenants (FR-11①), so they deliberately never bind TenantScopeGuard.
  *
- * Lifecycle transitions route through `TenantStatusService.transition` (single metadata
- * choke-point, §9.4 state machine): suspend (active→suspended), resume (suspended→active),
+ * Lifecycle transitions route through `TenantStatusService.transition` (single choke-point on
+ * the `tenant.status` column, §9.4 state machine): suspend (active→suspended), resume (suspended→active),
  * delete (soft→deleted terminal). Each success/failure emits a structured audit line (FR-6).
  */
 @ApiExtraModels(

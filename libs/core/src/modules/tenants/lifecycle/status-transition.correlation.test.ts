@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { requestStorage } from '../../../shared-kernel/context/request-context';
 import type { DomainEventPublisher } from '../../../shared-kernel/domain/event-publisher.port';
-import { TENANT_STATUS, withTenantStatus } from './tenant-lifecycle';
+import { TENANT_STATUS } from './tenant-lifecycle';
 import { TenantStatusService } from './tenant-status.service';
 import type { TenantStatusStore } from './tenant-status.store';
 import { UserStatusService } from './user-status.service';
@@ -28,10 +28,13 @@ function makeRecorder(): {
 describe('TenantStatusService.transition 构造点', () => {
   it('请求上下文内迁移：tenant.status.transitioned 携带当前 requestId', async () => {
     const store: TenantStatusStore = {
-      async load() {
-        return { metadata: withTenantStatus({}, TENANT_STATUS.PENDING) };
+      async readStatus() {
+        return TENANT_STATUS.PENDING;
       },
-      async save() {},
+      async organizationExists() {
+        return true;
+      },
+      async upsert() {},
     };
     const rec = makeRecorder();
     const svc = new TenantStatusService(store, rec as unknown as DomainEventPublisher, {
@@ -46,10 +49,13 @@ describe('TenantStatusService.transition 构造点', () => {
 
   it('上下文外（后台/脚本）迁移：correlationId undefined·持久化 ?? null 语义不动', async () => {
     const store: TenantStatusStore = {
-      async load() {
-        return { metadata: withTenantStatus({}, TENANT_STATUS.PENDING) };
+      async readStatus() {
+        return TENANT_STATUS.PENDING;
       },
-      async save() {},
+      async organizationExists() {
+        return true;
+      },
+      async upsert() {},
     };
     const rec = makeRecorder();
     const svc = new TenantStatusService(store, rec as unknown as DomainEventPublisher, {

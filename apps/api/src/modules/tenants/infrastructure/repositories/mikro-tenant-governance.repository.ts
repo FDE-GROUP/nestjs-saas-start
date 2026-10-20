@@ -4,12 +4,11 @@ import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
-  readTenantStatus,
   TENANT_STATUS,
   type TenantStatus,
 } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
-import { type InferEntity, QueryOrder } from '@mikro-orm/core';
+import { type EntityManager, type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   ExportedTenantMember,
@@ -19,10 +18,15 @@ import type {
   TenantDiagnostics,
   TenantGovernanceRepository,
 } from '../../domain/repositories/tenant-governance.repository';
+import { Tenant } from '../entities/tenant.entity';
 
-/** 无状态记录（存量/seeded）视同 active——与 canTransition 缺省/middleware deny-list 同口径。 */
-function effectiveStatus(metadata: unknown): TenantStatus {
-  return readTenantStatus(metadata) ?? TENANT_STATUS.ACTIVE;
+/**
+ * 无户籍记录（存量/seeded·tenant 行缺失）视同 active——与 `canTransition` 缺省/
+ * middleware deny-list 同口径（global-tenant-entity-reclamation 切片 B：态源从 metadata
+ * 换轨 `tenant.status` 真列，兑底语义逐字不变）。
+ */
+function effectiveStatus(status: TenantStatus | undefined): TenantStatus {
+  return status ?? TENANT_STATUS.ACTIVE;
 }
 
 /**
@@ -46,14 +50,27 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   // entities.ts 的 `defineEntity` 结果只有值、无 companion interface，实例类型经 `InferEntity` 提取。
-  private toRow(entity: InferEntity<typeof Organization>): PlatformTenantRow {
+  private toRow(
+    entity: InferEntity<typeof Organization>,
+    status?: TenantStatus,
+  ): PlatformTenantRow {
     return {
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: effectiveStatus(entity.metadata),
+      status: effectiveStatus(status),
       createdAt: entity.createdAt,
     };
+  }
+
+  /** 批量取户籍态（一页一查·LEFT JOIN 折叠为「批量取+内存拼接」同 R-B 惯例）。 */
+  private async statusByIds(
+    em: EntityManager,
+    ids: readonly string[],
+  ): Promise<Map<string, TenantStatus>> {
+    if (ids.length === 0) return new Map();
+    const rows = await em.find(Tenant, { id: { $in: [...ids] } } as never);
+    return new Map(rows.map((r) => [r.id, r.status]));
   }
 
   async list(opts: {
@@ -73,8 +90,12 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
       limit: opts.limit,
       offset: opts.offset,
     });
+    const statuses = await this.statusByIds(
+      em,
+      entities.map((e) => e.id),
+    );
     return createPage(
-      entities.map((entity) => this.toRow(entity)),
+      entities.map((entity) => this.toRow(entity, statuses.get(entity.id))),
       total,
       opts,
     );
@@ -83,7 +104,9 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
   async findById(organizationId: string): Promise<PlatformTenantRow | null> {
     const em = await this.mikro.fork();
     const entity = await em.findOne(Organization, { id: organizationId } as never);
-    return entity ? this.toRow(entity) : null;
+    if (!entity) return null;
+    const tenantRow = await em.findOne(Tenant, { id: organizationId } as never);
+    return this.toRow(entity, tenantRow?.status);
   }
 
   async diagnostics(organizationId: string): Promise<TenantDiagnostics | null> {
@@ -101,14 +124,17 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
 
   async exportTenantData(organizationId: string): Promise<TenantDataExport | null> {
     const em = await this.mikro.fork();
-    // 租户全列（含 metadata 状态机）；**不按 status 过滤**——deleted 终态可导（S5 软删取证用途·NFR-6）。
+    // 租户本体（BA 面全列·metadata 仅余 BA 自键）+ 户籍态分取；**不按 status 过滤**——
+    // deleted 终态可导（S5 软删取证用途·NFR-6）。收权后生命周期态不在 metadata 而在 tenant 行。
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return null;
+    const tenantRow = await em.findOne(Tenant, { id: organizationId } as never);
     const tenant: TenantDataExport['tenant'] = {
       id: org.id,
       name: org.name,
       slug: org.slug,
       logo: org.logo ?? null,
+      status: effectiveStatus(tenantRow?.status),
       metadata: org.metadata,
       createdAt: org.createdAt,
       updatedAt: org.updatedAt ?? null,

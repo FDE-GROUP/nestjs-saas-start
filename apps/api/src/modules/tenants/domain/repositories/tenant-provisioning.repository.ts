@@ -5,11 +5,12 @@ import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tena
  *
  * 「建租户唯一通道」= 服务端系统动作：申请经 Better Auth `createOrganization`（无 session +
  * `body.userId` → `isSystemAction`，源码坐实不受 `allowUserToCreateOrganization:false` 限）落
- * pending 组织，并强制盖 `metadata.status = pending_approval`。BA 原生把创建者置为首名
+ * pending 组织，并落 `tenant` 户籍行为 `pending_approval`（global-tenant-entity-reclamation
+ * 切片 B：态存自有表真列，旧 `metadata.status` 寄居已退场）。BA 原生把创建者置为首名
  * `owner` member（FR-12·天然满足），本 port 不另写成员。
  *
  * `remove` 供驳回：硬删 pending 组织行（FK 级联清 member/invitation·pending 期零业务数据）。
- * 状态迁移（approve）不在此 port——由 `TenantStatusService` 统一写回 metadata（禁散点）。
+ * 状态迁移（approve）不在此 port——由 `TenantStatusService` 统一写回户籍表（禁散点）。
  */
 export const TENANT_PROVISIONING_REPOSITORY = Symbol('TENANT_PROVISIONING_REPOSITORY');
 

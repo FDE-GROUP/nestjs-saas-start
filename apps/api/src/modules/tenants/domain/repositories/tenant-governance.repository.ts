@@ -9,7 +9,7 @@ import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagi
  * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
  *
  * 状态迁移（suspend/resume/delete）不在此 port——统一走 `TenantStatusService.transition`
- * （metadata 单点·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
+ * （户籍表 `tenant.status` 单点·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
  */
 export const TENANT_GOVERNANCE_REPOSITORY = Symbol('TENANT_GOVERNANCE_REPOSITORY');
 
@@ -58,7 +58,8 @@ export interface ExportedTenantMember {
 
 /**
  * 按租户导出 payload（六段聚合·SSOT = organizationId 归属可导表）。
- * `tenant` 为 organization 全列（含 metadata 状态机）；deleted 终态租户亦可导出
+ * `tenant` 为 organization 全列 + 户籍态 `status`（收权案切片 B：态在 `tenant.status` 真列·
+ * `metadata` 全列透传零我方键）；deleted 终态租户亦可导出
  *（S5 软删「保留行供按租户导出/硬删」的取证用途·查询面刻意不按 status 过滤）。
  */
 export interface TenantDataExport {
@@ -67,6 +68,8 @@ export interface TenantDataExport {
     name: string;
     slug: string;
     logo: string | null;
+    /** 生命周期态（`tenant.status` 真列·无户籍兑底 active·与列表行同口径）。 */
+    status: TenantStatus;
     metadata: unknown;
     createdAt: Date;
     updatedAt: Date | null;
