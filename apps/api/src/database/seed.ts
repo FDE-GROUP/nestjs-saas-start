@@ -16,8 +16,8 @@ import {
 } from '../modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '../modules/posts/infrastructure/entities/post.entity';
 import { Member, Organization } from '../modules/tenants/infrastructure/entities/ba-org.entities';
-import { MIKRO_APP_ENTITIES } from './mikro/app-entities';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
+import { MIKRO_SYS_ENTITIES } from './mikro/sys-entities';
 
 /**
  * ORM 修宪案 B · 切片 4-α（S-d6）——seed 数据面由旧 ORM 换轨为 **MikroORM**（只换通道·不改行为）。
@@ -34,11 +34,11 @@ import { initMikroOrm } from './mikro/mikro-orm.factory';
  *   旧「`ADMIN_PASSWORD||admin123` 静默兜底」升为入口裁决单点 `enforceSeedPasswordPolicy`——
  *   `NODE_ENV=production` 缺 `ADMIN_PASSWORD`/`USER_PASSWORD` 即**拒跑**（先于建连·零弱口令上图）；
  *   非生产兜底值不变 + 点名 warn（与 OAuth social 面「非生产 warn/生产 fail-loud」同构·机制不特判）。
- * - **运行器＝`tsx`**（`db:seed`）：seed 现值导入整条 Mikro 轨（`./mikro/mikro-orm.factory`→`./ba/entities`/`./mikro/app-entities`…
+ * - **运行器＝`tsx`**（`db:seed`）：seed 现值导入整条 Mikro 轨（`./mikro/mikro-orm.factory`→`./ba/entities`/`./mikro/sys-entities`…
  *   扩展名省略），Node 原生 type-stripping **不解析扩展名省略的相对 ESM 导入**（原 `node seed.ts` 亦不例外），
  *   故改用仓内既有 `tsx` 运行（不改行为·仅换装载器·SWC 编译链不受影响）。核心逻辑抽为 `runSeed(em, options)`
  *   （供镜测直调·fake em），`main()` 只负责 dotenv（顶部先行·R-η Node-ESM 时序）→ `initMikroOrm` 懒建 app-orm
- *   （`MIKRO_APP_ENTITIES` 涵盖 User/Organization/Post）→ fork em → `runSeed` → `orm.close()`。
+ *   （`MIKRO_SYS_ENTITIES` 涵盖 User/Organization/Post）→ fork em → `runSeed` → `orm.close()`。
  */
 
 /**
@@ -430,7 +430,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
   console.log('📋 Seed options:', options);
 
-  const orm = await initMikroOrm(process.env.DATABASE_URL as string, MIKRO_APP_ENTITIES);
+  const orm = await initMikroOrm(process.env.DATABASE_URL as string, MIKRO_SYS_ENTITIES);
   const auth = createLoginableAuth(orm);
   try {
     await runSeed(orm.em.fork(), options, auth);

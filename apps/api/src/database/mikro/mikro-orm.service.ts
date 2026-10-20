@@ -3,8 +3,8 @@ import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { TransactionScope } from '../eventing/transaction-scope';
-import { MIKRO_APP_ENTITIES } from './app-entities';
 import { initMikroOrm } from './mikro-orm.factory';
+import { MIKRO_SYS_ENTITIES } from './sys-entities';
 
 /**
  * ORM 修宪案 B · 切片 2 —— app 侧 MikroORM v7 连接持有者（**懒建**）。
@@ -14,7 +14,7 @@ import { initMikroOrm } from './mikro-orm.factory';
  * 数据面时才 `ensure()` 懒 init（本仓默认 CI 不跑真 posts 读写→永不触发·保持 DB-free 不变量）；
  * env-gated 全栈 e2e 打 `/posts` 时才真连。`onModuleDestroy` 仅在曾建过连时 close。
  *
- * 实体集＝`MIKRO_APP_ENTITIES`（切片 2 仅 `Post`·切片 3b 已并入 BA 七表为单一 app-orm）。
+ * 实体集＝`MIKRO_SYS_ENTITIES`（切片 2 仅 `Post`·切片 3b 已并入 BA 七表为单一 app-orm）。
  * 每次读写经 `fork()` 取**独立 em**（禁共享全局 `orm.em`·V4 串租户教训·与切片 1 adapter 同纪律）。
  */
 @Injectable()
@@ -33,7 +33,7 @@ export class MikroOrmService implements OnModuleDestroy {
   private async ensure(): Promise<MikroORM> {
     if (!this.pending) {
       const url = this.config.getDatabaseConfig().url;
-      this.pending = initMikroOrm(url, MIKRO_APP_ENTITIES).then((orm) => {
+      this.pending = initMikroOrm(url, MIKRO_SYS_ENTITIES).then((orm) => {
         this.orm = orm;
         this.logger.log('MikroORM app-orm connected (posts + BA adapter)');
         return orm;

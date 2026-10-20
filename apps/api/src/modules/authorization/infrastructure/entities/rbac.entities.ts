@@ -6,7 +6,7 @@ import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/c
  * 租户 RBAC 动态化三表（module-rbac-dynamic-roles §2.2·甲裁「行式 grant + 审计表」）——
  * 列元数据单源 + 双变体派生（γ 惯例·global-entity-context-placement 切片 B 归位：原
  * `database/mikro/rbac-tables.ts`·判据=`table-ownership.ts` 表属主 `tenantRole*→authorization`；
- * 迁移忠实实体见 `migration-entities.ts`，本文件出运行时扁平实体入 `MIKRO_APP_ENTITIES`）。
+ * 迁移忠实实体见 `migration-entities.ts`，本文件出运行时扁平实体入 `MIKRO_SYS_ENTITIES`）。
  * ⚠ tsx 消费链（迁移装配）文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  *
  * 新宪（丙裁）：**DB 是授权事实 SSOT**——
@@ -69,7 +69,7 @@ export const TENANT_ROLE_AUDIT_META: TableMeta = {
   ],
 };
 
-// —— 运行时扁平实体（companion interface + 工厂派生·入 MIKRO_APP_ENTITIES·app 仓储读写）——
+// —— 运行时扁平实体（companion interface + 工厂派生·入 MIKRO_SYS_ENTITIES·app 仓储读写）——
 
 export interface TenantRoleRow {
   id: string;

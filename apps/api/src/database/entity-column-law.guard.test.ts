@@ -15,8 +15,8 @@ import {
   UPDATED_AT_NULLABLE_EXEMPT,
 } from './entity-column-law';
 import { EVENT_META } from './eventing/entities/event.entity';
-import { MIKRO_ENTITIES } from './mikro/app-entities';
 import type { TableMeta } from './mikro/column-meta';
+import { MIKRO_ENTITIES } from './mikro/sys-entities';
 
 /**
  * 实体列定律守卫（global-entity-column-law 切片 A · 数据级核验·人裁③）。

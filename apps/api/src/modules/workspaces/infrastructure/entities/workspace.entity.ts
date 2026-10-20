@@ -7,7 +7,7 @@ import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/c
  *
  * 本文件是 `workspace` 列定义的**唯一真相源**：`*_META` 被 `migration-entities.ts` 经
  * `buildMigrationEntity` 消费（迁移忠实·FK 关系·受恒等闸守护），另经 `buildRuntimeEntity`
- * 派生运行时扁平实体入 `MIKRO_APP_ENTITIES`（app 仓储读写）——两变体同源·消双描述（γ 立意）。
+ * 派生运行时扁平实体入 `MIKRO_SYS_ENTITIES`（app 仓储读写）——两变体同源·消双描述（γ 立意）。
  * companion `interface` 提供运行时实例的 TS 形状（Mikro v7 动态工厂惯例·同 `post.entity.ts`）。
  * ⚠ tsx 消费链（迁移装配）文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  */

@@ -16,7 +16,7 @@ import { MikroORM as PostgreSqlMikroORM } from '@mikro-orm/postgresql';
  * snake↔camel 往返（见 entities.ts 头注）。列名一律带引号，规避 PG 保留字（`user` 等）。
  *
  * `entities` 形参（必填·名实案中性化）：调用方各自显式传实体集——BA 一致性套件传
- * `MIKRO_ENTITIES`（`ba/entities.ts`）、app 侧（`MikroOrmService`/seed）传 `MIKRO_APP_ENTITIES`，
+ * `MIKRO_ENTITIES`（`ba/entities.ts`）、app 侧（`MikroOrmService`/seed）传 `MIKRO_SYS_ENTITIES`，
  * 两套实体集边界在调用点自证，工厂不再特化偏向任何一方。
  */
 export async function initMikroOrm(databaseUrl: string, entities: readonly any[]) {

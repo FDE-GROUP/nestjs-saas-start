@@ -36,7 +36,7 @@ import { EVENT_META, Event } from '../eventing/entities/event.entity';
  * ⚠ tsx 消费链文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  */
 
-/** 四表运行时实体集（归位后跨上下文聚合·并入 `MIKRO_APP_ENTITIES`）。 */
+/** 四表运行时实体集（归位后跨上下文聚合·并入 `MIKRO_SYS_ENTITIES`）。 */
 export const MIKRO_FOUR_TABLE_ENTITIES = [Workspace, UserStatus, TenantSubscription, Event];
 
 /** 四表元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
@@ -53,7 +53,7 @@ export const RBAC_TABLE_METAS = [TENANT_ROLE_META, TENANT_ROLE_GRANT_META, TENAN
 /** BA 契约面八表全集（身份机器族[auth] + 组织容器族[tenants]·global-ba-entity-domain-placement 归域后装配根聚合）。 */
 export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES];
 
-export const MIKRO_APP_ENTITIES = [
+export const MIKRO_SYS_ENTITIES = [
   Post,
   ...MIKRO_ENTITIES,
   ...MIKRO_FOUR_TABLE_ENTITIES,
