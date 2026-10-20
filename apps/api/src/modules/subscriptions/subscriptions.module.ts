@@ -1,3 +1,4 @@
+import { ConfigService } from '@app/config/config.service';
 import { CreateSubscriptionCommandHandler } from '@core/saas-kit/modules/subscriptions/application/commands/handlers/create-subscription.command-handler';
 import { GetSubscriptionQueryHandler } from '@core/saas-kit/modules/subscriptions/application/queries/handlers/get-current-subscription.query-handler';
 import { CUSTOMER_PROVISIONER } from '@core/saas-kit/modules/subscriptions/domain/ports/customer-provisioner.port';
@@ -6,6 +7,7 @@ import { SUBSCRIPTION_REPOSITORY } from '@core/saas-kit/modules/subscriptions/do
 import { QuotaGuard } from '@core/saas-kit/modules/subscriptions/quota/quota.guard';
 import { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import { QUOTA_STORE } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
+import { ES_TRUTH_SOURCE_SUBSCRIPTIONS } from '@core/saas-kit/shared-kernel/domain/es-truth-source.port';
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { SubscriptionsController } from './api/subscriptions.controller';
@@ -45,6 +47,13 @@ const EventHandlers = [TenantStatusSubscriptionLinkHandler];
     { provide: SUBSCRIPTION_REPOSITORY, useClass: MikroSubscriptionRepository },
     // 治理联动系统面端口（module-es-first-real-consumer·显式 tenantId·终态收敛）。
     { provide: SUBSCRIPTION_LIFECYCLE, useClass: MikroSubscriptionLifecycle },
+    // ES R4c 真相源写切换（module-es-r4-second-context-subscriptions §3-R4c）：core/适配经 token 消费布尔，
+    // 适配由本（参考）应用装配—读 ConfigService 单源（端口倒置·core 不感知 @app/config）。缺省 false·与 TENANTS 正交。
+    {
+      provide: ES_TRUTH_SOURCE_SUBSCRIPTIONS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => config.getEsTruthSourceConfig().subscriptions,
+    },
     // §9.5.4①B/④ · P1c：订阅 domain/application 经端口消费客户开通，PaymentService 适配留应用侧。
     { provide: CUSTOMER_PROVISIONER, useClass: PaymentCustomerProvisioner },
     // 机制层提纯（未决项 4）：quota 服务/守卫与 store 适配自 TenancyModule 归位本上下文。

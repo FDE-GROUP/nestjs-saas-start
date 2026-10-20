@@ -98,13 +98,15 @@ export interface Config {
 }
 
 /**
- * ES 真相源写切换（module-es-r1-replay-core §3-R1c）：租户生命周期 `transition`/`reject`
- * 写路径是否翻为「回放即真相」（事件流为裁决输入与耐久真相·tenant 表降为投影）。
+ * ES 真相源写切换（module-es-r1-replay-core §3-R1c / module-es-r4-second-context-subscriptions §3-R4c）：
+ * 生命周期写路径是否翻为「回放即真相」（事件流为裁决输入与耐久真相·表行降为投影）。
  *  - `tenants`：缺省 false（env 未置 `ES_TRUTH_SOURCE_TENANTS=true` 即关·原路径逐字节不变）。
- *    开启后写序：`load → fold 重放态裁决 → append(expectedVersion 乐观锁·同事务) → 投影 upsert(fold 结果)`。
+ *  - `subscriptions`：缺省 false（env 未置 `ES_TRUTH_SOURCE_SUBSCRIPTIONS=true` 即关）·与 tenants 正交。
+ *  开启后写序：`load → fold 重放态裁决 → append(expectedVersion 乐观锁·同事务) → 投影 upsert(fold 结果)`。
  */
 export interface EsTruthSourceConfig {
   tenants: boolean;
+  subscriptions: boolean;
 }
 
 /**
