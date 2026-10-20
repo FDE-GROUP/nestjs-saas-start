@@ -1,8 +1,9 @@
-# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（呈审案 · 待审计 · 零实现）
+# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（已审计·按案 GO · R1a 进行中）
 
 > 适用范围: `libs/core saas-kit tenants/lifecycle · shared-kernel EventStore 端口 · apps/api database/eventing + tenants handlers · tenant 户籍表地位 · @saas/contracts 新增事件 payload 面` ← blast radius **大**（首个动写路径的 ES 片）；审计深度 = 人签核（高危#1：写路径切换 + 数据 bootstrap）
 > 关联: 母案 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md)（**已签发**·本案=其 §4 R1 细化；裁①乙/裁②甲+丙/裁③乙/裁④丙起步/裁⑤甲/裁⑥甲/首试点 A 为本案前提）· [event-sourcing-roadmap](./event-sourcing-roadmap.md) · [module-es-outbox-transactional](./module-es-outbox-transactional.md)（UoW/三态旋钮机制复用）· global-tenancy S4/S5（治理状态机）
 > 性质: **实施细化案**（母案方向与六裁已归人；本案只裁"怎么落"·分三子片各自过门）
+> **审计签发（2026-10-21）**：人同意=按案 GO——三子片框架/改锁清单/env 键位 `ES_TRUTH_SOURCE_TENANTS` 均签；R1a 授权开工（纯增量无高危）；**R1b（dev 库数据 backfill）/R1c（写路径切换）仍各需高危亲签另次放行**。
 > 状态**不在此**：单源于 [`README.md`](./README.md) 索引表
 
 ## 1. 现状取证（本轮实核·本案立论基础）
@@ -63,8 +64,9 @@ user 流事件化（裁④丙·待 R2 crypto-shredding）；异步投影/端到�
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-21 | 0.1.0 | 母案签发后按令细化 | 首版呈审案：现状取证（load 零存在/事件面三种/gated 10 文件/预期零 DDL）+ 目标态四定义 + R1a/b/c 分片（各带文件级改动面/幂等律/改锁清单）+ 旋钮回退窗 + 判据测四点 + 高危清单 ·零实现 |
+| 2026-10-21 | 0.2.0 | 审计门通过 | 人按案 GO：分片框架/改锁清单/env 键位签发；R1a 授权开工（load gated 测落既有已登记 event-store.mikro.e2e.test.ts·免新文件登记）；R1b/R1c 高危另次亲签 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.1.0 起草（呈审·待审计门·零实现）。状态以 README 索引表为单源。
+正文已于 2026-10-21 / v0.2.0 修订（审计通过·按案 GO·R1a 开工授权）。状态以 README 索引表为单源。
