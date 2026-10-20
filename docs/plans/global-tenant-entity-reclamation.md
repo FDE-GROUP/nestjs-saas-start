@@ -1,6 +1,6 @@
 # global-tenant-entity-reclamation：租户实体收权——tenant 自有表，BA 缩回宪法定位
 
-> 用途: **方案（提案–审计–实施）** | 状态: 已审计·进行中 | 版本: 0.1.0
+> 用途: **方案（提案–审计–实施）** | 状态: 已实施·待人类验收 | 版本: 0.2.0
 > 定位: 用户由「为什么没有 Tenant 实体」追问，自查出 **BA 责任面被放大**——租户生命周期态机寄居 `organization.metadata`（jsonb），而宪法对 BA 定位是「纯认证与成员数据源」（±zh），租户生命周期既非认证也非成员。用户裁「同意乙」（建自有 tenant 表收权），并令参考外部文章（已鉴定：CSDN 内容农场文·所述系同名 Java 项目·非本仓 better-auth.dev·仅取其多租户工程惯例旁证，全部支持乙档方向；设计先例采本仓 `user_status` 旁表模式）。
 > 关联: S4 审批制（metadata 态机出处·本案修订其存储决策）· global-entity-column-law（新表受 L1/L2 管辖·16→17 表恒等账）· table-ownership（organization 属主=tenants 不变·新表入账）· module-rbac-casl 甲裁（org HTTP 封端·不动）。
 
@@ -37,16 +37,17 @@
 - 审计人 / 日期：人（同意·五裁点全采建议）/ 2026-10-20
 
 ## 5. 验收判据（实施后回写·带取证）
-- [ ] `tenant` 表迁移落库 + backfill 对拍（迁移前后租户态逐行等值）；列定律 17 表恒等守卫绿；table-ownership 入账。
-- [ ] 治理链 e2e 全绿（含非法态 DB CHECK 负向测）；metadata 我方键全仓 grep=0。
-- [ ] `ci`/`ci:db`/`verify:prod-boot` 全绿；宪法 ±zh 改判成文两版一致。
+- [x] `tenant` 表迁移落库 + backfill 对拍（迁移前后租户态逐行等值）；列定律 17 表恒等守卫绿；table-ownership 入账。**取证（切片 A·f47c016）**：DDL+backfill 两工件落 dev 库逐行对拍 2/2（态入列·同岁·metadata 剥离净）；二次 `migration:generate` 空 diff；CHECK 违例负向红得其所；守卫 17 表恒等绿。
+- [x] 治理链 e2e 全绿（含非法态 DB CHECK 负向测）；metadata 我方键全仓 grep=0。**取证（切片 B·596a40f）**：新 gated e2e `tenant-table.e2e.test.ts` 四断言真库跑住（入册+盖戳/`tenant_status_check` 负向/无户籍兑底不拦/FK cascade 随灭）；ci:db 恒等闸认登记（10 gated+1 豁免）·存量 9 gated 文件零回归；`status`/`appliedAt` 写面退场后全仓 grep 仅余「已退场」叙述性注释（零寄居读写）。
+- [x] `ci`/`ci:db`/`verify:prod-boot` 全绿；宪法 ±zh 改判成文两版一致。**取证**：切片 A/B 各跑硬闸全绿（ci 677 测·prod-boot /health 200）；切片 C 后终跑存照（本行回写时点）；±zh 术语纪律段租户实体改判 + BA 定位条重申两版镜像（本文件提交内）。
 
 ## 6. 变更记录
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 用户判「BA 责任被放大」并同意乙档、令参考外部文章（已鉴定为同名项目嫁接文·取惯例旁证） | 首版三片：A 表+迁移+backfill+定律入账 / B 读写换轨 / C 宪法翻账；五裁点待审计 |
+| 2026-10-20 | 0.2.0 | 签核后三片实施完毕 | 切片 A（f47c016）checks 通道+实体+DDL/backfill+17 表恒等；切片 B（596a40f·含 appliedAt 退役收口 amend）端口三原语化/服务换轨/治理读面折叠/新 gated e2e 四断言/棘轮正名；切片 C 宪法 ±zh 改判成文（术语纪律段+BA 定位条）+ global-tenancy 修订注（§9.2/§10 S4 行/§12/§13 v0.24.0·不改史）；§5 判据三项勾账带取证；README 翻「已实施·待人类验收」；推送待人令 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 起草，待审计。
+正文已于 2026-10-20 / v0.2.0 实施回写（三片入库·待人类验收/推送）。

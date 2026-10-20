@@ -128,7 +128,12 @@ code review.
 ## Bounded Context Map & the Multi-Tenancy Mechanism Layer
 
 Terminology discipline: a **tenant** is a business concept (the `tenants` core-domain
-aggregate, with lifecycle, invariants and language); **multi-tenancy** is an isolation
+aggregate, with lifecycle, invariants and language); its physical entity is the
+self-owned registry table `tenant` (owned by the `tenants` context·`id` = proxy PK
+equal to `organization.id`·`status` as a real column + DB CHECK — the
+global-tenant-entity-reclamation amendment 2026-10-20 supersedes the old implicit shift
+“tenant identity = organization, status parked in `metadata`”; `organization` is its
+authentication/membership projection); **multi-tenancy** is an isolation
 mechanism (infrastructure, no aggregate, no lifecycle: request recognition → ALS
 propagation → boundary enforcement → exemption axis). The two never co-inhabit:
 `tenancy/` hosts no tenant-aggregate business writes, and business contexts never
@@ -204,7 +209,7 @@ directory centralization.
 - **Framework**: NestJS 12 + Fastify
 - **Architecture**: Clean Architecture + DDD + CQRS (`@nestjs/cqrs`)
 - **Database**: PostgreSQL + MikroORM (explicit migrations)
-- **Authentication**: Better Auth (**pure auth & membership data source**: identity/session/organization·member·invitation tables; its built-in org authorization HTTP endpoints are sealed (module-rbac-casl ruling A), member/invitation endpoints served by our own facades via server-side calls)
+- **Authentication**: Better Auth (**pure auth & membership data source**: identity/session/organization·member·invitation tables; its built-in org authorization HTTP endpoints are sealed (module-rbac-casl ruling A), member/invitation endpoints served by our own facades via server-side calls; the tenant lifecycle status lives in the self-owned registry table column `tenant.status` (global-tenant-entity-reclamation), and BA `organization.metadata` carries no keys of ours anymore — this clause's promise now holds verbatim)
 - **Authorization**: CASL (`@casl/ability` v7) — the sole tenant-level RBAC ruling engine. **The authorization-fact SSOT lives in DB grant rows** (`tenant_role`/`tenant_role_grant`·per-tenant dynamic roles·module-rbac-dynamic-roles ruling C supersedes the old "`tenant-rules` TS table is the SSOT" ruling); **the code vocabulary `tenant-rules` is the language SSOT** (compile-time `TenantSubject/TenantAction` type domain only); **CASL rules are the runtime projection** (the checker lazily projects per-tenant via the repository port + in-process version cache·`invalidateTenant` for hot reload). Endpoints declare `@Can(action, subject)` and `TenantPermissionGuard` rules from an ALS-preinjected role (no scattered special-casing); instance-level authorization runs at check level (`TenantPermissionCheck.resource` + condition rows matched by CASL mongo after resolving the `{{userId}}` template); query-level list filtering is its same-source extension (`TenantPermissionChecker.listPredicate` pushes restricted grant rows down into the list read chain as an instance predicate merged with the tenant filter under a fixed spread order·module-rbac-query-level-filtering)
 - **Testing**: Vitest (+ `unplugin-swc` for decorator metadata)
 - **Linting/Formatting**: Biome
