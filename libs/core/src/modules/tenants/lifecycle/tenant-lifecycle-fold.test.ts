@@ -100,3 +100,35 @@ describe('replayTenantLifecycle（tenant 流回放 fold）', () => {
     expect(() => replayTenantLifecycle([missing])).toThrow(/流损坏/);
   });
 });
+
+describe('replayTenantLifecycle·最后快照重启语义（R1b backfill 存量流·§3-R1b 裁②甲）', () => {
+  it('存量流：shadow 期历史前缀（首事 from=pending_approval）+ 尾部快照 → 覆盖此前一切·报快照态不报漂移', () => {
+    const events = [
+      transitioned('orgH', 'pending_approval', 'active'),
+      new TenantBootstrappedEvent({ aggregateId: 'orgH', payload: { status: 'active' } }),
+    ];
+    const state = replayTenantLifecycle(events);
+    expect(state).toMatchObject({ organizationId: 'orgH', status: 'active', purged: false });
+    // version=快照重启后回放段内已应用数（非流全长）——文件头既定语义
+    expect(state?.version).toBe(1);
+  });
+
+  it('多个快照 → 最后一个为起点（不报错·后者胜）', () => {
+    const events = [
+      new TenantBootstrappedEvent({ aggregateId: 'orgI', payload: { status: 'pending_approval' } }),
+      transitioned('orgI', 'pending_approval', 'active'),
+      new TenantBootstrappedEvent({ aggregateId: 'orgI', payload: { status: 'suspended' } }),
+    ];
+    const state = replayTenantLifecycle(events);
+    expect(state).toMatchObject({ status: 'suspended', version: 1 });
+  });
+
+  it('最后快照之后仍严格：漂移/非法迁移照样 fail-loud', () => {
+    const events = [
+      transitioned('orgJ', 'pending_approval', 'active'),
+      new TenantBootstrappedEvent({ aggregateId: 'orgJ', payload: { status: 'active' } }),
+      transitioned('orgJ', 'suspended', 'active'),
+    ];
+    expect(() => replayTenantLifecycle(events)).toThrow(/漂移/);
+  });
+});

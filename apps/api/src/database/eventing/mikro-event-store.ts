@@ -4,7 +4,7 @@ import { QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { Event } from './entities/event.entity';
-import { EVENT_TYPE_REGISTRY } from './event-type-registry';
+import { hydrateEventRow } from './event-hydration';
 
 /**
  * ORM 修宪案 B · 切片 3c-ii-C —— `EventStore` 端口的 **MikroORM 适配**（`EVENT_STORE` 绑定改指本类·MikroORM 为唯一实现）。
@@ -96,31 +96,14 @@ export class MikroEventStore implements EventStore {
   }
 
   /**
-   * 回放读取（ES R1a）：流内 version 升序重建事件实例；未知 eventType fail-loud（注册表外
-   * 即不可信流，拒回放不猜）；信封显式值透传（eventId/occurredAt/correlationId 不重掷）。
+   * 回放读取（ES R1a）：流内 version 升序重建事件实例（经 `event-hydration` 单源·R1b 抽出：
+   * 未知 eventType fail-loud、信封显式值透传不重掷，与 bootstrap 脚本 `--verify` 同源同义）。
    */
   async load(aggregateType: string, aggregateId: string): Promise<DomainEvent[]> {
     const em = await this.mikro.fork();
     const rows = await em.find(Event, this.byStream(aggregateType, aggregateId), {
       orderBy: { version: QueryOrder.ASC },
     });
-    return rows.map((row) => {
-      const EventClass = EVENT_TYPE_REGISTRY.get(row.eventType);
-      if (!EventClass) {
-        throw new Error(
-          `EVENT_STORE load: 未知 eventType ${row.eventType}（event ${row.eventId}）——注册表外事件，拒回放`,
-        );
-      }
-      const metadata = row.metadata ?? {};
-      return new EventClass({
-        aggregateId: row.aggregateId,
-        payload: row.payload,
-        eventId: row.eventId,
-        eventVersion: row.eventVersion,
-        occurredAt: row.occurredAt,
-        correlationId: metadata.correlationId ?? undefined,
-        causationId: metadata.causationId ?? undefined,
-      });
-    });
+    return rows.map((row) => hydrateEventRow(row));
   }
 }

@@ -14,15 +14,17 @@ import { canTransition, TENANT_STATUS, type TenantStatus } from './tenant-lifecy
  * 即从本 fold 的重放结果取得，而非表行。
  *
  * 流语义（tenant 流·aggregateType `tenant`）：
- *  - `tenant.bootstrapped`：**流起点快照**——只允许在空态出现（裁②甲·存量不虚构历史），
- *    以其 status 建立状态；已定位后再见 = 流损坏 fail-loud。
+ *  - `tenant.bootstrapped`：**快照事件**。全流回放（`replayTenantLifecycle`）采
+ *    「最后快照重启」语义（§3-R1b·裁②甲——**快照事件覆盖此前一切**）：R1b backfill 落
+ *    存量流的 bootstrapped 在历史治理事件之后（max+1 续位不重排历史），快照前缀不重放不校验。
+ *    增量推进（`applyTenantEvent`）仍只容空态出现——已定位后再见 = 流损坏 fail-loud。
  *  - `tenant.status.transitioned`：迁移合法性经 `canTransition` 复验（篡改/分叉防御），
  *    且事件记录的 `from` 必须等于重放态（无户籍历史 `from===null` ↔ 空态起点）；不符即漂移 fail-loud。
  *  - `tenant.rejected`：驳回 = 硬删事实（非状态迁移·§6-① 口径）→ 终态 tombstone
  *    `status=deleted, purged=true`；此后一切治理事件视为对已抹除流写入 = fail-loud。
  *  - 未知 eventType / 非 tenant 聚合 / payload 形态缺关键字段：一律 fail-loud，不猜。
  *
- * `version` 为**流内位置**（应用序号 1..n），非 DB 物理 version（端口 load 不携列值）；
+ * `version` 为**回放段内已应用事件数**（快照重启后从 1 起·非流全长；端口 load 不携列值）；
  * 物理并发校验由 `append(expectedVersion)` 承担（R1c 接线）。
  */
 export interface TenantLifecycleState {
@@ -114,13 +116,27 @@ export function applyTenantEvent(
   );
 }
 
-/** 全流回放（load 的升序结果）；空流 → undefined（无户籍=「无状态记录」·deny-list 同口径）。 */
+/**
+ * 全流回放（load 的升序结果）；空流 → undefined（无户籍=「无状态记录」·deny-list 同口径）。
+ *
+ * 「最后快照重启」（module-es-r1-replay-core §3-R1b·裁②甲）：流内存在 bootstrapped 时，
+ * 以**最后一个**为起点折叠——快照覆盖此前一切（存量 backfill 前缀含 shadow 期首事
+ * `from='pending_approval'` 一类无空态起点的历史，不重放不校验，避免历史重排）；
+ * 快照之后仍严格 fold（漂移/非法迁移/purged 一律 fail-loud）。无快照流保持全严格回放。
+ */
 export function replayTenantLifecycle(
   events: readonly DomainEvent[],
 ): TenantLifecycleState | undefined {
+  let start = 0;
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    if (events[i].eventType === DOMAIN_EVENTS.tenantBootstrapped) {
+      start = i;
+      break;
+    }
+  }
   let state: TenantLifecycleState | undefined;
-  for (const event of events) {
-    state = applyTenantEvent(state, event);
+  for (let i = start; i < events.length; i += 1) {
+    state = applyTenantEvent(state, events[i]);
   }
   return state;
 }

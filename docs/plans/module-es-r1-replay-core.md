@@ -1,4 +1,4 @@
-# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（已审计 · R1a 已实现待验收 · R1b/R1c 各需高危另签）
+# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（已审计 · R1a/R1b 已实现待验收 · R1c 需高危另签）
 
 > 适用范围: `libs/core saas-kit tenants/lifecycle · shared-kernel EventStore 端口 · apps/api database/eventing + tenants handlers · tenant 户籍表地位 · @saas/contracts 新增事件 payload 面` ← blast radius **大**（首个动写路径的 ES 片）；审计深度 = 人签核（高危#1：写路径切换 + 数据 bootstrap）
 > 关联: 母案 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md)（**已签发**·本案=其 §4 R1 细化；裁①乙/裁②甲+丙/裁③乙/裁④丙起步/裁⑤甲/裁⑥甲/首试点 A 为本案前提）· [event-sourcing-roadmap](./event-sourcing-roadmap.md) · [module-es-outbox-transactional](./module-es-outbox-transactional.md)（UoW/三态旋钮机制复用）· global-tenancy S4/S5（治理状态机）
@@ -66,8 +66,9 @@ user 流事件化（裁④丙·待 R2 crypto-shredding）；异步投影/端到�
 | 2026-10-21 | 0.1.0 | 母案签发后按令细化 | 首版呈审案：现状取证（load 零存在/事件面三种/gated 10 文件/预期零 DDL）+ 目标态四定义 + R1a/b/c 分片（各带文件级改动面/幂等律/改锁清单）+ 旋钮回退窗 + 判据测四点 + 高危清单 ·零实现 |
 | 2026-10-21 | 0.2.0 | 审计门通过 | 人按案 GO：分片框架/改锁清单/env 键位签发；R1a 授权开工（load gated 测落既有已登记 event-store.mikro.e2e.test.ts·免新文件登记）；R1b/R1c 高危另次亲签 |
 | 2026-10-21 | 0.3.0 | R1a 实现落地 | §3-R1a 全件交付：端口 +`load`/+`append expectedVersion?`、`tenant-lifecycle-fold` 纯函数（裁①乙·快照起点/from 漂移/canTransition 复验/rejected tombstone/未知 fail-loud）、`TenantBootstrappedEvent` 类+事件名登记、contracts `event/tenant-events.ts` zod 契约面（裁⑥甲）+对拍测、`MikroEventStore` load/hydrate+乐观锁（`byStream` 收敛使该文件 type-escape 3→2 合规下降）、e2e 三新测。**实核订正 §3-R1b 表述**：tenant 户籍表实列=id/status/createdAt/updatedAt，**无 name/slug**——bootstrapped payload 定为 `{status, actorId?}`（以事件类 doc 为准）。验收：`pnpm run ci` PASSED（717 passed · 棘轮降 · fallow 零违规）+ `test:fullstack` 真库链绿（gated 恒等 11+1 · event-store e2e 8/8）；R1b/R1c 未动 |
+| 2026-10-21 | 0.4.0 | 人亲签高危#1（dev）→ R1b 实现落地 | §3-R1b 全件交付：`bootstrapTenantStreams` 可注入核心（幂等判重/version max+1 续位/zod 律·落 `database/eventing/`·沿 seed `runSeed` 先例）+ `scripts/es-bootstrap-tenants.ts` 入口（含 `--verify` 只读全量对拍面）+ 镜测六例 + **新 gated e2e `tenant-replay-truth.e2e.test.ts` 段①（已登记 GATED·恒等 12+1）**。语义对账订正：R1a fold 曾按「快照只允许流起点」实现，与本节案文「version 从 max+1 续·快照覆盖此前一切」互斥（存量 shadow 流首事 `from=pending_approval` 照旧语义必报漂移）——`replayTenantLifecycle` 改「**最后快照重启**」（快照前缀不重放不校验·快照后仍严格；`applyTenantEvent` 增量语义不变），另抽 `event-hydration` 单源供 store.load 与 --verify 共用；hydrated 错误文案逐字不变 e2e 不碎。实机：dev 库（亲签范围）实跑 bootstrap total=2 created=2→重跑 skipped=2→`--verify` 2/2 全量一致；新文件正当逃逸入棘轮基线（+1 行=2）；contracts 值导入遵仓内惯例 `@saas/contracts/index`（bare 不过 nest TSC 检查链·R-η 族）。验收：`ci` PASSED + `test:fullstack` 全绿（tenant-replay-truth 2/2 真库）。prod apply **不在本片授权内·另签**；R1c 未动 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.3.0 修订（R1a 实现落地留痕 + R1b payload 范围实核订正）。状态以 README 索引表为单源。
+正文已于 2026-10-21 / v0.4.0 修订（R1b 实现落地留痕 + fold 回放语义对案文订正）。状态以 README 索引表为单源。

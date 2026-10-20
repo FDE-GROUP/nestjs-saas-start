@@ -1,6 +1,7 @@
 {
   "apps/api/src/common/contracts/api-contracts.ts": 2,
   "apps/api/src/config/config.module.ts": 1,
+  "apps/api/src/database/eventing/bootstrap-tenant-streams.ts": 2,
   "apps/api/src/database/eventing/mikro-event-store.ts": 3,
   "apps/api/src/database/eventing/outbox-relay.ts": 5,
   "apps/api/src/database/mikro/column-meta.ts": 8,
