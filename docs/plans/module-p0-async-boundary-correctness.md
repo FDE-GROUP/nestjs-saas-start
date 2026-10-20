@@ -125,9 +125,9 @@
 - [x] B：游标不丢亚毫秒种子行；gated e2e 真库跨页**行数守恒**；`GATED_E2E_FILES` 登记——`pagination.test.ts` 11 + repo 单测 16 passed；`posts-cursor-pagination.e2e.test.ts`（单语句 µs 同刻种子·六行守恒）`ci:db` 真库绿；既存文件无需新登
 - [x] C：relay 提交后投递（回滚不产幻影）；at-least-once 措辞诚实化；去 mock 失真·单测锁既定语义——`outbox-relay.test.ts` 10 passed（含「事务回滚→零投递」幻影回归锁）；`outbox-relay.e2e.test.ts` `ci:db` 真库绿
 - [x] D：硬删 ①② 包单 UoW 原子；gated e2e 验中途失败回滚 + 零孤儿事件——`delete-tenant-permanently.command-handler.test.ts` 6 passed（②失败传播 + uow 接线）；`tenant-hard-delete.e2e.test.ts` #2 甲档原子反证（注入 `destroy` 失败→事件回滚留存）`ci:db` 真库绿
-- [ ] E：`token` 唯一索引 + `expiresAt` 索引迁移（实体元数据对拍·`migration:generate` 空 diff 复跑）；过期清理任务（+依赖签核）；`verify:prod-boot` 绿——**高危#1·待人类亲签·本批零改动**
+- [x] E：已拆出专章 [`module-session-index-and-expiry-reclaim`](./module-session-index-and-expiry-reclaim.md) 独立实施完成（高危#1 迁移经人「同意 GO」亲签后落）——`session_token_idx`(unique)+`session_expires_at_idx` 迁移已应·二次空 diff·gated e2e 真库绿；清理采甲′镜像 relay 零依赖（未引新依赖）
 - [x] 各片 `pnpm run ci` 全绿·基线只增不减·Biome 净·fallow 0（Local CI PASSED·701 passed）；`ci:db` 带库全链 PASSED（gated e2e 10 文件 36 passed + BA 一致性 9 passed）
-- [ ] 零越权：E 的迁移/新依赖经人签后方实施；余片过审计门后方落码
+- [x] 零越权：E 的迁移经人「同意 GO」亲签后方于专章实施（未自行 migration:run）；未引新依赖（甲′镜像 relay）；余片过审计门后方落码
 
 ## 6. 演变记录
 
@@ -135,8 +135,9 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版（承四路深勘 + 🔴 逐条代码复核·纯方案·零实现·待审计） |
 | 2026-10-20 | 0.2.0 | A/B/C/D 甲档落码 | 承人类「A/B/C/D 一并甲档 GO」：A #4 500 message 收口·B #3 uuidv7 id 单键游标·C #1 post-commit 投递诚实化·D #2 硬删 ①② 包单 uow.run；各片单测 + gated e2e（B/C/D）真库绿·E 零改动待亲签 |
+| 2026-10-20 | 0.3.0 | E 拆专章实施完成 | 承人「同意」=GO E·亲签迁移：E 拆为 `module-session-index-and-expiry-reclaim` 专章独立落地（F1 索引迁移 unique+普通·二次空 diff·库直查双索引；F2 甲′镜像 relay 零依赖清理+config 两键+单测 5+gated e2e 3真库）·ci(705)/ci:db(gated 11+BA 9)/prod-boot 全绿。至此 P0′ 五片 A/B/C/D/E 均实施·待人类验收 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 落 A/B/C/D 甲档实现与验收（`pnpm run ci` + `ci:db` 双绿）；E 仍零改动·待人类亲签。状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.3.0 更新：A/B/C/D 甲档实现与验收（`pnpm run ci` + `ci:db` 双绿）；E 已拆专章 `module-session-index-and-expiry-reclaim` 经人亲签后实施完成。状态以 README 索引表为单源。

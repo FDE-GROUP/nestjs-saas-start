@@ -67,6 +67,12 @@ export default {
     mode: (process.env.EVENT_PUBLISH_MODE || 'inproc') as 'inproc' | 'shadow' | 'outbox',
     pollMs: Number(process.env.EVENT_OUTBOX_POLL_MS || 1000),
   },
+  // 过期 session 回收周期任务（module-session-index-and-expiry-reclaim F2）：缺省关（env 未置 true
+  // 即不启 timer·不触库）——与 eventPublish 缺省 inproc 同保 DB-free 装配不变量。
+  sessionReclaim: {
+    enabled: process.env.SESSION_RECLAIM_ENABLED === 'true',
+    intervalMs: Number(process.env.SESSION_RECLAIM_INTERVAL_MS || 3600000),
+  },
   // 平台经营者（FR-13 · S5）：全局唯一 operator 由开发者经配置设定，seed 保障其行存在；
   // 平台级动作判据 = 会话用户 email 命中此配置（泛 ADMIN 不再持有平台权）。
   platform: {

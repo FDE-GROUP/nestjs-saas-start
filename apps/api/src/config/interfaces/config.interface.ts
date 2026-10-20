@@ -93,6 +93,7 @@ export interface Config {
   platform: PlatformConfig;
   oauth: OAuthConfig;
   eventPublish: EventPublishConfig;
+  sessionReclaim: SessionReclaimConfig;
 }
 
 /**
@@ -108,4 +109,16 @@ export type EventPublishMode = 'inproc' | 'shadow' | 'outbox';
 export interface EventPublishConfig {
   mode: EventPublishMode;
   pollMs: number;
+}
+
+/**
+ * module-session-index-and-expiry-reclaim F2：过期 session 回收周期任务开关（镜像 eventPublish 的
+ * 「缺省不触库」纪律）：
+ *  - `enabled`：缺省 false（env 未置 `SESSION_RECLAIM_ENABLED=true` 即关·保 DB-free 装配不变量）；
+ *    开启方起 `setInterval` 周期 `nativeDelete(expiresAt < now)`（走 F1 `session_expires_at_idx`）。
+ *  - `intervalMs`：回收轮询间隔（缺省 1h）。
+ */
+export interface SessionReclaimConfig {
+  enabled: boolean;
+  intervalMs: number;
 }

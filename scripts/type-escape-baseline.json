@@ -11,6 +11,7 @@
   "apps/api/src/main.ts": 4,
   "apps/api/src/modules/auth/auth.bootstrap.ts": 1,
   "apps/api/src/modules/auth/auth.implement.ts": 50,
+  "apps/api/src/modules/auth/infrastructure/session-reclaim.service.ts": 1,
   "apps/api/src/modules/auth/infrastructure/session-store.adapter.ts": 1,
   "apps/api/src/modules/auth/infrastructure/user-store.adapter.ts": 1,
   "apps/api/src/modules/auth/seats-quota.hook.ts": 1,

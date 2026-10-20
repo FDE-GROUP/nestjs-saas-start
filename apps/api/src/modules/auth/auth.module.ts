@@ -9,6 +9,7 @@ import type { AuthInstance } from './auth.interface';
 import { AuthService } from './auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { SessionGuard } from './guards/session.guard';
+import { SessionReclaimService } from './infrastructure/session-reclaim.service';
 import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
 import { MikroUserStoreAdapter } from './infrastructure/user-store.adapter';
 import { AUTH_SESSION_STORE } from './session-store.port';
@@ -55,6 +56,9 @@ export class AuthModule {
         { provide: AUTH_SESSION_STORE, useClass: MikroSessionStoreAdapter },
         // global-ba-entity-domain-placement 切片 A：user 表归 auth 域——users 模块 PIPL 硬删经此端口（S3 同型）。
         { provide: AUTH_USER_STORE, useClass: MikroUserStoreAdapter },
+        // module-session-index-and-expiry-reclaim F2（甲′·镜像 OutboxRelay 零依赖）：过期 session 周期回收。
+        // 缺省 SESSION_RECLAIM_ENABLED=false ⇒ 不启 timer·不触库（DB-free 不变量不动）。
+        SessionReclaimService,
       ],
       exports: [AuthService, SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
       global: true,

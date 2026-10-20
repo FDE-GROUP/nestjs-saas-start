@@ -43,6 +43,7 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/tenants/tenant-table.e2e.test.ts',
   'apps/api/src/tenancy/tenant-isolation.e2e.test.ts',
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',
+  'apps/api/src/modules/auth/session-reclaim.e2e.test.ts',
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   'apps/api/src/modules/workspaces/workspace-owner-rbac.e2e.test.ts',
 ];

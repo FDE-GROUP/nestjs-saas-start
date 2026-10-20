@@ -101,6 +101,12 @@ export const Session = defineEntity({
     createdAt: tsNow(),
     updatedAt: ts(),
   },
+  // module-session-index-and-expiry-reclaim F1（高危#1·人「同意 GO·亲签迁移」2026-10-20）：
+  // BA 服务端每请求按 token 查 session 旧无索引→全表 seq scan；`user_email_idx`/`member_org_user_idx`
+  // 已证 BA 契约表可带具名 unique 约束（列律只裁表名恒等·不裁索引）。采 uniques 与既有形态一致
+  // （产具名 unique 约束·planner 自动建 backing 唯一索引命中查询·兼完整性防线）；expiresAt 普通索供回收。
+  uniques: [{ name: 'session_token_idx', properties: ['token'] }],
+  indexes: [{ name: 'session_expires_at_idx', properties: ['expiresAt'] }],
 });
 
 export const Verification = defineEntity({

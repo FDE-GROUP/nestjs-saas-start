@@ -55,6 +55,13 @@ const createSchemaForEnv = (_isProd: boolean) => {
       .optional(),
     // 生产限流信任链（module-auth-ip-trust）：反代网段 CIDR 逗号列表；未配=BA 安全默认（只信单值 XFF）。
     AUTH_TRUSTED_PROXIES: z.string().optional(),
+    // 过期 session 回收周期任务（module-session-index-and-expiry-reclaim F2）：缺省关（未置 true
+    // 即不启 timer）；均 optional⇒非必填，不上 compose 编排（不触四角对拍判据③）。
+    SESSION_RECLAIM_ENABLED: z.enum(['true', 'false']).optional(),
+    SESSION_RECLAIM_INTERVAL_MS: z
+      .string()
+      .regex(/^[1-9]\d*$/)
+      .optional(),
   };
   const betterAuthSchema = {};
   // Datadog 已移除（global-cn-adaptation G1 / D6）；生产 / 非生产环境 schema 一致。

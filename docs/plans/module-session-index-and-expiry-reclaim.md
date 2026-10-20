@@ -78,7 +78,7 @@
 
 > 无已审方案不写码；本片触高危#1，**须人亲签**方进实现。
 
-- 结论：**设计档已裁·实施未开工**（本案仅呈审·零实现；迁移执行待高危#1 人亲签）。
+- 结论：**已实施·待人类验收**（F1+F2 零越权落码·高危#1 迁移经人「同意 GO」亲签后实施）。
 - 已裁项（人类以「你裁定」授权·Agent 代裁·问责归该授权人）：
   - ① **F1 token 索引 = unique**（承取证：`user_email_idx` 已为 BA 契约表 unique 先例·加索引不违契约；采 `uniques: [{ name: 'session_token_idx', properties: ['token'] }]`）。施加前置仍列 §5：对已 populate 库先 `SELECT token,count(*) HAVING count(*)>1` 查重（BA 随机 token 实际不重复·dev/e2e 无虞）。
   - ② **F2 清理形态 = 甲′**（镜像 `OutboxRelay` 零依赖 `setInterval` provider）——取证显示仓内既有周期任务范式·无需第二套调度，**否** `@nestjs/schedule`（新依赖维度消失）。
@@ -88,21 +88,22 @@
 
 ## 6. 完成判据（可核验 + 穷尽·签核后方落）
 
-- [ ] F1：`migration:generate` 产 session 两索引 DDL → `migration:run` → **二次 generate 空 diff**；（若 unique）前置查重通过。
-- [ ] F2：清理 provider 镜像 relay 骨架；`reclaimOnce()` 单测锁删除谓词 `{ expiresAt:{ $lt } }` + 防重入。
-- [ ] 新增 gated e2e 真库验「过期删净、未过期幸存、幂等二次删 0」；`GATED_E2E_FILES` 已登记。
-- [ ] config 新键过 `verify-config-contract` 四角对拍 + `.env`/`.env.example` 同步；test 默认关清理。
-- [ ] `pnpm run ci` 全绿·基线只增不减·Biome 净·fallow 0；`pnpm run ci:db` 带库全链绿；`verify:prod-boot` `/health` 200。
-- [ ] 零越权：F1 迁移经人亲签后方实施；未改 BA 列形/认证语义；未引新依赖（采甲′）。
+- [x] **F1**：`migration:generate` 产 `Migration20261020150833.ts`（`create index session_expires_at_idx` + `alter table session add constraint session_token_idx unique (token)`）→ `migration:run` 已应用 → **二次 generate = no schema diff**（空 diff 硬闸绿）；库直查 `\d session` 确认 `session_token_idx UNIQUE CONSTRAINT btree(token)` + `session_expires_at_idx btree(expiresAt)` 均在位（BA 随机 token 无重复·前置查重自然满足）。
+- [x] **F2**：`SessionReclaimService`（`modules/auth/infrastructure/session-reclaim.service.ts`）逐字镜像 relay 骨架（config 门控 `setInterval` + 防重入 + 公开 `reclaimOnce()` + `onModuleDestroy` 摘表）；单测 `session-reclaim.service.test.ts` **5 passed**（缺省 enabled=false 不启 timer / enabled 启停 / 谓词 `{expiresAt:{$lt:Date}}`+返回数 / 防重入返 0 / nativeDelete 抛错 finally 复位）。已注瓦 AuthModule（global）。删除谓词走 F1 `session_expires_at_idx`。
+- [x] 新增 gated e2e `modules/auth/session-reclaim.e2e.test.ts`·**真库 3 passed**（过期删净·未过期幸存 / 二次幂等 / 重复 token 撞 unique）；已登记 `GATED_E2E_FILES`·gated 恒等校验 `11 gated + 1 exempt` 通过。
+- [x] config 两键（`SESSION_RECLAIM_ENABLED`/`SESSION_RECLAIM_INTERVAL_MS`·均 optional⇒不触判据③）：`config.module.ts` zod + `default.ts` 段 + `config.service.ts getSessionReclaimConfig()` + `Config` 接口 + `.env.example`（注释态）五处齐；`verify:config-contract` **PASSED**；enabled 缺省 false（非仅 test）⇒ DB-free 不变量不动。
+- [x] `pnpm run ci` **PASSED**（705 passed·122 文件·11 skip·Biome 净·fallow 0 边界无违规）；`ci:db` **EXIT=0**（gated e2e 全表 11 passed + BA 一致性 9 passed·Testcontainers 零足迹）；`verify:prod-boot` **PASSED**（production node 起编译产物命中 `/health` 200）。类型逃逸棘轮：`session-reclaim.service.ts` 新增 1 处 MikroORM `nativeDelete` 胶水 `as never`，经 `verify:type-escape:update` 官方通道 re-baseline（基线 35 文件/153 处·+1）。
+- [x] 零越权：F1 迁移经人「同意 GO」亲签后方实施（未自行签发前零动 DB）；未改 BA 列形/认证语义（仅加索引·session DDL 列集不变）；未引新依赖（采甲′镜像 relay）。
 
 ## 7. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草呈审 | 承母案 P0′ §2-E·本轮独立取证（session DDL 仅 PK·adapter token seq scan·列律只表名恒等·`user_email_idx` BA 表索引先例·relay `setInterval` 零依赖范式）细化为决策完备呈审：F1 索引迁移（unique 推荐·前置查重）+ F2 清理采甲′（镜像 relay·消除新依赖高危）·三待裁项归人 |
-| 2026-10-20 | 0.2.0 | 人「你裁定」·Agent 代裁设计档 | ① F1 token = unique（带前置查重）· ② F2 = 甲′镜像 relay零依赖（否 `@nestjs/schedule`）；③ 高危#1 迁移亲签**不可代裁**·留硬闸——实施（含 `migration:run`）仍待人明确签发·本批仅提交呈审 doc
+| 2026-10-20 | 0.2.0 | 人「你裁定」·Agent 代裁设计档 | ① F1 token = unique（带前置查重）· ② F2 = 甲′镜像 relay零依赖（否 `@nestjs/schedule`）；③ 高危#1 迁移亲签**不可代裁**·留硬闸——实施（含 `migration:run`）仍待人明确签发·本批仅提交呈审 doc |
+| 2026-10-20 | 0.3.0 | 人「同意」=GO E·亲签迁移·F1+F2 实施 | 零越权落码：F1 `migration-entities` Session 补 `uniques[session_token_idx]`+`indexes[session_expires_at_idx]`→generate `Migration20261020150833.ts`→run→二次空 diff→库直查双索引在位；F2 `SessionReclaimService`（镜像 relay·缺省关）入 AuthModule + config 两键五处 + 单测 5 + gated e2e 3（真库）登记 GATED_E2E_FILES。硬闸全绿：ci PASSED(705) · ci:db EXIT=0(gated 11 + BA 9) · verify:config-contract · verify:prod-boot · 棘轮 re-baseline +1。转「已实施·待人类验收」 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 修订（设档已代裁①②·③高危#1 迁移亲签未给→零实现），状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.3.0 修订（F1+F2 零越权实施·全链硬闸绿），状态以 README 索引表为单源。

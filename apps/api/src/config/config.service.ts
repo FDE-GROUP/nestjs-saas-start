@@ -55,4 +55,8 @@ export class ConfigService {
   getEventPublishConfig() {
     return this.get<Config['eventPublish']>('eventPublish');
   }
+
+  getSessionReclaimConfig() {
+    return this.get<Config['sessionReclaim']>('sessionReclaim');
+  }
 }
