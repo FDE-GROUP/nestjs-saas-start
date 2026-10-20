@@ -90,6 +90,7 @@
   （含 `FILE_TOO_LARGE`/`FILE_TYPE_NOT_ALLOWED`）**原样上抛保自身码**、不被归一。净果：upload HTTP 出口 =
   `NOT_MULTIPART`/`UPLOAD_FAILED`(仅 no-file)/service 原码(透传)。此为潜在实现瑕疵（catch 对主调用无效），
   属**实现缺口非测试缺口**——本片只锁现状不修码（是否收敛 catch/await 归人另裁）。
+  处置已另立呈审 plan [`module-storage-upload-error-surface`](./module-storage-upload-error-surface.md)（待审计·零实现）。
 
 ## 5. 完成判据（可核验 + 穷尽）
 
