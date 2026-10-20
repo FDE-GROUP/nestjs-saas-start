@@ -95,7 +95,7 @@
 - **归人裁点（开工前须定）→ 已人裁（2026-10-20·用户令「GO」）**：
   - **① 开工**：**GO**（用户直签·方向另见于对标选项「加 options 第二参（差异1）」）。
   - **② options 覆盖面**：按 Agent 建议确认 = **仅 `debugLogs` + `usePlural`** 两项；`transaction` 保持内部强制实现不开放关闭（数据一致性优先）。
-- 结论：**已审计·GO→已实施（切片 A 落地·待人类验收）**
+- 结论：**已审计·GO→已实施·已结项（人验收·提交推送 `6ab88da`）**
 - 未决项：无。
 - 审计人 / 日期：人（GO 直签·覆盖面按建议）/ 2026-10-20
 
@@ -111,10 +111,11 @@
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 0.3.0 | 人验收并令提交+推送（与抽包案合并单笔 B 案） | **结项**：入提交 `6ab88da`（17 files·+377/−13）推远端 main（a40645c..6ab88da），pre-push ci 再全绿；README 索引同步翻正「已完成」 |
 | 2026-10-20 | 0.2.0 | 用户令「GO」（覆盖面按建议）→ 实施切片 A | **已实施（待人类验收）**：`mikroAuthAdapter(orm, options?)` 第二参落地（新导出 `MikroAuthAdapterOptions`：`debugLogs`/`usePlural`）·`config` 透传 `?? false` 两项·barrel 补类型导出·CRUD/transaction 逻辑零变更·3 消费方零改动。验收全绿：build:libs 出参类型·ci PASSED（672/31skip 不动·棘轮 148=基线·openapi 零漂移·fallow 0）·`test:auth-consistency` 9/9 真 PG·`verify:prod-boot` 200。可逆（git revert） |
 | 2026-10-20 | 0.1.0 | 抽包完成后对标官方 createAdapterFactory 指南 + drizzle/mongo 包，识出唯一非测试面差距（工厂不接第二参 options）→ 用户选定「加 options 第二参」→ 依「无已审方案不写码」起草 | 首版（**零代码·只提议**）：`mikroAuthAdapter(orm, options?)` 加可选第二参，透传 `debugLogs`/`usePlural` 至 config；默认 `{}` + `?? false` 保证单参路径逐位向后兼容；不改 CRUD/transaction 逻辑、不改 3 消费方、不补 Normal 套件、不触构建链/schema/契约/宪法·不发。取证坐实 DBAdapterDebugLogOption/usePlural/debugLogs 均 better-auth@1.7.7 官方导出实存 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.3.0 变更，以当前正文内容为准。

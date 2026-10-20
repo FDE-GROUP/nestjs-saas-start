@@ -114,7 +114,7 @@
   - **① 包名**：定 **`@okee/mikro-adapter`**（人直裁·对齐前端 `okee` 家族命名）。
   - **② 落位**：Agent 代裁 = **`libs/`**（内部私有共享码·贴三区划界·与 `@core/saas-kit`/`@saas/contracts` 同区）。
   - **③ 开工签核**：Agent 代裁 = **GO**（用户「由你裁定」= 授权实施·触 `build:libs`/根 tsconfig 门禁邻接面之问责归签核人 P2）。
-- 结论：**已审计·GO→已实施（切片 A 全落地·待人类验收）**
+- 结论：**已审计·GO→已实施·已结项（人验收·提交推送 `6ab88da`）**
 - 未决项：无（①②③均已裁）。实施期实拓一结构约束（Node10 裸包解析/SWC build-path 重写）已回写 §2 A-2/A-3·非遗留。
 - 审计人 / 日期：人（①包名直裁·②③「由你裁定」代裁授权）/ 2026-10-20
 
@@ -132,10 +132,11 @@
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 0.3.0 | 人验收并令提交+推送（与 options 第二参案合并单笔 B 案） | **结项**：提交 `6ab88da`（17 files·+377/−13·适配器搬迁 git 识为 rename 90%）推远端 main（a40645c..6ab88da），pre-push ci 再全绿；README 索引同步翻正「已完成」 |
 | 2026-10-20 | 0.2.0 | 人裁①包名 `@okee/mikro-adapter` + ②③「由你裁定」（= 落位 libs + 开工 GO）→ 实施切片 A | **已实施（待人类验收）**：建 `libs/mikro-adapter`（package/nest-cli/tsconfig/build/src 镜像 libs/core）+ 根接线（`@okee/mikro-adapter` workspace 依赖 + `build:libs` 追加段 + 根/apps `tsconfig.paths`）+ 3 消费方改子路径 import + 删旧。**实施期实拓两个非预期约束**（均非适配器逻辑变更·回写 §2）：① nest SWC builder 按 `tsconfig.build.json` paths 将 import 重写为相对 src 路径致运行时 `ERR_MODULE_NOT_FOUND`（R-δ 同型）→ build paths **不加** `@okee`；② 根 tsconfig Node10 **不能裸解析**带 `exports` 的 workspace 包根（TS2307·无先例）→ 消费方改**子路径** `'@okee/mikro-adapter/mikro-auth-adapter'`（经 `typesVersions` 解析）。验收全绿：`ci` PASSED（基线 672/31skip 不动）·类型棘轮 update 后 148=基线·openapi 零漂移·fallow 0 违规·`test:auth-consistency` 9/9·`verify:prod-boot` 200。未发布/未搬实体/未改 schema/契约/宪法·可 git revert 回滚 |
 | 2026-10-20 | 0.1.0 | 用户咨询「能否参考 drizzle-adapter 把自持 Mikro 适配器抽为独立包」→ Agent 取证确认适配器零 app 耦合、官方无 Mikro 适配、社区包缺 transaction/consumeOne/incrementOne；用户拍板「内部私有·不发布·命名 mikro-adapter」→ 依「无已审方案不写码」起草 | 首版（**零代码·只提议**）：范围只圈适配器本体（明确不搬 entities/orm 防双 SSOT 与 blast radius 爆炸）；切片 A 建包骨架（镜像 libs/core 构建形态）+ 根三处接线（deps/build:libs/tsconfig paths·workspace glob 无需改）+ 3 处消费 import 改写 + 删旧文件；验收以 build:libs + ci 基线不动 + 一致性套件 EXIT=0 + verify:prod-boot 为准；三项归人裁点（包名 scoped vs 裸·落位 libs 确认·开工签核·触构建链高危邻接）留审计 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.3.0 变更，以当前正文内容为准。
