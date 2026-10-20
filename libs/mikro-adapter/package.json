@@ -1,0 +1,30 @@
+{
+  "name": "@okee/mikro-adapter",
+  "version": "0.0.0",
+  "description": "自持 Better Auth × MikroORM v7 adapter（官方 createAdapterFactory 规格内·transaction/consumeOne/incrementOne 齐备·内部私有·不发布）",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@mikro-orm/core": "7.2.5",
+    "better-auth": "^1.7.7"
+  }
+}

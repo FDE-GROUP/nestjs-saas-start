@@ -35,7 +35,9 @@
       "@shared/*": ["apps/api/src/shared/*"],
       "@core/saas-kit/*": ["libs/core/src/*"],
       "@saas/contracts": ["libs/contracts/src/index.ts"],
-      "@saas/contracts/*": ["libs/contracts/src/*"]
+      "@saas/contracts/*": ["libs/contracts/src/*"],
+      "@okee/mikro-adapter": ["libs/mikro-adapter/src/index.ts"],
+      "@okee/mikro-adapter/*": ["libs/mikro-adapter/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts", "prisma/**/*"]

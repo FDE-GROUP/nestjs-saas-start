@@ -1,6 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { MikroORM } from '@mikro-orm/core';
-import { type CleanedWhere, createAdapterFactory } from 'better-auth/adapters';
+import {
+  type CleanedWhere,
+  createAdapterFactory,
+  type DBAdapterDebugLogOption,
+} from 'better-auth/adapters';
 
 /**
  * ORM 修宪案 B · 切片 1 —— **自持** Better Auth × MikroORM v7 adapter（官方 `createAdapterFactory` 规格内）。
@@ -16,6 +20,7 @@ import { type CleanedWhere, createAdapterFactory } from 'better-auth/adapters';
  *    `transformInput`（键=BA DB 字段名 camelCase·`supportsBooleans/JSON` 真·`supportsDates` 假故 Date↔ISO 串由
  *    factory 转换）与 `transformWhereClause`（`connector` 大写 AND/OR·值已规整）；调用后跑 `transformOutput`（读 camelCase 键）。
  *    故本 adapter 全程以 **camelCase 列名**（`EntityCaseNamingStrategy`）读写、返回**裸行对象**即可，无需 snake 往返。
+ *    ⚠ 命名策略前提：消费者须以 camelCase 列名（`EntityCaseNamingStrategy`·属性名原样作列名）建 ORM·否则键名两侧对不齐。
  *  - **raw update 键**：`update`/`updateMany` 的改动值在参数键 `update`（非 `data`），且带 `modelKey`（factory 传入）。
  *  - **`consumeOne`/`incrementOne` 返「行快照 T|null」**（非 boolean）——`consumeVerificationValue` 读 `consumed.value`，
  *    早期误返 boolean 致 password-reset 恒 `Invalid token`。二者均以**单语句原子 SQL** 落地（DELETE…RETURNING /
@@ -25,7 +30,8 @@ import { type CleanedWhere, createAdapterFactory } from 'better-auth/adapters';
  *    事务 em 上以原生 SQL 执行，不依赖 `removeAndFlush`）。
  *  - **`generateId:false` 必须不在 BA 配置里**（BA 自生成 nanoid）；session 字段是 `expiresAt` 非 `expiresAt`（1.7.7）。
  *
- * 本适配为 BA 数据面唯一出口（切片 4 已接入生产）；一致性验收见同目录 `auth-adapter.consistency.test.ts`。
+ * 本适配为 BA 数据面唯一出口（切片 4 已接入生产）；一致性验收见消费应用 `apps/api` 的
+ * `database/mikro/auth-adapter.consistency.spec.ts`（本包只出适配器·BA 实体/orm 初始化留 app·防双 SSOT）。
  */
 
 /** 事务内透传当前 `em`（供子操作复用同一事务连接）。 */
@@ -104,14 +110,26 @@ function affected(res: unknown): number {
   return Number(n ?? 0);
 }
 
-export function mikroAuthAdapter(orm: MikroORM) {
+export function mikroAuthAdapter(orm: MikroORM, options: MikroAuthAdapterOptions = {}) {
   // factory 在调用本 creator 前已算好 schema 并注入 transform* 助手；本 adapter 不直接用它们
   // （键名两侧已由 camelCase 列对齐），但保留 `model`（物理表名）寻址——BA 物理模型名即小写表名。
-  const { adapter, config } = buildAdapterContract(orm);
+  const { adapter, config } = buildAdapterContract(orm, options);
   return createAdapterFactory({ adapter, config });
 }
 
-function buildAdapterContract(orm: MikroORM) {
+/**
+ * 对齐官方 drizzle/mongo 适配器工厂第二参（透传 `createAdapterFactory` config 的用户可调项）。
+ * 均可缺省：默认值与官方 factory 缺省逐位等价（单参调用零行为变更）。
+ * `transaction` 有意**不开放关闭**——本仓 BA 破坏性写的事务原子性为数据一致性前提。
+ */
+export interface MikroAuthAdapterOptions {
+  /** 逐方法调试日志（bool 或方法选择对象·官方 debugLogs·默认关）。 */
+  debugLogs?: DBAdapterDebugLogOption;
+  /** 表名是否复数（本仓 BA 表名单数·默认 false·对齐官方 usePlural）。 */
+  usePlural?: boolean;
+}
+
+function buildAdapterContract(orm: MikroORM, options: MikroAuthAdapterOptions) {
   /** 取当前应使用的 em：事务内取 ALS 透传的 fork，否则每次 per-op fork。
    *  （返回 `any`：`execute` 定义在 SqlEntityManager 上，core `EntityManager` 类型未暴露。） */
   const emFor = () => (txContext.getStore()?.em ?? orm.em.fork()) as any;
@@ -318,6 +336,9 @@ function buildAdapterContract(orm: MikroORM) {
   const config = {
     adapterId: 'mikro-orm',
     adapterName: 'mikro-orm',
+    // 用户可调项（对齐官方工厂第二参透传）：?? false 与 factory 缺省逐位等价，保单向后兼容。
+    usePlural: options.usePlural ?? false,
+    debugLogs: options.debugLogs ?? false,
     // 本 adapter 以 raw SQL（em.execute）寻址，v7 Kysely 层把 timestamptz 列回传为**字符串**
     // （如 "2026-10-16 02:29:25.791+00"）而非 Date。故 `supportsDates:false` 让 factory 代劳两侧转换：
     // 入 Date→ISO 串（写库）、出 串→Date（new Date 解析），使 BA 收到的仍是 Date（跨时区/additionalFields 用例因此绿）。

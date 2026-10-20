@@ -4,7 +4,6 @@
   "apps/api/src/database/mikro-event-store.ts": 3,
   "apps/api/src/database/mikro/column-meta.ts": 8,
   "apps/api/src/database/mikro/migration/mikro-migration.config.ts": 1,
-  "apps/api/src/database/mikro/mikro-auth-adapter.ts": 5,
   "apps/api/src/database/mikro/orm.ts": 1,
   "apps/api/src/database/outbox-relay.ts": 7,
   "apps/api/src/database/seed.ts": 6,
@@ -30,5 +29,6 @@
   "apps/api/src/modules/users/infrastructure/repositories/mikro-user.repository.ts": 3,
   "apps/api/src/modules/workspaces/infrastructure/repositories/mikro-workspace.repository.ts": 5,
   "libs/core/src/authorization/instance-predicate.ts": 1,
-  "libs/core/src/tenancy/tenant.middleware.ts": 1
+  "libs/core/src/tenancy/tenant.middleware.ts": 1,
+  "libs/mikro-adapter/src/mikro-auth-adapter.ts": 5
 }

@@ -12,7 +12,9 @@
       "@shared-kernel/*": ["../../libs/core/src/shared-kernel/*"],
       "@core/saas-kit/*": ["../../libs/core/src/*"],
       "@saas/contracts": ["../../libs/contracts/src/index.ts"],
-      "@saas/contracts/*": ["../../libs/contracts/src/*"]
+      "@saas/contracts/*": ["../../libs/contracts/src/*"],
+      "@okee/mikro-adapter": ["../../libs/mikro-adapter/src/index.ts"],
+      "@okee/mikro-adapter/*": ["../../libs/mikro-adapter/src/*"]
     }
   },
   "include": ["src/**/*"],
