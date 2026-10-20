@@ -1,6 +1,6 @@
 # 术语表（Glossary）
 
-> 状态: **起草 · 待审计**（新增 specs 文档，随 global-tenancy 审计门一并签核 · P7）| 版本: 0.1.0 | 日期: 2026-10-13
+> 状态: **起草 · 待审计**（新增 specs 文档，随 global-tenancy 审计门一并签核 · P7）| 版本: 0.2.0 | 日期: 2026-10-20
 > 归属: `docs/specs/`（项目宪法层 · 人/团队平面）| 性质: **重写型**（正文整体重写 + 变更戳 + 演变单列，`workflow.md` §2.4）
 > 关联: [vision.md](./vision.md) · [architecture.md](./architecture.md) · [global-tenancy.md](../plans/global-tenancy.md) §3 · [global-cn-adaptation.md](../plans/global-cn-adaptation.md) §3
 > 受众: **人 + Agent**（`读者: Agent`——术语为跨 plan 共识基，宜注入 agent 上下文）
@@ -17,7 +17,7 @@
 
 | 词 | 含义 |
 |----|------|
-| **Tenant（租户）** | 顶层隔离与归属单元（付费主体）；所有业务数据挂 `tenant_id`。技术方案中 **Tenant = Better Auth `organization`**（不另建表，见 global-tenancy §9.2） |
+| **Tenant（租户）** | 顶层隔离与归属单元（付费主体）；所有业务数据挂 `tenant_id`。物理实体 = 自有户籍表 `tenant`（`status` 真列 + DB CHECK·`id` = `organization.id` 同值代理 PK——[global-tenant-entity-reclamation](../plans/global-tenant-entity-reclamation.md) 2026-10-20 改判旧「Tenant = organization 不另建表」（global-tenancy §9.2））；**系存储实体非 DDD 聚合回归**：内核仍为 record(`TENANT_STATUS`)+port(`TenantStatusStore`)+function(`canTransition`) 三件套（P1 函数式内核）；`organization` 为其认证/成员面投影 |
 | **Owner（租户所有者）** | 创建申请人经审批通过即成为首名 owner；最高租户级角色；须至少保留一名（FR-12） |
 | **Workspace（工作区）** | 租户内二级**数据分组**（D2：两级 租户→工作区）；业务表挂 `workspace_id`，查询默认按 `(tenant_id, workspace_id)` 复合过滤（强数据边界，workspace 间默认互不可见）；**无独立角色/权限层** |
 | **Member（成员）** | user × tenant 的**多对多关系**（落 org `member` 表），带该租户内角色；一个 user 可属多个租户、角色互不相干 |
@@ -49,8 +49,9 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-13 | 0.1.0 | 建项目级术语 SSOT，收拢两份 plan 的领域词汇（履行 global-tenancy §7「术语并入 specs」判据） | 新建：§1 多租户 · §2 地域与合规 · 定位与 SSOT 约定 |
+| 2026-10-20 | 0.2.0 | 收权案翻账：Tenant 词条载旧裁「= organization 不另建表」已被签核改判，防术语 SSOT 漂移 | Tenant 词条重写（自有户籍表 `tenant`·同值代理 PK·存储实体非聚合回归·org 为认证/成员面投影），与 architecture ±zh 术语纪律段同源 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-13 / v0.1.0 起草（新增 specs 文档，随 global-tenancy 审计门一并签核）；词条含义以经人裁决的当前正文为准。
+正文已于 2026-10-13 / v0.1.0 起草（新增 specs 文档，随 global-tenancy 审计门一并签核），并于 2026-10-20 / v0.2.0 随收权案翻正 Tenant 词条；词条含义以经人裁决的当前正文为准。

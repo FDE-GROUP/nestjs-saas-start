@@ -1,6 +1,6 @@
 # global-tenant-entity-reclamation：租户实体收权——tenant 自有表，BA 缩回宪法定位
 
-> 用途: **方案（提案–审计–实施）** | 状态: 已实施·待人类验收 | 版本: 0.2.0
+> 用途: **方案（提案–审计–实施）** | 状态: 已实施·待人类验收 | 版本: 0.2.1
 > 定位: 用户由「为什么没有 Tenant 实体」追问，自查出 **BA 责任面被放大**——租户生命周期态机寄居 `organization.metadata`（jsonb），而宪法对 BA 定位是「纯认证与成员数据源」（±zh），租户生命周期既非认证也非成员。用户裁「同意乙」（建自有 tenant 表收权），并令参考外部文章（已鉴定：CSDN 内容农场文·所述系同名 Java 项目·非本仓 better-auth.dev·仅取其多租户工程惯例旁证，全部支持乙档方向；设计先例采本仓 `user_status` 旁表模式）。
 > 关联: S4 审批制（metadata 态机出处·本案修订其存储决策）· global-entity-column-law（新表受 L1/L2 管辖·16→17 表恒等账）· table-ownership（organization 属主=tenants 不变·新表入账）· module-rbac-casl 甲裁（org HTTP 封端·不动）。
 
@@ -27,6 +27,8 @@
 - **R1 双写窗口**：backfill 后 store 直切新表（dev/未上线环境一步切换，无生产流量兼容负担；若你要求平滑窗口则改「读新写双」过渡档——归裁③）。
 - **R2 FK 时序**：tenant 行 FK→organization 必须与 approve 建 org 同事务（seed/测试夹具抢跑教训入账）。
 - **R3 语义锚迁移**：下游（workspace/subscription/tenancy ALS 的 tenantId）现值即 organization.id，本案不改值只补户籍——若裁④要改指 tenant.id 则波及面扩大，Agent 建议**不改**。
+- **观察登记 O1（人评 2026-10-20）**：「无户籍视同 active」的 fail-open 边界，backfill 后触发面只剩 seed/外部直插（BA 自助建 org 已 S4 双闸封堵）；若未来出现其它建 org 路径（LDAP/SCIM 同步类），**即时入户籍行须作为该方案的必达判据**，否则边界被放大。
+- **观察登记 O2（人评 2026-10-20）**：并发 transition 无乐观锁/CAS（同一租户两并发仍靠 UoW 事务隔离 + canTransition 前置）——真列化后纯 additive `version` 小片门槛已降低，本案不夹带，待令人另立小 plan。
 - 归人裁：① 整案 GO（含 schema 迁移与修宪高危面）；② 表形：`tenant`（建议·直白）vs `tenant_profile`；status 采 text+CHECK（建议·与仓内枚举列惯例对拍后定）vs native enum；③ backfill 一步切换 vs 双写过渡（建议一步·无存量生产）；④ 下游 tenantId 锚不改指（建议维持）；⑤ 三片分笔提交。
 
 ## 4. 审计结论
@@ -46,6 +48,7 @@
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 用户判「BA 责任被放大」并同意乙档、令参考外部文章（已鉴定为同名项目嫁接文·取惯例旁证） | 首版三片：A 表+迁移+backfill+定律入账 / B 读写换轨 / C 宪法翻账；五裁点待审计 |
 | 2026-10-20 | 0.2.0 | 签核后三片实施完毕 | 切片 A（f47c016）checks 通道+实体+DDL/backfill+17 表恒等；切片 B（596a40f·含 appliedAt 退役收口 amend）端口三原语化/服务换轨/治理读面折叠/新 gated e2e 四断言/棘轮正名；切片 C 宪法 ±zh 改判成文（术语纪律段+BA 定位条）+ global-tenancy 修订注（§9.2/§10 S4 行/§12/§13 v0.24.0·不改史）；§5 判据三项勾账带取证；README 翻「已实施·待人类验收」；推送待人令 |
+| 2026-10-20 | 0.2.1 | 人验收评价（A 级）后令「先落留痕增补一并推」 | §3 增观察登记 O1（新建 org 路径须即时入册·fail-open 边界防放大）/O2（并发 transition 无乐观锁·真列化后 version 小片门槛降低·不夹带待另案）；glossary v0.2.0 同步翻正 Tenant 词条（旧裁「= organization 不另建表」改判成文+存储实体非聚合回归注·防术语 SSOT 漂移） |
 
 ---
 
