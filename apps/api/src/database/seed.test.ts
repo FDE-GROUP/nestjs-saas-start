@@ -1,4 +1,4 @@
-import { Member, Organization } from '@app/database/ba/entities';
+import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import {
   Account,
   Session,

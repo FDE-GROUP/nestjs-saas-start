@@ -46,10 +46,10 @@
 ## 1. 用户（User）
 
 - **定义**：在本平台注册的自然人账号；先成为 user，才可申请/关联租户。全局实体，**不带 `tenant_id`**（D3——一人可属多租户）。
-- **物理承载**：`user` 表（Better Auth 契约面，`apps/api/src/database/ba/entities.ts`）：`id`、`name`、`email`（全局唯一之「体」）、`emailVerified`、`password`（可空，凭证本体在 `account` 表按渠道分行）、`handle`/`isOwner`（BA additionalFields）、`createdAt/updatedAt`。
+- **物理承载**：`user` 表（BA 身份机器族·形状受 BA 接口契约约束，`apps/api/src/modules/auth/infrastructure/entities/ba-identity.entities.ts`·global-ba-entity-domain-placement 归域）：`id`、`name`、`email`（全局唯一之「体」）、`emailVerified`、`password`（可空，凭证本体在 `account` 表按渠道分行）、`handle`/`isOwner`（BA additionalFields）、`createdAt/updatedAt`。
 - **生命周期归属**：User 是本仓唯一天然的「外部聚合」，其注册/凭证/会话生命周期**归 Better Auth**（宪法 P1 注记：聚合优先战术 DDD 不采用之缘由）；本仓仅在其旁挂自有面。
 - **平台级失能**：`user_status` 旁表（`apps/api/src/modules/tenants/infrastructure/entities/user-status.entity.ts`，tenants 上下文属主）：`userId` 即 PK-FK→`user`（cascade）、`status`、`reason`。`UserStatusService` 为读写唯一卡点；暂停（suspend）同时**硬删该用户全部 session 行**（即时失权）。`user_status` 与 `tenant` 同构——本仓「不动 BA 表形、以自有旁表收权」的范式先例即出于此。
-- **表/实体**：表 `user`（连带凭证面 `account`、会话面 `session`/`verification`）↔ 运行时实体 `User`/`Account`/`Session`/`Verification`（`apps/api/src/database/ba/entities.ts`·`defineEntity` 零装饰器·入 `MIKRO_ENTITIES`）；旁表 `user_status` ↔ 实体 `UserStatus`（`user-status.entity.ts`·`USER_STATUS_META` 列单源）；迁移忠实变体同名居 `apps/api/src/database/mikro/migration/migration-entities.ts`。
+- **表/实体**：表 `user`（连带凭证面 `account`、会话面 `session`/`verification`）↔ 运行时实体 `User`/`Account`/`Session`/`Verification`（auth 域 `modules/auth/infrastructure/entities/ba-identity.entities.ts`·`defineEntity` 零装饰器·入 `MIKRO_ENTITIES`）；旁表 `user_status` ↔ 实体 `UserStatus`（`user-status.entity.ts`·`USER_STATUS_META` 列单源）；迁移忠实变体同名居 `apps/api/src/database/mikro/migration/migration-entities.ts`。
 - **注意**：`user.role` 列（USER/ADMIN）仍存在于 BA 面，但**不承载任何当前裁决判据**——平台经营者判据早已收敛为身份命中（见 §5），勿将其读作权限源。
 
 ## 2. 组织（Organization）
@@ -140,16 +140,16 @@
 
 本仓实体走**双轨制**（ORM 修宪案 B 遗产·列定律守卫）：
 
-- **运行时实体**（app 仓储读写面）：BA 契约面八表用 `defineEntity` 零装饰器扁平标量列（`apps/api/src/database/ba/entities.ts`·入 `MIKRO_ENTITIES`）；自有表用 `TableMeta` 列单源 + `buildRuntimeEntity` 派生 `EntitySchema`（各上下文 `infrastructure/entities/`·汇入 `MIKRO_APP_ENTITIES`，装配于 `database/mikro/mikro-orm.service.ts`）。
+- **运行时实体**（app 仓储读写面）：BA 契约面八表用 `defineEntity` 零装饰器扁平标量列（归域两文件：auth `ba-identity.entities.ts` + tenants `ba-org.entities`·global-ba-entity-domain-placement·入 `MIKRO_ENTITIES`）；自有表用 `TableMeta` 列单源 + `buildRuntimeEntity` 派生 `EntitySchema`（各上下文 `infrastructure/entities/`·汇入 `MIKRO_APP_ENTITIES`，装配于 `database/mikro/mikro-orm.service.ts`）。
 - **迁移忠实实体**（仅 `migration:generate` 消费·产 DDL/FK）：`apps/api/src/database/mikro/migration/migration-entities.ts`（`buildMigrationEntity` 挂真实关系·入 `MIKRO_MIGRATION_ENTITIES`）。
 
 | 概念 | 数据表 | 运行时实体（文件 · 导出） | 属主上下文 |
 |---|---|---|---|
-| 用户 | `user` | `database/ba/entities.ts` · `User` | users |
+| 用户 | `user` | auth `ba-identity.entities` · `User` | auth（台账随归位案裁①翻·users 模块纯读经端口） |
 | 用户（凭证） | `account` | 同文件 · `Account` | auth |
 | 用户（会话） | `session` / `verification` | 同文件 · `Session` / `Verification` | auth |
 | 用户（失能旁表） | `user_status` | `modules/tenants/infrastructure/entities/user-status.entity.ts` · `UserStatus`（`USER_STATUS_META`） | tenants |
-| 组织 | `organization` | `database/ba/entities.ts` · `Organization` | tenants |
+| 组织 | `organization` | tenants `ba-org.entities` · `Organization` | tenants |
 | 成员 | `member` | 同文件 · `Member` | tenants |
 | 邀请 | `invitation` | 同文件 · `Invitation` | tenants |
 | 租户 | `tenant` | `modules/tenants/infrastructure/entities/tenant.entity.ts` · `Tenant`（`TENANT_META`） | tenants |
@@ -159,7 +159,7 @@
 | 分区（授权 subject） | `workspace` | `modules/workspaces/infrastructure/entities/workspace.entity.ts` · `Workspace`（`WORKSPACE_META`） | workspaces |
 | 示例业务表 | `post` | `modules/posts/infrastructure/entities/post.entity.ts` · `Post`（`defineEntity`·跨模型 FK 当普通 string 列，物理 FK cascade 仍由 DB 强制） | posts |
 | 订阅 | `tenant_subscription` | `modules/subscriptions/infrastructure/entities/tenant-subscription.entity.ts` · `TenantSubscription`（`TENANT_SUBSCRIPTION_META`） | subscriptions |
-| 同意台账 | `consent` | `database/ba/entities.ts` · `Consent`（PIPL·只读投影消费） | auth |
+| 同意台账 | `consent` | auth `ba-identity.entities` · `Consent`（PIPL·只读投影消费·归位案裁②） | auth |
 
 > 一致性纪律：同一张表的列定义由单一 `TableMeta` 同源派生双变体（运行时/忠实），`database/entity-column-law.ts` 守卫「表 17 张恒等 + 列对齐」——新增表不同步登记即红。
 

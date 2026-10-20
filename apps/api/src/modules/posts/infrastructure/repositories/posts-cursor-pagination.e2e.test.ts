@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Organization } from '@app/database/ba/entities';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { TransactionScope } from '@app/database/eventing/transaction-scope';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';

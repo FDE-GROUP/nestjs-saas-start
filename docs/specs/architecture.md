@@ -60,8 +60,7 @@ src/
 ├── database/                # Global infra: MikroORM client, migrations (DDL SSOT), seed, eventing/ (ES infra); BA
 │                            #   entities re-homed by domain (identity machinery → auth/infrastructure/entities, org
 │                            #   container → tenants likewise; shapes constrained by the BA interface contract —
-│                            #   global-ba-entity-domain-placement · slice A landed); ⚠ org-container family
-│                            #   (organization/member/invitation) in flight with slice B (`database/ba/` until then),
+│                            #   global-ba-entity-domain-placement · both families landed, `database/ba/` dissolved),
 │                            #   migrations, seed, eventing/ (ES store/relay/UoW). Context-owned table entities live in
 │                            #   modules/<ctx>/infrastructure/entities (owner SSOT: database/table-ownership.ts)
 ├── config/                  # Global infra: typed config + zod validation

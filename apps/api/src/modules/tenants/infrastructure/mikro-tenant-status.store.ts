@@ -1,4 +1,4 @@
-import { Organization } from '@app/database/ba/entities';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Tenant } from '@app/modules/tenants/infrastructure/entities/tenant.entity';
 import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
-import { Member, Organization } from '@app/database/ba/entities';
+import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';

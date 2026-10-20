@@ -9,7 +9,7 @@ import { TENANT_META } from '@app/modules/tenants/infrastructure/entities/tenant
 import { USER_STATUS_META } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
-import { MIKRO_ENTITIES } from './ba/entities';
+import { MIKRO_ENTITIES } from './mikro/app-entities';
 import {
   BA_CONTRACT_TABLES,
   IMMUTABLE_TABLES,

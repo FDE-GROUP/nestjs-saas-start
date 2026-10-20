@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { createValidationPipe } from '@app/common/validation-pipe';
-import { Invitation, Member, Organization } from '@app/database/ba/entities';
+import { Invitation, Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Event } from '@app/database/eventing/entities/event.entity';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';

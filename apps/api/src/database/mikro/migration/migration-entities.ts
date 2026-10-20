@@ -15,7 +15,7 @@ import { buildMigrationEntity } from '../column-meta';
  * ORM 修宪案 B · 切片 3a —— **迁移专用·忠实全模型** 实体集（MikroORM v7 零装饰器 `defineEntity`）。
  *
  * 定位（归人裁定·多租户优先）：本文件**只服务 schema 迁移基线**，与两处刻意「扁平/有损」的实体集**解耦**——
- *  - `database/ba/entities.ts`（切片 1·BA 运行时面）：为 `mikro-auth-adapter` 的 **raw SQL** 寻址服务，
+ *  - BA 运行时面（归域两文件：auth `ba-identity.entities.ts` + tenants `ba-org.entities.ts`·为 `mikro-auth-adapter` 的 **raw SQL** 寻址服务）：
  *    扁平标量列、不建关系对象（遵循 BA `createAdapterFactory` 契约）；本迁移集**不触碰、不导入**它。
  *  - `modules/posts/infrastructure/entities/post.entity.ts`（切片 2·app 试迁移面）：同上。
  *  三套各自独立装进各自的 `MikroORM.init`（本集见 `mikro-migration.config.ts`），**零交集** ⇒ 切片 1/2 的

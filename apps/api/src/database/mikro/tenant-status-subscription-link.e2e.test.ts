@@ -3,7 +3,7 @@ import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
-import { Organization } from '@app/database/ba/entities';
+import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Event } from '@app/database/eventing/entities/event.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';

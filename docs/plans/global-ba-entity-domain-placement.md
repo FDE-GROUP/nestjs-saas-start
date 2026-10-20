@@ -71,17 +71,18 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 
 ## 8. 完成判据（可核验 + 穷尽）
 
-- [ ] 八实体新家落位（裁①②③定稿），`database/ba/` 目录消解。（**切片 A 已落地**：身份机器族五实体落 auth·台账 user→auth·AUTH_USER_STORE 收编；余切片 B 三实体）
-- [ ] 全仓 `database/ba/entities` 旧路径 grep 零残留（注释留痕除外）。
-- [ ] `migration:generate` 空 diff（零 schema 变更·二次 generate 复核）。
-- [ ] 台账↔文件位置全量一致（表所有权守卫绿·BA 表例外清零）；列律 `BA_CONTRACT_TABLES` 引用同步。
-- [ ] `ci` 全绿 + `ci:db`（含一致性套件新路径 + 16 测试文件 sweep 后）+ `verify:prod-boot` `/health` 200。
-- [ ] 宪法 ±zh BA 定位条翻转成文两版一致；`global-entity-context-placement` BY_MODEL 勘误行落档；`global-ba-contract-surface` 再裁决注落档。
+- [x] 八实体新家落位 + `database/ba/` 目录消解（切片 A 身份机器族五实体→auth[2026-10-20]；切片 B 组织容器族三实体→tenants·`MIKRO_ENTITIES` 聚合归装配根 `app-entities.ts`·ba 目录 git rm）。
+- [x] 全仓旧路径 grep 零活引用（余注释均为历史留痕/新家注记）。
+- [x] `migration:generate` 空 diff（切片 A/B 各实跑复核·0 migration created）。
+- [x] 台账↔文件位置全量一致（`user→auth` 翻转 + AUTH_USER_STORE 收编写面·守卫绿）；列律登账语境与守卫测试引用同步（app-entities 聚合源）。
+- [x] 测试 121 文件 700 测全绿 + fullstack gated e2e 10 文件 36 测 + 一致性 9/9（新路径）+ prod-boot /health 200（A/B 各实跑）。
+- [x] 宪法 ±zh BA 定位条翻转 + 目录树终态（迁移中标记摘除）；BY_MODEL 勘误与再裁决注已落档（C 片）；domain-concepts 路径表翻正（B 片）。
 
 ## 9. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 1.0.0 | 切片 B 落地·三片齐 | 组织容器族三实体迁 `modules/tenants/infrastructure/entities/ba-org.entities.ts` + `MIKRO_ENTITIES` 聚合归装配根 `app-entities.ts` + `database/ba/` 区 git rm 消解 + 18 文件 sweep（seed tsx 相对）+ 列律/守卫测试/spec 引用改装配根 + 宪法摘迁移标记成终态 + domain-concepts 路径表翻正。硬闸：700 测 + 空 diff + gated e2e 36 + 一致性 9/9 + prod-boot 全绿——**C→A→B 三片齐·待人类验收** |
 | 2026-10-20 | 0.3.0 | 切片 A 落地 | 身份机器族五实体迁 `modules/auth/infrastructure/entities/ba-identity.entities.ts`（BA 契约头注）+ 一致性 spec 迁位（consistency config 路径订正·真库 9/9）+ 18 文件 import sweep（含 seed tsx 相对导入）+ **台账 `user→auth` 翻转并收编写面**：新 `AUTH_USER_STORE` 端口（S3 同型）·users 端口去 `remove`·delete-user handler 经端口硬删（逐字同语义）——表所有权守卫绿。硬闸：700 测全绿 + `migration:generate` 空 diff + gated e2e 10 文件 36 测 + prod-boot /health 200 |
 | 2026-10-20 | 0.2.0 | 人裁 GO（按建议裁·先完成文档）| §7 翻正已审计·GO（四裁点建议档全采）+ 执行序倒置成文（C→A→B）；切片 C 文档件先行落地（宪法 ±zh 翻转[带迁移中注记]/归位案勘误/成区案再裁决注/索引翻正） |
 | 2026-10-20 | 0.1.0 | 起草 | 首版：BA 实体按域归位修宪提案（两族归域 + ba/ 区消解 + 宪法翻转 + BY_MODEL 勘误收口；四裁点归人） |
@@ -89,4 +90,4 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.2.0 变更（人裁 GO·四裁点建议档·C 片文档先行），以当前正文内容为准。
+正文已于 2026-10-20 / v1.0.0 变更（三片 C→A→B 齐施·判据全勾·待人类验收），以当前正文内容为准。

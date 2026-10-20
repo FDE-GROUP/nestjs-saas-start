@@ -2,7 +2,7 @@ import { authFlowTestSuite, testAdapter } from '@better-auth/test-utils/adapter'
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { describe, expect, it } from 'vitest';
-import { MIKRO_ENTITIES } from '../../../database/ba/entities';
+import { MIKRO_ENTITIES } from '../../../database/mikro/app-entities';
 import { initMikroOrm } from '../../../database/mikro/mikro-orm.factory';
 
 /**

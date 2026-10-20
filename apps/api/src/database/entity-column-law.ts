@@ -28,7 +28,8 @@ export const IMMUTABLE_TABLES: readonly string[] = [
 ];
 
 /**
- * Better Auth 契约面八表（`database/ba/entities.ts`）：列形**不在本律覆盖面**
+ * Better Auth 契约面八表（归域两文件：auth `ba-identity.entities.ts` + tenants `ba-org.entities.ts`·
+ * global-ba-entity-domain-placement）：列形**不在本律覆盖面**
  * （理由=外部契约·adapter raw SQL 寻址钉死）；守卫只做表名恒等——BA 面增删表须先来此登记。
  */
 export const BA_CONTRACT_TABLES: readonly string[] = [

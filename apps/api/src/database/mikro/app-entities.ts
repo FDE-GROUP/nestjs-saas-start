@@ -18,7 +18,8 @@ import {
   WORKSPACE_META,
   Workspace,
 } from '../../modules/workspaces/infrastructure/entities/workspace.entity';
-import { MIKRO_ENTITIES } from '../ba/entities';
+import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
+import { MIKRO_ORG_ENTITIES } from '../../modules/tenants/infrastructure/entities/ba-org.entities';
 import { EVENT_META, Event } from '../eventing/entities/event.entity';
 
 /**
@@ -48,6 +49,9 @@ export const FOUR_TABLE_METAS = [
 
 /** RBAC 三表元数据（迁移装配可消费）。 */
 export const RBAC_TABLE_METAS = [TENANT_ROLE_META, TENANT_ROLE_GRANT_META, TENANT_ROLE_AUDIT_META];
+
+/** BA 契约面八表全集（身份机器族[auth] + 组织容器族[tenants]·global-ba-entity-domain-placement 归域后装配根聚合）。 */
+export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES];
 
 export const MIKRO_APP_ENTITIES = [
   Post,

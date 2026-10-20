@@ -15,7 +15,7 @@ import {
   Verification,
 } from '../modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '../modules/posts/infrastructure/entities/post.entity';
-import { Member, Organization } from './ba/entities';
+import { Member, Organization } from '../modules/tenants/infrastructure/entities/ba-org.entities';
 import { MIKRO_APP_ENTITIES } from './mikro/app-entities';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 
