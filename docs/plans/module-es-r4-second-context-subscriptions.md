@@ -1,4 +1,4 @@
-# ES R4 第二上下文推广案（subscriptions 订阅治理状态机·「回放即真相」）——**已审计·裁ⓐ–ⓔ按推荐档 GO · R4a 已实现待验收（R4b/R4c 高危另签）**
+# ES R4 第二上下文推广案（subscriptions 订阅治理状态机·「回放即真相」）——**已审计·裁ⓐ–ⓔ按推荐档 GO · R4a/R4b 已实现待验收（R4c 高危另签）**
 
 > 适用范围: `modules/subscriptions 全域（domain/application/infrastructure）· tenant_subscription 表地位（真相源 vs 投影）· 新事件词汇 + fold + @saas/contracts payload schema · 新 env 键 ES_TRUTH_SOURCE_SUBSCRIPTIONS · 治理事件消费者 tenant-status-subscription-link 交互` ← blast radius 中（单上下文写读链换轨·复用 R1 机制）；审计深度 = 人签核（高危#1 bootstrap/写切换·R4b/R4c 逐次亲签）
 > 关联: 母案 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md) §4 **R4「第二上下文推广逐独立立项」**· §1「能力基线 + 逐模块按需实施」· [module-es-r1-replay-core](./module-es-r1-replay-core.md)（**本案复用其全部机制 seam**：`publishDurable`/fold「最后快照重启」/bootstrap 脚本/旋钮正交律）· [module-es-first-real-consumer](./module-es-first-real-consumer.md)（subscriptions 现为治理事件**消费者**）· R2 缓行见 [module-es-r2-crypto-shredding-spike](./module-es-r2-crypto-shredding-spike.md)
@@ -64,7 +64,8 @@
 - [x] 归人裁点 ⓐ–ⓔ（含推荐档）/ 分期 R4a–R4c / 改锁清单 / 风险可逆 齐备、决策完备可审。
 - [x] 人对本案签发 + 裁ⓐ–ⓔ 定向（审计门）——**2026-10-21 人同意=过审计门·裁ⓐ甲/裁ⓑ推荐守卫表/裁ⓒ三事件词汇/裁ⓓ link handler 单径/裁ⓔ create 全覆盖，均按推荐档 GO**。
 - [x] R4a 已实现（读侧+事件类+契约·纯增量·零写切换·零 DDL·`ci` 749 passed 含 14 新测·registry⇄DOMAIN_EVENTS 恒等锁过）；既有全量测零改=行为逐字节等价。
-- [ ] R4b（dev 亲签）→R4c（亲签）高危逐片实现·每片 `ci` + `test:fullstack` + 行为等价取证；prod apply/翻面另签。
+- [x] R4b（dev 亲签 2026-10-21）已实现：`bootstrap-subscription-streams.ts`（幂等判重/version max+1 续位/zod 三律·镜像 R1b）+ `scripts/es-bootstrap-subscriptions.ts --verify`（只读对拍 fail-loud）+ gated `subscription-replay-truth.e2e.test.ts` 段①（登记 `GATED_E2E_FILES`）；**dev 真库全链演练**：预检 0/3 FAIL→bootstrap created=3→复验 3/3 OK→幂等重跑 skipped=3→清场无损；`ci` 755（+6 镜测）+ `test:fullstack` 13 gated 恒等绿（订阅对拍段 2 tests 真库执行）；type-escape 棘轮 +2 正当 MikroORM 胶水随基线人审。零 DDL。
+- [ ] R4c（高危另签）写切换·新 env 键 `ES_TRUTH_SOURCE_SUBSCRIPTIONS`·`ci` + `test:fullstack` + 行为等价取证；prod apply/翻面另签。
 - [x] 本 plan 与 README/母案 §4 状态单源同步。
 
 ## 7. 非目标
@@ -79,8 +80,9 @@
 |------|------|----------|----------|
 | 2026-10-21 | 0.1.0 | 人裁 R4 目标（择 subscriptions·自行裁定授权）·R2 缓行后转推广 | 首版呈审案：择取凭据（workspaces 无状态机排除·subscriptions 4 态+PII 薄+复用 R1 seam）+ 现状取证 G1–G6（无转换守卫/多行 per 租户/零自身事件/双写路径/读投影/表 shared 零 DDL）+ 归人裁点 ⓐ–ⓔ（聚合流粒度/状态机守卫表/事件词汇/与治理消费者时序/create 是否纳入·各附推荐档）+ 分期 R4a 读侧+事件类+契约/R4b bootstrap/R4c 写切换（新 env 键 ES_TRUTH_SOURCE_SUBSCRIPTIONS）+ 改锁清单 + 风险可逆 · 零实现 |
 | 2026-10-21 | 0.2.0 | 审计门通过 + R4a 落地 | 人同意=过审计门·裁ⓐ–ⓔ按推荐档全 GO（甲 per-行流 / 守卫表 active↔suspended→expired/cancelled 终态 / 三事件词汇 / link handler 单径 / create 全覆盖）；**R4a 纯增量落地**：DOMAIN_EVENTS +3 键、`subscription-lifecycle.ts`（SUBSCRIPTION_STATUS + canTransition）、三事件类（created/status.transitioned/bootstrapped·aggregateType=subscription）、`subscription-lifecycle-fold.ts`（replay/apply·最后快照重启·from 漂移/非法迁移 fail-loud）、`@saas/contracts/subscription-events.ts`（payload zod·wire enum 内联）、EVENT_TYPE_REGISTRY 登记三件（保恒等）；镜测 fold 10 + 契约对拍 4·DB-free；`ci` PASSED 749（+14）·fallow 零违规·未触配置面（env 键留 R4c）。零写路径改动·零 DDL。R4b/R4c 高危待逐次亲签 |
+| 2026-10-21 | 0.3.0 | R4b bootstrap 落地（dev 亲签） | **R4b 存量成流 bootstrap**（高危#1·dev 范围人亲签 2026-10-21·prod apply 另签）：`bootstrap-subscription-streams.ts`（每 `tenant_subscription` 行按裁ⓐ甲发 `subscription.bootstrapped`·aggregateId=行 id·幂等判重/version max+1 续位/payload 过 zod·`actorId='bootstrap'`·镜像 `bootstrapTenantStreams` 全 seam）+ `scripts/es-bootstrap-subscriptions.ts`（`--verify` 只读全量 replay fold ⇄ 表行·不符逐行点名 exit 1）+ gated `subscription-replay-truth.e2e.test.ts`（段①·登记 `GATED_E2E_FILES`→13 gated·写切换段属 R4c 不越界）。**dev 真库全链演练**（合成行经 FK→Organization 链）：预检 0/3 FAIL·EXIT1→bootstrap created=3→复验 3/3 OK→幂等重跑 skipped=3→清场还原 subs=0/events=0 无损。`ci` PASSED 755（+6 镜测）·`test:fullstack` 恒等绿（订阅对拍 2 tests 真库执行）·type-escape 棘轮 +2 正当 MikroORM 胶水落基线随 PR 人审。零 DDL。R4c 写切换高危另签 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.2.0 修订（审计门 GO·裁ⓐ–ⓔ按推荐档·R4a 已实现待验收·零写路径/零 DDL）。状态以 README 索引表为单源。
+正文已于 2026-10-21 / v0.3.0 修订（审计门 GO·裁ⓐ–ⓔ按推荐档·R4a+R4b 已实现待验收·R4b dev 真库演练全链绿·零写切换/零 DDL）。状态以 README 索引表为单源。
