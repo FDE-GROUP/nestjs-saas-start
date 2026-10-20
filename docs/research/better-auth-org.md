@@ -4,6 +4,7 @@
 > 关联: [global-tenancy.md](../plans/global-tenancy.md) D1–D6 / FR-1~13 / §8-2 · [global-cn-adaptation.md](../plans/global-cn-adaptation.md) FR-3/§8-3 · [better-auth-cn-providers.md](./better-auth-cn-providers.md) 风险1（境内无 email）· [vision.md](../specs/vision.md) §4.1 / §8
 > 日期: 2026-10-13 | 证据基线: Better Auth v1.7.x（本仓 `better-auth ^1.7.7`）官方文档 `plugins/organization`
 > 本文只作制定 plan 的**参考**，结论须经人二次核验后方可写入方案（`workflow.md` §3）
+> **后续演变指针（2026-10-20 追注·阅读向导，正文历史段照留不改史）**：① 本文 §1/§4「以 `organization` 承载 tenant 实体 / metadata 存态」的建议已被 [global-tenant-entity-reclamation](../plans/global-tenant-entity-reclamation.md) 签核改判——租户物理实体为自有户籍表 `tenant`（`status` 真列 + DB CHECK），BA `organization` 仅余认证/成员面投影，metadata 我方寄居键（status/appliedAt）已全仓清零；订阅/配额亦走独立表 `tenant_subscription`（非 metadata 指针）。② 本文「本仓证据基线」为 Drizzle 语境（手写 `schema.ts`/`drizzle-kit`），该实态已被两案换轨：[global-runtime-node-pnpm](../plans/global-runtime-node-pnpm.md)（Bun→Node+pnpm）与 [global-orm-mikro-constitution-amendment](../plans/global-orm-mikro-constitution-amendment.md)（MikroORM·Drizzle 彻底移除）；BA 契约面现居 `apps/api/src/database/ba/entities.ts`（global-ba-contract-surface）。当前真相以 `docs/specs` 与代码为准。
 > 受众: **Agent 可参考（非依据）· 人主导判读**
 
 ---
@@ -112,4 +113,4 @@ S1（global-tenancy v0.7.0·f310cfc）把 Nest 侧 RBAC 守卫委派给 BA 的 `
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-13 起草（v0.1.0），同日补 §6 代码级 spike（v0.2.0）、§7 离线 generate 并入核验（v0.3.0）、§8 S0 boot 实测（v0.4.0·坐实 adapter/jsonb/D4 读路·撞出并采 A 修复 BA 1.7.7 validateSchema 与 session 缺列冲突）与 §9 S1 `hasPermission` 实测（v0.5.0·纠正返回体为 `{success:boolean}`、RBAC 委派单一权限源）；结论须人二次核验后写入 plan，本文不作开发依据。
+正文已于 2026-10-13 起草（v0.1.0），同日补 §6 代码级 spike（v0.2.0）、§7 离线 generate 并入核验（v0.3.0）、§8 S0 boot 实测（v0.4.0·坐实 adapter/jsonb/D4 读路·撞出并采 A 修复 BA 1.7.7 validateSchema 与 session 缺列冲突）与 §9 S1 `hasPermission` 实测（v0.5.0·纠正返回体为 `{success:boolean}`、RBAC 委派单一权限源）；2026-10-20 头注追「后续演变指针」（tenant 载体改判 + ORM/运行时换轨陈旧锚），正文未动；结论须人二次核验后写入 plan，本文不作开发依据。
