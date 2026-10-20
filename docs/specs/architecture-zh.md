@@ -216,3 +216,20 @@ Controller 经**官方 standard-schema 路径**校验（`@Body/@Param/@Query({ s
 - **开发**：Node + pnpm + Docker PostgreSQL（`docker-compose.dev.yml`）
 - **生产**：Docker Compose（应用 + PostgreSQL）
 - **文档**：Swagger/OpenAPI 自动生成（`/docs`）
+
+## 附录：实体列定律（Entity Column Law）
+
+> 由 global-entity-column-law 引入（2026-10-20·人裁「GO，2 取 (a)」）。
+> 机器可读清单（不可变表 / BA 契约表 / 棘轮豁免）单源在
+> `apps/api/src/database/entity-column-law.ts`；本附录只陈述语义——**切勿在此复述清单**。
+> CI 由 `entity-column-law.guard.test.ts` 强制执行（对声明式列元数据做数据级 inspect；
+> 豁免腐烂或新增违例即闸红）。
+
+- **L1 存在性**：每张表必须有 `createdAt`；可变表必须另有 `updatedAt`。缺失必须是
+  **显式声明的事实**：append-only 表登记为不可变；Better Auth 契约表不在列形覆盖面
+  （其列形由适配器 raw SQL 寻址契约钉死），仅做表名恒等登账。
+- **L2 口径（人裁 (a)）**：新表 `updatedAt` 一律 `nullable()`——NULL 即「建后未改」，
+  不伪造时间。存量 NOT NULL 盖章表入棘轮豁免账，**只减不增**；不为它们做任何 schema 迁移。
+- **统一立场**：公共列统一落在**语义 + 规则**层，**不落结构继承层**（拒绝
+  BaseEntity/跨上下文共享列 spread——限界上下文间结构相似是巧合非同一概念，共享实现
+  会把上下文焊死）。重议触发器：应用内出现真实多态消费点（泛型审计读写器）。

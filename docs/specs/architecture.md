@@ -266,3 +266,27 @@ side and reach the port as `PageRequest` / `CursorPageRequest`.
   migration change, reviewed at the audit gate. The `event` table is owned by the
   `database` infrastructure (ES port exclusive writes); business repositories must never
   append to it directly.
+
+## Appendix: Entity Column Law
+
+> Introduced by global-entity-column-law (2026-10-20 · human ruling「GO, 2 取 (a)」). The
+> machine-readable registries (immutable tables / BA contract tables / grandfathered
+> exemptions) are single-sourced in `apps/api/src/database/entity-column-law.ts`; this
+> appendix states the semantics only — never copy the list here. Enforced in CI by
+> `entity-column-law.guard.test.ts` (data-level inspection of declarative column metadata;
+> stale or new violations fail the gate).
+
+- **L1 Existence**: every table carries `createdAt`; every mutable table also carries
+  `updatedAt`. Absence must be a **declared fact**: append-only tables register as
+  immutable; Better Auth contract tables are outside column-shape scope (their shape is
+  pinned by the adapter's raw-SQL addressing contract) and are tracked by table-name
+  identity only.
+- **L2 Convention (human ruling (a))**: a new table's `updatedAt` is `nullable()` —
+  NULL means「never modified since creation」; do not fabricate timestamps. Legacy NOT NULL
+  update-stamped tables sit on the grandfather registry, **ratchet-style: may shrink, never
+  grow**; no schema migration is performed for them.
+- **Unification stance**: common columns unify at the *semantics + rules* level, **not** at
+  the *structural inheritance* level (BaseEntity / cross-context shared column spreads are
+  rejected — structural similarity across bounded contexts is coincidence, and sharing the
+  implementation would weld the contexts together). Renegotiation trigger: a real polymorphic
+  consumption site (generic audit reader/writer) appearing in the app.
