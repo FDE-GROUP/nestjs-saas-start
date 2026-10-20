@@ -56,6 +56,10 @@ export class ConfigService {
     return this.get<Config['eventPublish']>('eventPublish');
   }
 
+  getEsTruthSourceConfig() {
+    return this.get<Config['esTruthSource']>('esTruthSource');
+  }
+
   getSessionReclaimConfig() {
     return this.get<Config['sessionReclaim']>('sessionReclaim');
   }

@@ -1,12 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { currentRequestId } from '../../../shared-kernel/context/request-context';
+import { ES_TRUTH_SOURCE_TENANTS } from '../../../shared-kernel/domain/es-truth-source.port';
 import {
   DOMAIN_EVENT_PUBLISHER,
   type DomainEventPublisher,
 } from '../../../shared-kernel/domain/event-publisher.port';
+import { EVENT_STORE, type EventStore } from '../../../shared-kernel/domain/event-store.port';
 import { UNIT_OF_WORK, type UnitOfWork } from '../../../shared-kernel/domain/unit-of-work.port';
 import { TenantStatusTransitionedEvent } from './events/tenant-status-transitioned.event';
 import { canTransition, isTenantBlocked, type TenantStatus } from './tenant-lifecycle';
+import { applyTenantEvent, replayTenantLifecycle } from './tenant-lifecycle-fold';
 import { TENANT_STATUS_STORE, type TenantStatusStore } from './tenant-status.store';
 
 /** 严格迁移结果结合（S5）：ok 携 previous 供审计；not-found/illegal 由调用方转 404/409。 */
@@ -37,6 +40,11 @@ export class TenantStatusService {
     // ES Phase B 后半（module-es-outbox-transactional 切片 B）：ambient UoW，装配见
     // MikroOrmModule @Global·单测直 new 传 pass-through 假实现
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
+    // ES R1c 真相源写切换（module-es-r1-replay-core §3-R1c·高危#1 逐次亲签）：
+    // 两参均 @Optional + 缺省——旋钮关（缺省）时既有 `new(store, publisher, uow)` 三参调用点
+    // 逐字节不变（后两参落默认）；开时 TenantsModule 经 useFactory 注入布尔 + @Global EVENT_STORE。
+    @Optional() @Inject(EVENT_STORE) private readonly eventStore?: EventStore,
+    @Optional() @Inject(ES_TRUTH_SOURCE_TENANTS) private readonly truthSource = false,
   ) {}
 
   /** 读取租户当前生命周期状态；本体/户籍无记录 → undefined（deny-list 语义·视同 active）。 */
@@ -76,6 +84,44 @@ export class TenantStatusService {
       if (!(await this.store.organizationExists(organizationId))) {
         return { kind: 'not-found' } as const;
       }
+
+      // —— ES R1c 真相源写路径（旋钮开·module-es-r1-replay-core §3-R1c）——
+      // 事件流为裁决输入与耐久真相，tenant 表行降为投影：load→fold 取前置态→
+      // publishDurable(带 expectedVersion 乐观锁·同事务 append)→投影 upsert(fold 结果)。
+      // 读序与写序均为「append 先于投影」（§2 目标态），投影携 fold.status⇒读己之写不变。
+      if (this.truthSource) {
+        if (!this.eventStore) {
+          throw new Error('ES_TRUTH_SOURCE_TENANTS=true 需装配 EVENT_STORE（真相源写路径）');
+        }
+        if (!this.events.publishDurable) {
+          throw new Error(
+            'ES_TRUTH_SOURCE_TENANTS=true 要求发布器实现 publishDurable（耐久 append + 乐观锁）',
+          );
+        }
+        const stream = await this.eventStore.load('tenant', organizationId);
+        const replay = replayTenantLifecycle(stream);
+        const previous = replay?.status;
+        if (!canTransition(previous, to)) return { kind: 'illegal', from: previous, to } as const;
+        const event = new TenantStatusTransitionedEvent({
+          aggregateId: organizationId,
+          correlationId: currentRequestId(),
+          payload: {
+            from: previous ?? null,
+            to,
+            actorId: options?.actorId,
+            reason: options?.reason,
+          },
+        });
+        // 乐观锁：tenant 流 contiguous（bootstrap/append 均 max+1 续位·硬删清空整流），
+        // 故物理 max version === 流长；expectedVersion = 流长 + 1（与 store.append 内部 max+1 校验同律）。
+        await this.events.publishDurable([event], stream.length + 1);
+        // 投影：fold 结果回写 tenant 户籍行（非手推 to·严格等于重放态）。
+        const next = applyTenantEvent(replay, event);
+        await this.store.upsert(organizationId, next.status);
+        return { kind: 'ok', previous, status: to } as const;
+      }
+
+      // —— 原路径（缺省·旋钮关·逐字节不变）——
       const previous = await this.store.readStatus(organizationId);
       if (!canTransition(previous, to)) return { kind: 'illegal', from: previous, to } as const;
       await this.store.upsert(organizationId, to);
@@ -94,5 +140,20 @@ export class TenantStatusService {
       ]);
       return { kind: 'ok', previous, status: to } as const;
     });
+  }
+
+  /**
+   * 单流重建投影（ES R1c·§3-R1c 诊断面·非新增 HTTP 端点）：`load → fold → upsert`。
+   * 用于投影漂移修复/灾难重建（真相源回写表行）。空流（无事件）=「无状态记录」→
+   * 不写投影、返回 undefined（deny-list 同口径·避免凭空造 active 户籍行）。返回重建后状态。
+   */
+  async rebuildTenantProjection(organizationId: string): Promise<TenantStatus | undefined> {
+    if (!this.eventStore) {
+      throw new Error('rebuildTenantProjection 需装配 EVENT_STORE');
+    }
+    const replay = replayTenantLifecycle(await this.eventStore.load('tenant', organizationId));
+    if (!replay) return undefined;
+    await this.store.upsert(organizationId, replay.status);
+    return replay.status;
   }
 }

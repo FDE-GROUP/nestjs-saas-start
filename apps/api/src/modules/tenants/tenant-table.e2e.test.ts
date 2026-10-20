@@ -23,8 +23,14 @@ import { Tenant } from './infrastructure/entities/tenant.entity';
  *  4. FK cascade：主行 `organization` 硬删 → `tenant` 户籍行随灭（六子表入账）。
  *
  * **默认跳过**：仅当 `E2E_DATABASE_URL` 存在时运行（开关），不破默认 CI 的 DB-free 不变量。
- * 夹具时间戳后缀唯一键，afterAll 显式清净，运行幂等。B1 隔离：节掉 outbox 后台轮询
+ * 夹具时间戳后缀唯一键，afterAll 显式清净，运行幂等。B1 隔离：节掉 outbox 后台 轮询
  * （沿 `tenant-hard-delete.e2e.test.ts` 同文件先例）。
+ *
+ * ES R1c 地位注记（module-es-r1-replay-core §3-R1c·不改断言本体）：本测跑于旋钮缺省关（原路径）。
+ * 旋钮 `ES_TRUTH_SOURCE_TENANTS=true` 时，`tenant.status` 列由「唯一真相源」降为**投影**——仍经
+ * `TenantStatusService` 单点读写（读己之写不变），但其值由事件流 fold 结果同步刷写；「列约束/FK cascade/
+ * 无户籍兑底」四件 DB 语义与写路径来源无关，断言恒成立（故本守卫片无需随翻转放宽）。写切换的 DB 级实据
+ * 另见 `tenant-replay-truth.e2e.test.ts` 段②③④。
  */
 const E2E_DB = process.env.E2E_DATABASE_URL;
 const gated = E2E_DB ? describe : describe.skip;

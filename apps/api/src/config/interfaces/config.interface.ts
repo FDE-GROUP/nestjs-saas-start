@@ -93,7 +93,18 @@ export interface Config {
   platform: PlatformConfig;
   oauth: OAuthConfig;
   eventPublish: EventPublishConfig;
+  esTruthSource: EsTruthSourceConfig;
   sessionReclaim: SessionReclaimConfig;
+}
+
+/**
+ * ES 真相源写切换（module-es-r1-replay-core §3-R1c）：租户生命周期 `transition`/`reject`
+ * 写路径是否翻为「回放即真相」（事件流为裁决输入与耐久真相·tenant 表降为投影）。
+ *  - `tenants`：缺省 false（env 未置 `ES_TRUTH_SOURCE_TENANTS=true` 即关·原路径逐字节不变）。
+ *    开启后写序：`load → fold 重放态裁决 → append(expectedVersion 乐观锁·同事务) → 投影 upsert(fold 结果)`。
+ */
+export interface EsTruthSourceConfig {
+  tenants: boolean;
 }
 
 /**

@@ -105,3 +105,37 @@ describe('DefaultDomainEventPublisher (ES Phase B 后半 · 三模 seam · modul
     }
   });
 });
+
+describe('DefaultDomainEventPublisher.publishDurable（ES R1c · 真相源耐久 append + 乐观锁）', () => {
+  it('inproc/shadow：总是带 expectedVersion append，再同步派发总线', async () => {
+    for (const mode of ['inproc', 'shadow'] as const) {
+      const { publisher, eventBus, store } = makePublisher({ mode });
+      const events = [makeEvent()];
+      await publisher.publishDurable?.(events, 2);
+      // 不受 mode 门控：inproc 也耐久 append（区别于 publishAll），且携 expectedVersion
+      expect(store.append).toHaveBeenCalledWith(events, 2);
+      expect(eventBus.publishAll).toHaveBeenCalledWith(events);
+    }
+  });
+
+  it('outbox：带锁 append 后不即时派发（未投递行交 relay）', async () => {
+    const { publisher, eventBus, store } = makePublisher({ mode: 'outbox' });
+    const events = [makeEvent()];
+    await publisher.publishDurable?.(events, 1);
+    expect(store.append).toHaveBeenCalledWith(events, 1);
+    expect(eventBus.publishAll).not.toHaveBeenCalled();
+  });
+
+  it('空批 noop；append 失败 fail-loud 不进总线', async () => {
+    const { publisher, eventBus, store } = makePublisher({ mode: 'inproc' });
+    await publisher.publishDurable?.([], 1);
+    expect(store.append).not.toHaveBeenCalled();
+    expect(eventBus.publishAll).not.toHaveBeenCalled();
+
+    const failing = makePublisher({ mode: 'shadow', appendError: new Error('lock conflict') });
+    await expect(failing.publisher.publishDurable?.([makeEvent()], 5)).rejects.toThrow(
+      'lock conflict',
+    );
+    expect(failing.eventBus.publishAll).not.toHaveBeenCalled();
+  });
+});

@@ -67,6 +67,12 @@ export default {
     mode: (process.env.EVENT_PUBLISH_MODE || 'inproc') as 'inproc' | 'shadow' | 'outbox',
     pollMs: Number(process.env.EVENT_OUTBOX_POLL_MS || 1000),
   },
+  // ES 真相源写切换（module-es-r1-replay-core §3-R1c·高危#1 逐次亲签）：缺省关（env 未置
+  // ES_TRUTH_SOURCE_TENANTS=true 即原路径逐字节不变·回退窗）——与 eventPublish 缺省 inproc 同保
+  // DB-free/行为等价装配不变量。dev/prod envs 不重写此键，靠 @nestjs/config load 合并继承本缺省。
+  esTruthSource: {
+    tenants: process.env.ES_TRUTH_SOURCE_TENANTS === 'true',
+  },
   // 过期 session 回收周期任务（module-session-index-and-expiry-reclaim F2）：缺省关（env 未置 true
   // 即不启 timer·不触库）——与 eventPublish 缺省 inproc 同保 DB-free 装配不变量。
   sessionReclaim: {

@@ -50,4 +50,23 @@ export class DefaultDomainEventPublisher implements DomainEventPublisher {
     }
     this.eventBus.publishAll([...events]);
   }
+
+  /**
+   * ES 真相源写切换（module-es-r1-replay-core §3-R1c）：耐久真相优先的发布形。
+   * 与 `publishAll` 的差异：不受 mode 门控**总是**带乐观锁 `append(events, expectedVersion)`
+   * （失败整批不写·同事务由调用方 UoW 保证），再按 mode 决定派发通道：
+   *  - `outbox`：不即时派发（同事务落的未投递行由 relay 异步投→订阅端 at-least-once）；
+   *  - `inproc`/`shadow`：立即进程内派发（EDA Phase A 同步订阅不断）。
+   * 调用方（仅 truth-source 写路径）不得同时再调 `publishAll`（会二次 append 同版本键冲突）。
+   */
+  async publishDurable(events: readonly DomainEvent[], expectedVersion: number): Promise<void> {
+    if (events.length === 0) {
+      return;
+    }
+    await this.store.append(events, expectedVersion);
+    if (this.configService.getEventPublishConfig().mode === 'outbox') {
+      return;
+    }
+    this.eventBus.publishAll([...events]);
+  }
 }

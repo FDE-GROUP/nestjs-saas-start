@@ -1,7 +1,9 @@
+import { ConfigService } from '@app/config/config.service';
 import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
 import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
 import { USER_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+import { ES_TRUTH_SOURCE_TENANTS } from '@core/saas-kit/shared-kernel/domain/es-truth-source.port';
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TenantsController } from './api/tenants.controller';
@@ -85,6 +87,13 @@ const QueryHandlers = [
     UserStatusService,
     { provide: TENANT_STATUS_STORE, useClass: MikroTenantStatusStore },
     { provide: USER_STATUS_STORE, useClass: MikroUserStatusStore },
+    // ES R1c 真相源写切换（module-es-r1-replay-core §3-R1c）：core 服务经 token 消费布尔，
+    // 适配由本（参考）应用装配—读 ConfigService 单源（端口倒置·core 不感知 @app/config）。缺省 false。
+    {
+      provide: ES_TRUTH_SOURCE_TENANTS,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => config.getEsTruthSourceConfig().tenants,
+    },
     // 领域细化重构 A3：RBAC 仓储绑定与 TenantRbacAdminService 已迁 AuthorizationModule
     // （tenants 经全局 ROLE_ASSIGNABILITY_READER published port 消费角色可挂载判定）。
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
