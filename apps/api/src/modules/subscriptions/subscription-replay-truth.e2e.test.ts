@@ -3,6 +3,7 @@ import { SubscriptionCreatedEvent } from '@core/saas-kit/modules/subscriptions/d
 import { SubscriptionStatusTransitionedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-status-transitioned.event';
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
+import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { bootstrapSubscriptionStreams } from '../../database/eventing/bootstrap-subscription-streams';

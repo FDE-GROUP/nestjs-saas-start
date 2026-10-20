@@ -3,6 +3,7 @@ import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/li
 import { replayTenantLifecycle } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle-fold';
 import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
+import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { bootstrapTenantStreams } from '../../database/eventing/bootstrap-tenant-streams';
