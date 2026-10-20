@@ -1,7 +1,9 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
+import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
 import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
+import { replayTenantLifecycle } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle-fold';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
@@ -155,6 +157,74 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
     await expect(store.deleteByAggregate('user', userId)).resolves.toBe(2);
     const remaining = await readStream(userId);
     expect(remaining).toHaveLength(0);
+  });
+
+  // ── ES R1a（module-es-r1-replay-core §3-R1a）：load 回放读取 + expectedVersion 乐观锁 ──
+
+  it('load 重建实例升序回放；tenant fold 重放 == 写入终态（回放即真相读侧雏形）', async () => {
+    const orgId = `es-r1a-load-${Date.now()}`;
+    aggregateIds.push(orgId);
+    const bootstrap = new TenantBootstrappedEvent({
+      aggregateId: orgId,
+      payload: { status: 'pending_approval', actorId: 'bootstrap' },
+    });
+    const approve = new TenantStatusTransitionedEvent({
+      aggregateId: orgId,
+      payload: { from: 'pending_approval', to: 'active', actorId: 'op-1' },
+    });
+    await store.append([bootstrap, approve]);
+
+    const events = await store.load('tenant', orgId);
+    expect(events.map((event) => event.eventType)).toEqual([
+      'tenant.bootstrapped',
+      'tenant.status.transitioned',
+    ]);
+    // 信封显式值透传不重掷（同 relay 重建契约）
+    expect(events[0].eventId).toBe(bootstrap.eventId);
+    expect(events[0].occurredAt.getTime()).toBe(bootstrap.occurredAt.getTime());
+    expect(events[0]).toBeInstanceOf(TenantBootstrappedEvent);
+
+    const state = replayTenantLifecycle(events);
+    expect(state).toMatchObject({ organizationId: orgId, status: 'active', purged: false });
+  });
+
+  it('append(expectedVersion) 乐观锁：不符 fail-loud 整批不写，符合则续位', async () => {
+    const orgId = `es-r1a-ev-${Date.now()}`;
+    aggregateIds.push(orgId);
+    const first = new TenantBootstrappedEvent({
+      aggregateId: orgId,
+      payload: { status: 'active' },
+    });
+    // 空流期望 max+1=1 → 写成功
+    await store.append([first], 1);
+    // 再携 expectedVersion=1 → 实 max+1=2 不符 → 拒写且行数不变
+    const second = new TenantStatusTransitionedEvent({
+      aggregateId: orgId,
+      payload: { from: 'active', to: 'suspended' },
+    });
+    await expect(store.append([second], 1)).rejects.toThrow(/expectedVersion/);
+    const rows = await readStream(orgId);
+    expect(rows).toHaveLength(1);
+    // 正确期望 → 成功
+    await store.append([second], 2);
+    expect(await store.load('tenant', orgId)).toHaveLength(2);
+  });
+
+  it('load 遇注册表外 eventType 行 fail-loud 拒回放（不可信流不猜）', async () => {
+    const orgId = `es-r1a-unknown-${Date.now()}`;
+    aggregateIds.push(orgId);
+    const em = await mikro.fork();
+    await em.insert(Event, {
+      eventId: randomUUID(),
+      aggregateId: orgId,
+      aggregateType: 'tenant',
+      version: 1,
+      eventType: 'tenant.mystery',
+      eventVersion: 1,
+      payload: {},
+      occurredAt: new Date(),
+    } as never);
+    await expect(store.load('tenant', orgId)).rejects.toThrow(/未知 eventType/);
   });
 });
 

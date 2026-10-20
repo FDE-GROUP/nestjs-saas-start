@@ -4,6 +4,7 @@ import { QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { Event } from './entities/event.entity';
+import { EVENT_TYPE_REGISTRY } from './event-type-registry';
 
 /**
  * ORM 修宪案 B · 切片 3c-ii-C —— `EventStore` 端口的 **MikroORM 适配**（`EVENT_STORE` 绑定改指本类·MikroORM 为唯一实现）。
@@ -18,6 +19,12 @@ import { Event } from './entities/event.entity';
  *  - `deleteByAggregate` 为 PIPL 级联补删面（第二切片 §3.2）：`nativeDelete` 纯 SQL DELETE 返删除条数，
  *    不受 `EVENT_PUBLISH_MODE` 开关控制、失败 fail-loud。
  *
+ * ES R1a（module-es-r1-replay-core §3-R1a）新面：
+ *  - `append(events, expectedVersion?)`：提供时首事插入前校验流 max+1 === expectedVersion，
+ *    不符 fail-loud 整批不写（批内后续事件自然续位不再校）；缺省不校验=旧行为逐字节不变。
+ *  - `load`：按流 version 升序经 `EVENT_TYPE_REGISTRY` 重建事件实例（信封显式值透传不重掷，
+ *    同 relay 重建契约）；注册表外 eventType fail-loud 拒回放。
+ *
  * 落位 `database/`（与 `原事件存储适配` 同层·ES 跨切面端口实现·非 modules/tenancy 上下文）→
  * 表所有权纪律守卫（只扫 modules/tenancy）正交·`event` 写面不受跨上下文判定约束。
  * 每次读写经 `MikroOrmService.fork()` 取独立 em（禁全局 `orm.em`·与其余 Mikro 适配同纪律）；`insert`/
@@ -27,7 +34,7 @@ import { Event } from './entities/event.entity';
 export class MikroEventStore implements EventStore {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
-  async append(events: readonly DomainEvent[]): Promise<void> {
+  async append(events: readonly DomainEvent[], expectedVersion?: number): Promise<void> {
     if (events.length === 0) {
       return;
     }
@@ -38,6 +45,11 @@ export class MikroEventStore implements EventStore {
         domainEvent.aggregateType,
         domainEvent.aggregateId,
       );
+      if (expectedVersion !== undefined && version !== expectedVersion) {
+        throw new Error(
+          `EVENT_STORE append: expectedVersion=${expectedVersion} 与流 ${domainEvent.aggregateType}/${domainEvent.aggregateId} 当前 max+1=${version} 不符——fail-loud 不写（ES R1a 乐观锁）`,
+        );
+      }
       await em.insert(Event, {
         eventId: domainEvent.eventId,
         aggregateId: domainEvent.aggregateId,
@@ -55,12 +67,17 @@ export class MikroEventStore implements EventStore {
     }
   }
 
+  /** 流条件单源（棘轮收敛：三处 `as never` 收为一处·filter 对象仅文本字段）。 */
+  private byStream(aggregateType: string, aggregateId: string) {
+    return { aggregateType, aggregateId } as never;
+  }
+
   private async nextVersion(
     em: Awaited<ReturnType<MikroOrmService['fork']>>,
     aggregateType: string,
     aggregateId: string,
   ): Promise<number> {
-    const rows = await em.find(Event, { aggregateType, aggregateId } as never, {
+    const rows = await em.find(Event, this.byStream(aggregateType, aggregateId), {
       orderBy: { version: QueryOrder.DESC },
       limit: 1,
       fields: ['version'],
@@ -75,6 +92,35 @@ export class MikroEventStore implements EventStore {
    */
   async deleteByAggregate(aggregateType: string, aggregateId: string): Promise<number> {
     const em = await this.mikro.fork();
-    return em.nativeDelete(Event, { aggregateType, aggregateId } as never);
+    return em.nativeDelete(Event, this.byStream(aggregateType, aggregateId));
+  }
+
+  /**
+   * 回放读取（ES R1a）：流内 version 升序重建事件实例；未知 eventType fail-loud（注册表外
+   * 即不可信流，拒回放不猜）；信封显式值透传（eventId/occurredAt/correlationId 不重掷）。
+   */
+  async load(aggregateType: string, aggregateId: string): Promise<DomainEvent[]> {
+    const em = await this.mikro.fork();
+    const rows = await em.find(Event, this.byStream(aggregateType, aggregateId), {
+      orderBy: { version: QueryOrder.ASC },
+    });
+    return rows.map((row) => {
+      const EventClass = EVENT_TYPE_REGISTRY.get(row.eventType);
+      if (!EventClass) {
+        throw new Error(
+          `EVENT_STORE load: 未知 eventType ${row.eventType}（event ${row.eventId}）——注册表外事件，拒回放`,
+        );
+      }
+      const metadata = row.metadata ?? {};
+      return new EventClass({
+        aggregateId: row.aggregateId,
+        payload: row.payload,
+        eventId: row.eventId,
+        eventVersion: row.eventVersion,
+        occurredAt: row.occurredAt,
+        correlationId: metadata.correlationId ?? undefined,
+        causationId: metadata.causationId ?? undefined,
+      });
+    });
   }
 }

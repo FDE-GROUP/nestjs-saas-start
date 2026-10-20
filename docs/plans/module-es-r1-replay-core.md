@@ -1,4 +1,4 @@
-# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（已审计·按案 GO · R1a 进行中）
+# ES R1 回放核心：tenants 治理状态机「回放即真相」首试点（已审计 · R1a 已实现待验收 · R1b/R1c 各需高危另签）
 
 > 适用范围: `libs/core saas-kit tenants/lifecycle · shared-kernel EventStore 端口 · apps/api database/eventing + tenants handlers · tenant 户籍表地位 · @saas/contracts 新增事件 payload 面` ← blast radius **大**（首个动写路径的 ES 片）；审计深度 = 人签核（高危#1：写路径切换 + 数据 bootstrap）
 > 关联: 母案 [module-es-truth-source-amendment](./module-es-truth-source-amendment.md)（**已签发**·本案=其 §4 R1 细化；裁①乙/裁②甲+丙/裁③乙/裁④丙起步/裁⑤甲/裁⑥甲/首试点 A 为本案前提）· [event-sourcing-roadmap](./event-sourcing-roadmap.md) · [module-es-outbox-transactional](./module-es-outbox-transactional.md)（UoW/三态旋钮机制复用）· global-tenancy S4/S5（治理状态机）
@@ -65,8 +65,9 @@ user 流事件化（裁④丙·待 R2 crypto-shredding）；异步投影/端到�
 |------|------|----------|----------|
 | 2026-10-21 | 0.1.0 | 母案签发后按令细化 | 首版呈审案：现状取证（load 零存在/事件面三种/gated 10 文件/预期零 DDL）+ 目标态四定义 + R1a/b/c 分片（各带文件级改动面/幂等律/改锁清单）+ 旋钮回退窗 + 判据测四点 + 高危清单 ·零实现 |
 | 2026-10-21 | 0.2.0 | 审计门通过 | 人按案 GO：分片框架/改锁清单/env 键位签发；R1a 授权开工（load gated 测落既有已登记 event-store.mikro.e2e.test.ts·免新文件登记）；R1b/R1c 高危另次亲签 |
+| 2026-10-21 | 0.3.0 | R1a 实现落地 | §3-R1a 全件交付：端口 +`load`/+`append expectedVersion?`、`tenant-lifecycle-fold` 纯函数（裁①乙·快照起点/from 漂移/canTransition 复验/rejected tombstone/未知 fail-loud）、`TenantBootstrappedEvent` 类+事件名登记、contracts `event/tenant-events.ts` zod 契约面（裁⑥甲）+对拍测、`MikroEventStore` load/hydrate+乐观锁（`byStream` 收敛使该文件 type-escape 3→2 合规下降）、e2e 三新测。**实核订正 §3-R1b 表述**：tenant 户籍表实列=id/status/createdAt/updatedAt，**无 name/slug**——bootstrapped payload 定为 `{status, actorId?}`（以事件类 doc 为准）。验收：`pnpm run ci` PASSED（717 passed · 棘轮降 · fallow 零违规）+ `test:fullstack` 真库链绿（gated 恒等 11+1 · event-store e2e 8/8）；R1b/R1c 未动 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.2.0 修订（审计通过·按案 GO·R1a 开工授权）。状态以 README 索引表为单源。
+正文已于 2026-10-21 / v0.3.0 修订（R1a 实现落地留痕 + R1b payload 范围实核订正）。状态以 README 索引表为单源。

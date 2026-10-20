@@ -1,3 +1,4 @@
+import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
 import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
 import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
@@ -27,4 +28,5 @@ export const EVENT_TYPE_REGISTRY: ReadonlyMap<string, RegistrableEventClass> = n
   [UserStatusTransitionedEvent.EVENT_TYPE, UserStatusTransitionedEvent],
   [TenantStatusTransitionedEvent.EVENT_TYPE, TenantStatusTransitionedEvent],
   [TenantRejectedEvent.EVENT_TYPE, TenantRejectedEvent],
+  [TenantBootstrappedEvent.EVENT_TYPE, TenantBootstrappedEvent],
 ]);

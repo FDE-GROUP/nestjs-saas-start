@@ -13,6 +13,7 @@
  */
 
 export * from './envelope';
+export * from './event/index';
 export * from './request/index';
 export * from './response/index';
 export { strictObject } from './strict';
