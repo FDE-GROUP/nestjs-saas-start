@@ -61,26 +61,29 @@
   - **② BA 表面 `entities.ts`**：按建议 = **不拆留 database**（BY_MODEL 跨三属主不可切）。
   - **③ Event 实体归宿**：按建议 = `database/eventing/entities/`（属主 database 不变）。
   - **④ 提交策略**：按建议 = **三片分笔提交**（每片独立绿）。
-- 结论：**已审计·GO**
+- 结论：**已实施·三片落码，待人类验收与推送**
 - 未决项：无。
 - 审计人 / 日期：人（GO 直签·②③④采建议档）/ 2026-10-20
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] 切片 A：`ci` 全绿·基线测试数不动
-- [ ] 切片 B：`ci` 全绿 + `migration:generate` 空 diff（DDL 恒等）+ 表所有权守卫绿 + 全仓旧路径 grep 零残留
-- [ ] 切片 B：`ci:db`（Testcontainers gated e2e + BA 一致性链）全绿——实体搬家后真库装配实证
-- [ ] 切片 B：`test:auth-consistency`（真 PG）EXIT=0·`verify:prod-boot` `/health` 200
-- [ ] 切片 C：architecture.md(+zh) 与实存目录对拍一致·AGENTS §5 同步
-- [ ] README 索引状态单源同步
+- [x] 切片 A：`ci` 全绿·基线测试数不动（实跑 PASSED 672/31skip·提交「收拢事件基建至 database/eventing/」）
+- [x] 切片 B：`ci` 全绿 + `migration:generate` 空 diff（实跑 `✅ no schema diff — nothing to generate (0 migration created)`）+ 表所有权守卫绿（含于 672）+ 全仓旧路径 grep 零残留（仅剩注释留痕「原…」）
+- [x] 切片 B：`ci:db`（Testcontainers gated e2e + BA 一致性链）全绿——实体搬家后真库装配实证
+- [x] 切片 B：一致性套件 9/9（ci:db 内真库段实跑）·`verify:prod-boot` `/health` 200
+- [x] 切片 C：architecture.md(+zh) 目录图 database/ 行翻账（BA 表面/eventing/实体新家入注）；**AGENTS §5 核验无漂移不改**（该节为包粒度指针·不复述子目录细节，改即双 SSOT 漂移——方案原文「同步」改判为「核验」）
+- [x] README 索引状态单源同步
+
+**实施期落位注**（与§2计列的微差，均为等价实现）：每上下文 META+实体合居单文件（`workspace.entity.ts`/`user-status.entity.ts`/`tenant-subscription.entity.ts`/`event.entity.ts`/`rbac.entities.ts`/`post.entity.ts`）而非 meta/实体两文件；零消费的 `MIKRO_FOUR_TABLE_ENTITIES`/`*_METAS` 聚合数组保留导出、居 `mikro/app-entities.ts`（防「删码」越界）；**tsx 链硬约束**：`migration-entities.ts`/`seed.ts`/`app-entities.ts` 等新家文件一律相对导入（tsx 不解析 `@app` 别名·实跑坐实）。
 
 ## 6. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 0.2.0 | 人签核 GO（「GO，2、3、4 按建议」）后三片实施 | 切片 A：12 件 git mv `database/eventing/`+sweep+GATED_E2E_FILES 两径订正（ci PASSED）；切片 B：六实体文件归位四上下文+`eventing/entities/`，聚合点装配根化 `mikro/app-entities.ts`，migration-entities/seed 改指新家（全相对导入），BA 表面不拆（人裁②），硬闸全绿（空 diff+ci+ci:db+prod-boot）；切片 C：architecture ±zh 目录图翻账·AGENTS §5 核验无漂移不改 |
 | 2026-10-20 | 0.1.0 | 用户问「database 是否可进一步拆分」→ Agent 三向评估（抽包不可/垂直归位修宪级/目录整理口味级）→ 用户令「现在就可以考虑 B、C」→ 依「无已审方案不写码」起草 | 首版（**零代码·只提议**）：三片 A eventing 分包 / B 上下文专属实体归位（判据=table-ownership SSOT·BA 表面不拆·聚合点装配根化）/ C 宪法翻账；取证坐实零装饰器无 DI 风险、无关系对象无 FK 序风险、migration-entities 同源 import 面；四归人裁点留审计 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。

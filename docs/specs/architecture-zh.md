@@ -55,7 +55,9 @@ src/
 │                            #   TenantScopeGuard + middleware + exempt/public；会话适配
 │                            #   （deny-list 状态机已归位 `tenants`、席位配额已归位 `subscriptions`·未决项 4 已落地）；
 │                            #   消费 authorization 的裁决端口
-├── database/                # 全局基础设施：MikroORM 客户端、实体、迁移、seed
+├── database/                # 全局基础设施：MikroORM 客户端、BA 表面实体（entities.ts）、迁移、seed、
+│                            #   eventing/（ES 存储/中继/UoW 基建）；上下文专属表实体随各自上下文落
+│                            #   modules/<ctx>/infrastructure/entities（属主 SSOT=database/table-ownership.ts）
 ├── config/                  # 全局基础设施：类型安全配置 + zod 校验
 ├── logger/  mailer/  common/  i18n/   # 横切基础设施
 ```
