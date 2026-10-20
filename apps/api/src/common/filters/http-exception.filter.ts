@@ -59,9 +59,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (typeof nativeErrorCode === 'string' && errorCode === undefined) {
         errorCode = nativeErrorCode;
       }
-    } else if (exception instanceof Error) {
-      message = exception.message;
     }
+    // 甲档收口（#4·module-p0-async-boundary-correctness 切片 A）：**非** HttpException 的任意 Error
+    // （框架兜底 500：DB 驱动 / PG / 连接层错误等）**不再**把 `exception.message` 赋给响应体——原文常含
+    // SQL 片段、约束名、表列名、连接拓扑，属内部信息泄露。`message` 保持上方缺省 `'Internal server error'`，
+    // 原文经下方 5xx 日志段随堆栈留存（`Error.stack` 首行即 `Error: <message>`）。HttpException（含
+    // authored 5xx `InternalServerErrorException(msg)`）走上方分支，其 message 是安全文本、照常透传。
 
     const responseBody: ErrorResponse = {
       statusCode: status,

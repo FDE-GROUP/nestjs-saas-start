@@ -43,13 +43,13 @@ function createHost(request: Record<string, unknown>) {
 }
 
 function createFilter() {
-  const logger = { error: vi.fn(), warn: vi.fn() } as never;
-  return new HttpExceptionFilter(logger);
+  const logger = { error: vi.fn(), warn: vi.fn() };
+  return { filter: new HttpExceptionFilter(logger as never), logger };
 }
 
 describe('HttpExceptionFilter · requestId 契约', () => {
   it('ALS 上下文存在时，响应体 requestId 取 currentRequestId()', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/x', method: 'GET', id: 99 });
 
     requestStorage.run({ requestId: 'als-1' }, () => {
@@ -61,7 +61,7 @@ describe('HttpExceptionFilter · requestId 契约', () => {
   });
 
   it('无 ALS 上下文时回落 Fastify 原生 request.id', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/x', method: 'GET', id: 42 });
 
     filter.catch(new ForbiddenException('nope'), host);
@@ -70,7 +70,7 @@ describe('HttpExceptionFilter · requestId 契约', () => {
   });
 
   it('ALS 与 request.id 俱缺时落 req-unknown，且 500 形状不缺 requestId', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/x', method: 'GET' });
 
     filter.catch(new InternalServerErrorException('boom'), host);
@@ -79,23 +79,38 @@ describe('HttpExceptionFilter · requestId 契约', () => {
     expect(sent.status).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
   });
 
-  it('裸 Error（非 HttpException）兜底 500 时同样携带 requestId', () => {
-    const filter = createFilter();
+  it('裸 Error（非 HttpException）兜底 500 时携带 requestId·message 归一不外泄原文', () => {
+    const { filter, logger } = createFilter();
     const { host, sent } = createHost({ url: '/y', method: 'POST', id: 7 });
 
     requestStorage.run({ requestId: 'als-err' }, () => {
-      filter.catch(new Error('db exploded'), host);
+      filter.catch(new Error('SELECT * FROM secret_table WHERE token=...'), host);
     });
 
     expect(sent.body?.requestId).toBe('als-err');
-    expect(sent.body?.message).toBe('db exploded');
+    // 甲档收口（#4）：响应体 message 归一，不外泄内部原文
+    expect(sent.body?.message).toBe('Internal server error');
+    expect(sent.status).toBe(500);
+    // 原文随堆栈入 5xx 日志（第二参），不外泄至响应
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    const loggedDetail = String(logger.error.mock.calls[0]?.[1]);
+    expect(loggedDetail).toContain('SELECT * FROM secret_table');
+  });
+
+  it('HttpException authored 5xx message 照常透传（甲档不误伤安全文本）', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/y', method: 'POST', id: 8 });
+
+    filter.catch(new InternalServerErrorException('上游服务暂时不可用'), host);
+
+    expect(sent.body?.message).toBe('上游服务暂时不可用');
     expect(sent.status).toBe(500);
   });
 });
 
 describe('HttpExceptionFilter · errorCode 透传', () => {
   it('object response 携带字符串 errorCode 时透传', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/z', method: 'GET', id: 1 });
 
     filter.catch(
@@ -108,7 +123,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('未携带 errorCode 时响应体不含该键（可选字段非破坏）', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/z', method: 'GET', id: 1 });
 
     filter.catch(new ForbiddenException('plain string'), host);
@@ -117,7 +132,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('errorCode 非字符串（脏数据）时不透传', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/z', method: 'GET', id: 1 });
 
     filter.catch(new HttpException({ message: 'm', errorCode: 123 }, HttpStatus.BAD_REQUEST), host);
@@ -126,7 +141,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('子类 string + options 形（Nest 12 createBody 嵌入 response 对象）透传', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/auth', method: 'GET', id: 2 });
 
     filter.catch(
@@ -140,7 +155,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('base HttpException(msg, 402, { errorCode }) 走实例属性兜底', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/seat', method: 'POST', id: 3 });
 
     filter.catch(
@@ -156,7 +171,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('object response 携带 errors[] 结构化明细时透传', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/complex', method: 'POST', id: 4 });
 
     const details: ResponseErrorDetail[] = [
@@ -169,7 +184,7 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
   });
 
   it('未携带 errors[] 时响应体不含该键（可选字段非破坏）', () => {
-    const filter = createFilter();
+    const { filter } = createFilter();
     const { host, sent } = createHost({ url: '/simple', method: 'GET', id: 5 });
 
     filter.catch(new ForbiddenException('plain'), host);

@@ -23,8 +23,9 @@ import { TransactionScope } from './transaction-scope';
  * 坐实单测 mock 面覆盖不了的三条硬证据：
  *  1. **同生共死**：事务内业务行 + 事件行一起提交；事件 append fail-loud → 业务行**一并回滚**
  *     （dual-write 窗口消灭的直接反证）；
- *  2. relay 真 SQL 面：`FOR UPDATE SKIP LOCKED` 拉取、`dispatchedAt` 置位、版本拒收/去重重投
- *     在物理表上的最终形态；
+ *  2. relay 真 SQL 面：`FOR UPDATE SKIP LOCKED` 拉取、事务内 claim 置 `dispatchedAt`、版本拒收/去重重投
+ *     在物理表上的最终形态；投递发生在事务**提交后**（#1 甲档·幻影事件消灭·见 `outbox-relay.test.ts`
+ *     「事务回滚→零投递」单测锁时序）；
  *  3. publisher 的 outbox 守卫：事务外 `publishAll` fail-loud。
  *
  * 总线用收集替身（派发忠实性已由 `outbox-relay.test.ts` 单测锁），本测只验投递**决定**与
@@ -184,7 +185,7 @@ gated('Outbox + relay real-DB round trip (module-es-outbox-transactional · env-
     expect(rows.every((r) => r.dispatchedAt != null)).toBe(true);
   });
 
-  it('去重重投（at-least-once）：置位前崩溃再现未投递行 → 去重窗吞投递、只补标记', async () => {
+  it('去重重投（at-least-once-to-claim）：claim 后崩溃再现未投递行 → 去重窗吞投递、只补标记', async () => {
     const em = await mikro.fork();
     const row = (await em.find(Event, { aggregateId: tenantAggregateId } as never))[0];
     // 模拟「已投递未置位即崩溃」：手工把 dispatchedAt 拨回 null

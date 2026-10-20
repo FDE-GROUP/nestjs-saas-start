@@ -72,7 +72,7 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
     expect(where).toEqual({ organizationId: 'orgA' });
     expect(options).toMatchObject({
       limit: 11, // request.limit + 1（探页·免 COUNT）
-      orderBy: { createdAt: QueryOrder.DESC, id: QueryOrder.DESC },
+      orderBy: { id: QueryOrder.DESC },
     });
   });
 
@@ -143,7 +143,7 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
 describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('多取一条 → hasMore=true 且 nextCursor=末项复合键（items 裁至 limit）', async () => {
+  it('多取一条 → hasMore=true 且 nextCursor=末项 id 单键（items 裁至 limit）', async () => {
     const { repo, spies } = makeRepo('orgA');
     const e1 = postEntity('p1', new Date('2026-01-03T00:00:00.000Z'));
     const e2 = postEntity('p2', new Date('2026-01-02T00:00:00.000Z'));
@@ -155,7 +155,7 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
     expect(page.hasMore).toBe(true);
     expect(page.items).toHaveLength(2);
     expect(page.items.map((i) => i.id)).toEqual(['p1', 'p2']);
-    expect(page.nextCursor).toBe(encodeCursor({ createdAt: '2026-01-02T00:00:00.000Z', id: 'p2' }));
+    expect(page.nextCursor).toBe(encodeCursor({ id: 'p2' }));
   });
 
   it('取不满 limit → hasMore=false 且无 nextCursor 键', async () => {
@@ -175,9 +175,9 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
     expect(page).toEqual({ items: [], hasMore: false });
   });
 
-  it('续页 cursor → 复合键集谓词 $and[tenant, $or(createdAt<, createdAt= AND id<)]', async () => {
+  it('续页 cursor → id 单键 keyset 谓词 $and[tenant, {id<cursorId}]', async () => {
     const { repo, spies } = makeRepo('orgA');
-    const cursor = encodeCursor({ createdAt: '2026-01-02T00:00:00.000Z', id: 'p2' });
+    const cursor = encodeCursor({ id: 'p2' });
 
     await repo.list({ limit: 3, cursor });
 
@@ -186,26 +186,15 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
       Record<string, unknown>,
       Record<string, unknown>,
     ];
-    expect(options).toMatchObject({ limit: 4 });
+    expect(options).toMatchObject({ limit: 4, orderBy: { id: QueryOrder.DESC } });
     expect(where).toEqual({
-      $and: [
-        { organizationId: 'orgA' },
-        {
-          $or: [
-            { createdAt: { $lt: new Date('2026-01-02T00:00:00.000Z') } },
-            {
-              createdAt: { $eq: new Date('2026-01-02T00:00:00.000Z') },
-              id: { $lt: 'p2' },
-            },
-          ],
-        },
-      ],
+      $and: [{ organizationId: 'orgA' }, { id: { $lt: 'p2' } }],
     });
   });
 
   it('续页 + workspace → 谓词租户段携 workspaceId', async () => {
     const { repo, spies } = makeRepo('orgA', 'wsA1');
-    const cursor = encodeCursor({ createdAt: '2026-01-02T00:00:00.000Z', id: 'p2' });
+    const cursor = encodeCursor({ id: 'p2' });
 
     await repo.list({ limit: 3, cursor });
 
@@ -218,7 +207,7 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
     expect(segments[0]).toEqual({ organizationId: 'orgA', workspaceId: 'wsA1' });
   });
 
-  it('畸形 cursor（合法 base64url·载荷非 [date,id]）→ BadRequestException 且先于 fork（不查库）', async () => {
+  it('畸形 cursor（合法 base64url·载荷非 [id]）→ BadRequestException 且先于 fork（不查库）', async () => {
     const { repo, spies } = makeRepo('orgA');
     const bogus = Buffer.from(JSON.stringify({ nope: 1 })).toString('base64url');
 

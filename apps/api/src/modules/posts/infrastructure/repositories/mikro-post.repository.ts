@@ -63,45 +63,31 @@ export class MikroPostRepository implements PostRepository {
     // 类型而非 companion interface·两者在可空/默认列上 `FilterQuery` 宽化不致；cast 不改运行时谓词。
     const tenantFilter = workspaceId ? { organizationId, workspaceId } : { organizationId };
 
-    // 首页无 cursor：仅按租户谓词取。续页：以不透明 cursor 解出复合键 (createdAt,id)，
-    // 键集谓词 `createdAt < cDate OR (createdAt = cDate AND id < cId)`（与 ORDER BY DESC 同比较语义·无重无漏）。
+    // 首页无 cursor：仅按租户谓词取。续页：以不透明 cursor 解出 **id 单键**（#3 甲档收口·UUIDv7 时间有序），
+    // 键集谓词 `id < cursorId`（与 ORDER BY id DESC 同比较语义·唯一全序→无重无漏·免受 createdAt 亚毫秒截断丢行）。
     let where: Record<string, unknown> = tenantFilter;
     if (request.cursor) {
       let key: CursorKey;
       try {
         key = decodeCursor(request.cursor);
       } catch {
-        // cursor 字符集已过 DTO 闸·此处仅拦「合法 base64url 但载荷非 [date,id]」→ 400（先于 fork·不查库）
+        // cursor 字符集已过 DTO 闸·此处仅拦「合法 base64url 但载荷非 [id]」→ 400（先于 fork·不查库）
         throw new BadRequestException('Invalid pagination cursor');
       }
-      const cursorDate = new Date(key.createdAt);
-      where = {
-        $and: [
-          tenantFilter,
-          {
-            $or: [
-              { createdAt: { $lt: cursorDate } },
-              { createdAt: { $eq: cursorDate }, id: { $lt: key.id } },
-            ],
-          },
-        ],
-      };
+      where = { $and: [tenantFilter, { id: { $lt: key.id } }] };
     }
 
     const em = await this.mikro.fork();
-    // 多取一条（limit+1）探下一页·免 COUNT 全量查询。
+    // 多取一条（limit+1）探下一页·免 COUNT 全量查询。排序以 `id DESC`（UUIDv7 ⇒ 时间降序·与 createdAt 序 ms 级一致）。
     const entities = await em.find(Post, where as never, {
-      orderBy: { createdAt: QueryOrder.DESC, id: QueryOrder.DESC },
+      orderBy: { id: QueryOrder.DESC },
       limit: request.limit + 1,
     });
 
     const hasMore = entities.length > request.limit;
     const pageEntities = hasMore ? entities.slice(0, request.limit) : entities;
     const last = pageEntities[pageEntities.length - 1];
-    const nextCursor =
-      hasMore && last
-        ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id })
-        : undefined;
+    const nextCursor = hasMore && last ? encodeCursor({ id: last.id }) : undefined;
     return createCursorPage(
       pageEntities.map((entity) => this.toRecord(entity)),
       hasMore,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createCursorPage,
   createPage,
+  type CursorKey,
   decodeCursor,
   encodeCursor,
   type Page,
@@ -33,7 +34,7 @@ describe('Page<T> 契约（shared-kernel）', () => {
   });
 });
 
-/** 游标分页契约单测（就绪预备切片 B·丁裁 (createdAt,id)·浅复制纪律 + 编解码往返）。 */
+/** 游标分页契约单测（就绪预备切片 B·#3 甲档收口后为 `id` 单键·浅复制纪律 + 编解码往返）。 */
 describe('CursorPage<T> 契约（shared-kernel）', () => {
   it('createCursorPage 全形（items/hasMore/nextCursor）', () => {
     const page = createCursorPage(['a', 'b'], true, 'cur-1');
@@ -54,9 +55,9 @@ describe('CursorPage<T> 契约（shared-kernel）', () => {
   });
 });
 
-describe('游标编解码（opaque base64url）', () => {
-  it('encode→decode 往返保持复合键 (createdAt,id)', () => {
-    const key = { createdAt: '2026-01-02T03:04:05.000Z', id: 'uuid-abc' };
+describe('游标编解码（opaque base64url·id 单键）', () => {
+  it('encode→decode 往返保持 id 单键', () => {
+    const key: CursorKey = { id: 'uuid-abc' };
     const cursor = encodeCursor(key);
     // 不透明：仅为 base64url 字符集
     expect(cursor).toMatch(/^[A-Za-z0-9_-]+$/);
@@ -67,20 +68,20 @@ describe('游标编解码（opaque base64url）', () => {
     expect(() => decodeCursor('%%%not-base64%%%')).toThrow(/Invalid cursor/);
   });
 
-  it('合法 base64url 但载荷非 [date,id] → 抛错', () => {
+  it('合法 base64url 但载荷非数组（对象）→ 抛错', () => {
     const bogus = Buffer.from(JSON.stringify({ nope: 1 })).toString('base64url');
     expect(() => decodeCursor(bogus)).toThrow(/Invalid cursor/);
   });
 
-  it('数组长度对但日期不可析 → 抛错', () => {
-    const bogus = Buffer.from(JSON.stringify(['not-a-date', 'id1'])).toString('base64url');
-    expect(() => decodeCursor(bogus)).toThrow(/unparseable date/);
-  });
-
-  it('数组长度对但段非字符串/空 id → 抛错', () => {
-    const bogus = Buffer.from(JSON.stringify(['2026-01-01T00:00:00.000Z', ''])).toString(
+  it('数组长度非 1（旧 [date,id] 形也归非法）→ 抛错', () => {
+    const bogus = Buffer.from(JSON.stringify(['2026-01-01T00:00:00.000Z', 'id1'])).toString(
       'base64url',
     );
-    expect(() => decodeCursor(bogus)).toThrow(/malformed segments/);
+    expect(() => decodeCursor(bogus)).toThrow(/expected \[id\]/);
+  });
+
+  it('单元素为空串/非字符串 → 抛错', () => {
+    const bogus = Buffer.from(JSON.stringify([''])).toString('base64url');
+    expect(() => decodeCursor(bogus)).toThrow(/malformed segment/);
   });
 });

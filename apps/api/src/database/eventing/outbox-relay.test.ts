@@ -41,7 +41,7 @@ function makeRow(seed: RowSeed): Event {
 
 function makeRelay(
   rows: Event[],
-  opts: { mode?: 'inproc' | 'shadow' | 'outbox'; publishError?: Error } = {},
+  opts: { mode?: 'inproc' | 'shadow' | 'outbox'; publishThrows?: boolean } = {},
 ) {
   const updates: Array<{ where: unknown; data: Record<string, unknown> }> = [];
   const published: DomainEvent[][] = [];
@@ -51,14 +51,19 @@ function makeRelay(
       updates.push({ where, data });
     }),
   };
-  const em = { transactional: async (cb: (t: typeof tx) => Promise<number>) => cb(tx) };
+  // mock 事务边界：cb 在 tx 上执行并返回其值（返回结构由被测 tickOnce 决定·此处泛化）。
+  const em = {
+    transactional: async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx),
+  };
   const mikro = { fork: async () => em };
   const config = {
     getEventPublishConfig: () => ({ mode: opts.mode ?? 'outbox', pollMs: 1000 }),
   };
   const eventBus = {
+    // 真 `@nestjs/cqrs` publishAll 同步入队·fire-and-forget：handler 异常不回抛。本 mock 忠实于
+    // 「入队即返回」（push 记录批次）；`publishThrows` 仅用于验「即便总线抛错也不回滚 claim」。
     publishAll: vi.fn((batch: DomainEvent[]) => {
-      if (opts.publishError) throw opts.publishError;
+      if (opts.publishThrows) throw new Error('bus exploded');
       published.push(batch);
     }),
   };
@@ -70,7 +75,7 @@ function makeRelay(
   return { relay, updates, published, tx, eventBus };
 }
 
-describe('OutboxRelay（切片 C · at-least-once + 行级拒收 + 去重窗）', () => {
+describe('OutboxRelay（切片 C · 甲档：事务内 claim + 提交后投递 + 行级拒收 + 去重窗）', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -89,7 +94,7 @@ describe('OutboxRelay（切片 C · at-least-once + 行级拒收 + 去重窗）'
     expect((relay as unknown as { timer?: unknown }).timer).toBeUndefined();
   });
 
-  it('正常行：重建实例忠实投 bus，投递后才置 dispatchedAt（at-least-once 后置标记）', async () => {
+  it('正常行：重建实例忠实收入待投批次·事务内置 dispatchedAt（claim）后于提交后投递', async () => {
     const row = makeRow({ id: 7 });
     const { relay, updates, published } = makeRelay([row]);
     expect(await relay.tickOnce()).toBe(1);
@@ -140,27 +145,52 @@ describe('OutboxRelay（切片 C · at-least-once + 行级拒收 + 去重窗）'
     expect(updates[1].data.dispatchedAt).toBeInstanceOf(Date);
   });
 
-  it('投递抛错：attemptCount+1 + lastError，不中断整批；达上限走 exhausted 留痕', async () => {
-    const ok = makeRow({ id: 11 });
-    const bad = makeRow({ id: 12, eventType: 'tenant.status.transitioned' });
-    const { relay, updates } = makeRelay([bad, ok], {
-      publishError: new Error('bus exploded'),
-    });
+  it('提交后尽力投递（甲档）：publishAll 抛错不回滚 claim、不动 attemptCount、tickOnce 不 reject', async () => {
+    const row = makeRow({ id: 11 });
+    const { relay, updates, published } = makeRelay([row], { publishThrows: true });
+    await expect(relay.tickOnce()).resolves.toBe(1);
+    // claim 已在事务内置位（dispatchedAt），提交后投递抛错不回退、不记 attemptCount（非投递失败语义）。
+    expect(updates).toHaveLength(1);
+    expect(updates[0].data.dispatchedAt).toBeInstanceOf(Date);
+    expect(updates[0].data.attemptCount).toBeUndefined();
+    expect(published).toHaveLength(0); // publishAll 抛错前未记录（但 claim 已成·下拍不重取）
+  });
+
+  it('行级 park 顶至 MAX 使拉取条件自然排除（毒信封不毒死 relay）', async () => {
+    // 仅对可确定识别的毒信封（版本/类型）置 attemptCount=MAX；投递失败不属此类（见上测）。
+    const last = makeRow({ id: 13, attemptCount: OutboxRelay.MAX_ATTEMPTS - 1, eventVersion: 99 });
+    const { relay, updates } = makeRelay([last]);
     await relay.tickOnce();
-    // bad 行 attempt+1 留错；ok 行同样尝试并失败标记（本 mock 下两行皆失败）
-    const failedUpdates = updates.filter((u) => u.data.attemptCount === 1);
-    expect(failedUpdates).toHaveLength(2);
-    expect(failedUpdates[0].data.lastError).toBe('bus exploded');
-    // 上限位：attemptCount=MAX-1 的行失败后应顶到 MAX（exhausted 分支跑过即不抛）
-    const last = makeRow({ id: 13, attemptCount: OutboxRelay.MAX_ATTEMPTS - 1 });
-    const second = makeRelay([last], { publishError: new Error('still broken') });
-    await second.relay.tickOnce();
-    expect(second.updates[0].data.attemptCount).toBe(OutboxRelay.MAX_ATTEMPTS);
+    expect(updates[0].data.attemptCount).toBe(OutboxRelay.MAX_ATTEMPTS);
   });
 
   it('防重入：上一拍未完时立即返回 0（timer 拍不叠加）', async () => {
     const { relay } = makeRelay([]);
     (relay as unknown as { ticking: boolean }).ticking = true;
     expect(await relay.tickOnce()).toBe(0);
+  });
+
+  it('事务回滚 → 零投递（甲档 post-commit 消灭幻影事件）', async () => {
+    // mock：cb 在 tx 内已 claim，但**提交阶段回滚**（transactional 拒接）。
+    // 旧实现在事务内 publishAll → 回滚前已下发→幻影；甲档把下发挪到提交后 → 本景下零投递。
+    const rows = [makeRow({ id: 21 })];
+    const tx = {
+      find: vi.fn(async () => rows),
+      nativeUpdate: vi.fn(async () => {}),
+    };
+    const em = {
+      transactional: async (cb: (t: typeof tx) => Promise<unknown>) => {
+        await cb(tx);
+        throw new Error('commit failed'); // 模拟提交回滚
+      },
+    };
+    const published: DomainEvent[] = [];
+    const relay = new OutboxRelay(
+      { getEventPublishConfig: () => ({ mode: 'outbox', pollMs: 1000 }) } as unknown as ConfigService,
+      { fork: async () => em } as unknown as MikroOrmService,
+      { publishAll: (batch: DomainEvent[]) => published.push(...batch) } as unknown as EventBus,
+    );
+    await expect(relay.tickOnce()).rejects.toThrow('commit failed');
+    expect(published).toHaveLength(0); // 未提交 → 绝不下发（幻影事件消灭）
   });
 });

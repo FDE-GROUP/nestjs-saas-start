@@ -28,7 +28,7 @@ export function createPage<T>(items: readonly T[], total: number, request: PageR
   return { items: [...items], total, limit: request.limit, offset: request.offset };
 }
 
-// —— 游标分页契约（就绪预备 §2.3 #5·切片 B·丁裁 (createdAt,id) 复合降序）——
+// —— 游标分页契约（就绪预备 §2.3 #5·切片 B·#3 甲档收口后为 `id` 单键降序·UUIDv7 时间有序）——
 
 /** 游标分页请求：limit + 可选不透明 cursor（缺省 = 首页）。 */
 export interface CursorPageRequest {
@@ -55,25 +55,29 @@ export function createCursorPage<T>(
   return { items: [...items], hasMore, ...(nextCursor !== undefined ? { nextCursor } : {}) };
 }
 
-// —— 游标编解码（opaque base64url·复合键 (createdAt ISO, id)）——
+// —— 游标编解码（opaque base64url·单键 id·#3 module-p0-async-boundary-correctness 切片 B 甲档）——
 
-/** 游标承载的排序键对（与 DB 列对齐：createdAt 为 Date 的 ISO 串·id 为 uuid）。 */
+/**
+ * 游标承载的排序键（就绪预备切片 B 原为复合键 `(createdAt,id)`；甲档收口 #3 后改以 `id` 单键）。
+ * 前提：`id` 为 **UUIDv7**（时间有序·定宽小写 hex），其 ms 时间前缀使 `id` 序 ≡ `createdAt` 序（ms 级），
+ * 且 `id` 唯一全序——keyset 分页无重无漏，彻底摆脱 `createdAt` 亚毫秒精度截断陷阱（DB `now()` 种子行为 µs、
+ * app 写入为 ms，混合精度下复合游标会静默丢同刻行）。
+ */
 export interface CursorKey {
-  readonly createdAt: string;
   readonly id: string;
 }
 
 /**
- * 编码：`CursorKey → base64url(JSON [createdAt, id])`。
- * 不透明防实现细节泄漏，非授权替代——守卫面不变。
+ * 编码：`CursorKey → base64url(JSON [id])`。
+ * 不透明防实现细节泄漏，非授权替代——守卫面不变。wire 仍为 opaque base64url·仅内部形状从 `[date,id]` 换 `[id]`。
  */
 export function encodeCursor(key: CursorKey): string {
-  return Buffer.from(JSON.stringify([key.createdAt, key.id])).toString('base64url');
+  return Buffer.from(JSON.stringify([key.id])).toString('base64url');
 }
 
 /**
  * 解码：`base64url → CursorKey`，格式非法时抛 `Error`（上层 catch → 400）。
- * 校验维度：合法 base64url、JSON 可解、数组长度 2、两元素皆 string、createdAt 合法日期。
+ * 校验维度：合法 base64url、JSON 可解、数组长度 1、单元素为非空 string。
  */
 export function decodeCursor(raw: string): CursorKey {
   let parsed: unknown;
@@ -82,15 +86,12 @@ export function decodeCursor(raw: string): CursorKey {
   } catch {
     throw new Error('Invalid cursor: not decodable');
   }
-  if (!Array.isArray(parsed) || parsed.length !== 2) {
-    throw new Error('Invalid cursor: expected [date, id]');
+  if (!Array.isArray(parsed) || parsed.length !== 1) {
+    throw new Error('Invalid cursor: expected [id]');
   }
-  const [dateStr, id] = parsed as [unknown, unknown];
-  if (typeof dateStr !== 'string' || typeof id !== 'string' || id.length === 0) {
-    throw new Error('Invalid cursor: malformed segments');
+  const [id] = parsed as [unknown];
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new Error('Invalid cursor: malformed segment');
   }
-  if (Number.isNaN(Date.parse(dateStr))) {
-    throw new Error('Invalid cursor: unparseable date');
-  }
-  return { createdAt: dateStr, id };
+  return { id };
 }
