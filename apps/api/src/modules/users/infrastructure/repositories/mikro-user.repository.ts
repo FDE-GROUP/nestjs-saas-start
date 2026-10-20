@@ -1,5 +1,5 @@
-import { User as UserEntity } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { User as UserEntity } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import type { InferEntity } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UserRecord, UserRepository } from '../../domain/repositories/user.repository';
@@ -25,8 +25,9 @@ function entityToRecord(entity: InferEntity<typeof UserEntity>): UserRecord {
 /**
  * `UserRepository` 端口的 MikroORM 适配（ORM 修宪案 B · 切片 3d + 架构精度修宪 S1）。
  *
- * S1 起聚合死管道删除：`save/isNew/attachPersistenceMetadata/markExisting` 全部退役，
- * 本类收敛为**只读 + PIPL 硬删**（用户创建走 Better Auth，无应用层 save 用例）。
+ * S1 起聚合死管道删除；切片 A（global-ba-entity-domain-placement）起 PIPL 硬删收编
+ * `AUTH_USER_STORE`（auth 域端口·台账 user→auth）——本类自此**纯读**，users 模块对
+ * user 表零直接写（表所有权写侧例外清零）。
  * 每次 `fork()` 取独立 em（禁共享全局 em·V4 串租户教训）。`user` 属 `users` 上下文
  * （表所有权单源）·写自身 owned 表 → 写侧纪律天然合规。
  */
@@ -44,10 +45,5 @@ export class MikroUserRepository implements UserRepository {
     const em = await this.mikro.fork();
     const entity = await em.findOne(UserEntity, { email } as never);
     return entity ? entityToRecord(entity) : null;
-  }
-
-  async remove(id: string): Promise<void> {
-    const em = await this.mikro.fork();
-    await em.nativeDelete(UserEntity, { id } as never);
   }
 }

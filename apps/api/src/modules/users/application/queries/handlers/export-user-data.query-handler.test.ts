@@ -1,5 +1,10 @@
-import { Account, Consent, Session, User } from '@app/database/ba/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import {
+  Account,
+  Consent,
+  Session,
+  User,
+} from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

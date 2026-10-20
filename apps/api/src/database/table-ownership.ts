@@ -15,8 +15,9 @@
  * `tenancy/**` 现仅剩会话/机制适配，推导源保留防散点。
  */
 export const TABLE_OWNERSHIP: Record<string, string> = {
-  // auth core：Better Auth adapter 运行时写 + users 注册路径源码写
-  user: 'users',
+  // 身份机器族（global-ba-entity-domain-placement 裁①）：user 表归 auth 域——BA adapter 为 auth 域工具
+  // （raw SQL 寻址不进守卫扫描面），users 模块 PIPL 硬删经 AUTH_USER_STORE 端口落 auth 属主（S3 同型）。
+  user: 'auth',
   account: 'auth',
   session: 'auth',
   verification: 'auth',

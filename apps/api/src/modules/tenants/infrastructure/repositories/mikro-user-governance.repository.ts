@@ -1,5 +1,5 @@
-import { User } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { UserStatus } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import {
   TENANT_STATUS,

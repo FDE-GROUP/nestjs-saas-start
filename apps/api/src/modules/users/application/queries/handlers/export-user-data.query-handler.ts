@@ -1,5 +1,10 @@
-import { Account, Consent, Session, User } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import {
+  Account,
+  Consent,
+  Session,
+  User,
+} from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { Inject, NotFoundException } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';

@@ -10,7 +10,9 @@ import { AuthService } from './auth.service';
 import { CsrfOriginGuard } from './guards/csrf-origin.guard';
 import { SessionGuard } from './guards/session.guard';
 import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
+import { MikroUserStoreAdapter } from './infrastructure/user-store.adapter';
 import { AUTH_SESSION_STORE } from './session-store.port';
+import { AUTH_USER_STORE } from './user-store.port';
 
 @Module({})
 export class AuthModule {
@@ -51,8 +53,10 @@ export class AuthModule {
         { provide: APP_GUARD, useExisting: CsrfOriginGuard },
         // 架构精度修宪 S3：治理面对 session 表的受控写入口（原 suspend-user 直捅 em 越界收编）。
         { provide: AUTH_SESSION_STORE, useClass: MikroSessionStoreAdapter },
+        // global-ba-entity-domain-placement 切片 A：user 表归 auth 域——users 模块 PIPL 硬删经此端口（S3 同型）。
+        { provide: AUTH_USER_STORE, useClass: MikroUserStoreAdapter },
       ],
-      exports: [AuthService, SessionGuard, authProvider, AUTH_SESSION_STORE],
+      exports: [AuthService, SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
       global: true,
     };
   }

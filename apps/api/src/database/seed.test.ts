@@ -1,11 +1,10 @@
+import { Member, Organization } from '@app/database/ba/entities';
 import {
   Account,
-  Member,
-  Organization,
   Session,
   User,
   Verification,
-} from '@app/database/ba/entities';
+} from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

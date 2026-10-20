@@ -71,7 +71,7 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 
 ## 8. 完成判据（可核验 + 穷尽）
 
-- [ ] 八实体新家落位（裁①②③定稿），`database/ba/` 目录消解。
+- [ ] 八实体新家落位（裁①②③定稿），`database/ba/` 目录消解。（**切片 A 已落地**：身份机器族五实体落 auth·台账 user→auth·AUTH_USER_STORE 收编；余切片 B 三实体）
 - [ ] 全仓 `database/ba/entities` 旧路径 grep 零残留（注释留痕除外）。
 - [ ] `migration:generate` 空 diff（零 schema 变更·二次 generate 复核）。
 - [ ] 台账↔文件位置全量一致（表所有权守卫绿·BA 表例外清零）；列律 `BA_CONTRACT_TABLES` 引用同步。
@@ -82,6 +82,7 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 0.3.0 | 切片 A 落地 | 身份机器族五实体迁 `modules/auth/infrastructure/entities/ba-identity.entities.ts`（BA 契约头注）+ 一致性 spec 迁位（consistency config 路径订正·真库 9/9）+ 18 文件 import sweep（含 seed tsx 相对导入）+ **台账 `user→auth` 翻转并收编写面**：新 `AUTH_USER_STORE` 端口（S3 同型）·users 端口去 `remove`·delete-user handler 经端口硬删（逐字同语义）——表所有权守卫绿。硬闸：700 测全绿 + `migration:generate` 空 diff + gated e2e 10 文件 36 测 + prod-boot /health 200 |
 | 2026-10-20 | 0.2.0 | 人裁 GO（按建议裁·先完成文档）| §7 翻正已审计·GO（四裁点建议档全采）+ 执行序倒置成文（C→A→B）；切片 C 文档件先行落地（宪法 ±zh 翻转[带迁移中注记]/归位案勘误/成区案再裁决注/索引翻正） |
 | 2026-10-20 | 0.1.0 | 起草 | 首版：BA 实体按域归位修宪提案（两族归域 + ba/ 区消解 + 宪法翻转 + BY_MODEL 勘误收口；四裁点归人） |
 

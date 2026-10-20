@@ -8,8 +8,14 @@ import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { organization } from 'better-auth/plugins';
+import {
+  Account,
+  Session,
+  User,
+  Verification,
+} from '../modules/auth/infrastructure/entities/ba-identity.entities';
 import { Post } from '../modules/posts/infrastructure/entities/post.entity';
-import { Account, Member, Organization, Session, User, Verification } from './ba/entities';
+import { Member, Organization } from './ba/entities';
 import { MIKRO_APP_ENTITIES } from './mikro/app-entities';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 

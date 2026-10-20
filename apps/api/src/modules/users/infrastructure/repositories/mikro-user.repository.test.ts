@@ -1,5 +1,5 @@
-import { User as UserEntity } from '@app/database/ba/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { User as UserEntity } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroUserRepository } from './mikro-user.repository';
@@ -41,7 +41,7 @@ const entityRow = {
   updatedAt: new Date('2026-01-02T00:00:00.000Z'),
 };
 
-describe('MikroUserRepository（架构精度修宪 S1 · 只读 + PIPL 硬删）', () => {
+describe('MikroUserRepository（S1 纯读化 + 切片 A remove 收编 AUTH_USER_STORE）', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('findById maps a record by id and returns null when no row matches', async () => {
@@ -97,21 +97,10 @@ describe('MikroUserRepository（架构精度修宪 S1 · 只读 + PIPL 硬删）
     expect(user?.updatedAt).toEqual(new Date('2026-03-01T00:00:00.000Z')); // updatedAt 兜底 createdAt
   });
 
-  it('remove issues a single nativeDelete (pure SQL·FK cascade·R-B3 同律·never em.remove)', async () => {
-    const { repo, spies } = makeRepo();
-    await repo.remove('u-1');
-    expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
-    const [entity, where] = spies.nativeDelete.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(entity).toBe(UserEntity);
-    expect(where).toEqual({ id: 'u-1' });
-    expect(spies.fork).toHaveBeenCalledTimes(1);
-  });
-
-  it('写面收敛回归锁：create/persist/assign/flush 恒不被调用（save 已随聚合退役·不回潮）', async () => {
+  it('写面收敛回归锁：写面原语恒不被调用（save 已随 S1 退役·remove 已随切片 A 收编 AUTH_USER_STORE·纯读不回潮）', async () => {
     const { repo, spies } = makeRepo();
     spies.findOne.mockResolvedValueOnce({ ...entityRow });
     await repo.findById('u-1');
-    await repo.remove('u-1');
     expect(spies.create).not.toHaveBeenCalled();
     expect(spies.persist).not.toHaveBeenCalled();
     expect(spies.assign).not.toHaveBeenCalled();

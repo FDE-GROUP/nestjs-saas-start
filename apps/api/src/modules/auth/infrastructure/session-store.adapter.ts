@@ -1,5 +1,5 @@
-import { Session } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Session } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { Inject, Injectable } from '@nestjs/common';
 import type { AuthSessionStore } from '../session-store.port';
 

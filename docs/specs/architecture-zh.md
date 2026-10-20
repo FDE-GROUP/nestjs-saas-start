@@ -57,8 +57,8 @@ src/
 │                            #   消费 authorization 的裁决端口
 ├── database/                # 全局基础设施：MikroORM 客户端、迁移（DDL SSOT）、seed、eventing/（事件基建）；BA 实体
 │                            #   已按域归位（身份机器族→auth/infrastructure/entities·组织容器族→tenants 同理·形状受
-│                            #   BA 接口契约约束——global-ba-entity-domain-placement）⚠ 目录随该案切片 A/B 迁移中
-│                            #   （文档先行 2026-10-20·落地前 `database/ba/` 暂存）、迁移、seed、
+│                            #   BA 接口契约约束——global-ba-entity-domain-placement·切片 A 已落地）；⚠ 组织容器族
+│                            #   （organization/member/invitation）切片 B 迁移中·落地前暂存 `database/ba/`、迁移、seed、
 │                            #   eventing/（ES 存储/中继/UoW 基建）；上下文专属表实体随各自上下文落
 │                            #   modules/<ctx>/infrastructure/entities（属主 SSOT=database/table-ownership.ts）
 ├── config/                  # 全局基础设施：类型安全配置 + zod 校验

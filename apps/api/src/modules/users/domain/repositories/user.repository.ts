@@ -26,15 +26,13 @@ export interface UserRecord {
 }
 
 /**
- * Repository port defined by the domain（S1：`save` 随聚合死管道删除——用户创建走 Better Auth，
- * 生产无应用层 save 用例；端口收敛为读 + PIPL 硬删）。
+ * Repository port defined by the domain（S1：`save` 随聚合死管道删除；global-ba-entity-domain-placement
+ * 切片 A：`remove` 收编 `AUTH_USER_STORE`——user 表归 auth 域，跨域写经属主端口·本模块自此**纯读**）。
  *
- * ⚠ 未来边界（评审留痕）：若出现应用内直接建号/改号用例（如平台侧手工建 user 行），须**扩本
- * 端口**（如新增 create/update 语义），禁绕过端口直捅 ORM entity——那正是 S3 修掉的违规模式。
+ * ⚠ 未来边界（评审留痕）：若出现应用内直接建号/改号用例（如平台侧手工建 user 行），须**扩 auth 域
+ * 端口**（AUTH_USER_STORE 或新语义），禁绕过端口直捅 ORM entity——那正是 S3 修掉的违规模式。
  */
 export interface UserRepository {
   findById(id: string): Promise<UserRecord | null>;
   findByEmail(email: string): Promise<UserRecord | null>;
-  /** PIPL 硬删（FK 级联 account/session；event 表行由应用层显式补删）。 */
-  remove(id: string): Promise<void>;
 }
