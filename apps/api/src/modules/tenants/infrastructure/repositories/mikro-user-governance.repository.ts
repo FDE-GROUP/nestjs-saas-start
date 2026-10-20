@@ -40,7 +40,7 @@ export class MikroUserGovernanceRepository implements UserGovernanceRepository {
           ],
         }
       : {};
-    // `as never` 仅系调用边界 cast（orm.ts 以 `entities as never` 装配致 FilterQuery 宽化不匹配·不改运行时谓词）。
+    // `as never` 仅系调用边界 cast（mikro-orm.factory.ts 以 `entities as never` 装配致 FilterQuery 宽化不匹配·不改运行时谓词）。
     const [users, total] = await em.findAndCount(User, where as never, {
       fields: ['id', 'name', 'email', 'createdAt'],
       orderBy: { createdAt: QueryOrder.DESC },

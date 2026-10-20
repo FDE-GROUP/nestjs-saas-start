@@ -101,7 +101,7 @@ apps/api/src/database/
 ├── database.module.ts             # Global module wiring MikroORM + event store
 ├── seed.ts                        # Seeding script (Mikro insert path)
 └── mikro/
-    ├── orm.ts                     # MikroORM v7 init (PostgreSqlDriver)
+    ├── mikro-orm.factory.ts                     # MikroORM v7 init (PostgreSqlDriver)
     ├── entities.ts                # Better Auth surface entities
     ├── four-tables.ts             # workspace/user_status/tenant_subscription/event entities
     ├── column-meta.ts             # Single source of column metadata (runtime + migration derive)

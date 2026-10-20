@@ -6,7 +6,7 @@ import { defineEntity, p } from '@mikro-orm/core';
  * 形态（依 plan §5 Q2 裁决）：采零装饰器 + `defineEntity`/`p` 构造器，S9 三重约束在 ORM 实体面**不适用**
  * （实体非 DI 目标，无 `design:paramtypes` 之虞）。字段一律**扁平标量列**：跨模型外键当普通 string 列存
  * （不建 Mikro 关系对象——BA adapter 以「模型名 → entity」映射逐表寻址，不依赖 ORM 级 relation 装配）。
- * 列名走 **`EntityCaseNamingStrategy`**（见 orm.ts）：属性名**原样**作列名（camelCase 列，SQL 中一律双引号限定），
+ * 列名走 **`EntityCaseNamingStrategy`**（见 mikro-orm.factory.ts）：属性名**原样**作列名（camelCase 列，SQL 中一律双引号限定），
  * 使 BA 侧 DB 字段名（camelCase）与物理列名**直接对齐**——adapter 以手写 SQL（`em.execute`）寻址时键名两侧一致。
  * 表名单词小写与 BA 模型名对齐（`user`/`account`/…）。
  *

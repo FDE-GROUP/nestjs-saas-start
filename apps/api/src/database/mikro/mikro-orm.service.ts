@@ -4,7 +4,7 @@ import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { TransactionScope } from '../eventing/transaction-scope';
 import { MIKRO_APP_ENTITIES } from './app-entities';
-import { initMikroOrm } from './orm';
+import { initMikroOrm } from './mikro-orm.factory';
 
 /**
  * ORM 修宪案 B · 切片 2 —— app 侧 MikroORM v7 连接持有者（**懒建**）。

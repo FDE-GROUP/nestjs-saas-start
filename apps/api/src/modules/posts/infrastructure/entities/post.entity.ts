@@ -8,7 +8,7 @@ import { defineEntity, p } from '@mikro-orm/core';
  * 放置口径：「物理表 → 实体」的映射属基础设施层，本文件居 `modules/posts/infrastructure/entities/`
  * （仓储从此引 `Post`）。聚合装配（`MIKRO_APP_ENTITIES`）已移居 `database/mikro/app-entities.ts` 装配根。
  *
- * 列名走 `EntityCaseNamingStrategy`（见 `database/mikro/orm.ts`）：属性名**原样**作列名（camelCase 列·SQL 双引号限定），与
+ * 列名走 `EntityCaseNamingStrategy`（见 `database/mikro/mikro-orm.factory.ts`）：属性名**原样**作列名（camelCase 列·SQL 双引号限定），与
  * `database/schema.ts` 里 `post` 表的物理列（`id/title/content/published/organizationId/workspaceId/createdAt/updatedAt`
  * 均 camelCase）**逐列对齐**，故两侧读写键名一致、无需 snake↔camel 往返。
  *

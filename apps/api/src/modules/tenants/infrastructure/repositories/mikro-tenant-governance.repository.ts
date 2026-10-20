@@ -67,7 +67,7 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
           $or: [{ name: { $ilike: `%${opts.search}%` } }, { slug: { $ilike: `%${opts.search}%` } }],
         }
       : {};
-    // `as never` 仅系调用边界 cast（orm.ts 以 `entities as never` 装配致 FilterQuery 宽化不匹配·不改运行时谓词）。
+    // `as never` 仅系调用边界 cast（mikro-orm.factory.ts 以 `entities as never` 装配致 FilterQuery 宽化不匹配·不改运行时谓词）。
     const [entities, total] = await em.findAndCount(Organization, where as never, {
       orderBy: { createdAt: QueryOrder.DESC },
       limit: opts.limit,

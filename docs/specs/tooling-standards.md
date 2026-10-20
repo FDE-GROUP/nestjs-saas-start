@@ -100,7 +100,7 @@
 
 ### 4.4 数据库（MikroORM）
 - 迁移流程：改实体定义（`apps/api/src/database/mikro/**`·运行时实体 + 迁移实体经列元数据单一源 `column-meta.ts` 派生）→ `pnpm run migration:generate`（`scripts/mikro-migration-create.ts`·`migrator.create()` 比对「实体元数据 ↔ 库 schema」产增量工件 + 更新 snapshot）→ 审 SQL → `pnpm run migration:run`（`scripts/mikro-migrate.ts`·`migrator.up()` 应用未执行迁移）。
-- 迁移工件目录：`apps/api/src/database/mikro/migration/migrations`（基线 `Migration20261016055354` + snapshot·台账表 `mikro_migrations`）；迁移装配 `mikro-migration.config.ts`（与 app boot / `orm.ts` 解耦·`extensions:[Migrator]` 仅离线工具实例生效）。
+- 迁移工件目录：`apps/api/src/database/mikro/migration/migrations`（基线 `Migration20261016055354` + snapshot·台账表 `mikro_migrations`）；迁移装配 `mikro-migration.config.ts`（与 app boot / `mikro-orm.factory.ts` 解耦·`extensions:[Migrator]` 仅离线工具实例生效）。
 - 破坏性 dev 重建走 `pnpm run db:reset`（= `mikro-migrate.ts --fresh`·`schema.drop({ dropMigrationsTable: true })` 删实体表 + 台账后重放）；**切勿指向生产/现网库**（生产只走增量 `migration:run`）。
 - `db:seed` / `db:reset` / `db:setup` 为数据准备入口；Postgres 由 `docker compose` 供给。
 

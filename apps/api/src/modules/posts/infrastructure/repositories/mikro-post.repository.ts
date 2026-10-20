@@ -59,7 +59,7 @@ export class MikroPostRepository implements PostRepository {
   async list(request: CursorPageRequest): Promise<CursorPage<PostRecord>> {
     const { organizationId, workspaceId } = this.scope();
     // `where` 为真实谓词对象（organizationId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
-    // `orm.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
+    // `mikro-orm.factory.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
     // 类型而非 companion interface·两者在可空/默认列上 `FilterQuery` 宽化不致；cast 不改运行时谓词。
     const tenantFilter = workspaceId ? { organizationId, workspaceId } : { organizationId };
 

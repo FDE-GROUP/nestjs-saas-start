@@ -5,7 +5,7 @@
   "apps/api/src/database/eventing/outbox-relay.ts": 7,
   "apps/api/src/database/mikro/column-meta.ts": 8,
   "apps/api/src/database/mikro/migration/mikro-migration.config.ts": 1,
-  "apps/api/src/database/mikro/orm.ts": 1,
+  "apps/api/src/database/mikro/mikro-orm.factory.ts": 1,
   "apps/api/src/database/seed.ts": 6,
   "apps/api/src/logger/logger.service.ts": 3,
   "apps/api/src/main.ts": 4,

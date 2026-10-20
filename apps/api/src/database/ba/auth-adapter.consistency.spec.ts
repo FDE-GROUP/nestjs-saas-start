@@ -2,7 +2,8 @@ import { authFlowTestSuite, testAdapter } from '@better-auth/test-utils/adapter'
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { describe, expect, it } from 'vitest';
-import { initMikroOrm } from '../mikro/orm';
+import { initMikroOrm } from '../mikro/mikro-orm.factory';
+import { MIKRO_ENTITIES } from './entities';
 
 /**
  * ORM 修宪案 B · 切片 1 强制验收判据 —— `@better-auth/test-utils` **authFlow 一致性套件**（EXIT=0）。
@@ -43,7 +44,7 @@ const suite = enabled ? describe : describe.skip;
 
 suite('mikro-orm v7 × better-auth authFlow consistency', async () => {
   // ORM 懒建：仅当本 describe 回调被执行（enabled）才连库；disabled 时回调整体跳过，零副作用。
-  const ormPromise = initMikroOrm(databaseUrl);
+  const ormPromise = initMikroOrm(databaseUrl, MIKRO_ENTITIES);
   let ormRef: Awaited<ReturnType<typeof initMikroOrm>> | undefined;
 
   // 全表重建（一致性 + 存照共用）：先过 scratch 库名断言（安全前置）再 drop。

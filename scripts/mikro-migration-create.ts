@@ -3,7 +3,7 @@
  *
  * 连 `DATABASE_URL`，比对「实体元数据 ↔ 当前库 schema」差异，在
  * `apps/api/src/database/mikro/migration/migrations` 下生成一条**增量**迁移工件（+ 更新 snapshot）。
- * 由 `mikro-migration.config.ts` 的迁移专用装配驱动（与 app boot / `orm.ts` 完全解耦）。
+ * 由 `mikro-migration.config.ts` 的迁移专用装配驱动（与 app boot / `mikro-orm.factory.ts` 完全解耦）。
  *
  * 纪律（tooling §4「generate+migrate」）：本脚本**只生成** SQL/TS 工件，**不落库**；生成的工件须
  * 人工审阅后提交，运行侧由 `mikro-migrate.ts`（`db:setup`/`db:reset`）执行。dev 才用 `--safe=false`

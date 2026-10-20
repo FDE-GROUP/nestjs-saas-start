@@ -62,7 +62,7 @@ export class MikroWorkspaceRepository implements WorkspaceRepository {
     // `where` 为真实谓词对象（organizationId 必含·去之则回归测红）。**固定展开序**：授权谓词（切片 C
     // 下推的实例条件·可含 `$or`）先展、租户盖章恒为最后键——授权侧任何 `organizationId` 尝试被结构性
     // 覆盖（FR-5 唯一卡点不变）。`as never` 仅系调用边界 cast——
-    // `orm.ts` 以 `entities as never` 装配致 `FilterQuery` 与 companion interface 宽化不匹配（不改运行时谓词）。
+    // `mikro-orm.factory.ts` 以 `entities as never` 装配致 `FilterQuery` 与 companion interface 宽化不匹配（不改运行时谓词）。
     const em = await this.mikro.fork();
     const [entities, total] = await em.findAndCount(
       Workspace,
