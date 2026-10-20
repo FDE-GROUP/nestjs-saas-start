@@ -57,8 +57,9 @@ src/
 │                            #   context + TenantScopeGuard + middleware + exempt/public; session adapters
 │                            #   (deny-list status machine relocated to `tenants`, seat quota to `subscriptions` —
 │                            #   open item 4 landed); CONSUMES authorization's ruling ports
-├── database/                # Global infra: MikroORM client, BA-facing entities (entities.ts), migrations, seed,
-│                            #   eventing/ (ES store/relay/UoW). Context-owned table entities live in
+├── database/                # Global infra: MikroORM client, BA contract surface (`ba/entities.ts` — storage view
+│                            #   of the Better Auth schema, not domain models; table owners span three contexts),
+│                            #   migrations, seed, eventing/ (ES store/relay/UoW). Context-owned table entities live in
 │                            #   modules/<ctx>/infrastructure/entities (owner SSOT: database/table-ownership.ts)
 ├── config/                  # Global infra: typed config + zod validation
 ├── logger/  mailer/  common/  i18n/   # Cross-cutting infrastructure

@@ -32,23 +32,24 @@
 ## 4. 审计结论
 - 裁决：**GO**（人 2026-10-20 令「同意」：①整案 ②BY_MODEL 删除 ③两片分笔 均采建议档）
 - 意见 / 修改要求：无修改；②采删除建议（零消费已实证·守卫恒等账走 MIKRO_ENTITIES 不受影响）；删码与 ±zh 行注之高危问责归签核人。
-- 结论：**已签核·待实施**
+- 结论：**已签核·已实施**（两片落码·待人类验收与推送）
 - 未决项：无。
 - 审计人 / 日期：人（同意·三裁点全采建议）/ 2026-10-20
 
-## 5. 验收判据（实施后回写·带取证）
-- [ ] `git mv` 两件入 `database/ba/`；32 处 sweep 净（残留 grep=0）。
-- [ ] `vitest.consistency.config.ts` include 命中新路径·`test:auth-consistency` 实跑 9 用例绿（真 PG）。
-- [ ] 硬闸：`migration:generate` 空 diff；`ci` PASSED（基线数注记）；`ci:db` 绿；`verify:prod-boot` 200。
-- [ ] BY_MODEL 按②处置落地（删除则全仓 grep=0·守卫恒等不受影响）。
-- [ ] ±zh 目录图注记 `ba/`·两版一致。
+## 5. 验收判据（已实施·带取证）
+- [x] `git mv` 两件入 `database/ba/`（rename 识别 99%/91%）；sweep 净：代码/文档全仓 grep 旧路径 `mikro/entities`·`mikro/auth-adapter.consistency` 残留=0（仅历史叙述除外）。
+- [x] `vitest.consistency.config.ts` include 命中新路径·`ci:db` 实跑 `apps/api/src/database/ba/auth-adapter.consistency.spec.ts (9 tests) 9 passed`（真 PG·assertScratchDb 库名恒等满足·容器零足迹）——R1 静默失跑风险销雷。
+- [x] 硬闸：`migration:generate` 空 diff（`✅ no schema diff — 0 migration created`）；`ci` PASSED（含守卫 8 测·基线不变）；`ci:db` 绿；`verify:prod-boot` /health 200。
+- [x] `BY_MODEL` 删除（人签②a）：全仓 grep=0；MIKRO_ENTITIES 注释引用同步清；守卫恒等账走 MIKRO_ENTITIES 不受影响（ci 绿即证）。
+- [x] ±zh 目录图 database/ 行注记 `ba/entities.ts`·身份语成文（storage view·非领域模型）·两版同构。头注同步成文（ba/entities.ts 「身份」段）。
 
 ## 6. 变更记录
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 0.2.0 | 人签核「同意」后两片实施 | 切片 A：两件 `git mv` 入 `database/ba/`·BY_MODEL 死面删除（全仓 grep=0）·32 处 sweep+注释面 2 处·`vitest.consistency.config.ts` 路径同步（实跑命中 9/9）·`orm.ts` 留位只改 import——硬闸空 diff+ci+ci:db+prod-boot 全绿；切片 B：±zh 目录图 `ba/entities.ts` 行注成文 |
 | 2026-10-20 | 0.1.0 | 用户问 entities.ts 拆分归属，否掉进 adapter 包后裁「乙」 | 首版两片方案（A 契约面成区+sweep+config 硬账 / B BY_MODEL 死面处置 / C 文档）；取证 32 消费面·BY_MODEL 零消费·consistency 路径硬编码 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 起草，待审计。
+正文已于 2026-10-20 / v0.2.0 变更，以当前正文内容为准。
