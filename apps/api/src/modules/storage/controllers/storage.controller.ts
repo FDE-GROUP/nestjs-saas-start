@@ -5,6 +5,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Inject,
   Logger,
   Param,
@@ -94,15 +95,22 @@ export class StorageController {
       this.logger.log(`Uploading file: ${data.filename}`);
 
       // Handle multipart file upload
-      return this.storageService.uploadMultipartFile({
+      return await this.storageService.uploadMultipartFile({
         filename: data.filename,
         mimetype: data.mimetype,
         file: data.file,
         size: data.file.bytesRead,
       });
     } catch (error) {
+      // 甲档收口（module-storage-upload-error-surface）：补 `await` 使 service 的异步 reject
+      // 落回本 catch；领域校验码（`NO_FILE` / service 的 `FILE_TOO_LARGE`/`FILE_TYPE_NOT_ALLOWED`
+      // / provider 归一的 `UPLOAD_FAILED`）皆为 `HttpException`，原样放行使其在 HTTP 面正确显形；
+      // 仅对非 `HttpException` 的真未知/流层异常兜底归一为 `STORAGE_UPLOAD_FAILED`。
+      if (error instanceof HttpException) {
+        throw error;
+      }
       this.logger.error('Error uploading file', error);
-      throw new BadRequestException(`Failed to upload file: ${error.message}`, {
+      throw new BadRequestException(`Failed to upload file: ${(error as Error).message}`, {
         errorCode: ERROR_CODES.STORAGE_UPLOAD_FAILED,
       });
     }

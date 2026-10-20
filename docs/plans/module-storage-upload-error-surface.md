@@ -48,27 +48,29 @@
 
 > 无已审方案不写码。
 
-- 结论：**（待审计·归人）**
-- 未决项：
-  - ① 收口档取 **甲（推荐）** 还是乙？
-  - ② 「改变对外 400 码细分」是否触发高危#2（契约）须显式签，还是视为错误处理内部修复随片自审？
-- 审计人 / 日期：____
+- 结论：**已审计·GO（Agent 代裁·问责归授权令签发人）**
+- 决策：
+  - ① 采 **甲档**（保留领域码、catch 只兜非 `HttpException` 未知/流错）——乙档丢细分语义，不取。
+  - ② 判**不触发高危#2**：`@saas/contracts` 的 `errorResponseSchema` 外形不动、无迁移/无门禁/无契约 schema 改动；仅令既有 `ERROR_CODES` 于 HTTP 面正确显形，属错误处理内部修复。因对外 400 码细分行为变化，**以实跑/测对拍为验收口径**（非凭构建通过）。
+- 授权链：人类以「你定」明示将本呈审案裁定权代理给 Agent；Agent 按实存代码坐实后采甲档。
+- 审计人 / 日期：Agent 代裁（承「你定」授权）/ 2026-10-20
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] `uploadFile` await/rethrow 形态按择定档收口·两处不一致消除
-- [ ] `storage.controller.test.ts` 断言随真实行为更新（NO_FILE 可观测·service 校验码透出路径复测）
-- [ ] 故事 9.1 措辞校正·与实现一致
-- [ ] `pnpm run ci` 全绿（基线只增不减 · Biome 净 · fallow 0）+（如涉 openapi）`openapi:drift` 零漂移
-- [ ] 零 schema / 零依赖 / 零门禁变更
+- [x] `uploadFile` await/rethrow 形态按甲档收口（末行补 `await` + catch `instanceof HttpException` 放行）·两处不一致消除
+- [x] `storage.controller.test.ts` 断言随真实行为更新（NO_FILE 转可观测·service 校验码经 await 仍透出·新增非 HttpException 兜底归一用例）
+- [x] 故事 9.1 措辞校正·出口链与实现一致（epic-09 v0.3.0）
+- [x] `pnpm run ci` 全绿（基线 **696→697 passed/35 skip** 只增不减 · Biome 净 · fallow 0 · build 过）；openapi 对拍**零漂移**（upload 未列 400 码·无需再生）
+- [x] 零 schema / 零依赖 / 零门禁变更（`errorResponseSchema` 外形不动）
 
 ## 6. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版（承补测片 §4.1 发现立案·待审计·零实现） |
+| 2026-10-20 | 0.2.0 | 代裁·实施 | §4 裁定采甲档·不升高危#2；controller 补 `await` + catch `instanceof HttpException` 放行；controller 测断言翻正（NO_FILE 可观测 + 新增非 HttpException 兜底归一用例）；故事 9.1 出口链措辞对齐 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 起草（候选稿·零实现），状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.2.0 代裁·实施（采甲档），状态以 README 索引表为单源。

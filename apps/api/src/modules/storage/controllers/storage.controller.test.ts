@@ -5,15 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageController } from './storage.controller';
 
 /**
- * 存储控制器上传/删除/取址单测（module-test-coverage-gaps G2·controller 侧真实行为）。
+ * 存储控制器上传/删除/取址单测（module-test-coverage-gaps G2 + module-storage-upload-error-surface 甲档收口）。
  *
- * 锁 `uploadFile` 的真实出口链 + delete/url 委派。**两处关键 as-built 事实**（据实断言·不改码）：
- *  ① `try` 起于取 file 之前（controller L85），`STORAGE_NO_FILE` 抛点在 `try` 内（L89）系**同步 throw**
- *    → 被 catch（L103）吞成 `STORAGE_UPLOAD_FAILED`（HTTP 面不可观测 NO_FILE 具体码·仅存 service 层）；
- *  ② 末行 `return this.storageService.uploadMultipartFile(...)` **未 await**——该 promise 的 reject
- *    发生于 `try` 已同步返回之后，**逃过 catch**，故 service 抛错（含 FILE_TOO_LARGE/TYPE_NOT_ALLOWED/真实错误）
- *    **原样上抛**、保其自身码，不被归一为 UPLOAD_FAILED。
- * 净果：HTTP 面 upload 出口 = `NOT_MULTIPART`（try 前）/`UPLOAD_FAILED`（仅 no-file）/ service 原码（透传）。
+ * 锁 `uploadFile` 错误出口链（甲档：末行补 `await` + catch 内 `instanceof HttpException` 原样放行）：
+ *  · 非 multipart → `STORAGE_NOT_MULTIPART`（try 前抛·不被吞）；
+ *  · multipart 无文件 → `STORAGE_NO_FILE`（try 内同步 throw·catch 见 HttpException 原样放行·HTTP 面可观测）；
+ *  · service 抛校验码（`FILE_TOO_LARGE`/`TYPE_NOT_ALLOWED`·经 await 落回 catch）→ HttpException 原样透传；
+ *  · service 抛非 HttpException（真未知/流层）→ 兜底归一 `STORAGE_UPLOAD_FAILED`。
+ * delete/url 为纯委派。
  */
 
 function makeController() {
@@ -53,7 +52,7 @@ describe('StorageController.uploadFile（G2）', () => {
     }
   });
 
-  it('multipart 但 req.file() 为 null → 被 catch 吞成 STORAGE_UPLOAD_FAILED（NO_FILE 于 HTTP 面不可观测）', async () => {
+  it('multipart 但 req.file() 为 null → NO_FILE 原样放行（甲档收口后 HTTP 面可观测）', async () => {
     const { ctrl } = makeController();
     const req = { isMultipart: () => true, file: async () => null } as unknown as FastifyRequest;
 
@@ -62,13 +61,13 @@ describe('StorageController.uploadFile（G2）', () => {
       await ctrl.uploadFile(req);
     } catch (e) {
       expect((e as BadRequestException).getResponse()).toMatchObject({
-        errorCode: ERROR_CODES.STORAGE_UPLOAD_FAILED,
+        errorCode: ERROR_CODES.STORAGE_NO_FILE,
       });
       expect((e as BadRequestException).message).toContain('No file uploaded');
     }
   });
 
-  it('service 被拒 → 因末行 `return`（未 await）逃过 catch·原样上抛保自身码（不被归一 UPLOAD_FAILED）', async () => {
+  it('service 抛 HttpException（FILE_TOO_LARGE）→ 经 await 落回 catch·instanceof 判定原样放行保自身码', async () => {
     const { ctrl, storageService } = makeController();
     storageService.uploadMultipartFile.mockRejectedValueOnce(
       new BadRequestException('boom', { errorCode: ERROR_CODES.STORAGE_FILE_TOO_LARGE }),
@@ -81,6 +80,21 @@ describe('StorageController.uploadFile（G2）', () => {
     const err = await ctrl.uploadFile(req).catch((e) => e);
     expect((err as BadRequestException).getResponse()).toMatchObject({
       errorCode: ERROR_CODES.STORAGE_FILE_TOO_LARGE,
+    });
+  });
+
+  it('service 抛非 HttpException（真未知/流层）→ 兜底归一 STORAGE_UPLOAD_FAILED', async () => {
+    const { ctrl, storageService } = makeController();
+    storageService.uploadMultipartFile.mockRejectedValueOnce(new Error('socket hang up'));
+    const req = {
+      isMultipart: () => true,
+      file: async () => ({ filename: 'a.png', mimetype: 'image/png', file: { bytesRead: 3 } }),
+    } as unknown as FastifyRequest;
+
+    const err = await ctrl.uploadFile(req).catch((e) => e);
+    expect(err).toBeInstanceOf(BadRequestException);
+    expect((err as BadRequestException).getResponse()).toMatchObject({
+      errorCode: ERROR_CODES.STORAGE_UPLOAD_FAILED,
     });
   });
 

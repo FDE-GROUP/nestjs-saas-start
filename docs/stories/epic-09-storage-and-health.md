@@ -3,14 +3,14 @@
 > 旅程: 用户如何上传/取回文件、平台如何暴露存活探针供编排 | 上下文: `storage`（对象存储·用户级）+ `health`（存活探针·公开）
 > storage 属**用户级**（上传/下载·不经租户仓储 `requireTenantId`）→ 类级 `@TenantExempt`（仍靠会话墙）。health 是 Dockerfile `HEALTHCHECK` 声明的探针端点，类级 `@Public()`（旁路会话+租户墙）+ `@SkipThrottle()`（探活/CI 不得被限流锁）。
 > **provider 选型属实（与支付面对照）**：`S3` / `AliOSS` / `TencentCOS` **三 provider 均真实实现**（非仅类型占位）；`StorageService` 按 `storageConfig.provider` 命中已注册则用之，否则**回落 S3 作默认**——与 [Epic 06](./epic-06-billing-subscriptions-payment.md) 支付面「仅 Stripe 落地」不同，此处“三通道选型”为现状非规划。
-> 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
+> 版本: 0.3.0（2026-10-20·9.1 出口链据 `module-storage-upload-error-surface` 甲档收口翻正）
 
 ---
 
 ### 9.1 上传单个文件
 - **作为** 已登录用户，**我想** 上传一个文件到对象存储，**以便** 存储二进制资源。
-- **验收**：Given `multipart/form-data` 请求，When `POST /storage/upload`，Then 经 Fastify multipart 取流并交 `StorageService.uploadMultipartFile` 落存储返回结果（201）；Given 非 multipart，Then 400（`STORAGE_NOT_MULTIPART`）；无文件 Then 400（`STORAGE_NO_FILE`）；provider/流异常 Then 400（catch 兜底 `Failed to upload file`）。
-- **溯源**：`POST /api/v1/storage/upload` · `StorageController.uploadFile`（`req.isMultipart()`/`req.file()`）· `StorageService` · 契约 `fileUploadResultSchema` · 关联 [`global-cn-adaptation`](../plans/global-cn-adaptation.md)（OSS/COS/S3 provider 选型）。
+- **验收**：Given `multipart/form-data` 请求，When `POST /storage/upload`，Then 经 Fastify multipart 取流并交 `StorageService.uploadMultipartFile` 落存储返回结果（201）。**错误出口链**（`module-storage-upload-error-surface` 甲档收口后·各码于 HTTP 面正确显形）：非 multipart → 400 `STORAGE_NOT_MULTIPART`（抛于 try 前）；multipart 无文件 → 400 `STORAGE_NO_FILE`；文件超大小/类型非法 → 400 `STORAGE_FILE_TOO_LARGE`/`STORAGE_FILE_TYPE_NOT_ALLOWED`（service 校验·经末行 `await` 落回 catch 后按 `instanceof HttpException` 原样透传）；仅真未知/流层异常 → 400 `STORAGE_UPLOAD_FAILED`（catch 兜底归一）。
+- **溯源**：`POST /api/v1/storage/upload` · `StorageController.uploadFile`（`req.isMultipart()`/`req.file()`·末行 `await uploadMultipartFile` + catch `instanceof HttpException` 放行）· `StorageService.uploadMultipartFile`/`validateFile` · 契约 `fileUploadResultSchema` · 关联 [`module-storage-upload-error-surface`](../plans/module-storage-upload-error-surface.md)（错误出口链甲档收口）/ [`global-cn-adaptation`](../plans/global-cn-adaptation.md)（OSS/COS/S3 provider 选型）。
 
 ### 9.2 删除文件
 - **作为** 已登录用户，**我想** 按 key 删除一个文件，**以便** 清理存储对象。
