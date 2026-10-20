@@ -36,8 +36,8 @@ const CONSISTENCY_DB = 'mikro_ba_consistency';
  *  workspace-owner-rbac 为 owner-column 片漏登。均按清单自身声明规则补齐，非门禁语义变更。 */
 const GATED_E2E_FILES = [
   'apps/api/src/modules/posts/infrastructure/repositories/posts-cursor-pagination.e2e.test.ts',
-  'apps/api/src/database/event-store.mikro.e2e.test.ts',
-  'apps/api/src/database/outbox-relay.e2e.test.ts',
+  'apps/api/src/database/eventing/event-store.mikro.e2e.test.ts',
+  'apps/api/src/database/eventing/outbox-relay.e2e.test.ts',
   'apps/api/src/database/mikro/tenant-status-subscription-link.e2e.test.ts',
   'apps/api/src/modules/tenants/tenant-hard-delete.e2e.test.ts',
   'apps/api/src/tenancy/tenant-isolation.e2e.test.ts',

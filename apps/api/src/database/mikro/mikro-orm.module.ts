@@ -1,8 +1,8 @@
 import { UNIT_OF_WORK } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '../../config/config.module';
-import { MikroUnitOfWork } from '../mikro-unit-of-work';
-import { TransactionScope } from '../transaction-scope';
+import { MikroUnitOfWork } from '../eventing/mikro-unit-of-work';
+import { TransactionScope } from '../eventing/transaction-scope';
 import { MikroOrmService } from './mikro-orm.service';
 
 /**

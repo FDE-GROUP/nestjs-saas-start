@@ -3,9 +3,9 @@ import { EVENT_STORE } from '@core/saas-kit/shared-kernel/domain/event-store.por
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ConfigModule } from '../config/config.module';
-import { DefaultDomainEventPublisher } from './domain-event-publisher';
-import { MikroEventStore } from './mikro-event-store';
-import { OutboxRelay } from './outbox-relay';
+import { DefaultDomainEventPublisher } from './eventing/domain-event-publisher';
+import { MikroEventStore } from './eventing/mikro-event-store';
+import { OutboxRelay } from './eventing/outbox-relay';
 
 @Global()
 @Module({

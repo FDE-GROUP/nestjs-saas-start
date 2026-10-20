@@ -1,10 +1,10 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
+import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { Account, Member, Organization, Session, User } from '@app/database/mikro/entities';
 import { Workspace } from '@app/database/mikro/four-tables';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { TenantRole, TenantRoleGrant, type TenantRoleRow } from '@app/database/mikro/rbac-tables';
-import { OutboxRelay } from '@app/database/outbox-relay';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { ListWorkspacesQueryHandler } from '@core/saas-kit/modules/workspaces/application/queries/handlers/list-workspaces.query-handler';

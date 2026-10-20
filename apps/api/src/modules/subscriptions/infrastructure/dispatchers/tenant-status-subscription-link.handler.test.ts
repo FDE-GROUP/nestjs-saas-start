@@ -1,4 +1,4 @@
-import { EVENT_TYPE_REGISTRY } from '@app/database/event-type-registry';
+import { EVENT_TYPE_REGISTRY } from '@app/database/eventing/event-type-registry';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';

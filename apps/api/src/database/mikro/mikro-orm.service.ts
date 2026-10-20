@@ -2,7 +2,7 @@ import { ConfigService } from '@app/config/config.service';
 import type { EntityManager, MikroORM } from '@mikro-orm/core';
 import { Inject, Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
-import { TransactionScope } from '../transaction-scope';
+import { TransactionScope } from '../eventing/transaction-scope';
 import { initMikroOrm } from './orm';
 import { MIKRO_APP_ENTITIES } from './post.entity';
 

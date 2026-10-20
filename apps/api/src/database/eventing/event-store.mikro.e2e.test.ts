@@ -4,8 +4,8 @@ import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/li
 import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Event } from './mikro/four-tables';
-import { MikroOrmService } from './mikro/mikro-orm.service';
+import { Event } from '../mikro/four-tables';
+import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { MikroEventStore } from './mikro-event-store';
 import { TransactionScope } from './transaction-scope';
 

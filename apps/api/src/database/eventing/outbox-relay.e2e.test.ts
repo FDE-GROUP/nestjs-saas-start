@@ -8,10 +8,10 @@ import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/ev
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { EventBus } from '@nestjs/cqrs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Event } from '../mikro/four-tables';
+import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { DefaultDomainEventPublisher } from './domain-event-publisher';
 import { EVENT_TYPE_REGISTRY } from './event-type-registry';
-import { Event } from './mikro/four-tables';
-import { MikroOrmService } from './mikro/mikro-orm.service';
 import { MikroEventStore } from './mikro-event-store';
 import { MikroUnitOfWork } from './mikro-unit-of-work';
 import { OutboxRelay } from './outbox-relay';

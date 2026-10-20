@@ -1,6 +1,6 @@
 import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { Inject, Injectable } from '@nestjs/common';
-import { MikroOrmService } from './mikro/mikro-orm.service';
+import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { TransactionScope } from './transaction-scope';
 
 /**

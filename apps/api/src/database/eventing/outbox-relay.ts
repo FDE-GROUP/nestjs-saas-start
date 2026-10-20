@@ -8,9 +8,9 @@ import {
   type OnModuleDestroy,
 } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
+import { Event } from '../mikro/four-tables';
+import { MikroOrmService } from '../mikro/mikro-orm.service';
 import { EVENT_TYPE_REGISTRY } from './event-type-registry';
-import { Event } from './mikro/four-tables';
-import { MikroOrmService } from './mikro/mikro-orm.service';
 
 /**
  * Outbox relay：event 表 → 进程内 EventBus 的耐久投递器（ES Phase B 后半 ·

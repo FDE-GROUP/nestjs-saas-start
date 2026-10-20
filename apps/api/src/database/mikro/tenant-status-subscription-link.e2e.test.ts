@@ -11,10 +11,10 @@ import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-eve
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import type { EventBus } from '@nestjs/cqrs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { MikroEventStore } from '../mikro-event-store';
-import { MikroUnitOfWork } from '../mikro-unit-of-work';
-import { OutboxRelay } from '../outbox-relay';
-import { TransactionScope } from '../transaction-scope';
+import { MikroEventStore } from '../eventing/mikro-event-store';
+import { MikroUnitOfWork } from '../eventing/mikro-unit-of-work';
+import { OutboxRelay } from '../eventing/outbox-relay';
+import { TransactionScope } from '../eventing/transaction-scope';
 import { Event, TenantSubscription } from './four-tables';
 import { MikroOrmService } from './mikro-orm.service';
 

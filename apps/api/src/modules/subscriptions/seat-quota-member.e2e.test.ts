@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
+import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import {
   Account,
   Invitation,
@@ -9,7 +10,6 @@ import {
   User,
 } from '@app/database/mikro/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { OutboxRelay } from '@app/database/outbox-relay';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
