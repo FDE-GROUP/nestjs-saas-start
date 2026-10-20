@@ -67,7 +67,8 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 - 结论：**已审计·GO**（用户 2026-10-20 令「按建议裁，先完成文档」）——四裁点全采建议档：① `User` → **auth**（台账 `user→users` 随切片同步翻 `user→auth`·users 模块经端口消费不变）；② `Consent` → **auth**；③ 一致性 spec → **`modules/auth/infrastructure/`**；④ **三片分笔**。
 - **执行序倒置（人裁「先完成文档」）**：本仓「修宪殿后」镜像纪律在本案被显式倒置——切片 C（宪法翻账+勘误+再裁决注）**先行落地**，代码切片 A/B 随后；过渡期宪法目录注记带「迁移中」标记，A/B 落地时摘除（判据 §8 兜底对拍）。倒置理由：本案认知修正链（勘误/再裁决）不依赖物理状态，先行成文可止住错误论证的继续流传。
 - 未决项：~~四项已裁（见结论）~~。
-- 审计人 / 日期：人（按建议裁·四裁点 + 执行序）/ 2026-10-20。
+- **人验收（2026-10-20·「同意」）**：三片 C→A→B 成果与硬闸取证核验通过，方案结项。
+- 审计人 / 日期：人（按建议裁·四裁点 + 执行序 + 验收）/ 2026-10-20。
 
 ## 8. 完成判据（可核验 + 穷尽）
 
@@ -82,6 +83,7 @@ database/ba/ → 消解（一致性 spec 迁 auth/infrastructure·裁③）
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-20 | 1.1.0 | 人验收结项 | 用户「同意」——三片成果验收通过·索引翻已完成·推送 |
 | 2026-10-20 | 1.0.0 | 切片 B 落地·三片齐 | 组织容器族三实体迁 `modules/tenants/infrastructure/entities/ba-org.entities.ts` + `MIKRO_ENTITIES` 聚合归装配根 `app-entities.ts` + `database/ba/` 区 git rm 消解 + 18 文件 sweep（seed tsx 相对）+ 列律/守卫测试/spec 引用改装配根 + 宪法摘迁移标记成终态 + domain-concepts 路径表翻正。硬闸：700 测 + 空 diff + gated e2e 36 + 一致性 9/9 + prod-boot 全绿——**C→A→B 三片齐·待人类验收** |
 | 2026-10-20 | 0.3.0 | 切片 A 落地 | 身份机器族五实体迁 `modules/auth/infrastructure/entities/ba-identity.entities.ts`（BA 契约头注）+ 一致性 spec 迁位（consistency config 路径订正·真库 9/9）+ 18 文件 import sweep（含 seed tsx 相对导入）+ **台账 `user→auth` 翻转并收编写面**：新 `AUTH_USER_STORE` 端口（S3 同型）·users 端口去 `remove`·delete-user handler 经端口硬删（逐字同语义）——表所有权守卫绿。硬闸：700 测全绿 + `migration:generate` 空 diff + gated e2e 10 文件 36 测 + prod-boot /health 200 |
 | 2026-10-20 | 0.2.0 | 人裁 GO（按建议裁·先完成文档）| §7 翻正已审计·GO（四裁点建议档全采）+ 执行序倒置成文（C→A→B）；切片 C 文档件先行落地（宪法 ±zh 翻转[带迁移中注记]/归位案勘误/成区案再裁决注/索引翻正） |
