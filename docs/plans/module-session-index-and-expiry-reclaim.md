@@ -78,7 +78,7 @@
 
 > 无已审方案不写码；本片触高危#1，**须人亲签**方进实现。
 
-- 结论：**已实施·待人类验收**（F1+F2 零越权落码·高危#1 迁移经人「同意 GO」亲签后实施）。
+- 结论：**已验收·结项**（F1+F2 零越权落码·高危#1 迁移经人「同意 GO」亲签后实施；合批验收人签见母案 §6）。
 - 已裁项（人类以「你裁定」授权·Agent 代裁·问责归该授权人）：
   - ① **F1 token 索引 = unique**（承取证：`user_email_idx` 已为 BA 契约表 unique 先例·加索引不违契约；采 `uniques: [{ name: 'session_token_idx', properties: ['token'] }]`）。施加前置仍列 §5：对已 populate 库先 `SELECT token,count(*) HAVING count(*)>1` 查重（BA 随机 token 实际不重复·dev/e2e 无虞）。
   - ② **F2 清理形态 = 甲′**（镜像 `OutboxRelay` 零依赖 `setInterval` provider）——取证显示仓内既有周期任务范式·无需第二套调度，**否** `@nestjs/schedule`（新依赖维度消失）。
@@ -102,8 +102,9 @@
 | 2026-10-20 | 0.1.0 | 起草呈审 | 承母案 P0′ §2-E·本轮独立取证（session DDL 仅 PK·adapter token seq scan·列律只表名恒等·`user_email_idx` BA 表索引先例·relay `setInterval` 零依赖范式）细化为决策完备呈审：F1 索引迁移（unique 推荐·前置查重）+ F2 清理采甲′（镜像 relay·消除新依赖高危）·三待裁项归人 |
 | 2026-10-20 | 0.2.0 | 人「你裁定」·Agent 代裁设计档 | ① F1 token = unique（带前置查重）· ② F2 = 甲′镜像 relay零依赖（否 `@nestjs/schedule`）；③ 高危#1 迁移亲签**不可代裁**·留硬闸——实施（含 `migration:run`）仍待人明确签发·本批仅提交呈审 doc |
 | 2026-10-20 | 0.3.0 | 人「同意」=GO E·亲签迁移·F1+F2 实施 | 零越权落码：F1 `migration-entities` Session 补 `uniques[session_token_idx]`+`indexes[session_expires_at_idx]`→generate `Migration20261020150833.ts`→run→二次空 diff→库直查双索引在位；F2 `SessionReclaimService`（镜像 relay·缺省关）入 AuthModule + config 两键五处 + 单测 5 + gated e2e 3（真库）登记 GATED_E2E_FILES。硬闸全绿：ci PASSED(705) · ci:db EXIT=0(gated 11 + BA 9) · verify:config-contract · verify:prod-boot · 棘轮 re-baseline +1。转「已实施·待人类验收」 |
+| 2026-10-20 | 0.4.0 | 合批验收人签 | 承母案 §6 合批验收呈报（人「同意」入库），E 片随批验收通过·结项。部署前置留痕：回收缺省关须生产显式 ENABLED=true、token unique 上线前对已 populate 库查重。README 单源同步翻「已验收·结项」 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.3.0 修订（F1+F2 零越权实施·全链硬闸绿），状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.4.0 修订（承母案 §6 合批验收人签·E 片随批结项），状态以 README 索引表为单源。

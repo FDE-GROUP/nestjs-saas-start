@@ -2,7 +2,7 @@
 
 > 适用范围: `多上下文(platform/eventing · tenants · posts · auth/session · common/filters)` ← blast radius 较大，逐片独立可验；审计深度=人签核（含 DB 迁移·PIPL 删除链·事件投递语义三类敏感面）
 > 关联: `docs/plans/module-common-error-response-contract.md`（错误契约）· `module-es-outbox-transactional`（relay 出处）· `global-readiness-error-pagination.md`（分页契约）· `global-tenant-entity-reclamation.md`（硬删链 O 系列观察）· `global-validation-zod-constitution-amendment.md`（序列化白名单）
-> 性质: 修复型（改实现·**A/B/C/D 已实施·待人类验收；E 待审·零实现**）
+> 性质: 修复型（改实现·**五片已实施·合批验收人签·结项**·呈报见 §6）
 > 来源: 四路并行深勘 + 逐条代码复核（本 plan 只纳入**已证实**条目·证据锚点见各片「现状」；复核已把 #11 降档、无一推翻，属外部审的处置不在本片）
 > 状态**不在此**：审计 / 执行状态单源于 [`README.md`](./README.md) 索引表
 
@@ -129,15 +129,26 @@
 - [x] 各片 `pnpm run ci` 全绿·基线只增不减·Biome 净·fallow 0（Local CI PASSED·701 passed）；`ci:db` 带库全链 PASSED（gated e2e 10 文件 36 passed + BA 一致性 9 passed）
 - [x] 零越权：E 的迁移经人「同意 GO」亲签后方于专章实施（未自行 migration:run）；未引新依赖（甲′镜像 relay）；余片过审计门后方落码
 
-## 6. 演变记录
+## 6. 合批验收呈报（人签·2026-10-20）
+
+> 承人类「同意」将五片合批验收呈报固化入库。核验方式 = **三方对齐**（非凭提交标签/记忆）：① as-built 代码标志实读 ② 锁测（§5 记录·E 收口时全链复跑覆盖）③ git 落地取证。
+
+- **结论**：**五片（A/B/C/D/E）合批验收通过·结项**（审计人=人类·2026-10-20）。
+- **实现提交索引**：A/B/C/D 代码+锁测与归位修宪 doc **混承载于 `babe233`**（14 文件 +357/−218），回写 `78f30eb`；E 呈审 `f4dfdcf` / 实现 `61bda4e`（origin/main）。
+- **as-built 实据**（本轮实读）：A `http-exception.filter.ts` 缺省归一 `'Internal server error'`（原文只入日志）；B `mikro-post.repository.ts` `encodeCursor({id})` + 谓词 `id < cursorId` + `ORDER BY id DESC`；C `outbox-relay.ts` 事务内只 claim、**提交后** `publishAll`（best-effort 不回滚 claim）；D `delete-tenant-permanently.command-handler.ts`（现居 `modules/tenants/…`）`uow.run` 包 ①补删+②删主行；E `Migration20261020150833`（unique+普通索引·二次空 diff·库直查在位）+ `SessionReclaimService`（缺省关·镜像 relay 零依赖）。
+- **偏差登记（如实·不掩盖）**：`babe233` 题为 `docs(plans)` 却承载 A/B/C/D 生产代码——① 提交类型与内容不符；② §3 曾承诺「A–D 逐片独立 commit·可单片 revert」，实为一提交**不可单片 revert**。代码正确性不受影响，回滚粒度与留痕受损。纪律成文：**严禁以 `docs(*)` 承载生产代码**。
+- **验收附带·部署前置（非本片缺陷）**：① E 回收缺省关——生产须显式 `SESSION_RECLAIM_ENABLED=true`，否则无界增长仍在（仅查询已索引化），runbook 待补；② token unique 上线前对已 populate 生产库查重（重复行会阻 `migration:up`，必要时拆「普通→清重→升 unique」）；③ C 为 best-effort in-process 语义，接外部 MQ 时须重审。
+
+## 7. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 起草 | 首版（承四路深勘 + 🔴 逐条代码复核·纯方案·零实现·待审计） |
 | 2026-10-20 | 0.2.0 | A/B/C/D 甲档落码 | 承人类「A/B/C/D 一并甲档 GO」：A #4 500 message 收口·B #3 uuidv7 id 单键游标·C #1 post-commit 投递诚实化·D #2 硬删 ①② 包单 uow.run；各片单测 + gated e2e（B/C/D）真库绿·E 零改动待亲签 |
 | 2026-10-20 | 0.3.0 | E 拆专章实施完成 | 承人「同意」=GO E·亲签迁移：E 拆为 `module-session-index-and-expiry-reclaim` 专章独立落地（F1 索引迁移 unique+普通·二次空 diff·库直查双索引；F2 甲′镜像 relay 零依赖清理+config 两键+单测 5+gated e2e 3真库）·ci(705)/ci:db(gated 11+BA 9)/prod-boot 全绿。至此 P0′ 五片 A/B/C/D/E 均实施·待人类验收 |
+| 2026-10-20 | 0.4.0 | 合批验收人签·结项 | 承人「同意」新增 §6 合批验收呈报（三方对齐实读取证·五片通过结项）；坦白登记 babe233 docs 混提生产代码偏差；部署前置（回收开关/unique 查重/MQ 重审）随批留痕。README 单源同步翻「已验收·结项」 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.3.0 更新：A/B/C/D 甲档实现与验收（`pnpm run ci` + `ci:db` 双绿）；E 已拆专章 `module-session-index-and-expiry-reclaim` 经人亲签后实施完成。状态以 README 索引表为单源。
+正文已于 2026-10-20 / v0.4.0 更新：§6 合批验收呈报入库（人签·五片结项·babe233 混提偏差如实登记·部署前置随批留痕）。状态以 README 索引表为单源。
