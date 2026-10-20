@@ -1,4 +1,4 @@
-import { Member } from '@app/database/mikro/entities';
+import { Member } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import type {

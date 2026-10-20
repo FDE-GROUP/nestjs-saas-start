@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
+import { Account, Session, User } from '@app/database/ba/entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
-import { Account, Session, User } from '@app/database/mikro/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';

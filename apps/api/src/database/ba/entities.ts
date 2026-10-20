@@ -14,6 +14,10 @@ import { defineEntity, p } from '@mikro-orm/core';
  * （供 `@better-auth/test-utils` authFlow 的 additional-fields 一致性用例往返 Date）。
  *
  * 本目录在切片 1 **未接入生产装配**；切片 3 已换接链并接入生产。
+ *
+ * **身份（global-ba-contract-surface）**：本文件是 **Better Auth 契约面存储视图**，非领域模型——列形权威在
+ * BA 上游（字段集与其 schema 逐列对齐），表属主台账见 `table-ownership.ts`（跨 users/auth/tenants 三属主）。
+ * 按表属主拆分会割裂单一契约单位（上游变更永远整组动），如需重议先翻本条与台账。历史：自 `mikro/entities.ts` 迁至 `database/ba/`。
  */
 
 export const User = defineEntity({
@@ -168,17 +172,6 @@ export const MIKRO_ENTITIES = [
   Member,
   Invitation,
   // PIPL 同意台账（schema.ts `consent` 表·C1/FR-7）——切片 3d（S-d4 用户数据导出读面）补入运行时
-  // app-orm。BA 核心 adapter 不路由该模型（不入 `BY_MODEL`），仅供 `em.find(Consent, …, {fields})` 只读投影。
+  // app-orm。BA 核心 adapter 不路由该模型，仅供 `em.find(Consent, …, {fields})` 只读投影。
   Consent,
 ];
-
-/** 模型名（小写）→ entity schema。BA 传下的 `model` 是物理/表名，`modelKey` 是规范模型名。 */
-export const BY_MODEL: Record<string, any> = {
-  user: User,
-  account: Account,
-  session: Session,
-  verification: Verification,
-  organization: Organization,
-  member: Member,
-  invitation: Invitation,
-};

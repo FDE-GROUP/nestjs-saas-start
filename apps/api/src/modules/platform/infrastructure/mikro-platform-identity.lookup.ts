@@ -1,4 +1,4 @@
-import { User } from '@app/database/mikro/entities';
+import { User } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
 import { Inject, Injectable } from '@nestjs/common';

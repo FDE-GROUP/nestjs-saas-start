@@ -1,4 +1,4 @@
-import { Invitation, Member, Organization, User } from '@app/database/mikro/entities';
+import { Invitation, Member, Organization, User } from '@app/database/ba/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';

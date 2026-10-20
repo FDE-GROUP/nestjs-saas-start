@@ -2,7 +2,7 @@ import { authFlowTestSuite, testAdapter } from '@better-auth/test-utils/adapter'
 import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { describe, expect, it } from 'vitest';
-import { initMikroOrm } from './orm';
+import { initMikroOrm } from '../mikro/orm';
 
 /**
  * ORM 修宪案 B · 切片 1 强制验收判据 —— `@better-auth/test-utils` **authFlow 一致性套件**（EXIT=0）。

@@ -29,7 +29,7 @@ export default defineConfig({
     environment: 'node',
     testTimeout: 120_000,
     hookTimeout: 120_000,
-    include: ['apps/api/src/database/mikro/auth-adapter.consistency.spec.ts'],
+    include: ['apps/api/src/database/ba/auth-adapter.consistency.spec.ts'],
     env: {
       NODE_ENV: 'test',
       LOG_LEVEL: 'silent',

@@ -17,8 +17,8 @@ import {
   WORKSPACE_META,
   Workspace,
 } from '../../modules/workspaces/infrastructure/entities/workspace.entity';
+import { MIKRO_ENTITIES } from '../ba/entities';
 import { EVENT_META, Event } from '../eventing/entities/event.entity';
-import { MIKRO_ENTITIES } from './entities';
 
 /**
  * app-Mikro 实体集**装配根**（global-entity-context-placement 切片 B 装配根化：原聚合点

@@ -1,4 +1,4 @@
-import { User as UserEntity } from '@app/database/mikro/entities';
+import { User as UserEntity } from '@app/database/ba/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

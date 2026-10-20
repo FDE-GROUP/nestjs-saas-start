@@ -1,4 +1,4 @@
-import { User } from '@app/database/mikro/entities';
+import { User } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { UserStatus } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import {

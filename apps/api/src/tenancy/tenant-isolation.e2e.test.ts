@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { createValidationPipe } from '@app/common/validation-pipe';
+import { Account, Member, Organization, Session, User } from '@app/database/ba/entities';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
-import { Account, Member, Organization, Session, User } from '@app/database/mikro/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';

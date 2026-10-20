@@ -1,6 +1,6 @@
 import { EntityCaseNamingStrategy } from '@mikro-orm/core';
 import { MikroORM as PostgreSqlMikroORM } from '@mikro-orm/postgresql';
-import { MIKRO_ENTITIES } from './entities';
+import { MIKRO_ENTITIES } from '../ba/entities';
 
 /**
  * ORM 修宪案 B · 切片 1 —— MikroORM v7 初始化（PostgreSqlDriver）。

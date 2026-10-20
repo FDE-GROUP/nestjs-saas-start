@@ -1,6 +1,6 @@
 import 'reflect-metadata';
+import { Organization } from '@app/database/ba/entities';
 import { TransactionScope } from '@app/database/eventing/transaction-scope';
-import { Organization } from '@app/database/mikro/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { decodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';

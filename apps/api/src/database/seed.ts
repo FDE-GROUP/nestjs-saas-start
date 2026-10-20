@@ -9,8 +9,8 @@ import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { organization } from 'better-auth/plugins';
 import { Post } from '../modules/posts/infrastructure/entities/post.entity';
+import { Account, Member, Organization, Session, User, Verification } from './ba/entities';
 import { MIKRO_APP_ENTITIES } from './mikro/app-entities';
-import { Account, Member, Organization, Session, User, Verification } from './mikro/entities';
 import { initMikroOrm } from './mikro/orm';
 
 /**

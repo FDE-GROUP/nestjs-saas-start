@@ -1,4 +1,4 @@
-import { Account, Consent, Session, User } from '@app/database/mikro/entities';
+import { Account, Consent, Session, User } from '@app/database/ba/entities';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { Inject, NotFoundException } from '@nestjs/common';

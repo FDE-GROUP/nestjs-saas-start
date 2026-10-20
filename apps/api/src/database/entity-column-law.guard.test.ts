@@ -8,6 +8,7 @@ import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastruct
 import { USER_STATUS_META } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
+import { MIKRO_ENTITIES } from './ba/entities';
 import {
   BA_CONTRACT_TABLES,
   IMMUTABLE_TABLES,
@@ -15,7 +16,6 @@ import {
 } from './entity-column-law';
 import { EVENT_META } from './eventing/entities/event.entity';
 import type { TableMeta } from './mikro/column-meta';
-import { MIKRO_ENTITIES } from './mikro/entities';
 
 /**
  * 实体列定律守卫（global-entity-column-law 切片 A · 数据级核验·人裁③）。

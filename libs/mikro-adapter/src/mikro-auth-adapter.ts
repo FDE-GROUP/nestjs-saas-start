@@ -31,7 +31,7 @@ import {
  *  - **`generateId:false` 必须不在 BA 配置里**（BA 自生成 nanoid）；session 字段是 `expiresAt` 非 `expiresAt`（1.7.7）。
  *
  * 本适配为 BA 数据面唯一出口（切片 4 已接入生产）；一致性验收见消费应用 `apps/api` 的
- * `database/mikro/auth-adapter.consistency.spec.ts`（本包只出适配器·BA 实体/orm 初始化留 app·防双 SSOT）。
+ * `database/ba/auth-adapter.consistency.spec.ts`（本包只出适配器·BA 实体/orm 初始化留 app·防双 SSOT）。
  */
 
 /** 事务内透传当前 `em`（供子操作复用同一事务连接）。 */

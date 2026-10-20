@@ -1,4 +1,4 @@
-import { Account, Consent, Session, User } from '@app/database/mikro/entities';
+import { Account, Consent, Session, User } from '@app/database/ba/entities';
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { NotFoundException } from '@nestjs/common';
