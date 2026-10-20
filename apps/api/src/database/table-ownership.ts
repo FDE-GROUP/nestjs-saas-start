@@ -26,6 +26,8 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   member: 'tenants',
   invitation: 'tenants',
   userStatus: 'tenants',
+  // global-tenant-entity-reclamation 切片 A：租户户籍自有表（旁表 id=organization.id 同值）
+  tenant: 'tenants',
   // 各业务上下文
   workspace: 'workspaces',
   post: 'posts',

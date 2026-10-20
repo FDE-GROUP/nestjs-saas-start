@@ -25,7 +25,7 @@
         },
         "accessTokenExpiresAt": {
           "name": "accessTokenExpiresAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -59,7 +59,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -161,7 +161,7 @@
         },
         "refreshTokenExpiresAt": {
           "name": "refreshTokenExpiresAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -195,7 +195,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -258,7 +258,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -292,7 +292,7 @@
         },
         "grantedAt": {
           "name": "grantedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -343,7 +343,7 @@
         },
         "revokedAt": {
           "name": "revokedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -360,7 +360,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -425,8 +425,7 @@
           "constraint": false,
           "keyName": "consent_user_purpose_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX consent_user_purpose_idx ON public.consent USING btree (\"userId\", purpose)"
+          "unique": false
         }
       ],
       "checks": [],
@@ -500,7 +499,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -517,7 +516,7 @@
         },
         "dispatchedAt": {
           "name": "dispatchedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -636,7 +635,7 @@
         },
         "occurredAt": {
           "name": "occurredAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -693,8 +692,7 @@
           "constraint": false,
           "keyName": "event_aggregate_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX event_aggregate_idx ON public.event USING btree (\"aggregateType\", \"aggregateId\")"
+          "unique": false
         },
         {
           "columnNames": ["aggregateType", "aggregateId", "version"],
@@ -702,8 +700,7 @@
           "constraint": true,
           "keyName": "event_aggregate_version_key",
           "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX event_aggregate_version_key ON public.event USING btree (\"aggregateType\", \"aggregateId\", version)"
+          "unique": true
         },
         {
           "columnNames": ["dispatchedAt"],
@@ -711,8 +708,7 @@
           "constraint": false,
           "keyName": "event_dispatched_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX event_dispatched_idx ON public.event USING btree (\"dispatchedAt\")"
+          "unique": false
         },
         {
           "columnNames": ["eventId"],
@@ -720,8 +716,7 @@
           "constraint": true,
           "keyName": "event_event_id_key",
           "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX event_event_id_key ON public.event USING btree (\"eventId\")"
+          "unique": true
         },
         {
           "columnNames": ["id"],
@@ -743,7 +738,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -777,7 +772,7 @@
         },
         "expiresAt": {
           "name": "expiresAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -885,8 +880,7 @@
           "constraint": false,
           "keyName": "invitation_org_email_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX invitation_org_email_idx ON public.invitation USING btree (\"organizationId\", email)"
+          "unique": false
         },
         {
           "columnNames": ["id"],
@@ -925,7 +919,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1016,8 +1010,7 @@
           "constraint": true,
           "keyName": "member_org_user_idx",
           "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX member_org_user_idx ON public.member USING btree (\"organizationId\", \"userId\")"
+          "unique": true
         },
         {
           "columnNames": ["id"],
@@ -1056,7 +1049,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1158,7 +1151,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1212,7 +1205,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1297,7 +1290,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1337,8 +1330,7 @@
           "constraint": false,
           "keyName": "post_organization_created_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX post_organization_created_idx ON public.post USING btree (\"organizationId\", \"createdAt\")"
+          "unique": false
         },
         {
           "columnNames": ["organizationId", "workspaceId"],
@@ -1346,8 +1338,7 @@
           "constraint": false,
           "keyName": "post_organization_workspace_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX post_organization_workspace_idx ON public.post USING btree (\"organizationId\", \"workspaceId\")"
+          "unique": false
         },
         {
           "columnNames": ["id"],
@@ -1403,7 +1394,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1420,7 +1411,7 @@
         },
         "expiresAt": {
           "name": "expiresAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1505,7 +1496,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1580,12 +1571,115 @@
       "comment": null
     },
     {
+      "name": "tenant",
+      "schema": "public",
+      "columns": {
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": ["id"],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tenant_pkey",
+          "primary": true,
+          "unique": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "tenant_status_check",
+          "expression": "status IN ('pending_approval', 'active', 'suspended', 'deleted')",
+          "definition": "check (status IN ('pending_approval', 'active', 'suspended', 'deleted'))"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "tenant_id_foreign": {
+          "columnNames": ["id"],
+          "constraintName": "tenant_id_foreign",
+          "localTableName": "public.tenant",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.organization",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "tenant_role",
       "schema": "public",
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1687,7 +1781,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1710,8 +1804,7 @@
           "constraint": true,
           "keyName": "tenant_role_org_key_idx",
           "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX tenant_role_org_key_idx ON public.tenant_role USING btree (\"organizationId\", key)"
+          "unique": true
         },
         {
           "columnNames": ["id"],
@@ -1810,7 +1903,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -1884,8 +1977,7 @@
           "constraint": false,
           "keyName": "tenant_role_audit_org_created_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX tenant_role_audit_org_created_idx ON public.tenant_role_audit USING btree (\"organizationId\", \"createdAt\")"
+          "unique": false
         },
         {
           "columnNames": ["id"],
@@ -1958,7 +2050,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2040,8 +2132,7 @@
           "constraint": false,
           "keyName": "tenant_role_grant_role_subject_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX tenant_role_grant_role_subject_idx ON public.tenant_role_grant USING btree (\"roleId\", subject)"
+          "unique": false
         }
       ],
       "checks": [],
@@ -2081,7 +2172,7 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2115,7 +2206,7 @@
         },
         "periodEnd": {
           "name": "periodEnd",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2132,7 +2223,7 @@
         },
         "periodStart": {
           "name": "periodStart",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2285,7 +2376,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2316,8 +2407,7 @@
           "constraint": false,
           "keyName": "tenant_subscription_tenant_period_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX tenant_subscription_tenant_period_idx ON public.tenant_subscription USING btree (\"tenantId\", \"periodStart\")"
+          "unique": false
         },
         {
           "columnNames": ["tenantId", "status"],
@@ -2325,8 +2415,7 @@
           "constraint": false,
           "keyName": "tenant_subscription_tenant_status_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX tenant_subscription_tenant_status_idx ON public.tenant_subscription USING btree (\"tenantId\", status)"
+          "unique": false
         }
       ],
       "checks": [],
@@ -2349,7 +2438,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2549,12 +2638,12 @@
           "comment": null,
           "collation": null,
           "enumItems": ["USER", "ADMIN"],
-          "mappedType": "unknown",
+          "mappedType": "enum",
           "nativeEnumName": "role"
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2599,7 +2688,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2650,7 +2739,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2690,8 +2779,7 @@
           "constraint": true,
           "keyName": "user_status_pkey",
           "primary": true,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX user_status_pkey ON public.user_status USING btree (\"userId\")"
+          "unique": true
         }
       ],
       "checks": [],
@@ -2714,7 +2802,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2731,7 +2819,7 @@
         },
         "expiresAt": {
           "name": "expiresAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2782,7 +2870,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2836,7 +2924,7 @@
       "columns": {
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2938,7 +3026,7 @@
         },
         "updatedAt": {
           "name": "updatedAt",
-          "type": "timestamp(6)",
+          "type": "timestamp",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -2961,8 +3049,7 @@
           "constraint": false,
           "keyName": "workspace_org_owner_idx",
           "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX workspace_org_owner_idx ON public.workspace USING btree (\"organizationId\", \"ownerId\")"
+          "unique": false
         },
         {
           "columnNames": ["organizationId", "slug"],
@@ -2970,8 +3057,7 @@
           "constraint": true,
           "keyName": "workspace_org_slug_idx",
           "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX workspace_org_slug_idx ON public.workspace USING btree (\"organizationId\", slug)"
+          "unique": true
         },
         {
           "columnNames": ["id"],

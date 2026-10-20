@@ -5,6 +5,7 @@ import {
   TENANT_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { TENANT_META } from '../../../modules/tenants/infrastructure/entities/tenant.entity';
 import { USER_STATUS_META } from '../../../modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
@@ -214,7 +215,10 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   User,
 });
 
-/** 迁移基线用的全表忠实实体集（16 表·与 schema 逐列对齐）。 */
+// global-tenant-entity-reclamation 切片 A：租户户籍自有表（旁表同值 PK·status 真列+CHECK）。
+export const Tenant = buildMigrationEntity(TENANT_META, { Organization });
+
+/** 迁移基线用的全表忠实实体集（17 表·与 schema 逐列对齐）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -232,4 +236,5 @@ export const MIKRO_MIGRATION_ENTITIES = [
   TenantRole,
   TenantRoleGrant,
   TenantRoleAudit,
+  Tenant,
 ];

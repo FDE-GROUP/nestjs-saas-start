@@ -9,6 +9,7 @@ import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { Tenant } from '../../modules/tenants/infrastructure/entities/tenant.entity';
 import {
   USER_STATUS_META,
   UserStatus,
@@ -53,4 +54,6 @@ export const MIKRO_APP_ENTITIES = [
   ...MIKRO_ENTITIES,
   ...MIKRO_FOUR_TABLE_ENTITIES,
   ...MIKRO_RBAC_TABLE_ENTITIES,
+  // global-tenant-entity-reclamation 切片 A：租户户籍自有表（TENANT_META 同源双变体）。
+  Tenant,
 ];
