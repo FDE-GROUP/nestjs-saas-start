@@ -40,7 +40,7 @@
 
 ## 特性一览
 
-- 六边形架构（ports & adapters）+ 垂直切片的模块化单体
+- Clean Architecture（依赖规则向内·边界以 ports & adapters 落地）+ 垂直切片的模块化单体
 - 函数式领域内核：核心业务规则以纯函数与不可变数据表达，副作用隔离在边缘
 - 多租户：全局用户 + membership 多对多、两级边界（租户 → 工作区）、行级隔离
 - 三层权限：平台级 / 租户级 / 工作区级 RBAC，统一能力（ability）裁决
@@ -54,7 +54,7 @@
 
 - **运行时**：Node LTS ≥ 22（ESM，`"type": "module"`；开发经 `nest start --watch`，生产运行 SWC 编译产物）+ pnpm（workspace 包管理）
 - **框架**：NestJS 12 + Fastify 5
-- **架构范式**：六边形架构（Clean Architecture 依赖规则）垂直切片 + 函数式领域内核；CQRS 按需（简单上下文直接调用服务即为合法形态），领域事件用于跨上下文集成与审计
+- **架构范式**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + 函数式领域内核；CQRS 按需（简单上下文直接调用服务即为合法形态），领域事件用于跨上下文集成与审计
 - **数据库 / ORM**：PostgreSQL + MikroORM（迁移与种子）
 - **认证**：Better Auth（邮箱 + OAuth、会话 / CSRF）
 - **校验 / 契约**：zod（经 Nest 官方 standard-schema 集成 `@Body/@Param/@Query({ schema })`、`@SerializeOptions({ schema })`），跨端共享契约单源居 `libs/contracts`

@@ -2,7 +2,7 @@
 
 > 定位: **讲解性指南**（非规范）| 规范性单源: [`docs/specs/architecture.md`](./specs/architecture.md) §核心设计原则（P1–P4）——本文是 P1 的展开阐述，与规范冲突时以规范为准
 > 缘起: 架构精度修宪（2026-10-20 · [`global-architecture-functional-core-amendment`](./plans/global-architecture-functional-core-amendment.md)）——本文沉淀其论证、判据与常见问答，供模板使用者在自己的上下文里复制该范式
-> 受众: 人 + Agent | 版本: 0.3.0（2026-10-21）
+> 受众: 人 + Agent | 版本: 0.4.0（2026-10-21）
 
 ---
 
@@ -55,7 +55,7 @@ const result = await this.uow.run(async () => {
 2. **代码自己投过票**：仓内质量最高的领域代码（tenants 生命周期状态机）**自发采用**了纯函数 + result-union + 服务编排，从未采用聚合风格。
 3. **唯一按战术 DDD 建的实体是死代码**：User 聚合的 `register`/`pullDomainEvents`/`changeEmail` 生产零调用（注册走 Better Auth），连同其事件管道、no-op dispatcher、孤儿 Email VO 与 AggregateRoot 基类一并删除（修宪 S1）。
 
-结论：**不是放弃纪律，是停止表演**——宣称从「Clean Architecture + DDD + CQRS」精度化为「六边形（= Clean 同族依赖规则）+ 函数式内核 + CQRS 按需」。
+结论：**不是放弃纪律，是停止表演**——宣称从「Clean Architecture + DDD + CQRS」精度化为「以 Clean Architecture（同族亦称六边形）为纲 + 函数式内核 + CQRS 按需」。
 
 ## 4. 结构：内核/外壳分工
 
@@ -110,7 +110,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 ## 8. 与相邻概念的关系（四问四答）
 
-**Q：放弃了 Clean Architecture 吗？** 没有。六边形与 Clean 是同一依赖规则的两个名字（Uncle Bob 自述 Clean = Hexagonal + Onion 的综合重述）；端口-适配器、依赖规则、纯度守卫全保留，改的只是措辞与本仓库代码词汇（port/adapter）的对齐。
+**Q：放弃了 Clean Architecture 吗？** 没有。本仓一直以 Clean Architecture（依赖规则向内）为纲；六边形（Hexagonal）是同一依赖规则的同族别名（Uncle Bob 自述 Clean = Hexagonal + Onion 的综合重述）；端口-适配器、依赖规则、纯度守卫全保留，改的只是措辞与本仓库代码词汇（port/adapter）的对齐。
 
 **Q：放弃了 DDD 吗？** 放弃的是**聚合优先的战术 DDD 与全覆盖 CQRS 两个宣称**（二者均非 Clean Architecture 的要求）；保留的是战略层——限界上下文、上下文间经领域事件集成（P3）、 ubiquitous language 在治理域的体现。实体的三个职责被拆走：数据形状 → 不可变 record；业务规则 → 纯函数；不变量防护 → 按需 VO（P2）。（实体教义一期·2026-10-21 已把"数据形状"进一步分为**领域态契约**与**数据实体**两层，见 §9。）
 
@@ -172,7 +172,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 |---|---|---|
 | 纯核 + 副作用推到边界的整体风格 | Functional Core, Imperative Shell /《Boundaries》 | Gary Bernhardt · 2012（RubyConf '12） |
 | 同一风格的 F# 体系化 +「pits of success」 | 同名演讲 · Type-Driven Design | Scott Wlaschin |
-| 依赖规则向内 / 端口-适配器 | Hexagonal（Ports & Adapters）· Clean Architecture · Onion | Alistair Cockburn · 2005；R. C. Martin；Jeffrey Palermo · 2008 |
+| 依赖规则向内 / 端口-适配器 | Clean Architecture · Hexagonal（Ports & Adapters）· Onion | R. C. Martin；Alistair Cockburn · 2005；Jeffrey Palermo · 2008 |
 | 用返回值而非异常表达失败（result-union） | Railway Oriented Programming | Scott Wlaschin · 约 2014 |
 | 边界解析成「构造即合法」类型（VO 构造校验 + 边界 zod） | 「Parse, Don't Validate」 | Alexis King · 2019 |
 | 判别联合 = 代数数据类型（sum type） | Algebraic Data Types | ML / Haskell 学派（通用·无单一作者） |
@@ -183,7 +183,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 - **内核的写法**属**函数式编程范式（FP）**——不可变数据 + 纯函数（引用透明 / total）+ 代数数据类型（判别联合）+ 声明式；刻意规避「可变 behavior-box」的经典 OOP 聚合风格（近数据导向/FP，而非消息传递式 OO）。
 - **但整体是多范式混合**：FP 核 + 命令式/OO 壳（`Quota`/`Post` 用 class 承载却按 FP 方式使用）。TypeScript 本身即多范式语言，本范式做的是**刻意的「范式分界」**——边界用命令式、内核只用 FP 子集。
-- **三层别混称**：`FC-IS`/六边形是**架构风格/组织原则**（不是「编程范式」）；result-union/VO/Ports & Adapters 是**设计模式/惯用法**；「纯/不可变/代数类型」才是**编程范式（FP）**层面的事。「投影镜射」的**组合**无单独命名范式·属工程综合。
+- **三层别混称**：`FC-IS`/Clean Architecture（六边形为其同族别名）是**架构风格/组织原则**（不是「编程范式」）；result-union/VO/Ports & Adapters 是**设计模式/惯用法**；「纯/不可变/代数类型」才是**编程范式（FP）**层面的事。「投影镜射」的**组合**无单独命名范式·属工程综合。
 
 ---
 
@@ -194,3 +194,4 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 | 2026-10-20 | 0.1.0 | 首版 | 架构精度修宪的论证/判据/地图/FAQ 沉淀成讲解指南（规范单源仍居 architecture.md） |
 | 2026-10-21 | 0.2.0 | 实体教义一期 | 新增 §9「实体教义与三映射（投影镜射）」讲解、订正 §8"数据形状"叙事；原 §9–12 顺延为 §10–13 |
 | 2026-10-21 | 0.3.0 | 谱系溯源 + 范式坐标 | 新增 §14「参考谱系（母本出处·带作者年份）」与范式坐标问答（回应「属哪种编程范式」）·纯讲解补齐不动规范 |
+| 2026-10-21 | 0.4.0 | 首要术语翻正回 Clean Architecture 为纲（回应人澄清「强调 CA 而非六边形」） | §3 结论、§8 FAQ、§14 谱系表与范式坐标——「六边形」由首要名降为同族别名；ports & adapters 保留为边界机制·纯措辞不动规范 |
