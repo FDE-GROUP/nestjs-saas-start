@@ -9,6 +9,12 @@ import {
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
 import { Inject, Injectable } from '@nestjs/common';
+import { SYSTEM_ROLE_SEED } from '../../domain/constants/system-role-seed';
+import {
+  canonicalConditions,
+  isValidGrantConditions,
+  isValidRoleKey,
+} from '../../domain/policies/tenant-rbac.policy';
 import type {
   TenantRbacRepository,
   TenantRoleAuditAction,
@@ -19,12 +25,6 @@ import type {
   TenantRoleRevokeResult,
   TenantRoleView,
 } from '../../domain/repositories/tenant-rbac.repository';
-import { SYSTEM_ROLE_SEED } from '../../domain/system-role-seed';
-import {
-  canonicalConditions,
-  isValidGrantConditions,
-  isValidRoleKey,
-} from '../../domain/tenant-rbac-policy';
 
 /**
  * `TenantRbacRepository` 的 MikroORM 适配（module-rbac-dynamic-roles S1·授权事实 SSOT 的读写通道）。

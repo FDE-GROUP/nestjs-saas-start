@@ -2,7 +2,7 @@ import { ConfigService } from '@app/config/config.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { selectStorageProvider } from '../domain/policies/provider-selection.policy';
-import { evaluateUpload } from '../domain/policies/upload-policy';
+import { evaluateUpload } from '../domain/policies/upload.policy';
 import type { StorageProvider, UploadedFileResult } from '../domain/ports/storage-provider.port';
 
 /**

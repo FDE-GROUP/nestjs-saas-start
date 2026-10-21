@@ -5,7 +5,7 @@
  * **DB 是授权事实 SSOT**（`tenant_role`/`tenant_role_grant`·行式 grant·热改生效），
  * **代码词汇表是语言 SSOT**（subject/action 编译期保留·@Can 类型域·新资源随代码发布入表），
  * **CASL rules 是运行时投影**（app 侧 checker 按租户从 DB grant 行投影）。
- * 旧 `TENANT_RULES` 矩阵已删、内容迁为静态 seed 死数据（app 侧 `system-role-seed.ts`·
+ * 旧 `TENANT_RULES` 矩阵已删、内容迁为静态 seed 死数据（app 侧 `constants/system-role-seed.ts`·
  * lazy-ensure 初始化三系统角色），代码侧不再承载任何授权事实。「禁散点特判 / 不实现平行
  * 权限矩阵」条款语义不变（真源从本文件迁到 DB grant 行；module-rbac-casl「表是 SSOT」
  * 旧裁由该片 §4.1 互引订正）。

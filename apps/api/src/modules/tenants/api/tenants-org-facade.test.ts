@@ -1,5 +1,5 @@
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
-import type { RoleAssignabilityReader } from '@app/modules/authorization/domain/role-assignability.port';
+import type { RoleAssignabilityReader } from '@app/modules/authorization/domain/ports/role-assignability.port';
 import { BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { TenantsOrgAdminController } from './tenants-org-admin.controller';

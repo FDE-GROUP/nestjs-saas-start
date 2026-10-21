@@ -6,7 +6,7 @@ import { buildTenantAbility, type TenantAbilityGrant } from './casl-ability.fact
  * grant 行 → CASL ability 纯投影锁测（module-rbac-casl §2.5 换形 · module-rbac-dynamic-roles §2.3）。
  *
  * 旧「buildTenantAbility ↔ TENANT_RULES 逐格等价」随丙裁（矩阵删净）迁至
- * `system-role-seed.test.ts`（seed ↔ 旧矩阵对拍）；本测只锁**投影机制**：
+ * `constants/system-role-seed.test.ts`（seed ↔ 旧矩阵对拍）；本测只锁**投影机制**：
  * 行内 can、行外 cannot、conditions 匹配、空输入 fail-closed——投影不含任何权限知识。
  */
 

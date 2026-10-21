@@ -7,7 +7,7 @@ import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/t
  *  - 读侧供 checker 投影（`findGrants` · S2）与存在性校验（`listRoles` · S3 DTO 改形）；
  *  - 写侧供管理门面（create/rename/delete/grant/revoke · S3），每次变更同通道落审计行（甲裁）。
  * 返回码用字面量 union（不借 HTTP 异常表达领域事实·应用层负责转译）；conditions 形状
- * 校验在 domain 策略纯函数（`tenant-rbac-policy.ts`），适配器写前必过闸。
+ * 校验在 domain 策略纯函数（`policies/tenant-rbac.policy.ts`），适配器写前必过闸。
  */
 export const TENANT_RBAC_REPOSITORY = Symbol('TENANT_RBAC_REPOSITORY');
 

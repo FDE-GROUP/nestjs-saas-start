@@ -13,13 +13,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { RoleAssignabilityReader } from '../domain/ports/role-assignability.port';
 import {
   TENANT_RBAC_REPOSITORY,
   type TenantRbacRepository,
   type TenantRoleGrantView,
   type TenantRoleView,
 } from '../domain/repositories/tenant-rbac.repository';
-import type { RoleAssignabilityReader } from '../domain/role-assignability.port';
 
 /**
  * 角色/授权**管理门面应用服务**（module-rbac-dynamic-roles §2.5/§2.6·S3）。

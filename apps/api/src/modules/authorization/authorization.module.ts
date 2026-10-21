@@ -6,8 +6,8 @@ import {
 import { Global, Module } from '@nestjs/common';
 import { AuthorizationAdminController } from './api/authorization-admin.controller';
 import { TenantRbacAdminService } from './application/tenant-rbac-admin.service';
+import { ROLE_ASSIGNABILITY_READER } from './domain/ports/role-assignability.port';
 import { TENANT_RBAC_REPOSITORY } from './domain/repositories/tenant-rbac.repository';
-import { ROLE_ASSIGNABILITY_READER } from './domain/role-assignability.port';
 import { CaslTenantPermissionChecker } from './infrastructure/casl-tenant-permission.checker';
 import { MikroTenantRbacRepository } from './infrastructure/repositories/mikro-tenant-rbac.repository';
 

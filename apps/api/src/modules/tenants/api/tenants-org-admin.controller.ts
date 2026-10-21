@@ -3,7 +3,7 @@ import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import {
   ROLE_ASSIGNABILITY_READER,
   type RoleAssignabilityReader,
-} from '@app/modules/authorization/domain/role-assignability.port';
+} from '@app/modules/authorization/domain/ports/role-assignability.port';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';

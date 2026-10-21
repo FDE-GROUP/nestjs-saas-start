@@ -4,7 +4,7 @@ import {
   isReservedRoleKey,
   isValidGrantConditions,
   isValidRoleKey,
-} from './tenant-rbac-policy';
+} from './tenant-rbac.policy';
 
 /**
  * RBAC 写侧策略闸单测（module-rbac-dynamic-roles S1·conditions 白名单判据）。

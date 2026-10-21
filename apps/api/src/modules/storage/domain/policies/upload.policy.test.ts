@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateUpload } from './upload-policy';
+import { evaluateUpload } from './upload.policy';
 
 /**
  * 上传校验策略纯单测（分层对齐·domain 零框架依赖）。
