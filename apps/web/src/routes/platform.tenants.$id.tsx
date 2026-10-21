@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ErrorPanel, SectionHeading } from '../components/panels';
 import { StatusBadge, TenantActions } from '../components/platform-tenants';
@@ -46,6 +46,7 @@ export const Route = createFileRoute('/platform/tenants/$id')({
 function TenantDetailPage() {
   const result = Route.useLoaderData();
   const action = useAction();
+  const navigate = useNavigate();
   // 硬删不可逆：需键入 slug 才解禁（裁③甲·后端另要求先软删·双闸）。
   const [hardInput, setHardInput] = useState('');
   const [hardHint, setHardHint] = useState<string | null>(null);
@@ -77,6 +78,33 @@ function TenantDetailPage() {
           ? api.PATCH('/api/v1/platform/tenants/{id}/suspend', { params: { path: { id } } })
           : api.PATCH('/api/v1/platform/tenants/{id}/resume', { params: { path: { id } } }),
     });
+  }
+
+  // 审批通过（epic-02 §2.2 · 非破坏）：pending→active ·无确认 · 成功经 action.run 里 router.invalidate() 重载详情。
+  async function doApprove() {
+    await action.run({
+      path: `/api/v1/tenants/applications/${id}/approve`,
+      method: 'POST',
+      scope: 'platform.tenant.approve',
+      successMessage: '已通过审批（pending→active）',
+      thunk: () =>
+        api.POST('/api/v1/tenants/applications/{id}/approve', { params: { path: { id } } }),
+    });
+  }
+
+  // 驳回（epic-02 §2.3 · reject=物理硬删·不可逆）：确认后才发 · 成功后 org 行消失→跳列表避免详情 404。
+  async function doReject() {
+    if (!window.confirm('驳回将不可逆硬删该待审批租户（reject=物理删除 · FK 级联），确认？'))
+      return;
+    const ok = await action.run({
+      path: `/api/v1/tenants/applications/${id}/reject`,
+      method: 'POST',
+      scope: 'platform.tenant.reject',
+      successMessage: '已驳回并硬删除',
+      thunk: () =>
+        api.POST('/api/v1/tenants/applications/{id}/reject', { params: { path: { id } } }),
+    });
+    if (ok) await navigate({ to: '/platform/tenants', search: { offset: 0 } });
   }
 
   async function doSoftDelete() {
@@ -179,6 +207,8 @@ function TenantDetailPage() {
         <TenantActions
           status={tenant.status}
           pending={action.pending}
+          onApprove={doApprove}
+          onReject={doReject}
           onSuspend={() =>
             doTransition(
               'suspend',

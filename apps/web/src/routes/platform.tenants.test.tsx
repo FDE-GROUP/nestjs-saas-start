@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { components } from '@saas/api-client';
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { actionEnabled, StatusBadge, TenantActions } from '../components/platform-tenants';
 import { TenantsListView } from './platform.tenants';
 
@@ -64,8 +64,10 @@ describe('StatusBadge（四态文案映射）', () => {
 });
 
 describe('actionEnabled（镜像 TRANSITIONS 状态机矩阵）', () => {
-  it('active：可暂停 / 可软删 · 不可恢复 / 不可硬删', () => {
+  it('active：可暂停 / 可软删 · 不可恢复 / 不可硬删 / 不可审批驳回', () => {
     expect(actionEnabled('active')).toEqual({
+      approve: false,
+      reject: false,
       suspend: true,
       resume: false,
       softDelete: true,
@@ -74,6 +76,8 @@ describe('actionEnabled（镜像 TRANSITIONS 状态机矩阵）', () => {
   });
   it('suspended：可恢复 / 可软删 · 不可暂停 / 不可硬删', () => {
     expect(actionEnabled('suspended')).toEqual({
+      approve: false,
+      reject: false,
       suspend: false,
       resume: true,
       softDelete: true,
@@ -82,14 +86,18 @@ describe('actionEnabled（镜像 TRANSITIONS 状态机矩阵）', () => {
   });
   it('deleted 终态：仅可硬删', () => {
     expect(actionEnabled('deleted')).toEqual({
+      approve: false,
+      reject: false,
       suspend: false,
       resume: false,
       softDelete: false,
       permanentDelete: true,
     });
   });
-  it('pending_approval：仅可软删（尚无生命周期动作）', () => {
+  it('pending_approval：可审批 / 可驳回 · 不可其它生命周期动作', () => {
     expect(actionEnabled('pending_approval')).toEqual({
+      approve: true,
+      reject: true,
       suspend: false,
       resume: false,
       softDelete: true,
@@ -99,11 +107,13 @@ describe('actionEnabled（镜像 TRANSITIONS 状态机矩阵）', () => {
 });
 
 describe('TenantActions（按钮 disable 矩阵 · 纯展示）', () => {
-  it('active 态：暂停/软删可用，恢复/硬删禁用', () => {
+  it('active 态：暂停/软删可用，恢复/硬删/审批/驳回禁用', () => {
     render(
       <TenantActions
         status="active"
         pending={false}
+        onApprove={noop}
+        onReject={noop}
         onSuspend={noop}
         onResume={noop}
         onSoftDelete={noop}
@@ -115,13 +125,44 @@ describe('TenantActions（按钮 disable 矩阵 · 纯展示）', () => {
     expect(btn('软删除').disabled).toBe(false);
     expect(btn('恢复').disabled).toBe(true);
     expect(btn('硬删除').disabled).toBe(true);
+    expect(btn('审批通过').disabled).toBe(true);
+    expect(btn('驳回申请').disabled).toBe(true);
+  });
+
+  it('pending_approval 态：审批/驳回可用且回调触发', () => {
+    const onApprove = vi.fn();
+    const onReject = vi.fn();
+    render(
+      <TenantActions
+        status="pending_approval"
+        pending={false}
+        onApprove={onApprove}
+        onReject={onReject}
+        onSuspend={noop}
+        onResume={noop}
+        onSoftDelete={noop}
+        onPermanentDelete={noop}
+      />,
+    );
+    const approve = screen.getByRole('button', {
+      name: '审批通过',
+    }) as HTMLButtonElement;
+    const reject = screen.getByRole('button', { name: '驳回申请' }) as HTMLButtonElement;
+    expect(approve.disabled).toBe(false);
+    expect(reject.disabled).toBe(false);
+    fireEvent.click(approve);
+    fireEvent.click(reject);
+    expect(onApprove).toHaveBeenCalledTimes(1);
+    expect(onReject).toHaveBeenCalledTimes(1);
   });
 
   it('pending=true → 全部禁用（防重复提交）', () => {
     render(
       <TenantActions
-        status="active"
+        status="pending_approval"
         pending
+        onApprove={noop}
+        onReject={noop}
         onSuspend={noop}
         onResume={noop}
         onSoftDelete={noop}

@@ -33,16 +33,22 @@ export function StatusBadge({ status }: { status: TenantStatus }) {
 }
 
 /**
- * 按当前状态判定四类治理动作是否合法（镜像 TRANSITIONS）：
+ * 按当前状态判定各类治理动作是否合法（镜像 TRANSITIONS）：
+ * approve/reject 仅 pending_approval（审批通过·驳回=物理硬删申请）·
  * suspend 仅 active · resume 仅 suspended · 软删非 deleted · 硬删仅 deleted 终态。
  */
 export function actionEnabled(status: TenantStatus): {
+  approve: boolean;
+  reject: boolean;
   suspend: boolean;
   resume: boolean;
   softDelete: boolean;
   permanentDelete: boolean;
 } {
+  const pendingApproval = status === 'pending_approval';
   return {
+    approve: pendingApproval,
+    reject: pendingApproval,
     suspend: status === 'active',
     resume: status === 'suspended',
     softDelete: status !== 'deleted',
@@ -62,6 +68,8 @@ const DANGER =
 export function TenantActions({
   status,
   pending,
+  onApprove,
+  onReject,
   onSuspend,
   onResume,
   onSoftDelete,
@@ -69,6 +77,8 @@ export function TenantActions({
 }: {
   status: TenantStatus;
   pending: boolean;
+  onApprove: () => void;
+  onReject: () => void;
   onSuspend: () => void;
   onResume: () => void;
   onSoftDelete: () => void;
@@ -77,6 +87,24 @@ export function TenantActions({
   const en = actionEnabled(status);
   return (
     <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        disabled={!en.approve || pending}
+        title={en.approve ? '审批通过（pending→active）' : '当前状态不允许审批'}
+        onClick={onApprove}
+        className={BTN}
+      >
+        审批通过
+      </button>
+      <button
+        type="button"
+        disabled={!en.reject || pending}
+        title={en.reject ? '驳回申请（不可逆硬删待审批租户）' : '仅待审批态可驳回'}
+        onClick={onReject}
+        className={DANGER}
+      >
+        驳回申请
+      </button>
       <button
         type="button"
         disabled={!en.suspend || pending}
