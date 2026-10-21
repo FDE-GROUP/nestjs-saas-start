@@ -167,7 +167,7 @@ Within a context's `domain/`, files MUST live in one of the canonical sub-direct
 | `policies/` | pure policy/decision functions | `.policy.ts` |
 | `constants/` | seed / vocabulary / pure constant tables | by name |
 
-Tests are co-located with their subject (same sub-dir, `<name>.test.ts`). A sub-dir is present only when the context has content for it (see §Layer-shape). This law is purely intra-context: relocating a file inside its own `domain/` never changes the vertical-slice boundary, and `domain/` still must not import `infrastructure/`.
+Tests are co-located with their subject (same sub-dir, `<name>.test.ts`). A sub-dir is present only when the context has content for it (see §Layer-shape). This law is purely intra-context: relocating a file inside its own `domain/` never changes the vertical-slice boundary, and `domain/` still must not import `infrastructure/`. This law is machine-enforced by the `verify:domain-layout` identity gate wired into `pnpm run ci` (full + quick) and `pre-push`: any `.ts` sitting at a `domain/` root or in a non-canonical sub-dir fails loud. Scope is `apps/api/*/domain` only — `libs/core` follows a different layout and is excluded.
 
 ### Entity Doctrine: domain entity vs data entity
 

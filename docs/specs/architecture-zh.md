@@ -159,7 +159,7 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 | `policies/` | 纯策略/裁决函数 | `.policy.ts` |
 | `constants/` | seed / 词表 / 纯常量表 | 按名 |
 
-测试与被测件共位（同子目录、`<name>.test.ts`）。某子目录仅当上下文有其内容时才存在（见 §层形）。本法则纯为上下文内之事：把文件在其自身 `domain/` 内搬移绝不改变垂直切片边界，且 `domain/` 仍绝不 import `infrastructure/`。
+测试与被测件共位（同子目录、`<name>.test.ts`）。某子目录仅当上下文有其内容时才存在（见 §层形）。本法则纯为上下文内之事：把文件在其自身 `domain/` 内搬移绝不改变垂直切片边界，且 `domain/` 仍绝不 import `infrastructure/`。本法则由 `verify:domain-layout` 恒等闸机制强制（接入 `pnpm run ci` full+quick 与 `pre-push`）：任何躺在 `domain/` 根或落在非规范子目录的 `.ts` 即 fail-loud。范围仅 `apps/api/*/domain`——`libs/core` 自有布局、不纳入。
 
 ### 实体教义：领域实体 vs 数据实体
 

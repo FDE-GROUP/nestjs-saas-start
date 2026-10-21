@@ -88,7 +88,7 @@
 - **G1 执行**：authorization 3 根散件归位——`policies/tenant-rbac.policy.ts`、`ports/role-assignability.port.ts`、`constants/system-role-seed.ts`（+ 共位测试随迁）。
 - **G2 执行**：`.repository`（聚合持久化端口）/`.port`（其它出站端口）/`.policy`（纯策略）命名裁定已写入宪法表。
 - **后缀标准化（storage）**：`policies/upload-policy.ts` → `policies/upload.policy.ts`（+ 测试），全仓 `-policy.ts`  outliers 归一到点分式。
-- **未做**：清单恒等 CI 闸（§4 标注的高危项·本阶段有意不做）；libs/core 不在范围（另规则）。G3/G4/G5 维持现状。
+- **清单恒等 CI 闸（已做·2026-10-21·另案签核 `domain_布局恒等闸`）**：新增 `scripts/verify-domain-layout.ts`（纯核 `findViolationsFromRelPaths` + 三向自测），接入 `pnpm run ci` full/quick 与 `pre-push`——扫 `apps/api/*/domain` 全部 `.ts`，躺根 / 非规范子目录即 fail-loud（基线 6 上下文 · 25 件全绿·造红已验）。libs/core 不在范围（另规则·防误红）。G3/G4/G5 维持现状。
 
 ---
 
@@ -111,3 +111,4 @@ for ctx in $(find apps/api/src/modules -maxdepth 1 -mindepth 1 -type d); do
 |------|------|----------|----------|
 | 2026-10-21 | 0.1.0 | 相对剥离形态①摸底 | 首版：apps/api/*/domain 内核件识别清单 + 布局一致性矩阵 + 归位缺口（G1–G5）+ 形态②候选范围与风险/ROI 判定 |
 | 2026-10-21 | 0.2.0 | 形态②执行收口 | 新增 §5：canonical 子目录法入宪法、G1（authorization 3 件归位）、G2（命名裁定）、storage 后缀标准化；清单表保留作形态①摸底快照不改史 |
+| 2026-10-21 | 0.3.0 | 防再漂移机制化 | §5 「未做→已做」：`domain_布局恒等闸` 方案落地 `verify:domain-layout` 恒等闸（纯目录扫描·fail-loud·入 ci full/quick + pre-push），将子目录法从人工自觉升格为机制强制 |
