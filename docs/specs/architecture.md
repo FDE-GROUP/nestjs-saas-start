@@ -4,6 +4,14 @@
 
 ## Core Design Principles
 
+> **Positioning — Four Pillars (宪法定位 · 2026-10-21 人澄清并成文；每句均映射到既有强制机制，不作姿态性宣称):**
+> 1. **Clean Architecture is the floor** — the dependency rule is executable infrastructure, not a slogan: core-purity guard (DI minimal surface + zero HTTP inside core), table-ownership guard (ledger↔path full identity), fallow 0 boundary violations, OpenAPI three-way drift gate, Entity Column Law identity. Details in the bullets + §Appendix below.
+> 2. **DDD taken in proportion** — the strategic layer (bounded contexts, event-based cross-context integration) is fully kept; the tactical layer is trimmed by recorded cost/benefit judgments (aggregate-first + full-cover CQRS were removed; state machines / `Quota` VO / projection doctrine grew back by adjudication). Judgments are on the record — see `functional-core.md` and the P2/P4 bullets below.
+> 3. **Functional-core three-mapping is the breakthrough** — the consistency target is a **projection** `domain-state ⊆ (data-entity ≡ table)` (not a naive 1:1), enforced by a triple (migration-diff + Column Law / pure total `fromRow` single seam / compile-time `PostState↔PostEntity` structural lock in `infrastructure/`). Each part has precedent; the guard-enforced unification interlocked with the functional core is this repo's **engineering synthesis** (not academic novelty). See the Projection-Mapping Doctrine below.
+> 4. **CQRS/ES/EDA on demand but capability-ready** — the capability baseline is fully provided (per-context knobs, optimistic lock, bootstrap + `--verify` reconciliation, replay read-side, truth-source flip runbook); activation is decided per module. The law is **"enabled = committed, default = shadow"** — "non-mandatory" must not be misread against the already-committed truth-source contexts. See the CQRS / ES / EDA bullets below.
+
+> The enforceable statements follow; this block is the identity summary, pointers only (single source stays in the bullets + the linked guards/plans).
+
 - **Hexagonal / Clean Architecture** (same dependency rule): ports & adapters with a strict inward direction (`api → application → domain ← infrastructure`); the domain depends on nothing but the shared kernel (enforced by the core purity guard test).
 - **Functional core, imperative shell** (architecture precision amendment, 2026-10-20): domain decisions are pure functions over immutable data returning result-unions (reference: `canTransition`). Aggregate-first tactical DDD is **not** adopted (the only natural aggregate — User — has its lifecycle owned by Better Auth; the dead pipeline was removed). Value objects on demand (only `Quota` in this domain).
 - **Projection-Mapping Doctrine (FC entity consistency · core principle, codified 2026-10-21, human sign-off)**: the consistency target between a **domain entity** ↔ its **data entity** ↔ the physical **table** is **not** a naive 1:1 equality — Evans-style aggregate roots inherently break that (object graphs, value objects, storage-only columns, local identity). Under the functional core the target is a **projection**: `domain-state ⊆ (data-entity ≡ table)`, enforced by a triple — (1) *data-entity ≡ table* via `migration:generate` diff + schema/metadata consistency e2e + the Entity Column Law guard (already in place); (2) a **pure total mapper** `fromRow` (data-entity → domain restore) as the single mapping seam in the repository adapter; (3) a **compile-time structural lock** between the domain persisted-state contract (`PostState`) and the data-entity interface (`PostEntity`), living in `infrastructure/` — **never `domain/`**, which must not import `infrastructure/`. Storage-only columns (optimistic-lock `version`, FK, discriminator) are on the whitelist: read by the mapper, **not** mirrored into domain-state. For real aggregates the same law holds per granularity (table-per-aggregate or table-per-entity — each entity ↔ its own table, value objects embedded). Reference implementation: `posts`; other persistence contexts are **pending** via their own audited plans. See the [Entity Doctrine](#entity-doctrine-domain-entity-vs-data-entity) below and [module-posts-fc-projection-doctrine.md](../plans/module-posts-fc-projection-doctrine.md).
@@ -155,6 +163,15 @@ the pure mapper and the compile-time structural lock live in `infrastructure/`, 
 Reference implementation: `posts`.
 Other persistence contexts (`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`)
 are **pending** this doctrine and adopt it via their own audited plans — not instant violations.
+
+### Layer-shape: "a layer exists only if it has content" — the auth / platform case
+
+The four-directory vertical slice (`domain/application/infrastructure/api`) is mandatory **as a shape**, but a given layer is present only when the context actually has content for it. Two recorded, non-violating exceptions (codifying the residual cases the four-layer rule leaves open):
+
+- **`auth`** owns BA-facing write surfaces (session/bootstrap adapters) and the identity ledger, but delegates authentication semantics to Better Auth — it legitimately has **no local `domain/`** of its own (no self-owned invariant to encode yet). The moment an auth-local invariant appears, it MUST be materialized under `domain/`, never left inline.
+- **`platform`** is a governance facade (a cross-context read/command surface) with **no physical table of its own**; its `infrastructure/` holds only foreign-store adapters, and its rules live in the owning contexts (tenants/users) reached via CQRS/events. A facade with no owned persistence has no `domain/` entities to place.
+
+This is the concrete reading of "a layer exists only if it has content" in the P4/CQRS bullet: it licenses omitting an *empty* layer, never omitting the layering discipline itself, and never suppressing a layer that has (or gains) content.
 
 ## Bounded Context Map & the Multi-Tenancy Mechanism Layer
 

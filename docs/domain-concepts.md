@@ -163,6 +163,10 @@
 
 > 一致性纪律：同一张表的列定义由单一 `TableMeta` 同源派生双变体（运行时/忠实），`database/entity-column-law.ts` 守卫「表 17 张恒等 + 列对齐」——新增表不同步登记即红。
 
+### 投影镜射（domain entity ↔ data entity ↔ table）
+
+有持久化的上下文里，**领域实体**（`domain/entities/`·不可变数据载体 + 纯迁移函数）与其**数据实体**（`infrastructure/entities/`·映射物理表的 MikroORM `defineEntity`）不是朴素 1:1 全等，而是投影一致性 `领域态 ⊆ (数据实体 ≡ 表)`，由三件套强制——迁移 diff + 列律 / 纯全函数 `fromRow` 唯一映射缝 / `PostState↔PostEntity` 编译期结构锁（落 `infrastructure/`）。参考实现 `posts`，其余持久化上下文经已审方案跟进。规范单源见 [specs/architecture.md](./specs/architecture.md) 的 **Entity Doctrine** 与 **Projection-Mapping Doctrine**——本节只述不裁。
+
 ---
 
 ## 附：单源指针（本文只述不裁）
@@ -173,4 +177,4 @@
 - 表属主台账：`apps/api/src/database/table-ownership.ts` · 实体列定律：`apps/api/src/database/entity-column-law.ts`
 
 <!-- 变更戳 -->
-正文已于 2026-10-20 / v0.1.0 依当前代码取证成文（收权案结项后全景重述）；2026-10-20 / v0.2.0 增补各概念「表/实体」对应与 §8 双轨制总览映射表。
+正文已于 2026-10-20 / v0.1.0 依当前代码取证成文（收权案结项后全景重述）；2026-10-20 / v0.2.0 增补各概念「表/实体」对应与 §8 双轨制总览映射表；2026-10-21 / v0.3.0 §8 增「投影镜射」节（回指 architecture 实体教义·只述不裁）。

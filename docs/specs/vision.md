@@ -60,7 +60,7 @@
 
 愿景的落地方式继承既有宪法，不新造：
 
-- **架构**：六边形架构（= Clean Architecture 依赖规则·ports & adapters）垂直切片 + **函数式领域内核**（functional core, imperative shell）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
+- **架构**：六边形架构（= Clean Architecture 依赖规则·ports & adapters）垂直切片 + **函数式领域内核**（functional core, imperative shell·含 2026-10-21 投影镜射/实体教义一期）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。四点定位（CA 为底 · DDD 量力 · FC 三映射为突破 · CQRS/ES/EDA 按需但备能）已升为宪法定位、canonical 见 [architecture.md](./architecture.md)「Positioning — Four Pillars」。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
 - **工程**：本地 CI 为 L1 裁决、fallow 为 L2 佐证（须二判）、**无已审方案不写码**、完成判据可核验+穷尽（[workflow.md](./workflow.md) · [tooling-standards.md](./tooling-standards.md)）。
 - **决策**：权威归人；多租户隔离级别、计费模型等**不可逆决策须人签核**（workflow §3 高危清单）。
 - **地域与合规约束**：本项目面向**中国大陆**用户——技术栈与第三方资源须**境内可访问、合规可用**；依赖镜像（npm / Docker）、支付、登录、短信、监控/日志等**优先境内方案**，并预留 **ICP 备案 / 数据驻留 / 个人信息保护法（PIPL）** 合规要求。**例外**：Google / GitHub 等海外 OAuth 登录**不受本约束影响、予以保留**。与现有假设冲突处的选型（支付已定：**Stripe + 微信 + 支付宝** 三通道并存，见 §4.3；登录已定：保留 Google/GitHub **+ 新增微信、企业微信、钉钉、飞书**（Better Auth 自定义 provider），**不做手机验证码登录**（实名走平台人工审批）；镜像 / 日志后端等**待决策**）统一落 [tooling-standards.md](./tooling-standards.md)。

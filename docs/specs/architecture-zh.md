@@ -2,6 +2,14 @@
 
 ## 核心设计原则
 
+> **定位——四支柱（宪法定位 · 2026-10-21 人澄清并成文；每句均映射到既有强制机制，不作姿态性宣称）：**
+> 1. **Clean Architecture 为底**——依赖规则已是可执行设施而非口号：core 纯度守卫（DI 最小面 + core 内 HTTP 零出现）、表所有权守卫（台账↔路径全量一致）、fallow 0 边界违规、OpenAPI 三向漂移闸、实体列定律恒等。细则见下方各条与 §附录。
+> 2. **DDD 量力而行**——战略层（限界上下文、经领域事件跨上下文集成）全程保留；战术层按已在案的成本/收益判据逐案裁剪（聚合优先 + 全覆盖 CQRS 已减；状态机 / `Quota` VO / 投影教义按裁回流）。判据在案——见 `functional-core.md` 与下方 P2/P4 各条。
+> 3. **函数式内核的三映射为突破点**——一致性目标是**投影** `领域态 ⊆ (数据实体 ≡ 表)`（非朴素 1:1），由三件套强制（迁移 diff + 列律 / 纯全函数 `fromRow` 唯一缝 / `PostState↔PostEntity` 编译期结构锁落 `infrastructure/`）。单件皆有业界先例；受守卫强制、并与函数式内核互锁的**统一**是本仓的**工程综合贡献**（非学术新颖）。详见下方投影镜射教义。
+> 4. **CQRS/ES/EDA 按需但备能**——能力基线完备在位（逐上下文旋钮、乐观锁、bootstrap + `--verify` 对拍、回放读侧、真相源翻面 runbook）；启用与否逐模块裁。定律为**「启用即承诺、缺省即影子」**——「非强制」不得与已 committed 的真相源上下文混读。详见下方 CQRS / ES / EDA 各条。
+
+> 下方为可执行的细则条文；本块是身份摘要、只作指针（单一真源仍在各条 + 链接的守卫/方案）。
+
 - **六边形架构 / 整洁架构（Hexagonal = Clean Architecture·同一依赖规则）**：端口-适配器 + 依赖方向严格向内（`api → application → domain ← infrastructure`）；domain 除共享内核外零框架依赖（core 纯度守卫测试可执行化锁定）。
 - **函数式领域内核（functional core, imperative shell·架构精度修宪 2026-10-20）**：领域裁决 = 纯函数 + 不可变数据 + result-union（基准样例 `canTransition`）；**不采用聚合优先的战术 DDD**（唯一天然聚合 User 的生命周期归 Better Auth·死管道已删），值对象按需（本域仅 `Quota`）。
 - **投影镜射教义（FC 实体一致性·核心原则·2026-10-21 固化·人签核）**：**领域实体** ↔ 其 **数据实体** ↔ 物理 **表** 之间的一致性目标**不是**朴素的 1:1 全等——Evans 式聚合根天生破坏之（对象图、值对象、存储专用列、局部身份）。函数式内核下目标是**投影**：`领域态 ⊆ (数据实体 ≡ 表)`，由三件套强制——（1）*数据实体 ≡ 表* 经 `migration:generate` diff + schema/元数据一致性 e2e + 实体列定律守卫（已在位）；（2）**纯全函数 mapper** `fromRow`（数据实体 → 领域复原）作仓储适配器的唯一映射缝；（3）**编译期结构锁** 焊领域持久态契约（`PostState`）与数据实体接口（`PostEntity`），落 `infrastructure/`——**绝不落 `domain/`**（domain 不得 import infrastructure）。存储专用列（乐观锁 `version`、FK、discriminator）走白名单：mapper 读之，**不**镜射进领域态。真聚合同一定律按粒度成立（table-per-aggregate 或 table-per-entity——每实体 ↔ 自己的表、值对象嵌入）。参考实现：`posts`；其余持久化上下文**待跟进**，各自经已审方案落地。详见下方[实体教义](#实体教义领域实体-vs-数据实体)与 [module-posts-fc-projection-doctrine.md](../plans/module-posts-fc-projection-doctrine.md)。
@@ -143,6 +151,15 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 `infrastructure/`，绝不落 `domain/`。参考实现：`posts`。
 其余持久化上下文（`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`）**待跟进**
 本教义，各自经已审方案落地——非即时违宪。
+
+### 层形：「层有内容才存在」——auth / platform 两例
+
+四目录垂直切片（`domain/application/infrastructure/api`）作为**形制**强制，但某一层仅在上下文确有该内容时才在场。两个已登记、非违宪的残余例外（把四目录规则留白的残余情形成文化）：
+
+- **`auth`** 持有 BA 面向的写面（session/bootstrap 适配）与身份台账，但认证语义下沉 Better Auth——它依法**无自有 `domain/`**（暂无自持不变量可编码）。一旦出现 auth 本地不变量，须即刻物化进 `domain/`，不得内联散落。
+- **`platform`** 是治理门面（跨上下文读/命令面），**无自有物理表**；其 `infrastructure/` 只放外部存储适配，规则活在属主上下文（tenants/users）经 CQRS/事件触达。无自持持久化的门面，无 `domain/` 实体可放。
+
+此即 P4/CQRS 条中「层有内容才存在」的具体读法：只放行省略*空*层，绝不放行跳过分层纪律本身，也绝不压制一个已有（或将得）内容的层。
 
 ## 限界上下文地图与多租户机制层
 

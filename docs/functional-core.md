@@ -2,7 +2,7 @@
 
 > 定位: **讲解性指南**（非规范）| 规范性单源: [`docs/specs/architecture.md`](./specs/architecture.md) §核心设计原则（P1–P4）——本文是 P1 的展开阐述，与规范冲突时以规范为准
 > 缘起: 架构精度修宪（2026-10-20 · [`global-architecture-functional-core-amendment`](./plans/global-architecture-functional-core-amendment.md)）——本文沉淀其论证、判据与常见问答，供模板使用者在自己的上下文里复制该范式
-> 受众: 人 + Agent | 版本: 0.1.0（2026-10-20）
+> 受众: 人 + Agent | 版本: 0.2.0（2026-10-21）
 
 ---
 
@@ -43,7 +43,7 @@ const result = await this.uow.run(async () => {
 
 ## 2. 它解决什么问题
 
-传统分层里业务逻辑与数据库/HTTP 调用交织，导致：**测试必须 mock 一串依赖**、规则散落在 service 与 controller 之间难以复用、逻辑无法在不同入口（HTTP/CLI/定时任务）间搬运。函数式内核用一条硬边界分开"纯的计算"与"不纯的交互"——内核测试**直接传对象、断言返回值，零 mock**（见 §9 的状态机矩阵测试）。
+传统分层里业务逻辑与数据库/HTTP 调用交织，导致：**测试必须 mock 一串依赖**、规则散落在 service 与 controller 之间难以复用、逻辑无法在不同入口（HTTP/CLI/定时任务）间搬运。函数式内核用一条硬边界分开"纯的计算"与"不纯的交互"——内核测试**直接传对象、断言返回值，零 mock**（见 §10 的状态机矩阵测试）。
 
 该模式的公开表述通常归于 Gary Bernhardt（《Boundaries》· 2012）；它与 Clean Architecture / 六边形架构**同族**——依赖规则都指向内，差异只在内核的写作风格（函数 + 不可变数据，而非实体类）。
 
@@ -92,7 +92,7 @@ function decide(order: Order): { kind: 'ok'; next: Order; events: DomainEvent[] 
 3. 失败是否可用**返回值**表达（result-union），而非抛异常控制流？
 4. 它是否是**规则**（允许吗/是多少/迁移到哪），而非**编排**（先做什么再做什么）？
 
-反之，凡涉及"读取、写入、发布、翻译 HTTP、开事务"的都是外壳。经验比例：本仓库内核约数百行、外壳数万行——**内核小是这个域的真相，不是缺陷**（见 §12 FAQ）。
+反之，凡涉及"读取、写入、发布、翻译 HTTP、开事务"的都是外壳。经验比例：本仓库内核约数百行、外壳数万行——**内核小是这个域的真相，不是缺陷**（见 §13 FAQ）。
 
 ## 7. 物理地图：内核件清单
 
@@ -112,19 +112,28 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 **Q：放弃了 Clean Architecture 吗？** 没有。六边形与 Clean 是同一依赖规则的两个名字（Uncle Bob 自述 Clean = Hexagonal + Onion 的综合重述）；端口-适配器、依赖规则、纯度守卫全保留，改的只是措辞与本仓库代码词汇（port/adapter）的对齐。
 
-**Q：放弃了 DDD 吗？** 放弃的是**聚合优先的战术 DDD 与全覆盖 CQRS 两个宣称**（二者均非 Clean Architecture 的要求）；保留的是战略层——限界上下文、上下文间经领域事件集成（P3）、 ubiquitous language 在治理域的体现。实体的三个职责被拆走：数据形状 → 不可变 record；业务规则 → 纯函数；不变量防护 → 按需 VO（P2）。
+**Q：放弃了 DDD 吗？** 放弃的是**聚合优先的战术 DDD 与全覆盖 CQRS 两个宣称**（二者均非 Clean Architecture 的要求）；保留的是战略层——限界上下文、上下文间经领域事件集成（P3）、 ubiquitous language 在治理域的体现。实体的三个职责被拆走：数据形状 → 不可变 record；业务规则 → 纯函数；不变量防护 → 按需 VO（P2）。（实体教义一期·2026-10-21 已把"数据形状"进一步分为**领域态契约**与**数据实体**两层，见 §9。）
 
 **Q：领域事件还算"领域"事件吗？** 算，语义正名为**操作记录**（operation record）：由 service/handler 层发布是**正式模式**（P3），不再视作对"聚合事件"的妥协。event store 定位 = 审计 + 集成，非事件溯源真相源；投影/saga（Phase C）是触发判据驱动的可选项。
 
 **Q：值对象还要吗？** 按需（P2 判据）：**违反不变量 = 破坏数据正确性**的概念才封类型（本域唯一认定：`Quota`）；格式类校验归边界 zod schema，**不为 VO 而 VO**（Money 已实查裁定不做——金额纯透传 Stripe 零本地运算）。
 
-## 9. 测试形态
+## 9. 实体教义与三映射（投影镜射·一期已进）
+
+§8 那句"实体的三个职责被拆走：数据形状 → 不可变 record"是**架构精度修宪（2026-10-20）**时的简化叙事；**2026-10-21 实体教义一期**把其中的"数据形状"进一步拆成两层。本节仅作讲解衔接——规范性单源在 [specs/architecture.md](./specs/architecture.md) 的 **Entity Doctrine** 与 **Projection-Mapping Doctrine**，本文只述不裁：
+
+- **领域实体 vs 数据实体**：每个有持久化的限界上下文区分两物——`domain/entities/` 下的**领域实体**是不可变数据载体（持构造期不变量 + 返回新实例的纯迁移函数、零框架 import），`infrastructure/entities/` 下的**数据实体**是映射到物理表的 MikroORM `defineEntity`。旧的"record"即领域实体的持久态契约（如 `PostState`）。
+- **一致性目标 = 投影而非 1:1**：目标不是领域实体与表的朴素全等（Evans 式聚合根天生破坏它），而是投影 `领域态 ⊆ (数据实体 ≡ 表)`。
+- **三件套强制**：（1）*数据实体 ≡ 表* 经 `migration:generate` diff + 实体列定律守卫（已在位）；（2）**纯全函数 mapper** `fromRow`（数据实体 → 领域复原）作仓储适配器的唯一映射缝——领域态正是经此纯函数从数据实体投影而来；（3）**编译期结构锁**焊 `PostState ↔ PostEntity`，落 `infrastructure/`（`domain/` 绝不 import `infrastructure/`）。存储专用列（乐观锁 `version`、FK、discriminator）走白名单：mapper 读之、不镜射进领域态。
+- **进度**：参考实现 `posts`；其余持久化上下文（`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`）**待跟进**，各自经已审方案落地，非即时违宪。
+
+## 10. 测试形态
 
 - **内核：零 mock。** 直接构造输入、断言输出。范例：状态机矩阵测试（全迁移表逐格断言）、`Quota` VO 不变量测试（负数/小数/NaN/Infinity 全拒）、RBAC 策略闸测试。
 - **外壳：时序锁。** 用 fake UoW 记录作用域时序，断言"读→裁决→写在同一关键段"（见 `user-governance.command-handlers.test.ts` 的 `tx-begin → transition → session-delete → tx-end` 断言）。
 - **纯度本身也是被测的。** `libs/core/src/core-purity.test.ts` 双锁：`@nestjs/common` import ⊆ DI 最小面 + `HttpException/HttpStatus` 零出现——范式不靠自觉靠门禁。
 
-## 10. 反模式清单
+## 11. 反模式清单
 
 | 反模式 | 为什么错 | 本仓对应约束 |
 |---|---|---|
@@ -136,7 +145,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 | CRUD 上下文强上 Command/Handler 三件套 | 仪式感代码，零编排收益 | P4：简单上下文是合法终态 |
 | `read-models` 当作物化投影宣传 | 名不副实（实为返回类型） | S5 已头注正名 |
 
-## 11. 新增一个裁决的配方
+## 12. 新增一个裁决的配方
 
 1. **写内核函数**：`canXxx(input): Verdict`——零 import（或仅词表/VO）、result-union 判别联合、不变量违约抛原生 Error；需要时间就加 `now: Date` 入参。
 2. **定 Verdict 类型**：`{ kind: 'ok'; ... } | { kind: 'not-found' } | { kind: 'illegal'; from; to }` 形状，成功失败同构可穷尽 switch。
@@ -145,7 +154,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 5. **测试**：内核矩阵测试（零 mock）+ 外壳时序锁 +（如涉及公共契约）gated e2e。
 6. **进守卫**：新文件落在扫描面内即自动受纯度双锁保护——若它真是适配器角色，按 guard/decorator/middleware 后缀命名或留待 http/ 目录演进。
 
-## 12. FAQ（真实问过的问题）
+## 13. FAQ（真实问过的问题）
 
 **Q：为什么 domain/ 里没有实体了？** 因为"实体"的职责被三件套取代（record=形状、纯函数=规则、port=契约），且唯一的实体（User 聚合）是死代码已删。DB 行就是实体，领域层描述它的形状与规则。（详见修宪方案 §2.A 取证）
 
@@ -162,3 +171,4 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 首版 | 架构精度修宪的论证/判据/地图/FAQ 沉淀成讲解指南（规范单源仍居 architecture.md） |
+| 2026-10-21 | 0.2.0 | 实体教义一期 | 新增 §9「实体教义与三映射（投影镜射）」讲解、订正 §8"数据形状"叙事；原 §9–12 顺延为 §10–13 |
