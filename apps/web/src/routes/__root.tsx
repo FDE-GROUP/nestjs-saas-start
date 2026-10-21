@@ -34,6 +34,9 @@ function RootLayout() {
             <Link to="/settings/account" className="hover:text-slate-900">
               账号
             </Link>
+            <Link to="/settings/billing" className="hover:text-slate-900">
+              订阅计费
+            </Link>
             <Link to="/platform/tenants" search={{ offset: 0 }} className="hover:text-slate-900">
               平台运营
             </Link>
