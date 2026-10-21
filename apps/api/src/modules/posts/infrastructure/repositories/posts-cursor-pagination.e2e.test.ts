@@ -92,7 +92,8 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
     for (;;) {
       if (guard++ > 10) throw new Error('游标遍历未收敛（疑似死循环）');
       const page = await r.list({ limit: 2, ...(cursor ? { cursor } : {}) });
-      collected.push(...page.items.map((i) => i.id));
+      // 仓储 list 恒返已落库实例（id 非空·与 application toPostReadModel 同口径取断言）
+      collected.push(...page.items.map((i) => i.id as string));
       if (!page.hasMore) {
         expect(page.nextCursor).toBeUndefined();
         break;
