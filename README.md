@@ -76,6 +76,16 @@ packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安�
 
 > 各限界上下文（见 `apps/api/src/modules`）均已按垂直切片就位（S 系列重构已收口）；结构规则以 [`docs/specs/architecture.md`](./docs/specs/architecture.md) 为准。
 
+### 机制层 vs 业务域（落位判据）
+
+新能力落位不按**话题**（是否“关于”认证/租户）判归属，而按**“谁定义规则、为谁服务”**——同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属；判错即结构债）。三处易错刀口：
+
+- **多租户机制 ≠ 租户业务域**：`tenancy/` 横切层（ALS 传播 / 隔离守卫 / deny-list）不关心“租户是什么”；`modules/tenants` 定义“租户如何存在与消亡”。同理认证机制（`modules/auth` 身份机器）≠ 用户合规域（`modules/users`·PIPL 导出/硬删）。
+- **authorization 双栖**：裁决机器（core 守卫 / CASL 投影·零 import·受纯度守卫）= 机制；授权事实与管理面（三表 / 角色 CRUD / `domain/policies`）= 支撑域——故它是限界上下文而非横切层。
+- **storage/payment 不是基础设施**：是带领域策略的出站网关上下文（通道降级 / 上传校验 / 金额货币 / 对象键命名已下沉 `domain/`）；真设施是其身后 provider（S3/OSS/COS、Stripe）与 `database/` `config/` 等窄义基础设施。
+
+canonical 判据（含完整归属表）见 [`docs/specs/architecture.md`](./docs/specs/architecture.md)「Mechanism Layer vs Business Domain」。
+
 ## 文档
 
 **规格**（`docs/specs/` — 约束性规范）
