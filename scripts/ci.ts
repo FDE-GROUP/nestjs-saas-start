@@ -45,6 +45,10 @@ step('Lint & format (biome)', run('run', 'check'));
 // 类型逃逸「只紧不扫」棘轮（module-common-type-escape-ratchet·高危#4 经人签核落地）：
 // 存量入基线单源，新增超基线即 fail。纯文本扫描、便宜，故 full/quick 均跑、尽早失败。
 step('Type-escape ratchet', run('run', 'verify:type-escape'));
+// domain 标准子目录法恒等闸（docs/specs/architecture.md「Domain sub-directory law & naming」）：
+// 扫 apps/api/*/domain，根散件 / 非规范子目录即 fail-loud（防归位后再漂移）。纯目录扫描、便宜，
+// 故与 type-escape 同置 full/quick 均跑、早失败；libs/core 另规则不纳入（防误红）。
+step('Domain layout guard', run('run', 'verify:domain-layout'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 前端类型面纳入门禁（外部评审暴露第二盲区：ci 曾不 typecheck apps/web——
