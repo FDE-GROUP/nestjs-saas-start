@@ -51,6 +51,11 @@ if (!quick) {
   // api-client schema.d.ts 脱钩当时须手动 typecheck 才现，入闸后自动拦截）。
   // 依赖 build 产出的 @saas/contracts + @saas/api-client dist，故置于 build 之后、仅 full 模式。
   step('Web typecheck (apps/web)', run('--filter', 'web', 'run', 'typecheck'));
+  // 测试类型面纳入门禁（本轮暴露第三盲区：build 的 tsc 排 `*.test.ts`、vitest transpile-only
+  // 不做类型检查 → posts/auth 两处测试类型错长期潜伏、只在手动 tsc 现形）。逐包复用各 tsconfig.json
+  // （apps/api + libs 已含测试）+ packages/scripts 两个 test-inclusive 配置；web 测试由上面独立步已覆盖。
+  // 多次全量 tsc 较重，故仅 full 模式（随 pre-push 强制），quick 不加。
+  step('Test typecheck (all packages incl *.test.ts)', run('run', 'verify:test-types'));
   // 契约对拍（前端 F1 · module-frontend-api-client 丁裁）：以 build 产物直出 openapi.yaml，
   // 与入库的 openapi/openapi.yaml 逐字节对拍——改响应注解却未 `openapi:export` 重生成 → 此处拓红，
   // 逼「文档 SSOT 与代码同源」。需 DB-free dist，故仅 full 模式（build 之后）执行。
