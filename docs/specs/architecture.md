@@ -198,6 +198,25 @@ This is the concrete reading of "a layer exists only if it has content" in the P
 
 ## Bounded Context Map & the Multi-Tenancy Mechanism Layer
 
+### Mechanism Layer vs Business Domain: placement criteria (human ruling, 2026-10-21)
+
+The terminology discipline above (Tenant ≠ Multi-tenancy) is a special case of this criterion. The
+general test is **not the topic** (whether something is "about" auth or tenancy) but **who defines
+the rules and whom it serves** — one topic can split in two:
+
+| Placement | Repo locations | Criteria (four axes) |
+|---|---|---|
+| **System mechanism** | `modules/auth` (identity machinery + `AUTH_*_STORE` ports) · authorization's **ruling machinery** (core guards / CASL projection / predicate-compiler kernel pieces) · the `tenancy/` horizontal layer (ALS propagation / isolation guards / deny-list) · infrastructure **in the narrow sense** (database/config/common/logger/mailer/i18n + provider adapters) | Changes for **technical** reasons (framework upgrades, BA replacement, performance); strictest CA dependency enforcement (core purity guard · port inversion · table-ownership ledger); tested mostly via matrix/wiring identity gates; **tools (BA/CASL/MikroORM) live inside mechanisms** (library constrains the interface, domain owns the facts) |
+| **Business domain** | the bounded contexts: `tenants` (lifecycle/governance) · `workspaces` · `posts` · `subscriptions` · `payment` · `storage` · `users` (PIPL compliance) · `platform` (operations facade) · authorization's **management face** (three tables / role CRUD / `domain/policies` — supporting domain) | Changes for **business** reasons; main arena of the functional core + projection doctrine + entity separation; tested via zero-mock kernel tests + compile-time structural locks + gated e2e; **consume mechanism capabilities only through ports** |
+
+**Three cuts where the knife goes wrong most easily**:
+1. **One topic, two placements**: the multi-tenancy **mechanism** (`tenancy/` — does not care what a tenant *is*) ≠ the tenant **business domain** (`modules/tenants` — defines how tenants live and die); the authentication **mechanism** (`auth` — identity machinery) ≠ the user **compliance domain** (`users` — PIPL export/erase) — the same `user` table seen from two angles, stitched by the `AUTH_USER_STORE` port (global-ba-entity-domain-placement ruling ①).
+2. **authorization is dual-natured**: its ruling machinery is mechanism (core kernel pieces, zero imports, purity-guarded); its authorization facts and management face are a supporting domain (own tables, four-layer slice, role-management use cases) — this is the documented reason it is a **bounded context** rather than a horizontal layer (and why its shape differs from `tenancy/`).
+3. **Infrastructure in the narrow sense**: `storage`/`payment` are **outbound-gateway contexts with domain policies** (channel fallback, upload validation, money & currency, object-key naming sunk into `domain/` — a回流 example of pillar 2's "DDD by cost/benefit"), **not** infrastructure; the actual facilities are the providers behind them (S3/OSS/COS, Stripe channels) and the database/config layer.
+
+> Operational consequence: when placing a new capability, run it through the four axes above (change-driver / paradigm / testing / tool placement). Mechanism-side changes go through the horizontal & guard review surface (fallow/purity/identity gates); domain-side changes go through the vertical-slice & reviewed-plan surface (entity doctrine / projection / kernel criteria). Misplacing either way (treating a gateway context as a facility, or scattering mechanism policy into contexts as business rules) is structural debt.
+
+
 Terminology discipline: a **tenant** is a business concept (the `tenants` core-domain
 aggregate, with lifecycle, invariants and language); its physical entity is the
 self-owned registry table `tenant` (owned by the `tenants` context·the general rule is the

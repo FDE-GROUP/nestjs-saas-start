@@ -186,6 +186,24 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 
 ## 限界上下文地图与多租户机制层
 
+### 机制层 vs 业务域：归属判据（2026-10-21 人裁成文·总纲）
+
+上方术语纪律（租户≠多租户）是本判据的特例；总纲判据**不是"话题"**（是否关于认证/租户），
+**而是"谁定义规则、为谁服务"**——同一主题可以两分，归属由此定：
+
+| 归属 | 仓库落位 | 判据特征（四维） |
+|---|---|---|
+| **系统机制** | `modules/auth`（身份机器 + `AUTH_*_STORE` 端口）· authorization 的**裁决机器**（core 守卫/CASL 投影/谓词编译内核件）· `tenancy/` 横切层（ALS 传播/隔离守卫/deny-list 失能）· **窄义**基础设施（database/config/common/logger/mailer/i18n + 各 provider 通道适配） | 变更动因**技术性**（框架升级/BA 换代/性能）；CA 依赖规则最严处（core 纯度守卫·端口倒置·表所有权台账）；测试以矩阵/wiring 恒等闸为主；**工具（BA/CASL/MikroORM）住在机制里**（库约束接口·域拥有事实） |
+| **业务域** | 各限界上下文：`tenants`（生命周期/治理）· `workspaces` · `posts` · `subscriptions` · `payment` · `storage` · `users`（PIPL 合规）· `platform`（运营门面）· authorization 的**管理面**（三表/角色 CRUD/`domain/policies`——支撑域） | 变更动因**业务性**；FC 内核 + 投影教义 + 实体分离的主战场；测试以内核零 mock + 编译期结构锁 + gated e2e 为主；**只经端口消费机制能力** |
+
+**三处易切错的刀口**：
+1. **同一主题两分**：多租户**机制**（`tenancy/`·不关心"租户是什么"）≠ 租户**业务域**（`modules/tenants`·定义"租户如何存在与消亡"）；认证**机制**（`auth`·身份机器）≠ 用户**合规域**（`users`·PIPL 导出/硬删）——同批 user 表两个视角，经 `AUTH_USER_STORE` 端口缝合（global-ba-entity-domain-placement 裁①先例）。
+2. **authorization 双栖**：裁决机器=机制（core 内部件·零 import·受纯度守卫）；授权事实与管理面=支撑域（自有三表 + 四层切片 + 角色管理用例）——这是它作为**限界上下文**而非横切层存在的成文理由（形态与 `tenancy/` 有别的根因）。
+3. **基础设施取窄义**：`storage`/`payment` 是**有领域策略的出站网关上下文**（通道降级/上传校验/金额货币/对象键命名策略已下沉 `domain/`——四支柱 2「DDD 量力」的回流例证），**不是**基础设施；真正的设施是其身后的 providers（S3/OSS/COS、Stripe 通道）与 database/config 层。
+
+> 操作后果：新能力落位时先过本表四维（动因/范式/测试/工具归属）判归属——机制面变更走横切与守卫评审面（fallow/纯度/恒等闸），业务面变更走垂直切片与已审方案面（实体教义/投影/内核判据）。判错归属（如把网关上下文当设施、或把机制策略当业务规则散入上下文）即结构债。
+
+
 术语纪律：**租户（Tenant）**是业务概念（`tenants` 核心域聚合·有生命周期/不变量/语言）；
 其物理实体为自有户籍表 `tenant`（`tenants` 上下文属主·通则见上方实体教义 + 投影镜射教义：领域实体 ↔ 独立数据实体由仓储适配器映射·`id` = `organization.id` 同值代理键·
 `status` 真列 + DB CHECK——global-tenant-entity-reclamation 2026-10-20 改判旧「租户身份=organization·
