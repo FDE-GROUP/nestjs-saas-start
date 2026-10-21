@@ -2,7 +2,7 @@ import type { ConfigService } from '@app/config/config.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import type { StorageProvider } from '../providers/storage.interface';
+import type { StorageProvider } from '../domain/ports/storage-provider.port';
 import { StorageService } from './storage.service';
 
 /**
@@ -10,13 +10,20 @@ import { StorageService } from './storage.service';
  *
  * 锁构造期 provider 选择（命中配置指定者 / 未命中回落 `s3`）与 `validateFile` 两枚领域码
  * （超限→`FILE_TOO_LARGE`·类型非法→`FILE_TYPE_NOT_ALLOWED`）+ `deleteFile`/`getFileUrl` 委派。
- * 全 DB-free：providers 以桩替真 SDK（S3/OSS/COS 不打网络）；校验闸在触 fs 前 throw，无需真临时文件。
+ * 全 DB-free：providers 以桩替真 SDK（S3/OSS/COS 不打网络）；校验闸在触 IO 前 throw，无需真临时文件。
  */
 
 function fakeStorageProvider(): StorageProvider {
   return {
     uploadFile: vi.fn(),
     uploadFileFromStream: vi.fn().mockResolvedValue({
+      key: 'k',
+      url: 'https://u',
+      size: 1,
+      mimetype: 'image/png',
+      originalname: 'a.png',
+    }),
+    uploadMultipart: vi.fn().mockResolvedValue({
       key: 'k',
       url: 'https://u',
       size: 1,
@@ -77,7 +84,7 @@ describe('StorageService provider 选择（G2）', () => {
 });
 
 describe('StorageService.validateFile 闸（G2）', () => {
-  it('超限 → FILE_TOO_LARGE（触 fs 前 throw）', async () => {
+  it('超限 → FILE_TOO_LARGE（触 IO 前 throw）', async () => {
     const svc = makeService('s3', { s3: fakeStorageProvider() }, { maxFileSize: 100 });
 
     expect.assertions(2);

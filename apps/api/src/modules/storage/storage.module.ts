@@ -1,12 +1,12 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '../../config/config.module';
 import { ConfigService } from '../../config/config.service';
-import { StorageController } from './controllers/storage.controller';
-import { AliOssStorageProvider } from './providers/alioss-storage.provider';
-import { S3StorageProvider } from './providers/s3-storage.provider';
-import type { StorageProvider } from './providers/storage.interface';
-import { TencentCosStorageProvider } from './providers/tencentcos-storage.provider';
-import { StorageService } from './services/storage.service';
+import { StorageController } from './api/storage.controller';
+import { StorageService } from './application/storage.service';
+import type { StorageProvider } from './domain/ports/storage-provider.port';
+import { AliOssStorageProvider } from './infrastructure/alioss-storage.provider';
+import { S3StorageProvider } from './infrastructure/s3-storage.provider';
+import { TencentCosStorageProvider } from './infrastructure/tencentcos-storage.provider';
 
 @Module({
   imports: [ConfigModule],

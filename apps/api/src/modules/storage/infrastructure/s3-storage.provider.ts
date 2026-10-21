@@ -10,8 +10,12 @@ import {
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
+import type {
+  FileUploadOptions,
+  StorageProvider,
+  UploadedFileResult,
+} from '../domain/ports/storage-provider.port';
 import { BaseStorageProvider } from './base-storage.provider';
-import type { FileUploadOptions, StorageProvider, UploadedFileResult } from './storage.interface';
 
 @Injectable()
 export class S3StorageProvider extends BaseStorageProvider implements StorageProvider {

@@ -2,8 +2,12 @@ import type { ReadStream } from 'node:fs';
 import { ConfigService } from '@app/config/config.service';
 import { Inject, Injectable } from '@nestjs/common';
 import * as COS from 'cos-nodejs-sdk-v5';
+import type {
+  FileUploadOptions,
+  StorageProvider,
+  UploadedFileResult,
+} from '../domain/ports/storage-provider.port';
 import { BaseStorageProvider } from './base-storage.provider';
-import type { FileUploadOptions, StorageProvider, UploadedFileResult } from './storage.interface';
 
 @Injectable()
 export class TencentCosStorageProvider extends BaseStorageProvider implements StorageProvider {

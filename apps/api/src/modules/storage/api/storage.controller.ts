@@ -36,8 +36,8 @@ import {
   ApiErrorResponse,
   apiEnvelopeShape,
 } from '../../../common/contracts/api-contracts';
-import { FileUploadResultDto } from '../dto/file-upload.dto';
-import { StorageService } from '../services/storage.service';
+import { StorageService } from '../application/storage.service';
+import { FileUploadResultDto } from './dto/file-upload.dto';
 import { StorageDeleteResponse, StorageUrlResponse } from './response/storage.response';
 
 @ApiExtraModels(
