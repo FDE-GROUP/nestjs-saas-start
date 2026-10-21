@@ -102,7 +102,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 |---|---|---|
 | `libs/core/src/modules/tenants/lifecycle/tenant-lifecycle.ts` | 租户/用户**共用**状态机迁移表 + `canTransition`（旗舰样例） | 零 import |
 | `libs/core/src/authorization/instance-predicate.ts` | RBAC 查询级谓词语法 → DB 谓词编译 | 零 import |
-| `apps/api/src/modules/authorization/domain/tenant-rbac-policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
+| `apps/api/src/modules/authorization/domain/policies/tenant-rbac.policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
 | `libs/core/src/modules/subscriptions/quota/tenant-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
 | `libs/core/src/modules/subscriptions/quota/quota.vo.ts` | Quota 非负整数不变量（P2 唯一认定 VO） | 零 import |
 

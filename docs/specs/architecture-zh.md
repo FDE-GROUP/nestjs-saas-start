@@ -35,7 +35,7 @@ P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度
 |---|---|---|
 | `core/modules/tenants/lifecycle/tenant-lifecycle.ts` | 租户/用户**共用**状态机迁移表 + `canTransition`（result-union·旗舰样例） | 零 import |
 | `core/authorization/instance-predicate.ts` | RBAC 查询级谓词语法 → DB 谓词编译 | 零 import |
-| `apps/api …/authorization/domain/tenant-rbac-policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
+| `apps/api …/authorization/domain/policies/tenant-rbac.policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
 | `core/modules/subscriptions/quota/tenant-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota 非负整数不变量（P2 唯一认定 VO） | 零 import |
 
@@ -55,7 +55,7 @@ src/
 │   └── cqrs/types.ts        #   BaseCommand / BaseQuery（封装 @nestjs/cqrs）
 ├── modules/                 # 限界上下文（垂直切片）
 │   ├── users/               # ★ 完整模式的参考实现
-│   │   ├── domain/          #   entities/ value-objects/ events/ repositories/（端口）
+│   │   ├── domain/          #   entities/ value-objects/ events/ repositories/ ports/ policies/ constants/
 │   │   ├── application/     #   commands/ queries/ read-models/（处理器）· 应用服务 · ＝ CA「Use Cases」层
 │   │   ├── infrastructure/  #   MikroORM 仓储适配器、映射器、事件分发器
 │   │   ├── api/             #   Controller + DTO（HTTP 传输层）
@@ -144,6 +144,22 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 阻断；其结论需二次人工核验，见 [tooling-standards.md §4.7](./tooling-standards.md)）。**不存在**
 任何扫描 `apps/api/src/modules/users/domain/**` 检查 `@nestjs/*`、`@mikro-orm/*`、
 `@app/database` import 的测试——层级方向另由上表逐层 import 矩阵与代码评审守住。
+
+### Domain 子目录法与命名
+
+一个上下文 `domain/` 内的文件**必须**落在下列 canonical 子目录之一——**任何业务/契约/常量件都不得躺在 `domain/` 根**。命名走点分式（`<name>.<kind>.ts`），与 `.command.ts` / `.query.ts` / `.event.ts` 同族：
+
+| 子目录 | 承载 | 文件后缀 |
+|---|---|---|
+| `entities/` | 不可变领域实体（数据载体 + 纯转移） | 按名 |
+| `value-objects/` | 值对象（构造期不变量） | 按名 |
+| `events/` | 领域事件 | `.event.ts` |
+| `repositories/` | 聚合持久化端口 | `.repository.ts` |
+| `ports/` | 其它出站端口（网关/服务） | `.port.ts` |
+| `policies/` | 纯策略/裁决函数 | `.policy.ts` |
+| `constants/` | seed / 词表 / 纯常量表 | 按名 |
+
+测试与被测件共位（同子目录、`<name>.test.ts`）。某子目录仅当上下文有其内容时才存在（见 §层形）。本法则纯为上下文内之事：把文件在其自身 `domain/` 内搬移绝不改变垂直切片边界，且 `domain/` 仍绝不 import `infrastructure/`。
 
 ### 实体教义：领域实体 vs 数据实体
 

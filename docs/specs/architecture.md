@@ -37,7 +37,7 @@ P1 is a pattern, not a folder — kernel pieces live across contexts. Admission 
 |---|---|---|
 | `core/modules/tenants/lifecycle/tenant-lifecycle.ts` | Shared tenant/**user** state-machine transition table + `canTransition` (result-union · reference sample) | zero imports |
 | `core/authorization/instance-predicate.ts` | RBAC query-level predicate grammar → DB predicate compilation | zero imports |
-| `apps/api …/authorization/domain/tenant-rbac-policy.ts` | Role key/conditions policy gates | vocabulary only |
+| `apps/api …/authorization/domain/policies/tenant-rbac.policy.ts` | Role key/conditions policy gates | vocabulary only |
 | `core/modules/subscriptions/quota/tenant-plans.ts` | Plan catalog + `resolvePlanDef` | self-owned VO only |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota non-negative-integer invariant (the single P2 VO) | zero imports |
 
@@ -57,7 +57,7 @@ src/
 │   └── cqrs/types.ts        #   BaseCommand / BaseQuery over @nestjs/cqrs
 ├── modules/                 # Bounded contexts (vertical slices)
 │   ├── users/               # ★ Reference implementation of the full pattern
-│   │   ├── domain/          #   entities/ value-objects/ events/ repositories/ (ports)
+│   │   ├── domain/          #   entities/ value-objects/ events/ repositories/ ports/ policies/ constants/
 │   │   ├── application/     #   commands/ queries/ read-models/ (handlers) · imperative services · = CA "Use Cases" layer
 │   │   ├── infrastructure/  #   MikroORM repository adapter, mappers, event dispatcher
 │   │   ├── api/             #   controller + DTOs (HTTP transport)
@@ -152,6 +152,22 @@ Domain purity is guarded by the **fallow architecture-boundary advisory** in `pn
 `apps/api/src/modules/users/domain/**` for `@nestjs/*`, `@mikro-orm/*` or `@app/database`
 imports — layer direction is additionally held by the per-layer import matrix above and by
 code review.
+
+### Domain sub-directory law & naming
+
+Within a context's `domain/`, files MUST live in one of the canonical sub-directories — **no business/contract/constant file may sit at the `domain/` root**. Naming is dot-kind (`<name>.<kind>.ts`), matching `.command.ts` / `.query.ts` / `.event.ts`:
+
+| Sub-dir | Holds | File suffix |
+|---|---|---|
+| `entities/` | immutable domain entities (data carrier + pure transitions) | by name |
+| `value-objects/` | VOs (construction-time invariant) | by name |
+| `events/` | domain events | `.event.ts` |
+| `repositories/` | aggregate persistence ports | `.repository.ts` |
+| `ports/` | other outbound ports (gateways/services) | `.port.ts` |
+| `policies/` | pure policy/decision functions | `.policy.ts` |
+| `constants/` | seed / vocabulary / pure constant tables | by name |
+
+Tests are co-located with their subject (same sub-dir, `<name>.test.ts`). A sub-dir is present only when the context has content for it (see §Layer-shape). This law is purely intra-context: relocating a file inside its own `domain/` never changes the vertical-slice boundary, and `domain/` still must not import `infrastructure/`.
 
 ### Entity Doctrine: domain entity vs data entity
 
