@@ -136,6 +136,7 @@
 ### 4.8 本地 CI（Local CI）
 - **定位**：本项目**不走远程 CI 做门禁**（GitHub Actions 仅部署 Swagger Pages）。质量门禁在**本地**由 `scripts/ci.ts` 一键执行，等价替代远程 CI。
 - **命令**：`pnpm run ci`（full，默认）—— 依序跑 `check` → `build`（`build:libs`→`build:nest`）→ `test` 三道**硬门禁**（快速失败），随后经 package.json 脚本 `fallow:arch`（= `pnpm exec fallow architecture`）作**佐证**（非阻断）；`pnpm run ci:quick` 仅跑 `check` + `test`（跳过 build 与 fallow，供快速回归）。pre-push 固定走 full。另提供 `pnpm run verify:prod-boot`：构建后真起服命中 `/api/v1/health` 200 的**prod 回归防线**（R-δ：CI 绿≠prod 可跑，需真起服实证）。
+- **类型门禁族（`build` 之外的 `tsc` 面）**：`check` 后先跑 `verify:type-escape`（逃逸棘轮·full/quick 均）；`build` 之后依序 `Web typecheck`（`apps/web`·其 `tsconfig.json` 含 `src`→意外覆盖 `*.test.tsx`）→ `verify:test-types` → `openapi:drift`。`verify:test-types` 为逐包 `tsc --noEmit`（`apps/api`+`libs/{core,contracts,mikro-adapter}` 各 `tsconfig.json` 已含 `*.test.ts`，加 `packages/api-client/tsconfig.test.json`+`scripts/tsconfig.json` 两个 test-inclusive 配置），封「`build` 走 `tsconfig.build.json` 排测试 + `vitest` transpile-only 不做类型检查」致测试类型错长期潜伏的盲区（posts/auth 两处驱动·见 `plans/module-ci-test-type-gate.md`）；因多次全量 `tsc` 较重，**仅 full 模式**（随 pre-push 强制），`ci:quick` 不加。
 - **自动触发**：`.husky/pre-push` 在 push 前执行 `pnpm run ci`；未全绿则阻断 push。禁止 `--no-verify` 绕过（§3）。
 - **失败语义**：任一硬门禁非零退出 → 整体 `exit 1`；fallow 步骤即便有发现项或工具缺失也仅告警、不使流水线失败（遵循 §4.7「结论须二次人工核验」）。
 - **可复现性**：编排仅用 `node:child_process`（`spawnSync('pnpm', …)`），不引入 bash/Make 等其他编排工具，遵守 §1「运行时统一 Node」。

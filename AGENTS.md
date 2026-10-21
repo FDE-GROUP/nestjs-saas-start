@@ -28,8 +28,9 @@ pnpm install               # 依赖（registry 见 §6）
 pnpm run start:dev         # 开发（nest start --watch，端口 7009，前缀 /api/v1）
 pnpm run build             # 构建（build:libs → build:client（产 @saas/api-client dist）→ build:nest --builder swc）
 pnpm run test              # 测试（Vitest）；check = Biome（lint+format）
-pnpm run ci                # L1 门禁：check → build → test（+ fallow 佐证）
+pnpm run ci                # L1 门禁：check → build → test（+ type-escape/各 typecheck 含测试类型闸/openapi 对拍 + fallow 佐证）
 pnpm run ci:quick          # 轻量：check + test
+pnpm run verify:test-types # 全包测试类型检查（含 *.test.ts·build 排测试+vitest transpile-only 的盲区补位·full ci 内自动跑）
 pnpm run ci:db             # 带 DB 全链：check → test → Testcontainers 一次性 PG 跑 gated e2e + BA 一致性套件（用完即焚）
 pnpm run test:fullstack    # 只跑上述 DB 段（编排器 = scripts/ci-fullstack.ts）
 pnpm run dev:web / build:web  # 前端（apps/web·Vite dev :5173 反代→7009·tooling §4.12）
