@@ -10,6 +10,13 @@
 
 > 下方为可执行的细则条文；本块是身份摘要、只作指针（单一真源仍在各条 + 链接的守卫/方案）。
 
+> **函数式领域内核（P1）— 阅读地图（导航索引·只作指针、不新增规则）：** P1 教义有意分散于本文多处，请合读（每一面的单一真源仍留在原处）：
+> - **身份** — 上方「定位——四支柱」第 3 条。
+> - **核心陈述（P1）** — 下方「函数式领域内核」条。
+> - **实体一致性** — 下方「投影镜射教义」条 + [实体教义](#实体教义领域实体-vs-数据实体)。
+> - **物理地图** — 下方「函数式内核件清单」小节。
+> - **完整展开（讲解性·非规范）** — [functional-core.md](../functional-core.md)。
+
 - **六边形架构 / 整洁架构（Hexagonal = Clean Architecture·同一依赖规则）**：端口-适配器 + 依赖方向严格向内（`api → application → domain ← infrastructure`）；domain 除共享内核外零框架依赖（core 纯度守卫测试可执行化锁定）。
 - **函数式领域内核（functional core, imperative shell·架构精度修宪 2026-10-20）**：领域裁决 = 纯函数 + 不可变数据 + result-union（基准样例 `canTransition`）；**不采用聚合优先的战术 DDD**（唯一天然聚合 User 的生命周期归 Better Auth·死管道已删），值对象按需（本域仅 `Quota`）。
 - **投影镜射教义（FC 实体一致性·核心原则·2026-10-21 固化·人签核）**：**领域实体** ↔ 其 **数据实体** ↔ 物理 **表** 之间的一致性目标**不是**朴素的 1:1 全等——Evans 式聚合根天生破坏之（对象图、值对象、存储专用列、局部身份）。函数式内核下目标是**投影**：`领域态 ⊆ (数据实体 ≡ 表)`，由三件套强制——（1）*数据实体 ≡ 表* 经 `migration:generate` diff + schema/元数据一致性 e2e + 实体列定律守卫（已在位）；（2）**纯全函数 mapper** `fromRow`（数据实体 → 领域复原）作仓储适配器的唯一映射缝；（3）**编译期结构锁** 焊领域持久态契约（`PostState`）与数据实体接口（`PostEntity`），落 `infrastructure/`——**绝不落 `domain/`**（domain 不得 import infrastructure）。存储专用列（乐观锁 `version`、FK、discriminator）走白名单：mapper 读之，**不**镜射进领域态。真聚合同一定律按粒度成立（table-per-aggregate 或 table-per-entity——每实体 ↔ 自己的表、值对象嵌入）。参考实现：`posts`；其余持久化上下文**待跟进**，各自经已审方案落地。详见下方[实体教义](#实体教义领域实体-vs-数据实体)与 [module-posts-fc-projection-doctrine.md](../plans/module-posts-fc-projection-doctrine.md)。
