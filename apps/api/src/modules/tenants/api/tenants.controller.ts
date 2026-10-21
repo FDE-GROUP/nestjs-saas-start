@@ -33,6 +33,7 @@ import { ApproveTenantCommand } from '../application/commands/approve-tenant.com
 import { RejectTenantCommand } from '../application/commands/reject-tenant.command';
 import { SubmitTenantApplicationCommand } from '../application/commands/submit-tenant-application.command';
 import type { TenantApplicationReadModel } from '../application/read-models/tenant-application.read-model';
+import { mapBaError } from './ba-error.mapping';
 import { TenantApplicationResponse } from './response/tenant-application.response';
 
 /**
@@ -68,13 +69,21 @@ export class TenantsController {
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  apply(
+  @ApiResponse(apiError(400, 'Organization slug already exists (BA duplicate).'))
+  async apply(
     @CurrentUser() user: SessionUser,
     @Body({ schema: createTenantApplicationSchema }) dto: CreateTenantApplication,
   ): Promise<TenantApplicationReadModel> {
-    return this.commandBus.execute<SubmitTenantApplicationCommand, TenantApplicationReadModel>(
-      new SubmitTenantApplicationCommand(user.id, dto.name, dto.slug),
-    );
+    // 建租经 BA `createOrganization` 服务端系统动作：重复 slug 等 4xx `APIError` 走门面统一出口
+    // `mapBaError` 归一透传状态（避免逃逸为 500·对齐 epic-02 §2.1·module-rbac-casl §2.3.1）。
+    try {
+      return await this.commandBus.execute<
+        SubmitTenantApplicationCommand,
+        TenantApplicationReadModel
+      >(new SubmitTenantApplicationCommand(user.id, dto.name, dto.slug));
+    } catch (err) {
+      return mapBaError(err);
+    }
   }
 
   @Post('applications/:id/approve')

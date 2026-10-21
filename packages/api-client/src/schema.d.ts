@@ -2283,6 +2283,15 @@ export interface operations {
                     };
                 };
             };
+            /** @description Organization slug already exists (BA duplicate). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Missing or invalid session. */
             401: {
                 headers: {

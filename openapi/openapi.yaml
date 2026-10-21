@@ -1165,6 +1165,12 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/TenantApplicationResponse'
+        '400':
+          description: Organization slug already exists (BA duplicate).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
         '401':
           description: Missing or invalid session.
           content:
