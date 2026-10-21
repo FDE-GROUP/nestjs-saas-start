@@ -1,184 +1,199 @@
-# NestJS 项目模板
+# NestJS 多租户 SaaS 启动模板
 
 <p align="center">
   <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-<p align="center">一个采用最佳实践的现代 NestJS 工程骨架：Fastify + MikroORM + PostgreSQL + Node/pnpm，<br/>多租户 SaaS 核心能力已就位（租户→工作区两级、全局用户 + membership、三层权限）。</p>
+<p align="center">一个采用最佳实践的现代 NestJS 工程骨架：Fastify + MikroORM + PostgreSQL + Node/pnpm，<br/>多租户 SaaS 核心能力开箱即用（租户→工作区两级、全局用户 + membership、三层权限）。</p>
 
 <p align="center">
-  <a href="https://github.com/nestjs/nest" target="_blank"><img src="https://img.shields.io/github/license/nestjs/nest.svg" alt="Package License" /></a>
+  <a href="https://github.com/nestjs/nest" target="_blank"><img src="https://img.shields.io/badge/NestJS-12-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS" /></a>
+  <a href="https://www.fastify.io/" target="_blank"><img src="https://img.shields.io/badge/Fastify-5-000?style=flat&logo=fastify&logoColor=white" alt="Fastify" /></a>
   <a href="https://nodejs.org/" target="_blank"><img src="https://img.shields.io/badge/node-%3E%3D%2022-339933?style=flat&logo=node.js&logoColor=white" alt="Node Runtime" /></a>
   <a href="https://pnpm.io/" target="_blank"><img src="https://img.shields.io/badge/pnpm-11-F69220?style=flat&logo=pnpm&logoColor=white" alt="pnpm Package Manager" /></a>
   <a href="https://www.postgresql.org/" target="_blank"><img src="https://img.shields.io/badge/database-PostgreSQL-green.svg" alt="Database" /></a>
+  <a href="./LICENSE" target="_blank"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/MikroORM-7.2-00b055?style=flat-square" alt="MikroORM" />
+  <img src="https://img.shields.io/badge/MikroORM-7-00b055?style=flat-square" alt="MikroORM" />
+  <img src="https://img.shields.io/badge/Zod-v4-3E63DD?style=flat-square" alt="Zod" />
   <img src="https://img.shields.io/badge/Better--Auth-6366F1?style=flat-square&logo=lock&logoColor=white" alt="Better Auth" />
   <img src="https://img.shields.io/badge/Stripe-Payments-008CDD?style=flat-square&logo=stripe&logoColor=white" alt="Stripe" />
   <img src="https://img.shields.io/badge/Aliyun-OSS-FF6A00?style=flat-square&logo=alibabacloud&logoColor=white" alt="Aliyun OSS" />
   <img src="https://img.shields.io/badge/Tencent-COS-3399FF?style=flat-square&logo=tencentqq&logoColor=white" alt="Tencent COS" />
   <img src="https://img.shields.io/badge/Amazon-S3-FF9900?style=flat-square&logo=amazons3&logoColor=white" alt="Amazon S3" />
   <img src="https://img.shields.io/badge/Pino-Logger-11C877?style=flat-square&logo=pino&logoColor=white" alt="Pino" />
-  <img src="https://img.shields.io/badge/MJML-Email-EB5757?style=flat-square&logo=mail.ru&logoColor=white" alt="MJML" />
+  <img src="https://img.shields.io/badge/Vitest-Test-6cc24a?style=flat-square" alt="Vitest" />
+  <img src="https://img.shields.io/badge/Biome-Lint&Format-60A5FA?style=flat-square" alt="Biome" />
   <img src="https://img.shields.io/badge/Docker-Containers-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
-## 项目定位
+## 概览
 
-**架构形态**（经人澄清 2026-10-14）：**单体优先**（模块化单体·单部署单元），同时保持**兼容未来向微服务扩展的条件**（接缝/边界/就绪机制见 [microservice-readiness](./docs/plans/microservice-readiness.md)）——演进由触发判据驱动，不为拆而拆。
-**现状**：多租户 SaaS 核心能力已落地——审批制租户生命周期、两级边界（租户→工作区）、三层权限与行级隔离、平台治理（驳回/暂停/恢复/删除 + 审计）、事件溯源 Phase B 影子追加（开关缺省关）。
-**方向**：订阅计费闭环与境内支付通道接入、ES Phase B 后半（同事务化/投影，待重状态上下文立项）持续推进。
-**地域**：面向**中国大陆**用户——技术栈与第三方选型优先**境内可访问 / 合规可用**的方案（依赖镜像、支付、登录、监控等，详见工具标准）。
+本项目是一个**面向中国大陆场景、可直接孵化 SaaS 产品的多租户工程模板**：以结构良好的 NestJS 骨架为底座，内置多租户身份、权限、隔离、订阅、支付、存储、邮件、国际化等 SaaS 横切能力，并演示如何以清晰的分层与领域边界组织业务代码。
 
-> 愿景是宪法顶层：详见 [项目愿景 `docs/specs/vision.md`](./docs/specs/vision.md)；多租户需求详见 [`docs/plans/global-tenancy.md`](./docs/plans/global-tenancy.md)。
+- **架构形态**：模块化单体（单一部署单元），同时保留向微服务演进的条件——拆分由实际触发判据驱动，而非预先切碎。
+- **当前状态**：多租户核心能力已可用——审批制租户生命周期、租户→工作区两级边界、平台/租户/工作区三层权限、仓储层行级数据隔离、平台治理（驳回 / 暂停 / 恢复 / 删除）与结构化审计；前端租户控制台覆盖核心只读视图并持续补全。
+- **在建方向**：订阅计费闭环与境内支付通道接入；事件溯源在默认关闭的开关后渐进推进。
+- **地域取向**：技术栈与第三方选型优先境内可访问、合规可用的方案（依赖镜像、支付、登录、监控等），并预留 ICP 备案 / 数据驻留 / 个人信息保护法（PIPL）合规要求。
+
+## 特性一览
+
+- 六边形架构（ports & adapters）+ 垂直切片的模块化单体
+- 函数式领域内核：核心业务规则以纯函数与不可变数据表达，副作用隔离在边缘
+- 多租户：全局用户 + membership 多对多、两级边界（租户 → 工作区）、行级隔离
+- 三层权限：平台级 / 租户级 / 工作区级 RBAC，统一能力（ability）裁决
+- 认证：邮箱 + 社交登录（Google/GitHub + 微信、企业微信、钉钉、飞书）、会话与 CSRF 防护
+- 校验单源：以 zod 契约同时驱动请求校验、响应序列化与前后端类型
+- 支付、对象存储、邮件、日志、i18n 等横切能力抽象为可插拔 provider
+- OpenAPI 契约与类型安全 API 客户端由代码单一来源生成
+- 本地 CI 一键质量门禁 + Git Hooks；容器化开箱即用
 
 ## 技术栈
 
-- **运行时**：[Node LTS ≥22](https://nodejs.org/)（ESM，`"type": "module"`；开发经 `nest start --watch`、生产运行 SWC 编译产物）+ [pnpm](https://pnpm.io/)（包管理·workspace）
-- **框架**：[NestJS 12](https://nestjs.com/) + [Fastify 5](https://www.fastify.io/)
-- **架构范式**：六边形架构（= Clean Architecture 依赖规则·ports & adapters）的模块化单体 + **函数式领域内核**（functional core, imperative shell·治理/订阅域）——CQRS 按需（简单上下文 service 直调为合法终态），叠加 **EDA**（领域事件 = 集成契约 + 审计日志·Phase B 影子追加；投影/saga 为触发判据驱动的可选项，见[事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)）
-- **数据库**：[PostgreSQL](https://www.postgresql.org/) + [MikroORM](https://mikro-orm.io/)（迁移与种子）
-- **认证**：[Better Auth](https://github.com/better-auth/better-auth)（邮箱 + OAuth、会话/CSRF）——保留海外 OAuth（Google/GitHub）；**新增境内登录：微信、企业微信、钉钉、飞书**（自定义 provider；不做手机验证码登录）
-- **校验**：[zod](https://zod.dev/)（经 Nest 官方 standard-schema 件 `@Body/@Param/@Query({ schema })` + `@SerializeOptions({ schema })`）；跨端共享契约单源居 `libs/contracts`（class-validator/class-transformer/Joi 已换轨摘除）
+- **运行时**：Node LTS ≥ 22（ESM，`"type": "module"`；开发经 `nest start --watch`，生产运行 SWC 编译产物）+ pnpm（workspace 包管理）
+- **框架**：NestJS 12 + Fastify 5
+- **架构范式**：六边形架构（Clean Architecture 依赖规则）垂直切片 + 函数式领域内核；CQRS 按需（简单上下文直接调用服务即为合法形态），领域事件用于跨上下文集成与审计
+- **数据库 / ORM**：PostgreSQL + MikroORM（迁移与种子）
+- **认证**：Better Auth（邮箱 + OAuth、会话 / CSRF）
+- **校验 / 契约**：zod（经 Nest 官方 standard-schema 集成 `@Body/@Param/@Query({ schema })`、`@SerializeOptions({ schema })`），跨端共享契约单源居 `libs/contracts`
+- **授权**：CASL 能力模型 + 自研 RBAC 管理面
 - **构建**：SWC（`nest build --builder swc`）
-- **测试**：[Vitest](https://vitest.dev/)
-- **规范**：[Biome](https://biomejs.dev/)（lint + format）
-- **日志**：[Pino](https://getpino.io/) 结构化日志
-- **支付**：[Stripe](https://stripe.com/)（海外·已落地）+ 微信支付 / 支付宝（大陆·**规划中**，统一 provider 抽象已预留接入面；周期扣款随通道能力，方案层细化）
-- **对象存储**：多云统一接口（[AWS S3](https://aws.amazon.com/s3/) / [阿里云 OSS](https://www.alibabacloud.com/product/object-storage-service) / [腾讯云 COS](https://www.tencentcloud.com/products/cos)）
-- **邮件**：[Nodemailer](https://nodemailer.com/) + [MJML](https://mjml.io/) 模板
-- **文档**：[Swagger / OpenAPI](https://swagger.io/)（`@nestjs/swagger`）
-- **前端**：[React 19](https://react.dev/) + [Vite](https://vitejs.dev/) + [TanStack Router](https://tanstack.com/router) + [Tailwind CSS 4](https://tailwindcss.com/)（租户自助面 `apps/web`）
-- **契约客户端**：`@saas/api-client`（由 OpenAPI 生成的类型安全 API 客户端·`packages/api-client`）
-- **容器化**：[Docker](https://www.docker.com/)（dev / prod）
-- **工程协作**：[Husky](https://typicode.github.io/husky/) + [Conventional Commits](./COMMIT_CONVENTION.md) + commitlint
+- **测试**：Vitest
+- **代码规范**：Biome（lint + format）
+- **日志**：Pino 结构化日志
+- **支付**：Stripe（海外·已集成）+ 微信支付 / 支付宝（境内·经统一 provider 抽象预留）
+- **对象存储**：多云统一接口（AWS S3 / 阿里云 OSS / 腾讯云 COS）
+- **邮件**：Nodemailer + MJML 模板
+- **API 文档**：Swagger / OpenAPI
+- **前端**：React 19 + Vite + TanStack Router + Tailwind CSS 4（租户自助面 `apps/web`）
+- **契约客户端**：`@saas/api-client`（由 OpenAPI 生成的类型安全客户端）
+- **容器化**：Docker + Docker Compose（dev / prod）
+- **工程协作**：Husky + Conventional Commits + commitlint
 
 ## 架构
 
-采用**六边形架构（ports & adapters · 即 Clean Architecture 依赖规则）的垂直切片**组织业务：治理/订阅域用函数式领域内核（纯函数 + result-union·基准样例 `canTransition`），简单上下文保持 service 直调（P4 合法终态）；跨上下文经领域事件通信（P3·操作记录语义，当前处 Phase B 影子追加）。目录层**有内容才存在**。以 **pnpm workspace**（`apps/*` · `libs/*` · `packages/*`）组织为共享内核、参考后端应用、前端自助面与类型契约客户端（后端目录按行业惯例命名 `apps/api`，“参考实现”语义由文档承担）：
+业务以**垂直切片**组织：每个限界上下文（bounded context）内部自成 `domain / application / infrastructure / api` 四层，跨上下文仅通过领域事件通信。目录遵循「**层有内容才存在**」——没有实际内容的层不预先铺空壳。仓库以 pnpm workspace 划分共享内核、后端参考应用、前端与契约客户端：
 
 ```
-libs/core/src/              # @core 共享内核：领域事件/聚合基类、tenancy 契约、subscriptions/workspaces 领域层
-apps/api/src/               # 后端参考应用（NestJS + Fastify）
-├─ modules/<上下文>/        # 限界上下文（users / auth / authorization / tenants / workspaces / platform / payment / storage / subscriptions / posts）
-│  ├─ domain/               # 实体、值对象、领域事件、仓储接口
-│  ├─ application/          # 用例（command/query + handler）、入参/命令编排
-│  ├─ infrastructure/       # 仓储实现、外部集成（MikroORM 等）
-│  └─ api/                  # controller / HTTP 边界
-├─ tenancy/                 # 租户边界：生命周期 / RBAC / 配额 / 会话 / 平台治理 / 隔离
-├─ common/ config/ database/ i18n/ logger/ mailer/   # 技术基础设施
-└─ main.ts / app.module.ts
-apps/web/                   # 前端租户自助面（React + Vite + TanStack Router + Tailwind·@saas/api-client 首消费者）
-packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安全 API 客户端
+libs/
+├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenancy/authorization 契约，以及 subscriptions/workspaces 领域层
+├─ contracts/src/     # @saas/contracts 跨端传输契约单源（请求/响应/envelope 的 zod schema + 派生类型）
+└─ mikro-adapter/     # MikroORM 适配层
+apps/
+├─ api/src/           # 后端参考应用（NestJS + Fastify）
+│  ├─ modules/<上下文>/        # 限界上下文：users / auth / authorization / tenants / workspaces / platform / payment / storage / subscriptions / posts
+│  │  ├─ domain/               # 纯领域内核：entities / value-objects / events / repositories / ports / policies / constants
+│  │  ├─ application/          # 用例编排（command/query + handler，或简单 service 直调）
+│  │  ├─ infrastructure/       # 仓储实现与外部集成（MikroORM、provider 适配等）
+│  │  └─ api/                  # Controller / HTTP 边界
+│  ├─ tenancy/                 # 多租户横切机制：请求上下文传播、隔离守卫、失权清单
+│  ├─ common/ config/ database/ i18n/ logger/ mailer/   # 基础设施
+│  └─ main.ts / app.module.ts
+└─ web/               # 前端租户自助控制台（React + Vite，经 @saas/api-client 消费后端）
+packages/
+└─ api-client/        # @saas/api-client：OpenAPI 生成的类型安全 API 客户端
 ```
 
-> 各限界上下文（见 `apps/api/src/modules`）均已按垂直切片就位（S 系列重构已收口）；结构规则以 [`docs/specs/architecture.md`](./docs/specs/architecture.md) 为准。
+### 共享内核与业务上下文的分界
 
-### 机制层 vs 业务域（落位判据）
+代码归属看「**谁定义规则、为谁服务**」，而不是看话题是否"关于"认证或租户——同一主题可以拆成机制与业务两面：
 
-新能力落位不按**话题**（是否“关于”认证/租户）判归属，而按**“谁定义规则、为谁服务”**——同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属；判错即结构债）。三处易错刀口：
+- **系统机制**：`auth`（身份认证机器）、`authorization` 的裁决内核（能力投影 / 谓词编译，纯函数、零框架依赖、受纯度守卫）、`tenancy/` 横切层（请求级租户上下文传播、隔离守卫、即时失权），以及 `database` / `config` 等基础设施。这些组件因技术演进（框架升级、第三方换代、性能）而变化。
+- **业务域**：各限界上下文的领域规则——`tenants`（租户生命周期与治理）、`workspaces`、`users`、`subscriptions`、`platform` 等，以及 `authorization` 的管理面（角色与授权数据的维护）。这些组件因业务需求而变化，是函数式内核与领域建模的主战场。
+- **易混点**：多租户**机制**（`tenancy/`，不关心"租户是什么"）不同于租户**业务域**（`modules/tenants`，定义租户如何创建、暂停、消亡）；`storage` / `payment` 是带领域策略（上传校验、通道降级、金额与货币）的**出站网关上下文**，而非基础设施——真正的设施是其身后的 provider 适配器。
 
-- **多租户机制 ≠ 租户业务域**：`tenancy/` 横切层（ALS 传播 / 隔离守卫 / deny-list）不关心“租户是什么”；`modules/tenants` 定义“租户如何存在与消亡”。同理认证机制（`modules/auth` 身份机器）≠ 用户合规域（`modules/users`·PIPL 导出/硬删）。
-- **authorization 双栖**：裁决机器（core 守卫 / CASL 投影·零 import·受纯度守卫）= 机制；授权事实与管理面（三表 / 角色 CRUD / `domain/policies`）= 支撑域——故它是限界上下文而非横切层。
-- **storage/payment 不是基础设施**：是带领域策略的出站网关上下文（通道降级 / 上传校验 / 金额货币 / 对象键命名已下沉 `domain/`）；真设施是其身后 provider（S3/OSS/COS、Stripe）与 `database/` `config/` 等窄义基础设施。
+> 完整结构规则见 [`docs/specs/architecture.md`](./docs/specs/architecture.md)。
 
-canonical 判据（含完整归属表）见 [`docs/specs/architecture.md`](./docs/specs/architecture.md)「Mechanism Layer vs Business Domain」。
+## 功能模块
+
+| 上下文 | 职责 |
+|---|---|
+| `users` | 平台全局用户与成员关系（membership）；PIPL 合规（数据导出 / 硬删级联清除） |
+| `auth` | 认证：邮箱密码 / 魔法链接、社交 OAuth、会话与 CSRF；全局会话墙（默认拒绝 + `@Public` 旁路） |
+| `authorization` | 授权：CASL 能力投影 + 三层 RBAC 管理面；跨租户鉴权边界默认拒绝 |
+| `tenants` | 租户生命周期与治理：审批制状态机、暂停 / 恢复 / 硬删、结构化审计 |
+| `workspaces` | 工作区：租户之下的强数据分区（查询默认按工作区复合过滤） |
+| `subscriptions` | 订阅与配额：计划、席位、额度（领域层居 `@core`） |
+| `payment` | 支付：Stripe 客户 / 支付意图集成；境内通道经 provider 抽象预留 |
+| `storage` | 对象存储：S3 / OSS / COS 统一接口 + 上传策略 |
+| `platform` | 平台运营面：经营者治理端点与审计 |
+| `posts` | 示例内容上下文（演示领域建模与读写的参考切片） |
+
+## 快速开始
+
+完整安装与运行步骤见 [安装与运行指南](./docs/install&run.md)。
+
+**前置要求**：Node ≥ 22、pnpm 11、PostgreSQL（或使用 Docker Compose 起库）。
+
+```bash
+pnpm install                # 安装依赖
+cp .env.example .env        # 配置环境变量（数据库连接等）
+pnpm run db:setup           # 应用迁移并写入种子数据
+
+pnpm run start:dev          # 开发后端：http://localhost:7009（API 前缀 /api/v1）
+pnpm run dev:web            # 开发前端：Vite http://localhost:5173（/api 反向代理到后端 :7009）
+
+pnpm run build              # 构建：libs → api-client → nest(SWC)
+pnpm run start:prod         # 生产运行：node dist/apps/api/src/main.js
+```
+
+## 开发与质量门禁
+
+本项目以**本地 CI** 作为主要质量门禁（不依赖远程 CI 才能把关），提交 / 推送前一键校验：
+
+```bash
+pnpm run ci          # 完整门禁：check → 类型/布局守护 → build → 全量类型检查 → OpenAPI 契约对拍 → test
+pnpm run ci:quick    # 轻量门禁：check + test
+pnpm run test        # Vitest 测试
+pnpm run ci:db       # 带数据库全链：静态检查 + 测试 + 一次性 PostgreSQL 跑 gated e2e（用完即焚）
+```
+
+- **Git Hooks**（Husky）：`pre-commit` 跑 `lint:fix`、`commit-msg` 校验 Conventional Commits、`pre-push` 跑 `pnpm run ci`。
+- **提交规范**：Conventional Commits，详见 [约定文档](./COMMIT_CONVENTION.md)。
+- **契约对拍**：响应注解变更须重生成 OpenAPI 规范与 `@saas/api-client` 类型，门禁会比对入库产物与代码是否同源。
+- **代码智能分析**：`fallow`（devDependency）用于架构边界与死代码佐证，结论须人工二次核验后采信。
+
+## 部署
+
+- 本地 / 依赖服务：`docker-compose.dev.yml`（PostgreSQL、pgAdmin 等）。
+- 生产镜像：多阶段 `Dockerfile`；完整部署说明见 [Docker 部署指南](./docs/docker-deployment.md)。
+- 生产回归防线：`pnpm run verify:prod-boot`（构建后真实起服并校验 `/health`）。
 
 ## 文档
 
-**规格**（`docs/specs/` — 约束性规范）
+**规格**（`docs/specs/`·约束性规范）
 
 - [项目愿景](./docs/specs/vision.md)
-- [项目架构](./docs/specs/architecture.md) | [中文](./docs/specs/architecture-zh.md)
+- [项目架构](./docs/specs/architecture.md) ｜ [中文](./docs/specs/architecture-zh.md)
 - [工具标准](./docs/specs/tooling-standards.md)
 - [开发工作流程](./docs/specs/workflow.md)
 
-**方案**（`docs/plans/` — 技术方案，开发依据）
+**指南**（`docs/`·操作手册）
 
-- [方案索引](./docs/plans/README.md) · [方案模板](./docs/plans/_template.md)
-- [多租户能力需求](./docs/plans/global-tenancy.md)
-- [中国大陆地域适配](./docs/plans/global-cn-adaptation.md)（技术方案）
-- [事件溯源路线图](./docs/plans/event-sourcing-roadmap.md)
-
-**调研**（`docs/research/` — 参考，非开发依据）
-
-- [Better Auth 承载境内登录渠道](./docs/research/better-auth-cn-providers.md)
-- [Clean Architecture 系列整理（19 篇逐篇忠实对译 + 9 篇主题串读，双轨索引）](./docs/research/clean-architecture/README.md)
-- [Know About Clean Architecture（外部概念参考卡：Bitloops 等）](./docs/research/KnowAboutCleanArchitecture/README.md)
-
-**指南**（`docs/` — 操作手册）
-
-- [函数式领域内核指南](./docs/functional-core.md)（概念·判据·地图·FAQ）
+- [函数式领域内核指南](./docs/functional-core.md)（概念 · 判据 · 地图 · FAQ）
 - [安装与运行](./docs/install&run.md)
-- [前端 dev 反代真跑手册](./docs/frontend-dev-proxy-runbook.md)
+- [前端 dev 反代运行手册](./docs/frontend-dev-proxy-runbook.md)
 - [Docker 部署](./docs/docker-deployment.md)
 - [MikroORM 迁移指南](./docs/mikro-migration-guide.md)
 - [邮件模块指南（英文）](./docs/mailer-en.md)
 - [OAuth 认证指南（英文）](./docs/oauth-guide-en.md)
 
-**提交规范**
+**设计方案与调研**（`docs/plans/`、`docs/research/`·技术方案与参考资料）
 
-- [Conventional Commits 约定](./COMMIT_CONVENTION.md)
-
-## 功能特性
-
-- **分层架构**：关注点分离的模块化 / 垂直切片结构
-- **配置管理**：`@nestjs/config` + [zod](https://zod.dev/) 校验（原生 `StandardSchemaV1`），分环境（`config/envs`）
-- **异常与响应**：全局异常过滤 + 响应转换拦截器 + 日志拦截器
-- **数据库**：MikroORM + PostgreSQL，含迁移（`migration:generate/migration:run`）与种子
-- **认证**：Better Auth——邮箱登录/注册 + 社交登录（Google、GitHub + 境内企微/钉钉/飞书 genericOAuth 通道）、会话与 CSRF；全局会话墙（deny-by-default + `@Public` 旁路）
-- **多租户**：审批制租户生命周期（状态机单点裁决）、租户→工作区两级边界、三层权限（平台/租户/Workspace RBAC）、仓储层行级隔离（ALS 卡点）、deny-list 即时失权
-- **平台治理与合规**：驳回/暂停/恢复/删除治理端点 + 结构化审计（FR-6）；PIPL 硬删级联清除（含事件流补删）
-- **事件溯源（Phase B 影子追加）**：领域事件耐久落 `event` 表（两级治理动作 + 驳回，治理事件面收口；注册流事件随架构精度修宪 S1 移除）；`EVENT_PUBLISH_MODE` 缺省 inproc 不落库，CRUD 仍为唯一真相源
-- **存储**：多云统一接口（S3 / OSS / COS），抽象基类去重
-- **邮件**：MJML 模板化发送（多语言 `i18n`）
-- **支付**：Stripe 客户 / 支付意图集成（境内通道规划中·provider 抽象预留）
-- **多语言**：`apps/api/src/i18n`（中 / 英 / 日）
-- **前端自助面**：`apps/web` 租户控制台（只读可见片·F2a），经 `@saas/api-client` 类型安全消费后端契约
-- **可观测**：Pino 结构化日志
-- **测试**：Vitest 单元与集成测试
-- **代码质量**：Biome lint/format + 本地 CI 门禁（见下）
-- **容器化**：Docker（dev / prod）+ Docker Compose
-
-## 快速开始
-
-安装与运行的完整步骤见 [安装与运行指南](./docs/install&run.md)。常用命令：
-
-```bash
-pnpm install                # 安装依赖
-cp .env.example .env        # 配置环境变量（数据库等）
-pnpm run db:setup           # 应用迁移并写入种子（migration:run + seed）
-
-pnpm run start:dev          # 开发：nest start --watch
-pnpm run dev:web            # 前端：Vite :5173 · /api 反代 → 后端 :7009
-pnpm run build              # 构建：build:libs → build:client（产 @saas/api-client dist）→ build:nest（SWC）
-pnpm run start:prod         # 生产：node dist/apps/api/src/main.js
-```
-
-## 开发工作流
-
-本项目走**本地 CI 门禁**（不依赖远程 CI），提交前一键校验：
-
-```bash
-pnpm run ci          # 完整门禁：check → build → test（+ fallow architecture 佐证）
-pnpm run ci:quick    # 轻量门禁：check + test
-```
-
-- **Git Hooks**：Husky `pre-commit`（biome `lint:fix`）、`commit-msg`（commitlint）、`pre-push`（跑 `pnpm run ci`）。
-- **提交规范**：Conventional Commits，见 [约定文档](./COMMIT_CONVENTION.md)。
-- **代码智能分析**：`fallow`（项目 devDependency·经 `pnpm exec fallow`）作为 L2 佐证工具（结果须人工二判），详见 [工具标准](./docs/specs/tooling-standards.md)。
+- [方案索引](./docs/plans/README.md)（多租户、地域适配、事件溯源、前后端契约等各专项方案）
+- [Clean Architecture 系列整理](./docs/research/clean-architecture/README.md)
 
 ## 联系方式
 
 <p align="center">
   <img src="./abel-weichat.jpg" alt="WeChat 联系" width="240" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="./chat_Odoo%20ERP.jpg" alt="微信群：Odoo ERP 实施 · FDE拓展（群码 7 天有效·至 10/21，过期请联系上方微信拉入）" width="240" />
+  <img src="./chat_Odoo%20ERP.jpg" alt="微信群：Odoo ERP 实施 · FDE拓展" width="240" />
 </p>
 
-<p align="center">左：个人微信 · 右：「Odoo ERP 实施：FDE拓展」群聊（群码有时效，过期可加个人微信拉入）</p>
+<p align="center">左：个人微信 · 右：技术交流群（群二维码有时效，过期可加个人微信拉入）</p>
 
 ## 许可
 
