@@ -27,6 +27,16 @@ describe('auth 门面（Better Auth HTTP 面）', () => {
     await expect(getSession()).resolves.toEqual(payload);
   });
 
+  it('get-session 5xx → 抛出（后端/反代故障不当作无会话）', async () => {
+    vi.stubGlobal('fetch', fetchStub({ ok: false, status: 502 }));
+    await expect(getSession()).rejects.toThrow(/会话服务不可用/);
+  });
+
+  it('get-session 网络异常（fetch reject）→ 抛出', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('net down')));
+    await expect(getSession()).rejects.toThrow(/会话服务不可用/);
+  });
+
   it('sign-in/email 携带 same-origin 凭证与 JSON body；失败带 message', async () => {
     const ok = fetchStub({ ok: true });
     vi.stubGlobal('fetch', ok);
@@ -46,6 +56,14 @@ describe('auth 门面（Better Auth HTTP 面）', () => {
     await expect(signInEmail('a@b.c', 'wrong')).resolves.toMatchObject({
       ok: false,
       error: 'Invalid email or password',
+    });
+  });
+
+  it('sign-in/email 5xx → 归一为「服务暂时不可用」', async () => {
+    vi.stubGlobal('fetch', fetchStub({ ok: false, status: 502 }));
+    await expect(signInEmail('a@b.c', 'pw')).resolves.toMatchObject({
+      ok: false,
+      error: '服务暂时不可用，请稍后重试',
     });
   });
 

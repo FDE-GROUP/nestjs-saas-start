@@ -25,14 +25,32 @@ async function post(path: string, body: unknown): Promise<Response> {
   });
 }
 
-/** 无有效会话一律收敛为 null（实机存照：无 cookie 回 401；登出后回 200 + body null）。 */
+/**
+ * 会话读取的错误分类（区分「不可用」与「未登录」，实机存照：无 cookie 回 401；登出后回 200 + body null）：
+ * - 401/403/登出 200-null → 返回 null（确属无有效会话，由 requireSession 弹回登录）。
+ * - 5xx（含 dev 反代对宕机后端的 502 代答）/ 网络异常 → 抛出：非「无会话」，穿透 loader 使
+ *   受保护页落到路由错误边界（RouteError），不再被误弹到必然失败的登录页。
+ */
 export async function getSession(): Promise<SessionResult | null> {
-  const res = await fetch(`${BASE}/get-session`, {
-    credentials: 'same-origin',
-    headers: { Accept: 'application/json' },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/get-session`, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    });
+  } catch {
+    throw new Error('会话服务不可用（网络异常）');
+  }
+  if (res.status >= 500) throw new Error(`会话服务不可用（${res.status}）`);
   if (!res.ok) return null;
-  return (await res.json()) as SessionResult;
+  return ((await res.json()) ?? null) as SessionResult | null;
+}
+
+/** 登录/注册/魔法链接面失败文案：5xx 归一为「服务暂时不可用」，否则取后端 message 或带状态码的兜底。 */
+async function authFailure(res: Response, fallback: string): Promise<string> {
+  if (res.status >= 500) return '服务暂时不可用，请稍后重试';
+  const detail = (await res.json().catch(() => ({}))) as { message?: string };
+  return detail.message ?? `${fallback}（${res.status}）`;
 }
 
 export interface SignInOutcome {
@@ -44,8 +62,7 @@ export interface SignInOutcome {
 export async function signInEmail(email: string, password: string): Promise<SignInOutcome> {
   const res = await post('/sign-in/email', { email, password });
   if (res.ok) return { ok: true, status: res.status };
-  const detail = (await res.json().catch(() => ({}))) as { message?: string };
-  return { ok: false, status: res.status, error: detail.message ?? `登录失败（${res.status}）` };
+  return { ok: false, status: res.status, error: await authFailure(res, '登录失败') };
 }
 
 /** 注册（dev only·NODE_ENV !== 'production' 时后端 emailAndPassword.enabled）。 */
@@ -56,8 +73,7 @@ export async function signUpEmail(
 ): Promise<SignInOutcome> {
   const res = await post('/sign-up/email', { email, password, name });
   if (res.ok) return { ok: true, status: res.status };
-  const detail = (await res.json().catch(() => ({}))) as { message?: string };
-  return { ok: false, status: res.status, error: detail.message ?? `注册失败（${res.status}）` };
+  return { ok: false, status: res.status, error: await authFailure(res, '注册失败') };
 }
 
 export async function signOut(): Promise<void> {
@@ -72,6 +88,5 @@ export async function signOut(): Promise<void> {
 export async function signInMagicLink(email: string, callbackURL: string): Promise<SignInOutcome> {
   const res = await post('/sign-in/magic-link', { email, callbackURL });
   if (res.ok) return { ok: true, status: res.status };
-  const detail = (await res.json().catch(() => ({}))) as { message?: string };
-  return { ok: false, status: res.status, error: detail.message ?? '邮件发送失败' };
+  return { ok: false, status: res.status, error: await authFailure(res, '邮件发送失败') };
 }
