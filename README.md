@@ -95,6 +95,8 @@ packages/api-client/        # @saas/api-client：由 OpenAPI 生成的类型安�
 **调研**（`docs/research/` — 参考，非开发依据）
 
 - [Better Auth 承载境内登录渠道](./docs/research/better-auth-cn-providers.md)
+- [Clean Architecture 系列整理（19 篇逐篇忠实对译 + 9 篇主题串读，双轨索引）](./docs/research/clean-architecture/README.md)
+- [Know About Clean Architecture（外部概念参考卡：Bitloops 等）](./docs/research/KnowAboutCleanArchitecture/README.md)
 
 **指南**（`docs/` — 操作手册）
 
