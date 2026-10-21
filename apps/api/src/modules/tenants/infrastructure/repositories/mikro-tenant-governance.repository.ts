@@ -1,6 +1,6 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import {
   Invitation,
@@ -122,7 +122,7 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
       em.count(Member, { organizationId } as never),
       em.count(Invitation, { organizationId } as never),
       em.count(Workspace, { organizationId } as never),
-      em.count(Post, { organizationId } as never),
+      em.count(PostEntity, { organizationId } as never),
     ]);
     return { tenant, memberCount, invitationCount, workspaceCount, postCount };
   }
@@ -213,7 +213,7 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
       updatedAt: s.updatedAt,
     }));
 
-    const postEntities = await em.find(Post, { organizationId } as never);
+    const postEntities = await em.find(PostEntity, { organizationId } as never);
     const posts = postEntities.map((p) => ({
       id: p.id,
       title: p.title,

@@ -5,7 +5,7 @@ import type { PostReadModel } from '../../application/read-models/post.read-mode
 
 /**
  * posts 上下文响应契约（F1 甲①）——schema 源，纯文档面零运行时。
- * 真相源 = controller 实际返回类型 `PostReadModel (≡ PostRecord)`；漂移防线见文末编译期双向赋值锁。
+ * 真相源 = controller 实际返回类型 `PostReadModel`（领域实体 `Post` 经 application `toPostReadModel` 映射而得）；漂移防线见文末编译期双向赋值锁。
  */
 export class PostResponse {
   @ApiProperty({ description: 'UUIDv7。' })

@@ -1,5 +1,6 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { Post } from '@app/modules/posts/domain/entities/post';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { encodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import type { EntityManager } from '@mikro-orm/core';
@@ -67,7 +68,7 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
       Record<string, unknown>,
       Record<string, unknown>,
     ];
-    expect(entity).toBe(Post);
+    expect(entity).toBe(PostEntity);
     // 首页无 cursor：谓词即裸租户对象（organizationId 必含·去之则回归红）
     expect(where).toEqual({ organizationId: 'orgA' });
     expect(options).toMatchObject({
@@ -85,7 +86,7 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
 
   it('create() stamps the active tenant regardless of the draft', async () => {
     const { repo, spies } = makeRepo('orgA');
-    await repo.create({ title: 'hi' });
+    await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
     expect(data.organizationId).toBe('orgA');
     expect(spies.persist).toHaveBeenCalled();
@@ -94,7 +95,9 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
 
   it('create() refuses when no tenant is bound (never forks)', async () => {
     const { repo, spies } = makeRepo(null);
-    await expect(repo.create({ title: 'hi' })).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(repo.create(Post.draft({ title: 'hi' }))).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
     expect(spies.fork).not.toHaveBeenCalled();
   });
 });
@@ -125,7 +128,7 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
 
   it('create() stamps BOTH the trusted tenant and the active workspace', async () => {
     const { repo, spies } = makeRepo('orgA', 'wsA1');
-    await repo.create({ title: 'hi' });
+    await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
     expect(data.organizationId).toBe('orgA');
     expect(data.workspaceId).toBe('wsA1');
@@ -133,7 +136,7 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
 
   it('create() with no workspace selector stamps workspaceId = null (tenant-level row)', async () => {
     const { repo, spies } = makeRepo('orgA');
-    await repo.create({ title: 'hi' });
+    await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
     expect(data.organizationId).toBe('orgA');
     expect(data.workspaceId).toBeNull();

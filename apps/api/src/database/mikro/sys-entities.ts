@@ -5,7 +5,7 @@ import {
   TENANT_ROLE_GRANT_META,
   TENANT_ROLE_META,
 } from '../../modules/authorization/infrastructure/entities/rbac.entities';
-import { Post } from '../../modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '../../modules/posts/infrastructure/entities/post.entity';
 import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
@@ -54,7 +54,7 @@ export const RBAC_TABLE_METAS = [TENANT_ROLE_META, TENANT_ROLE_GRANT_META, TENAN
 export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES];
 
 export const MIKRO_SYS_ENTITIES = [
-  Post,
+  PostEntity,
   ...MIKRO_ENTITIES,
   ...MIKRO_FOUR_TABLE_ENTITIES,
   ...MIKRO_RBAC_TABLE_ENTITIES,

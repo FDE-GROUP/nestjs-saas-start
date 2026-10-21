@@ -1,6 +1,6 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import {
   Invitation,
   Member,
@@ -150,7 +150,7 @@ describe('MikroTenantGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
     expect(diag?.tenant.organizationId).toBe('orgA');
     // 计数走 em.count（纯 COUNT(*)·不选列），依次四表。
     const countedEntities = spies.count.mock.calls.map((c) => c[0]);
-    expect(countedEntities).toEqual([Member, Invitation, Workspace, Post]);
+    expect(countedEntities).toEqual([Member, Invitation, Workspace, PostEntity]);
   });
 });
 

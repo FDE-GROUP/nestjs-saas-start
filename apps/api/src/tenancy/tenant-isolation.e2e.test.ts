@@ -9,7 +9,7 @@ import {
   Session,
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -98,7 +98,7 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     if (!app) return;
     const em = await mikro.fork();
     if (createdOrgIds.length) {
-      await em.nativeDelete(Post, { organizationId: { $in: createdOrgIds } } as never);
+      await em.nativeDelete(PostEntity, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
     }

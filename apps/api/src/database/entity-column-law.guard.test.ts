@@ -3,7 +3,7 @@ import {
   TENANT_ROLE_GRANT_META,
   TENANT_ROLE_META,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { TENANT_META } from '@app/modules/tenants/infrastructure/entities/tenant.entity';
 import { USER_STATUS_META } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
@@ -53,7 +53,7 @@ function metaFacts(meta: TableMeta): SelfTableFacts {
   };
 }
 
-const postAny = Post as unknown as { tableName: string; properties: Record<string, unknown> };
+const postAny = PostEntity as unknown as { tableName: string; properties: Record<string, unknown> };
 const POST_FACTS: SelfTableFacts = {
   table: postAny.tableName,
   hasCreatedAt: 'createdAt' in postAny.properties,

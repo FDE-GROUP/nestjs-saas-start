@@ -5,7 +5,7 @@ import { Event } from '@app/database/eventing/entities/event.entity';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import {
   Invitation,
@@ -94,7 +94,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       seatsLimit: 5,
       updatedAt: new Date(),
     } as never);
-    await em.insert(Post, {
+    await em.insert(PostEntity, {
       id: `e2e-hd-post-${stamp}`,
       title: 'HD e2e',
       organizationId: id,
@@ -192,7 +192,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       await em.count(Invitation, { organizationId: orgId } as never),
       await em.count(Workspace, { organizationId: orgId } as never),
       await em.count(TenantSubscription, { tenantId: orgId } as never),
-      await em.count(Post, { organizationId: orgId } as never),
+      await em.count(PostEntity, { organizationId: orgId } as never),
     ];
     for (const count of counts) expect(count).toBe(0);
 

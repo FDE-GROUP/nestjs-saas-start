@@ -1,5 +1,5 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import {
   type CursorKey,
   type CursorPage,
@@ -12,11 +12,9 @@ import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import { QueryOrder } from '@mikro-orm/core';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import type {
-  PostDraft,
-  PostRecord,
-  PostRepository,
-} from '../../domain/repositories/post.repository';
+import type { Post } from '../../domain/entities/post';
+import type { PostRepository } from '../../domain/repositories/post.repository';
+import { toPostDomain } from './post-mapping';
 
 /**
  * ORM 修宪案 B · 切片 2 —— posts 上下文的 **MikroORM 仓储适配**（MikroORM 为唯一实现）。
@@ -28,7 +26,7 @@ import type {
  *
  * 读写全走 Mikro `EntityManager`（`findAndCount`/`findOne`/`create`+`persist`）·每次 `fork()` 取独立 em
  * （禁共享全局 em）。`EntityCaseNamingStrategy` 使 camelCase 属性⇄camelCase 物理列（对齐 `schema.ts`·见
- * `post.entity.ts` 头注）·`datetime` 回真实 `Date`·故 `PostRecord` 的 `createdAt/updatedAt` 天然为 `Date`。
+ * `post.entity.ts` 头注）·`datetime` 回真实 `Date`·故领域实体的 `createdAt/updatedAt` 天然为 `Date`。
  * `updatedAt` 无 DB 触发器（旧 ORM 侧靠 app `$onUpdate`）·写路径显式盖时间戳。
  */
 @Injectable()
@@ -43,20 +41,7 @@ export class MikroPostRepository implements PostRepository {
     return { organizationId: this.tenant.requireTenantId(), workspaceId: this.tenant.workspaceId };
   }
 
-  private toRecord(entity: Post): PostRecord {
-    return {
-      id: entity.id,
-      title: entity.title,
-      content: entity.content ?? null,
-      published: entity.published,
-      organizationId: entity.organizationId,
-      workspaceId: entity.workspaceId ?? null,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    };
-  }
-
-  async list(request: CursorPageRequest): Promise<CursorPage<PostRecord>> {
+  async list(request: CursorPageRequest): Promise<CursorPage<Post>> {
     const { organizationId, workspaceId } = this.scope();
     // `where` 为真实谓词对象（organizationId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
     // `mikro-orm.factory.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
@@ -79,7 +64,7 @@ export class MikroPostRepository implements PostRepository {
 
     const em = await this.mikro.fork();
     // 多取一条（limit+1）探下一页·免 COUNT 全量查询。排序以 `id DESC`（UUIDv7 ⇒ 时间降序·与 createdAt 序 ms 级一致）。
-    const entities = await em.find(Post, where as never, {
+    const entities = await em.find(PostEntity, where as never, {
       orderBy: { id: QueryOrder.DESC },
       limit: request.limit + 1,
     });
@@ -89,35 +74,36 @@ export class MikroPostRepository implements PostRepository {
     const last = pageEntities[pageEntities.length - 1];
     const nextCursor = hasMore && last ? encodeCursor({ id: last.id }) : undefined;
     return createCursorPage(
-      pageEntities.map((entity) => this.toRecord(entity)),
+      pageEntities.map((entity) => toPostDomain(entity)),
       hasMore,
       nextCursor,
     );
   }
 
-  async findById(id: string): Promise<PostRecord | null> {
+  async findById(id: string): Promise<Post | null> {
     const { organizationId, workspaceId } = this.scope();
     const where = workspaceId ? { id, organizationId, workspaceId } : { id, organizationId };
     const em = await this.mikro.fork();
-    const entity = await em.findOne(Post, where as never);
-    return entity ? this.toRecord(entity) : null;
+    const entity = await em.findOne(PostEntity, where as never);
+    return entity ? toPostDomain(entity) : null;
   }
 
-  async create(draft: PostDraft): Promise<PostRecord> {
+  async create(post: Post): Promise<Post> {
     const { organizationId, workspaceId } = this.scope();
     const now = new Date();
     const em = await this.mikro.fork();
-    const entity = em.create(Post, {
+    // 领域实体携业务字段（title/content/published）；id/租户/时间戳由本适配器 + ALS 盖章落库。
+    const entity = em.create(PostEntity, {
       id: uuidv7(),
-      title: draft.title,
-      content: draft.content ?? null,
-      published: draft.published ?? false,
+      title: post.title,
+      content: post.content ?? null,
+      published: post.published,
       organizationId,
       workspaceId: workspaceId ?? null,
       createdAt: now,
       updatedAt: now,
     });
     await em.persist(entity).flush();
-    return this.toRecord(entity);
+    return toPostDomain(entity);
   }
 }

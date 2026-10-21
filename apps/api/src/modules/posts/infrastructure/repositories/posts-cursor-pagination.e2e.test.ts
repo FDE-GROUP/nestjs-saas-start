@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { TransactionScope } from '@app/database/eventing/transaction-scope';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { decodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
@@ -52,7 +52,7 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
     await em.insert(Organization, { id: orgId, name: `E2E Cursor ${stamp}`, slug: orgId } as never);
     // 单语句多行 INSERT（不携 createdAt）→ DB 默认 now() 事务级恒定 → 六行 createdAt 逐 µs 相等（#3 回归面）。
     await em.insert(
-      Post,
+      PostEntity,
       ids.map((id) => ({
         id,
         title: `cursor-${id}`,
@@ -69,7 +69,7 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
     if (!mikro) return;
     const em = await mikro.fork();
     // organization 级联（ON DELETE CASCADE）清 post；显式先删 post 更稳。
-    await em.nativeDelete(Post, { organizationId: orgId } as never);
+    await em.nativeDelete(PostEntity, { organizationId: orgId } as never);
     await em.nativeDelete(Organization, { id: orgId } as never);
     await mikro.onModuleDestroy();
   });

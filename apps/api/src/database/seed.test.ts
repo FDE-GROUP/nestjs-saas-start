@@ -4,7 +4,7 @@ import {
   User,
   Verification,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -238,7 +238,7 @@ describe('seed createPosts (S-d6)', () => {
     expect(spies.find.mock.calls[0][0]).toBe(Organization);
     expect(spies.find.mock.calls[0][1]).toEqual({});
     expect(spies.find.mock.calls[0][2]).toEqual({ limit: 1 });
-    expect(insertsFor(spies.insert, Post)).toHaveLength(0);
+    expect(insertsFor(spies.insert, PostEntity)).toHaveLength(0);
   });
 
   it('有 organization → 每 post 盖 organizationId·显式 updatedAt·不写 createdAt（落 DB 默认）', async () => {
@@ -247,7 +247,7 @@ describe('seed createPosts (S-d6)', () => {
 
     await createPosts(em, { includeTestData: true, userCount: 0, postCount: 2 });
 
-    const postInserts = insertsFor(spies.insert, Post);
+    const postInserts = insertsFor(spies.insert, PostEntity);
     expect(postInserts).toHaveLength(1);
     const batch = postInserts[0] as (Record<string, unknown> & { organizationId: string })[];
     expect(batch).toHaveLength(2);
@@ -276,7 +276,7 @@ describe('seed cleanup（BA 表随 user 清·切片 A）', () => {
       Session,
       Account,
       Verification,
-      Post,
+      PostEntity,
       User,
     ]);
     for (const call of spies.nativeDelete.mock.calls) expect(call[1]).toEqual({});
@@ -323,7 +323,7 @@ describe('seed runSeed 编排', () => {
     expect(as.createOrganization.mock.calls[0][0]).toEqual({
       body: { name: 'Acme (Seed)', slug: 'seed-acme', userId: 'u-op' },
     });
-    expect(insertsFor(spies.insert, Post)).toHaveLength(1);
+    expect(insertsFor(spies.insert, PostEntity)).toHaveLength(1);
   });
 });
 

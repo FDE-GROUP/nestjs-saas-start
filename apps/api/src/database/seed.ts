@@ -14,7 +14,7 @@ import {
   User,
   Verification,
 } from '../modules/auth/infrastructure/entities/ba-identity.entities';
-import { Post } from '../modules/posts/infrastructure/entities/post.entity';
+import { PostEntity } from '../modules/posts/infrastructure/entities/post.entity';
 import { Member, Organization } from '../modules/tenants/infrastructure/entities/ba-org.entities';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 import { MIKRO_SYS_ENTITIES } from './mikro/sys-entities';
@@ -372,7 +372,7 @@ export async function createPosts(em: EntityManager, options: SeedOptions): Prom
   if (postsToCreate.length > 0) {
     try {
       await em.insert(
-        Post,
+        PostEntity,
         postsToCreate.map((p) => ({
           id: uuidv7(),
           organizationId: orgId,
@@ -398,7 +398,7 @@ export async function cleanup(em: EntityManager): Promise<void> {
       await em.nativeDelete(Session, {});
       await em.nativeDelete(Account, {});
       await em.nativeDelete(Verification, {});
-      await em.nativeDelete(Post, {});
+      await em.nativeDelete(PostEntity, {});
       await em.nativeDelete(User, {});
       console.log('✅ Cleanup completed');
     } catch (error) {
