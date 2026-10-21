@@ -2,7 +2,7 @@
 
 > 定位: **讲解性指南**（非规范）| 规范性单源: [`docs/specs/architecture.md`](./specs/architecture.md) §核心设计原则（P1–P4）——本文是 P1 的展开阐述，与规范冲突时以规范为准
 > 缘起: 架构精度修宪（2026-10-20 · [`global-architecture-functional-core-amendment`](./plans/global-architecture-functional-core-amendment.md)）——本文沉淀其论证、判据与常见问答，供模板使用者在自己的上下文里复制该范式
-> 受众: 人 + Agent | 版本: 0.2.0（2026-10-21）
+> 受众: 人 + Agent | 版本: 0.3.0（2026-10-21）
 
 ---
 
@@ -164,6 +164,27 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 **Q：未来出现"跨多次修改的密集不变量"怎么办？** 按 P2/P1 升级为函数式聚合：`load → 纯迁移函数 → save`——`TenantStatusService.transition` 已经是这个形态（没有 class 外壳的聚合事务）。不需要回到实体类。
 
+## 14. 参考谱系（母本出处·非本仓自创）
+
+本范式几乎每个零件都有公开母本；下表供后来者溯源，**切勿误认本仓自创**——唯一属本仓的是把这些**组合 + 用守卫强制化**（architecture 四支柱 #3 已如实标「工程综合·非学术新颖」）。
+
+| 本仓要素 | 母本 | 出处（作者·年份） |
+|---|---|---|
+| 纯核 + 副作用推到边界的整体风格 | Functional Core, Imperative Shell /《Boundaries》 | Gary Bernhardt · 2012（RubyConf '12） |
+| 同一风格的 F# 体系化 +「pits of success」 | 同名演讲 · Type-Driven Design | Scott Wlaschin |
+| 依赖规则向内 / 端口-适配器 | Hexagonal（Ports & Adapters）· Clean Architecture · Onion | Alistair Cockburn · 2005；R. C. Martin；Jeffrey Palermo · 2008 |
+| 用返回值而非异常表达失败（result-union） | Railway Oriented Programming | Scott Wlaschin · 约 2014 |
+| 边界解析成「构造即合法」类型（VO 构造校验 + 边界 zod） | 「Parse, Don't Validate」 | Alexis King · 2019 |
+| 判别联合 = 代数数据类型（sum type） | Algebraic Data Types | ML / Haskell 学派（通用·无单一作者） |
+| 值对象 · 领域实体 · 限界上下文 | DDD 战略/战术 | Eric Evans · 2003；Vaughn Vernon · 2013 |
+| 事件溯源 / CQRS | Event Sourcing · CQRS | Greg Young（推广 · 术语）；Martin Fowler（bliki 记录）；底层 Command–Query Separation 原则 = Bertrand Meyer |
+
+### 范式坐标（本范式属于哪种编程范式？）
+
+- **内核的写法**属**函数式编程范式（FP）**——不可变数据 + 纯函数（引用透明 / total）+ 代数数据类型（判别联合）+ 声明式；刻意规避「可变 behavior-box」的经典 OOP 聚合风格（近数据导向/FP，而非消息传递式 OO）。
+- **但整体是多范式混合**：FP 核 + 命令式/OO 壳（`Quota`/`Post` 用 class 承载却按 FP 方式使用）。TypeScript 本身即多范式语言，本范式做的是**刻意的「范式分界」**——边界用命令式、内核只用 FP 子集。
+- **三层别混称**：`FC-IS`/六边形是**架构风格/组织原则**（不是「编程范式」）；result-union/VO/Ports & Adapters 是**设计模式/惯用法**；「纯/不可变/代数类型」才是**编程范式（FP）**层面的事。「投影镜射」的**组合**无单独命名范式·属工程综合。
+
 ---
 
 ## 演变记录
@@ -172,3 +193,4 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 |------|------|----------|----------|
 | 2026-10-20 | 0.1.0 | 首版 | 架构精度修宪的论证/判据/地图/FAQ 沉淀成讲解指南（规范单源仍居 architecture.md） |
 | 2026-10-21 | 0.2.0 | 实体教义一期 | 新增 §9「实体教义与三映射（投影镜射）」讲解、订正 §8"数据形状"叙事；原 §9–12 顺延为 §10–13 |
+| 2026-10-21 | 0.3.0 | 谱系溯源 + 范式坐标 | 新增 §14「参考谱系（母本出处·带作者年份）」与范式坐标问答（回应「属哪种编程范式」）·纯讲解补齐不动规范 |
