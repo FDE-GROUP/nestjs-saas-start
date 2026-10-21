@@ -5,7 +5,7 @@ dotenv.config();
 import { pathToFileURL } from 'node:url';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import type { EntityManager, MikroORM } from '@mikro-orm/core';
-import { mikroAuthAdapter } from '@okee/mikro-adapter/mikro-auth-adapter';
+import { mikroAuthAdapter } from '@okee/ba-mikro-adapter/mikro-auth-adapter';
 import { betterAuth } from 'better-auth';
 import { organization } from 'better-auth/plugins';
 import {

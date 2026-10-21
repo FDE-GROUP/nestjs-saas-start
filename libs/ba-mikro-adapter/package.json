@@ -1,5 +1,5 @@
 {
-  "name": "@okee/mikro-adapter",
+  "name": "@okee/ba-mikro-adapter",
   "version": "0.0.0",
   "description": "自持 Better Auth × MikroORM v7 adapter（官方 createAdapterFactory 规格内·transaction/consumeOne/incrementOne 齐备·内部私有·不发布）",
   "type": "module",

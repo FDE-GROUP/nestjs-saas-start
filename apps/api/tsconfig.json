@@ -13,8 +13,8 @@
       "@core/saas-kit/*": ["../../libs/core/src/*"],
       "@saas/contracts": ["../../libs/contracts/src/index.ts"],
       "@saas/contracts/*": ["../../libs/contracts/src/*"],
-      "@okee/mikro-adapter": ["../../libs/mikro-adapter/src/index.ts"],
-      "@okee/mikro-adapter/*": ["../../libs/mikro-adapter/src/*"]
+      "@okee/ba-mikro-adapter": ["../../libs/ba-mikro-adapter/src/index.ts"],
+      "@okee/ba-mikro-adapter/*": ["../../libs/ba-mikro-adapter/src/*"]
     }
   },
   "include": ["src/**/*"],

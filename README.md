@@ -80,7 +80,7 @@
 libs/
 ├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenancy/authorization 契约，以及 subscriptions/workspaces 领域层
 ├─ contracts/src/     # @saas/contracts 跨端传输契约单源（请求/响应/envelope 的 zod schema + 派生类型）
-└─ mikro-adapter/     # MikroORM 适配层
+└─ ba-mikro-adapter/  # Better Auth × MikroORM 适配层
 apps/
 ├─ api/src/           # 后端参考应用（NestJS + Fastify）
 │  ├─ modules/<上下文>/        # 限界上下文：users / auth / authorization / tenants / workspaces / platform / payment / storage / subscriptions / posts
