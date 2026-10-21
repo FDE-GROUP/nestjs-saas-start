@@ -40,6 +40,9 @@ const makeService = (overrides?: Record<string, unknown>) => {
     { checkSeats: async () => {} } as never,
     authInstance as never,
     httpAdapterHost as never,
+    // AuthBootstrapService 第 6 依赖 mailerService（auth 接入邮件/magic-link 时新增）：
+    // 本测仅验 bootstrap 装配、不触发发信（CreateAuth 装配期不 eager 调用它），故给轻量 mock。
+    { sendMail: async () => {} } as never,
   );
   return { service, registered, authInstance };
 };
