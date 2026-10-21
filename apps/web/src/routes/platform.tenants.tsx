@@ -23,13 +23,13 @@ export const Route = createFileRoute('/platform/tenants')({
     offset: Number(search.offset ?? 0) || 0,
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),
-  loader: async (ctx) => {
+  // search 经 loaderDeps 注入 deps（对齐 TanStack Router 1.x：LoaderFnContext 无 search 字段，
+  // validated search 只在 loaderDeps 的 opts 暴露）——此前直取 ctx.search 运行期恒 undefined 致崩。
+  loaderDeps: ({ search }): TenantSearch => ({ offset: search.offset, q: search.q }),
+  loader: async ({ deps }) => {
     await requireSession();
-    // validateSearch 的返回类型未被插件登记进路由注册表（本仓首个 offset 分页面）——
-    // `ctx.search` 运行时存在，此处按 TenantSearch 形取，编译期诚实降级。
-    const search = (ctx as unknown as { search: TenantSearch }).search;
     const { data, error } = await api.GET('/api/v1/platform/tenants', {
-      params: { query: { limit: LIMIT, offset: search.offset, search: search.q } },
+      params: { query: { limit: LIMIT, offset: deps.offset, search: deps.q } },
     });
     if (error) {
       logApiError({ path: '/api/v1/platform/tenants', scope: 'platform.tenants' }, error);
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/platform/tenants')({
         body: describeApiError(error),
       };
     }
-    return { kind: 'ok' as const, page: data?.data, offset: search.offset, q: search.q };
+    return { kind: 'ok' as const, page: data?.data, offset: deps.offset, q: deps.q };
   },
   component: PlatformTenantsPage,
 });
