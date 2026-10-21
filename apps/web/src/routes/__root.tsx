@@ -1,7 +1,10 @@
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
+import { RouteError, RouteNotFound } from '../components/route-feedback';
 
 export const Route = createRootRoute({
   component: RootLayout,
+  errorComponent: RouteError,
+  notFoundComponent: RouteNotFound,
 });
 
 function RootLayout() {
