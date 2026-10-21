@@ -1,6 +1,6 @@
 # 项目愿景（Vision）
 
-> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.5.0 | 日期: 2026-10-21
+> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.6.0 | 日期: 2026-10-21
 > 归属: `docs/specs/`（**宪法顶层** · 人/团队平面）| 性质: **重写型**（正文整体重写 + 变更戳 + 演变单列）
 > 地位: 本文件是项目宪法顶层——其余 `specs`（architecture / workflow / tooling-standards）与 `plans` 以其为纲；与它冲突时，**以实现/方案让位于愿景方向**（愿景只指方向，不作技术门禁）。
 > 关联: [workflow.md](./workflow.md)（工作原则）· [architecture.md](./architecture.md)（结构 SSOT）· [tooling-standards.md](./tooling-standards.md)（工具 SSOT）
@@ -60,7 +60,7 @@
 
 愿景的落地方式继承既有宪法，不新造：
 
-- **架构**：六边形架构（= Clean Architecture 依赖规则·ports & adapters）垂直切片 + **函数式领域内核**（functional core, imperative shell·含 2026-10-21 投影镜射/实体教义一期）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。四点定位（CA 为底 · DDD 量力 · FC 三映射为突破 · CQRS/ES/EDA 按需但备能）已升为宪法定位、canonical 见 [architecture.md](./architecture.md)「Positioning — Four Pillars」。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
+- **架构**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + **函数式领域内核**（functional core, imperative shell·含 2026-10-21 投影镜射/实体教义一期）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。四点定位（CA 为底 · DDD 量力 · FC 三映射为突破 · CQRS/ES/EDA 按需但备能）已升为宪法定位、canonical 见 [architecture.md](./architecture.md)「Positioning — Four Pillars」。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
 - **落位判据（机制层 vs 业务域）**：新能力落位按「谁定义规则、为谁服务」（非话题）判归属，同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属）——**系统机制**（`auth` 身份机器、authorization 裁决机器、`tenancy/` 横切层、窄义基础设施 database/config/…）与**业务域**（各限界上下文 + authorization 管理面）；三处易错刀口：多租户机制 ≠ 租户业务域、认证机制 ≠ 用户合规域；authorization 双栖（裁决机器=机制 / 授权事实与管理面=支撑域，故为限界上下文非横切层）；`storage`/`payment` 是带领域策略的出站网关上下文、**非**基础设施。判错归属即结构债；四维判据与完整归属表 canonical 见 [architecture.md](./architecture.md)「Mechanism Layer vs Business Domain」。
 - **工程**：本地 CI 为 L1 裁决、fallow 为 L2 佐证（须二判）、**无已审方案不写码**、完成判据可核验+穷尽（[workflow.md](./workflow.md) · [tooling-standards.md](./tooling-standards.md)）。
 - **决策**：权威归人；多租户隔离级别、计费模型等**不可逆决策须人签核**（workflow §3 高危清单）。
@@ -99,8 +99,9 @@
 | 2026-10-17 | 0.3.0 | 人令引入前端（三点裁：修宪/参考 okee 栈/工具 SSOT 沿用·global-frontend-adoption 过审计门） | §4 增第 7 支柱「人的界面」；§7 阶段 3 加注自助面=前端首落位 |
 | 2026-10-20 | 0.4.0 | **架构精度修宪顶层对齐**（S5 补笔·高危#5 随批）：§6 架构条与改写后 architecture.md 保持宪法层级一致，消除顶层矛盾；§7 阶段 1「聚合」措辞按实交付精度化 | §6 / §7 |
 | 2026-10-21 | 0.5.0 | 宪法成文「机制层 vs 业务域归属判据」（人裁·architecture 总纲）上承至愿景顶层：§6 新增「落位判据」条；同时回正版本头（上一笔 0.4.0 漏更头部） | §6 / 版本头 |
+| 2026-10-21 | 0.6.0 | 首要术语翻正回 Clean Architecture 为纲（四支柱 #1 本就是「CA 为底」）：§6 架构条「六边形」居首改为 CA 居首·六边形降为同族别名；ports & adapters 保留为边界机制。纯措辞·不动代码/目录/依赖方向 | §6 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.5.0 变更（§6 新增「落位判据」条上承机制/业务域归属总纲·回正版本头），以当前正文内容为准。
+正文已于 2026-10-21 / v0.6.0 变更（§6 架构条首要术语翻正回 Clean Architecture 为纲·六边形降为同族别名），以当前正文内容为准。
