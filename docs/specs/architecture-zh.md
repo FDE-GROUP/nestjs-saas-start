@@ -4,7 +4,10 @@
 
 - **六边形架构 / 整洁架构（Hexagonal = Clean Architecture·同一依赖规则）**：端口-适配器 + 依赖方向严格向内（`api → application → domain ← infrastructure`）；domain 除共享内核外零框架依赖（core 纯度守卫测试可执行化锁定）。
 - **函数式领域内核（functional core, imperative shell·架构精度修宪 2026-10-20）**：领域裁决 = 纯函数 + 不可变数据 + result-union（基准样例 `canTransition`）；**不采用聚合优先的战术 DDD**（唯一天然聚合 User 的生命周期归 Better Auth·死管道已删），值对象按需（本域仅 `Quota`）。
-- **CQRS 按需（P4 判据）**：存在跨聚合编排/事务边界/事件发布的上下文走 `Command/Query → Handler`（`@nestjs/cqrs`）；简单上下文（controller + service + repository）是**合法终态**而非「没做完」。能力基线必含、实施逐模块裁（ES/EDA 同此规则，见下条）；handler 实证示例：tenants 治理命令、users delete/export。
+- **投影镜射教义（FC 实体一致性·核心原则·2026-10-21 固化·人签核）**：**领域实体** ↔ 其 **数据实体** ↔ 物理 **表** 之间的一致性目标**不是**朴素的 1:1 全等——Evans 式聚合根天生破坏之（对象图、值对象、存储专用列、局部身份）。函数式内核下目标是**投影**：`领域态 ⊆ (数据实体 ≡ 表)`，由三件套强制——（1）*数据实体 ≡ 表* 经 `migration:generate` diff + schema/元数据一致性 e2e + 实体列定律守卫（已在位）；（2）**纯全函数 mapper** `fromRow`（数据实体 → 领域复原）作仓储适配器的唯一映射缝；（3）**编译期结构锁** 焊领域持久态契约（`PostState`）与数据实体接口（`PostEntity`），落 `infrastructure/`——**绝不落 `domain/`**（domain 不得 import infrastructure）。存储专用列（乐观锁 `version`、FK、discriminator）走白名单：mapper 读之，**不**镜射进领域态。真聚合同一定律按粒度成立（table-per-aggregate 或 table-per-entity——每实体 ↔ 自己的表、值对象嵌入）。参考实现：`posts`；其余持久化上下文**待跟进**，各自经已审方案落地。详见下方[实体教义](#实体教义领域实体-vs-数据实体)与 [module-posts-fc-projection-doctrine.md](../plans/module-posts-fc-projection-doctrine.md)。
+- **CQRS 按需（P4 判据）**：存在跨聚合编排/事务边界/事件发布的上下文走 `Command/Query → Handler`（`@nestjs/cqrs`）；简单上下文可直接调 `application/*.service.ts` 而不加 handler——**「合法终态」仅指 CQRS handler 可省，绝不指可跳过分层本身**。每个限界上下文仍**必须**呈现 `domain/application/infrastructure/api` 四层垂直切片；`domain/` 承载真实业务规则（策略 / 值对象 / 端口），出站网关型上下文亦然（通道选择与降级、上传校验、金额与货币、对象键命名等策略须下沉 domain）。能力基线必含、实施逐模块裁（ES/EDA 同此规则，见下条）；handler 实证示例：tenants 治理命令、users delete/export。
+- **Use Cases 层 = `application/`**（术语坐标·2026-10-21 成文）：Clean Architecture 锥体第二环 "Use Cases" 在本仓**不是**一个独立的 `usecases/` 目录，也**不是** `XxxUseCase`/`XxxInteractor` 后缀——它**就是**每个垂直切片的 `application/` 层，经两种业界主流惯例物化、且**都是 P4 所述的合法终态**：（a）**一用例一 CQRS handler**（`Command/Query → Handler`·`@nestjs/cqrs`·用于 `posts`/`tenants`/`users`·与 NestJS 生态对齐的主流形态）；（b）**命令式应用服务**（`application/<context>.service.ts` 的每个公开方法即一个用例·用于出站网关型上下文 `payment`/`storage`·DDD/Vernon 应用服务形态）。有意**不**新增第三种 `usecases/` 目录或 `XxxUseCase` 命名：会与 handler/service 语义重复、偏离 `@nestjs/cqrs` 惯例。分层（存在 Use Cases 层）强制、把每个用例物化为独立 handler 类逐上下文可选。
+- **Handler vs service——选择判据**（P4 细化·每上下文保持**单一 spine**、不按调用混用——8 个上下文已全部核实）：当用例需跨聚合编排、显式事务/UoW 边界、领域事件发布、或逐消息管道/钩子点（守卫、幂等、回放），或命令/查询契约值得分别派发时，走 **CQRS handler spine**——当前：`users`/`posts`/`tenants`/`workspaces`/`subscriptions`。当上下文是薄编排或**出站网关**——单一副作用路径、无聚合图、逐用例 command+handler+registrar 的仪式徒增无值时，走**命令式应用服务 spine**——当前：`payment`/`storage`（+ 命令稀少的支撑上下文 `authorization`）。两者皆合法终态；service spine 在 handler 型需求出现时可**升为 handler**（能力基线强制、实施逐模块裁）。
 - **垂直切片（Vertical Slice）**：按功能而非技术分层组织（`apps/api/src/modules/<context>`；共享契约侧居 `libs/core/src/modules/<context>`）。上下文之间只能通过领域事件耦合，禁止 import 另一个上下文的 `domain/` 或 `infrastructure/`。
 - **Event Sourcing（能力基线·逐模块按需·分期递进）**：确定的架构目标（人澄清 2026-10-14；2026-10-20 人再定向「回放即真相」+ 能力/实施分离，**supersede** 同日精度修宪的「Phase C 可选·终态缺省=审计日志」口径——见 [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)）。架构必须**完备提供** CQRS/ES/EDA 能力（端口、机制、参考示范）；**实施按业务模块实际需求逐模块裁**——被事件化的聚合以 event store 为唯一真相源（「回放即真相」·读表降为可重建投影）；简单 CRUD / 无状态数据（sessions、verification、成员关系等）**可依法永远不事件化**。已落地：shadow-append + 同事务 outbox + relay（`EVENT_PUBLISH_MODE: inproc|shadow|outbox`·缺省 inproc）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于精度修宪 S1 删除）。回放即真相以试点先行实证（tenants 治理状态机·R1）。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
@@ -38,7 +41,7 @@ src/
 ├── modules/                 # 限界上下文（垂直切片）
 │   ├── users/               # ★ 完整模式的参考实现
 │   │   ├── domain/          #   entities/ value-objects/ events/ repositories/（端口）
-│   │   ├── application/     #   commands/ queries/ read-models/（处理器）
+│   │   ├── application/     #   commands/ queries/ read-models/（处理器）· 应用服务 · ＝ CA「Use Cases」层
 │   │   ├── infrastructure/  #   MikroORM 仓储适配器、映射器、事件分发器
 │   │   ├── api/             #   Controller + DTO（HTTP 传输层）
 │   │   └── users.module.ts  #   装配 CqrsModule + 处理器 + 端口→适配器绑定
@@ -127,10 +130,24 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 任何扫描 `apps/api/src/modules/users/domain/**` 检查 `@nestjs/*`、`@mikro-orm/*`、
 `@app/database` import 的测试——层级方向另由上表逐层 import 矩阵与代码评审守住。
 
+### 实体教义：领域实体 vs 数据实体
+
+每个有持久化的限界上下文 **必须** 区分两样东西：
+
+- `domain/entities/` 下的**领域实体**——**不可变数据载体**，持构造期不变量与**返回新实例的纯转移函数**（按 P1 对齐函数内核·*非*可变行为盒），零框架依赖（受上表 `domain/` 行约束）；
+- `infrastructure/entities/` 下的**物理数据实体**——映射到表的 MikroORM `defineEntity`（见实体列定律附录）。
+
+仓储适配器是二者**唯一映射点**；**仓储端口流动领域实体**，传输形状仍是 application 的
+`read-model`——领域实体绝不越界进 `api/`（受上表 `api/` 行约束）。二者一致性
+（`领域态 ⊆ 数据实体 ≡ 表`）受上方**投影镜射教义**约束——纯 mapper 与编译期结构锁落
+`infrastructure/`，绝不落 `domain/`。参考实现：`posts`。
+其余持久化上下文（`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`）**待跟进**
+本教义，各自经已审方案落地——非即时违宪。
+
 ## 限界上下文地图与多租户机制层
 
 术语纪律：**租户（Tenant）**是业务概念（`tenants` 核心域聚合·有生命周期/不变量/语言）；
-其物理实体为自有户籍表 `tenant`（`tenants` 上下文属主·`id` = `organization.id` 同值代理键·
+其物理实体为自有户籍表 `tenant`（`tenants` 上下文属主·通则见上方实体教义 + 投影镜射教义：领域实体 ↔ 独立数据实体由仓储适配器映射·`id` = `organization.id` 同值代理键·
 `status` 真列 + DB CHECK——global-tenant-entity-reclamation 2026-10-20 改判旧「租户身份=organization·
 态寄居 `metadata`」隐含位移；`organization` 为其认证/成员面投影）；
 **多租户（Multi-tenancy）**是隔离机制（基础设施·无聚合无生命周期：请求识别 → ALS 传播 →
@@ -151,7 +168,10 @@ checker、经 D 片不再自住平台治理。
 ## 上下文间通信
 
 上下文之间绝不互相 import 内部实现。跨上下文的副作用通过领域事件表达，用
-`@EventsHandler` 订阅。`auth`、`stripe`、`storage` 保持为薄适配/胶水层（P4 合法终态）；未来若某上下文
+`@EventsHandler` 订阅。`stripe`（payment）与 `storage` 属**出站网关型上下文，仍须走四层垂直切片**
+（`domain/` 放 provider 端口 + 真实策略：通道选择与降级、上传校验、金额/货币、对象键命名；
+`application/` 编排；`infrastructure/` 放 SDK 适配器；`api/` 放控制器）。仅 `auth` 作为 Better Auth
+适配面暂保留薄适配/胶水层（过渡例外·待其专属分层专项）；未来若某上下文
 出现真聚合需求，经触发判据立项再引入（不再有「指定预留位」）。
 
 ## 上下文边界：认证（authentication）↔ 用户（users）

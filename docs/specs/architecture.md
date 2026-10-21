@@ -6,7 +6,10 @@
 
 - **Hexagonal / Clean Architecture** (same dependency rule): ports & adapters with a strict inward direction (`api → application → domain ← infrastructure`); the domain depends on nothing but the shared kernel (enforced by the core purity guard test).
 - **Functional core, imperative shell** (architecture precision amendment, 2026-10-20): domain decisions are pure functions over immutable data returning result-unions (reference: `canTransition`). Aggregate-first tactical DDD is **not** adopted (the only natural aggregate — User — has its lifecycle owned by Better Auth; the dead pipeline was removed). Value objects on demand (only `Quota` in this domain).
-- **CQRS on demand (P4)**: contexts with cross-aggregate orchestration / transaction boundaries / event publishing use `Command/Query → Handler` (`@nestjs/cqrs`); simple contexts (controller + service + repository) are a **legal end state**, not unfinished work. The capability baseline is mandatory while adoption is per-module (same rule for ES/EDA, see below); real handler examples: tenants governance commands, users delete/export.
+- **Projection-Mapping Doctrine (FC entity consistency · core principle, codified 2026-10-21, human sign-off)**: the consistency target between a **domain entity** ↔ its **data entity** ↔ the physical **table** is **not** a naive 1:1 equality — Evans-style aggregate roots inherently break that (object graphs, value objects, storage-only columns, local identity). Under the functional core the target is a **projection**: `domain-state ⊆ (data-entity ≡ table)`, enforced by a triple — (1) *data-entity ≡ table* via `migration:generate` diff + schema/metadata consistency e2e + the Entity Column Law guard (already in place); (2) a **pure total mapper** `fromRow` (data-entity → domain restore) as the single mapping seam in the repository adapter; (3) a **compile-time structural lock** between the domain persisted-state contract (`PostState`) and the data-entity interface (`PostEntity`), living in `infrastructure/` — **never `domain/`**, which must not import `infrastructure/`. Storage-only columns (optimistic-lock `version`, FK, discriminator) are on the whitelist: read by the mapper, **not** mirrored into domain-state. For real aggregates the same law holds per granularity (table-per-aggregate or table-per-entity — each entity ↔ its own table, value objects embedded). Reference implementation: `posts`; other persistence contexts are **pending** via their own audited plans. See the [Entity Doctrine](#entity-doctrine-domain-entity-vs-data-entity) below and [module-posts-fc-projection-doctrine.md](../plans/module-posts-fc-projection-doctrine.md).
+- **CQRS on demand (P4)**: contexts with cross-aggregate orchestration / transaction boundaries / event publishing use `Command/Query → Handler` (`@nestjs/cqrs`); simple contexts may call `application/*.service.ts` directly instead of adding handlers — **what is a "legal end state" is only the optionality of CQRS handlers, never the layering itself**. Every bounded context MUST still present the four-layer vertical slice `domain/application/infrastructure/api`; `domain/` carries the real business rules (policies / value objects / ports) even for outbound-gateway contexts (channel selection & degradation, upload validation, money & currency, object-key naming). The capability baseline is mandatory while adoption is per-module (same rule for ES/EDA, see below); real handler examples: tenants governance commands, users delete/export.
+- **Use Cases layer = `application/`** (terminology coordinate, codified 2026-10-21): the Clean Architecture cone's second ring "Use Cases" is **not** a separate `usecases/` folder nor a `XxxUseCase`/`XxxInteractor` suffix here — it **is** the `application/` layer of each vertical slice, materialized through two recognized industry conventions, both legal end-states per P4 above: (a) **CQRS handler-per-use-case** (`Command/Query → Handler` via `@nestjs/cqrs`; used by `posts`/`tenants`/`users` — the NestJS-aligned mainstream form), and (b) **imperative application service** (each public method of `application/<context>.service.ts` is a use case; used by the outbound-gateway contexts `payment`/`storage` — the DDD/Vernon application-service form). We **deliberately do not** add a third `usecases/` directory or `XxxUseCase` naming: it would duplicate handler/service semantics and diverge from the `@nestjs/cqrs` convention. The layer (a Use Cases layer exists) is mandatory; materializing each use case as a standalone handler class is per-context optional.
+- **Handler vs service — selection rule** (P4 refinement · each context keeps **one spine**, no per-call mixing — verified across all 8 contexts): use the **CQRS handler spine** when a use case needs cross-aggregate orchestration, an explicit transaction/UoW boundary, domain-event publishing, or a per-message pipeline/hook point (guards, idempotency, replay), or when command/query contracts are worth dispatching separately — today: `users`/`posts`/`tenants`/`workspaces`/`subscriptions`. Use the **imperative application-service spine** when the context is thin orchestration or an **outbound gateway** — a single side-effect path with no aggregate graph, where per-use-case command+handler+registrar ceremony adds no value — today: `payment`/`storage` (+ the command-light support context `authorization`). Both are legal end-states; a service spine may be **upgraded to handlers** when handler-type needs emerge (capability baseline mandatory, adoption per-module).
 - **Vertical slices**: contexts are packaged by feature (`apps/api/src/modules/<context>`; shared-contract contexts live under `libs/core/src/modules/<context>`), not by technical tier. Cross-context coupling only happens through domain events, never by importing another context's `domain/` or `infrastructure/`.
 - **Event Sourcing (capability baseline · per-module adoption · phased)**: confirmed architectural goal (human clarification 2026-10-14; truth-source re-direction + capability/implementation separation, human 2026-10-20, supersedes the "Phase C optional / CRUD-as-default-end-state" wording of the 2026-10-20 precision amendment — see [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)). The architecture **must fully provide** CQRS/ES/EDA capabilities (ports, mechanism, reference demo); **adoption is decided per business module** on real needs — for eventized aggregates the event store is the single source of truth ("replay = truth", read tables are rebuildable projections); simple-CRUD / stateless data (sessions, verification, memberships…) may **legally remain CRUD forever**. Landed today: shadow-append + transactional outbox + relay (`EVENT_PUBLISH_MODE: inproc|shadow|outbox`, default inproc); events are published from service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). Replay-as-truth is being proven pilot-first (tenants governance state machine, R1). See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
 - **EDA (event-driven architecture, committed)**: domain events are the **only** cross-context integration mechanism; evolution path = in-process dispatch (landed) → transactional outbox for durable publish (Phase B) → cross-process broker subscription (only after microservice triggers fire, see [microservice-readiness.md](../plans/microservice-readiness.md)).
@@ -40,7 +43,7 @@ src/
 ├── modules/                 # Bounded contexts (vertical slices)
 │   ├── users/               # ★ Reference implementation of the full pattern
 │   │   ├── domain/          #   entities/ value-objects/ events/ repositories/ (ports)
-│   │   ├── application/     #   commands/ queries/ read-models/ (handlers)
+│   │   ├── application/     #   commands/ queries/ read-models/ (handlers) · imperative services · = CA "Use Cases" layer
 │   │   ├── infrastructure/  #   MikroORM repository adapter, mappers, event dispatcher
 │   │   ├── api/             #   controller + DTOs (HTTP transport)
 │   │   └── users.module.ts  #   wires CqrsModule + handlers + port→adapter binding
@@ -135,11 +138,31 @@ Domain purity is guarded by the **fallow architecture-boundary advisory** in `pn
 imports — layer direction is additionally held by the per-layer import matrix above and by
 code review.
 
+### Entity Doctrine: domain entity vs data entity
+
+Every persistence-backed bounded context MUST separate two distinct things:
+
+- a **domain entity** under `domain/entities/` — an **immutable data carrier** holding construction-time invariants and **pure transition functions that return new instances** (FC-aligned per P1 — *not* a mutable behavior-box),
+  zero framework imports (subject to the `domain/` row above);
+- its **physical data entity** under `infrastructure/entities/` — the MikroORM `defineEntity`
+  mapping to a table (see the Entity Column Law appendix).
+
+The repository adapter is the single place that maps between the two; **repository ports carry
+the domain entity**, while the transport shape stays the application `read-model` — the domain
+entity never crosses into `api/` (the `api/` row above). Their mutual consistency
+(`domain-state ⊆ data-entity ≡ table`) is governed by the **Projection-Mapping Doctrine** above —
+the pure mapper and the compile-time structural lock live in `infrastructure/`, never in `domain/`.
+Reference implementation: `posts`.
+Other persistence contexts (`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`)
+are **pending** this doctrine and adopt it via their own audited plans — not instant violations.
+
 ## Bounded Context Map & the Multi-Tenancy Mechanism Layer
 
 Terminology discipline: a **tenant** is a business concept (the `tenants` core-domain
 aggregate, with lifecycle, invariants and language); its physical entity is the
-self-owned registry table `tenant` (owned by the `tenants` context·`id` = proxy PK
+self-owned registry table `tenant` (owned by the `tenants` context·the general rule is the
+Entity Doctrine + Projection-Mapping Doctrine above: domain entity ↔ separate data entity mapped
+by the repository adapter·`id` = proxy PK
 equal to `organization.id`·`status` as a real column + DB CHECK — the
 global-tenant-entity-reclamation amendment 2026-10-20 supersedes the old implicit shift
 “tenant identity = organization, status parked in `metadata`”; `organization` is its
@@ -166,8 +189,13 @@ The three-layer permission chain: `PlatformOperatorGuard` (platform layer) →
 ## Cross-Context Communication
 
 Contexts never import each other's internals. Side effects that span contexts are
-expressed as domain events subscribed via `@EventsHandler`. `auth`, `stripe` and
-`storage` stay thin adapters/glue (a legal P4 end state); should a context develop
+expressed as domain events subscribed via `@EventsHandler`. `stripe` (payment) and
+`storage` are **outbound-gateway contexts and still follow the four-layer vertical
+slice** (`domain/` holds the provider port + real policies such as channel selection
+& degradation, upload validation, money/currency and object-key naming; `application/`
+orchestrates; `infrastructure/` holds the SDK adapters; `api/` the controllers). Only
+`auth` currently remains a thin adapter/glue plane (Better Auth surface) as a
+transitional exception pending its own dedicated layering plan; should a context develop
 real aggregate needs later, that goes through a trigger-criteria-gated plan (no
 more "designated slots").
 
