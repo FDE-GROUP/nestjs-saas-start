@@ -10,7 +10,7 @@ import type {
   PaymentProvider,
   PaymentRefundRef,
   RefundInput,
-} from './payment.interface';
+} from '../domain/ports/payment-provider.port';
 
 /**
  * Stripe 通道适配器（收敛自旧 `StripeService`，global-cn-adaptation D1/P1）。

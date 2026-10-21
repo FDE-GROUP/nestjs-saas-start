@@ -31,7 +31,7 @@ import {
   apiEnvelopeShape,
   apiError,
 } from '../../../common/contracts/api-contracts';
-import { PaymentService } from '../services/payment.service';
+import { PaymentService } from '../application/payment.service';
 import {
   PaymentCheckoutRefResponse,
   PaymentCustomerRefResponse,

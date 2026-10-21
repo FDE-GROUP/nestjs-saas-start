@@ -5,6 +5,7 @@
  * 由 `PaymentModule.register()` 依配置装配、`PaymentService` 依 `payment.provider` 选择。
  * 返回体为跨通道归一化引用 + `raw` 透传原生载荷，便于既有调用方渐进迁移。
  *
+ * 分层对齐：原居 `providers/payment.interface.ts`，现下沉 `domain/ports`（零框架依赖）。
  * 签名属方案 §6.1 草案，随 P2/P3 通道接入在代码评审处定稿。
  */
 export type PaymentProviderId = 'stripe' | 'alipay' | 'wechat_pay';

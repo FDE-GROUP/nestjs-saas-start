@@ -2,7 +2,7 @@ import type { ConfigService } from '@app/config/config.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
-import type { PaymentProvider, PaymentProviderId } from '../providers/payment.interface';
+import type { PaymentProvider, PaymentProviderId } from '../domain/ports/payment-provider.port';
 import { PaymentService } from './payment.service';
 
 /**

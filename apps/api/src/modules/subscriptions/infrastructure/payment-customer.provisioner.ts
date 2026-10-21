@@ -1,4 +1,4 @@
-import { PaymentService } from '@app/modules/payment/services/payment.service';
+import { PaymentService } from '@app/modules/payment/application/payment.service';
 import type {
   CustomerProvisioner,
   ProvisionedCustomer,

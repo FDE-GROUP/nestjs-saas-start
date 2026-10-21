@@ -12,7 +12,7 @@ import type {
   PaymentCustomerRef,
   PaymentProviderId,
   PaymentRefundRef,
-} from '../../providers/payment.interface';
+} from '../../domain/ports/payment-provider.port';
 
 /**
  * 支付面响应契约（F1 甲①）——schema 源，纯文档面零运行时。

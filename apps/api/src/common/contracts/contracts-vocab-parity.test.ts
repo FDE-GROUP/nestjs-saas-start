@@ -1,4 +1,4 @@
-import type { PaymentProviderId } from '@app/modules/payment/providers/payment.interface';
+import type { PaymentProviderId } from '@app/modules/payment/domain/ports/payment-provider.port';
 import {
   TENANT_ACTION_VALUES,
   TENANT_SUBJECT_VALUES,
