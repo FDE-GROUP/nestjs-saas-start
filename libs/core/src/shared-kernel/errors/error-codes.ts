@@ -29,6 +29,9 @@ export const ERROR_CODES = {
   TENANCY_NOT_DELETED_TERMINAL: 'TENANCY:NOT_DELETED_TERMINAL',
   TENANCY_NOT_FOUND: 'TENANCY:NOT_FOUND',
   TENANCY_APPLICATION_NOT_FOUND: 'TENANCY:APPLICATION_NOT_FOUND',
+  // BA 服务端数据事实拒绝的泛用兜底码（4xx·`mapBaError` 出口统一附·细分仍据 HTTP status，
+  // 因 BA APIError 仅回不透明 message+status，门面无法可靠辨具体业务语义，不逐态猜码）。
+  TENANCY_PROVIDER_REJECTED: 'TENANCY:PROVIDER_REJECTED',
 
   // —— 租户级 RBAC 动态角色（module-rbac-dynamic-roles S3·自建角色/授权管理门面的领域拒绝码）——
   TENANCY_ROLE_INVALID_KEY: 'TENANCY:ROLE_INVALID_KEY',

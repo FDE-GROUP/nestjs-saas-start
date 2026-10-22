@@ -1,4 +1,5 @@
 import type { SessionUser } from '@app/modules/auth/guards/session.guard';
+import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { HttpException } from '@nestjs/common';
 import type { CommandBus } from '@nestjs/cqrs';
 import type { CreateTenantApplication } from '@saas/contracts/index';
@@ -8,7 +9,8 @@ import { TenantsController } from './tenants.controller';
 /**
  * 建租申请门面单测（修「重复 slug → 500」缺陷·对齐 epic-02 §2.1 / module-rbac-casl §2.3.1）：
  * `apply` 经 BA `createOrganization` 服务端系统动作，BA 4xx `APIError` 须经门面统一出口
- * `mapBaError` 归一透传状态（不再逃逸为 500）；成功原样透传读模型；5xx/未知不伪装交全局过滤器。
+ * `mapBaError` 归一透传状态（不再逃逸为 500）并附泛用业务 `errorCode`（承 followups 项①）；
+ * 成功原样透传读模型；5xx/未知不伪装交全局过滤器。
  * 命令裁决/仓储落库由 gated e2e 覆盖，此处只锁控制器错误出口形状。
  */
 
@@ -31,6 +33,12 @@ describe('TenantsController.apply（建租申请·BA 错误归一出口）', () 
     const ctrl = ctrlWith(vi.fn().mockRejectedValue(apiError));
     await expect(ctrl.apply(USER, DTO)).rejects.toBeInstanceOf(HttpException);
     await expect(ctrl.apply(USER, DTO)).rejects.toMatchObject({ status: 400 });
+    // 4xx 分支附泛用业务码（object response·filter 透传入 envelope.errorCode·承 followups 项①）。
+    const err = (await ctrl.apply(USER, DTO).catch((e: unknown) => e)) as HttpException;
+    expect(err.getResponse()).toMatchObject({
+      message: 'Organization already exists',
+      errorCode: ERROR_CODES.TENANCY_PROVIDER_REJECTED,
+    });
   });
 
   it('成功路径：透传 commandBus 返回的读模型（不改造结果形状）', async () => {
