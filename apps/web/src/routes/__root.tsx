@@ -110,6 +110,13 @@ function RootLayout() {
                 存储
               </Link>
               <Link
+                to="/settings/integrations"
+                className={NAV_BASE}
+                activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}
+              >
+                集成状态
+              </Link>
+              <Link
                 to="/settings/billing"
                 className={NAV_BASE}
                 activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}

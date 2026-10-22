@@ -20,6 +20,7 @@ import { Route as PlatformTenantsRouteImport } from './routes/platform.tenants'
 import { Route as PlatformUsersRouteImport } from './routes/platform.users'
 import { Route as SettingsAccountRouteImport } from './routes/settings.account'
 import { Route as SettingsBillingRouteImport } from './routes/settings.billing'
+import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsInvitationsRouteImport } from './routes/settings.invitations'
 import { Route as SettingsMembersRouteImport } from './routes/settings.members'
 import { Route as SettingsRolesRouteImport } from './routes/settings.roles'
@@ -82,6 +83,11 @@ const SettingsBillingRoute = SettingsBillingRouteImport.update({
   path: '/settings/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
+  id: '/settings/integrations',
+  path: '/settings/integrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsInvitationsRoute = SettingsInvitationsRouteImport.update({
   id: '/settings/invitations',
   path: '/settings/invitations',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/platform/users': typeof PlatformUsersRoute
   '/settings/account': typeof SettingsAccountRoute
   '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/platform/users'
     | '/settings/account'
     | '/settings/billing'
+    | '/settings/integrations'
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/platform/users'
     | '/settings/account'
     | '/settings/billing'
+    | '/settings/integrations'
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/platform/users'
     | '/settings/account'
     | '/settings/billing'
+    | '/settings/integrations'
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
@@ -241,6 +253,7 @@ export interface RootRouteChildren {
   WorkspacesRoute: typeof WorkspacesRoute
   SettingsAccountRoute: typeof SettingsAccountRoute
   SettingsBillingRoute: typeof SettingsBillingRoute
+  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
   SettingsInvitationsRoute: typeof SettingsInvitationsRoute
   SettingsMembersRoute: typeof SettingsMembersRoute
   SettingsRolesRoute: typeof SettingsRolesRouteWithChildren
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/billing'
       fullPath: '/settings/billing'
       preLoaderRoute: typeof SettingsBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/integrations': {
+      id: '/settings/integrations'
+      path: '/settings/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SettingsIntegrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/invitations': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspacesRoute: WorkspacesRoute,
   SettingsAccountRoute: SettingsAccountRoute,
   SettingsBillingRoute: SettingsBillingRoute,
+  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
   SettingsInvitationsRoute: SettingsInvitationsRoute,
   SettingsMembersRoute: SettingsMembersRoute,
   SettingsRolesRoute: SettingsRolesRouteWithChildren,
