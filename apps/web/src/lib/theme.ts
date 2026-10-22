@@ -15,7 +15,13 @@ const MODES: readonly ThemeMode[] = ['light', 'dark', 'system'];
 /** 读存储模式：缺键/非法值一律回落 `'system'`（跟随系统）。 */
 export function readStoredMode(): ThemeMode {
   if (typeof localStorage === 'undefined') return 'system';
-  const raw = localStorage.getItem(STORAGE_KEY);
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    // 隐私模式/禁用 Cookie：`getItem` 可能抛 SecurityError，与 index.html 内联脚本 try/catch 语义对齐
+    return 'system';
+  }
   return raw !== null && (MODES as readonly string[]).includes(raw) ? (raw as ThemeMode) : 'system';
 }
 
@@ -31,7 +37,7 @@ export function resolveEffective(mode: ThemeMode): EffectiveTheme {
   return mode;
 }
 
-/** 应用主题到文档（切 `.dark` 类），回传生效值。无 DOM（SSR）短路返 light。 */
+/** 应用主题到文档（切 `.dark` 类），回传生效值。无 DOM（SSR）短路返解析后的 effective。 */
 export function applyTheme(mode: ThemeMode): EffectiveTheme {
   const effective = resolveEffective(mode);
   if (typeof document === 'undefined') return effective;
@@ -39,8 +45,12 @@ export function applyTheme(mode: ThemeMode): EffectiveTheme {
   return effective;
 }
 
-/** 持久化用户显式模式选择。无 localStorage 短路。 */
+/** 持久化用户显式模式选择。无 localStorage / 存储不可写时静默降级（不影响本会话内生效）。 */
 export function writeStoredMode(mode: ThemeMode): void {
   if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, mode);
+  try {
+    localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    // 配额/隐私模式：写失败静默忽略，与 readStoredMode 的读降级对称
+  }
 }

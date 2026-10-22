@@ -66,7 +66,7 @@ export function SubscriptionSummaryView({ snap }: { snap: SubscriptionSnapshot }
     <div className="flex flex-col gap-3 text-sm">
       <div className="flex items-center gap-3">
         <span className="text-slate-500 dark:text-slate-400">当前档位</span>
-        <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-white">
+        <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-white dark:bg-slate-200 dark:text-slate-900">
           {planLabel(snap.plan)}
         </span>
       </div>

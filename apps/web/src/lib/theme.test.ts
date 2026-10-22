@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import indexHtml from '../../index.html?raw';
 import {
   applyTheme,
   prefersDark,
@@ -101,27 +103,61 @@ describe('writeStoredMode（持久化到 STORAGE_KEY）', () => {
   });
 });
 
-describe('index.html 内联脚本 ↔ theme.ts 映射一致', () => {
-  // 复刻 index.html 内联防 FOUC 脚本语义（同一 saas-theme key）：
-  // stored ∈ {light,dark} 取之、否则 system；dark = mode==='dark' || (system && 系统偏好暗)。
-  function inlineResolvesDark(stored: string | null, sysDark: boolean): boolean {
-    const mode = stored === 'light' || stored === 'dark' ? stored : 'system';
-    return mode === 'dark' || (mode === 'system' && sysDark);
+describe('index.html 内联防 FOUC 脚本 ↔ theme.ts 映射一致（真读产物·锁漂移）', () => {
+  // 真实读取并执行 index.html 里的内联脚本（经 Vite `?raw` 取产物文本），逐格比对与 theme.ts 的
+  // (stored, system)→dark 表。锁住 key 改名 / 判定逻辑被改 / 脚本被删（手抄副本锁不住这些·故必须读产物）。
+  const html = indexHtml;
+  // 取无属性的内联 <script> 体（带 src 的 module 脚本不匹配），再按 saas-theme 锁定防 FOUC 那段。
+  const inlineFound = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+    .map((m) => m[1])
+    .find((s) => s.includes('saas-theme'));
+  if (!inlineFound) {
+    throw new Error(
+      '未在 index.html 找到含 saas-theme 的内联防 FOUC 脚本——脚本被删或 key 改名？需与 theme.ts 同步。',
+    );
+  }
+  const inline: string = inlineFound;
+
+  /** 在受控 shim 下执行真实内联脚本，返回其是否给 <html> 加了 .dark。 */
+  function runInlineScript(stored: string | null, sysDark: boolean): boolean {
+    let added = false;
+    const sandboxLocalStorage = { getItem: (k: string) => (k === STORAGE_KEY ? stored : null) };
+    const sandboxWindow = { matchMedia: () => ({ matches: sysDark }) };
+    const sandboxDocument = {
+      documentElement: {
+        classList: {
+          add: (c: string) => {
+            if (c === 'dark') added = true;
+          },
+        },
+      },
+    };
+    // 在受控 shim 下执行仓库自身 index.html 的产物脚本（非动态外部输入），验证与 theme.ts 逐格一致
+    new Function('localStorage', 'window', 'document', inline)(
+      sandboxLocalStorage,
+      sandboxWindow,
+      sandboxDocument,
+    );
+    return added;
   }
 
   const STORED: (string | null)[] = ['light', 'dark', 'system', 'bogus', null];
   const SYS: boolean[] = [true, false];
 
-  it('同一 (stored, system) 下 theme.ts 生效暗判定与内联脚本逐格一致', () => {
+  it('真实内联脚本的生效暗判定与 theme.ts 逐格一致', () => {
     for (const stored of STORED) {
       for (const sysDark of SYS) {
         if (stored === null) localStorage.removeItem(STORAGE_KEY);
         else localStorage.setItem(STORAGE_KEY, stored);
         stubMatchMedia(sysDark);
         const viaTheme = resolveEffective(readStoredMode()) === 'dark';
-        expect(viaTheme).toBe(inlineResolvesDark(stored, sysDark));
+        expect(runInlineScript(stored, sysDark)).toBe(viaTheme);
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+  });
+
+  it('内联脚本与 theme.ts 共用同一 STORAGE_KEY（防 key 漂移）', () => {
+    expect(inline).toContain(`'${STORAGE_KEY}'`);
   });
 });
