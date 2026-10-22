@@ -2,7 +2,7 @@
 
 > 旅程: 一个用户如何申请开租户、平台如何审批放行/驳回、未放行前如何 fail-closed 失能 | 上下文: `tenants`（申请/审批切片 + 生命周期状态机）
 > 审批制准入（S4·FR-1）：自助即时开通在 BA 层封死（`allowUserToCreateOrganization:false`），建租唯一通道 = 服务端系统动作。状态机 `pending_approval → active ⇄ suspended → deleted`（纯函数 `canTransition`·`tenant-lifecycle.ts`·迁移表 `TRANSITIONS`）。
-> 版本: 0.2.1（2026-10-21·溯源去内联行号）
+> 版本: 0.2.2（2026-10-22·2.2 成功码随项③ 订正同步 200）
 
 ---
 
@@ -22,8 +22,8 @@
   - Given 非 operator，When 调用，Then 403（`PlatformOperatorGuard`·跨租治理判据）。
   - Given 租户不存在，When 调用，Then 404（`TENANCY_APPLICATION_NOT_FOUND`）。
   - **非法迁移 409 的精确域**（迁移表实证·非推断）：`pending_approval→active`、`active→active`（幂等重批·设计保留）、`suspended→active`（复活）皆**合法**；**仅 `deleted` 终态**（`TRANSITIONS[DELETED]=[]`）触发 409 `TENANCY_ILLEGAL_TRANSITION`。
-  - **成功码 as-built 注**：approve 路由**未设 `@HttpCode`** ⇒ Nest 对 POST 默认返回 **201**（语义存疑·宜 `@HttpCode(200)`；此处如实记录现状）。
-- **溯源**：`POST /api/v1/tenants/applications/:id/approve` · `TenantsController.approve` · `ApproveTenantCommand` → `governedTenantTransition`（S4 修宪·approve/suspend/resume 三分支收敛共用用例）· `TRANSITIONS`（`tenant-lifecycle.ts`）· `@UseGuards(PlatformOperatorGuard)` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S4/S5。
+  - **成功码 as-built 注**：approve 路由已显式 `@HttpCode(200)`（REST 一致性核验片·项③ 订正——激活既有 `pending_approval` 租户属对已有资源的操作、非新建，Nest 对 POST 默认 201 系语义偏差，已与 OpenAPI 文档 200 对齐）。
+- **溯源**：`POST /api/v1/tenants/applications/:id/approve` · `TenantsController.approve` · `ApproveTenantCommand` → `governedTenantTransition`（S4 修宪·approve/suspend/resume 三分支收敛共用用例）· `TRANSITIONS`（`tenant-lifecycle.ts`）· `@UseGuards(PlatformOperatorGuard)` · `@HttpCode(200)`（项③ 订正）· 关联 [`global-tenancy`](../plans/global-tenancy.md) S4/S5。
 
 ### 2.3 驳回申请（硬删）
 - **作为** 平台经营者，**我想** 驳回不合格的申请，**以便** 清理掉不该存在的 pending 租户。
@@ -50,4 +50,4 @@
 ← [故事索引](./README.md)
 
 <!-- 变更戳 -->
-正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论后校正：2.1 补重提/幂等边界（无每用户去重·换 slug 可再申请·相同 slug 靠 BA 应用层拦而 DDL 无唯一约束·并发非原子属推断）；2.2 依迁移表更正 409 精确域（仅 deleted 终态·active→active 幂等重批合法·suspended→active 复活合法）+ 补 approve 结构化审计 + 如实标注成功返 201；2.3 补 S5 收紧（仅 pending 可驳·非 pending→409 TENANCY_NOT_PENDING）+ 物理硬删 FK 级联（硬删≠置 deleted 态）+ `tenant.rejected` 事件 + 「无 status 行可被删成 204」诚实观察；2.4 补双层失能汇于同码 403 + 态读取异常 fail-closed + deny/allow 双谓词与 fail-open 依据。v0.2.1（2026-10-21）：2.4 溯源去除内联行号（原 `L69`/`L84`）——符号 `userStatus.isBlocked`/`tenantStatus.isBlocked` 已足以锚定，行号属易漂移引用（承「溯源只用文件名/方法名」纪律）。
+正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论后校正：2.1 补重提/幂等边界（无每用户去重·换 slug 可再申请·相同 slug 靠 BA 应用层拦而 DDL 无唯一约束·并发非原子属推断）；2.2 依迁移表更正 409 精确域（仅 deleted 终态·active→active 幂等重批合法·suspended→active 复活合法）+ 补 approve 结构化审计 + 如实标注成功返 201；2.3 补 S5 收紧（仅 pending 可驳·非 pending→409 TENANCY_NOT_PENDING）+ 物理硬删 FK 级联（硬删≠置 deleted 态）+ `tenant.rejected` 事件 + 「无 status 行可被删成 204」诚实观察；2.4 补双层失能汇于同码 403 + 态读取异常 fail-closed + deny/allow 双谓词与 fail-open 依据。v0.2.1（2026-10-21）：2.4 溯源去除内联行号（原 `L69`/`L84`）——符号 `userStatus.isBlocked`/`tenantStatus.isBlocked` 已足以锚定，行号属易漂移引用（承「溯源只用文件名/方法名」纪律）。 v0.2.2（2026-10-22）：2.2 成功码 as-built 注随项③ 订正（approve 补 `@HttpCode(200)` 对齐 OpenAPI 文档·代码 commit `9463a3f`）同步更新——原「未设 @HttpCode⇒201·宜 200」的现状已改；溯源补 `@HttpCode(200)`（此亦 stories-drift 恒等闸立项时发现的一处真实文档 drift）。
