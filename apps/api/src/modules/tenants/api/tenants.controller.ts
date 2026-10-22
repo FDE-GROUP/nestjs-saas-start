@@ -87,6 +87,8 @@ export class TenantsController {
   }
 
   @Post('applications/:id/approve')
+  // 激活既有 pending 租户（非新建资源）·运行时对齐 OpenAPI 文档 200（REST 一致性核验片·项③）。
+  @HttpCode(HttpStatus.OK)
   @UseGuards(PlatformOperatorGuard)
   @SerializeOptions({ schema: tenantApplicationViewSchema })
   @ApiOperation({ summary: 'Approve a pending tenant (platform operator · pending → active)' })

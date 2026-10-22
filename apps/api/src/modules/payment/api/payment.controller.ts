@@ -1,7 +1,18 @@
 import { Public } from '@core/saas-kit/tenancy/public.decorator';
 import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
 import type { RawBodyRequest } from '@nestjs/common';
-import { Body, Controller, Get, Headers, Inject, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import {
   ApiExtraModels,
@@ -125,6 +136,8 @@ export class PaymentController {
   }
 
   @Post('webhooks')
+  // 入站回调 ack 非新建资源·运行时对齐 OpenAPI 文档 200（PSP 期望 2xx·REST 一致性核验片·项③）。
+  @HttpCode(HttpStatus.OK)
   // 入站回调靠 Stripe 签名校验而非会话·S11 显式旁路全局会话墙（deny-by-default 下的例外）。
   @Public()
   @SerializeOptions({ schema: webhookAckSchema })
