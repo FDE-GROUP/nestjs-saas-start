@@ -1,6 +1,8 @@
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
+import { createRootRoute, Link, Outlet, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RouteError, RouteNotFound } from '../components/route-feedback';
 import { ThemeToggle } from '../components/theme-toggle';
+import { signOut } from '../lib/auth';
 import { useSession } from '../lib/use-session';
 
 export const Route = createRootRoute({
@@ -10,9 +12,22 @@ export const Route = createRootRoute({
 });
 
 function RootLayout() {
-  const { status } = useSession();
+  const { status, user } = useSession();
+  const navigate = useNavigate();
+  const [pending, setPending] = useState(false);
   // 导航按登录态收口：仅 `authed` 展开控制台链接；`loading`/`anon` 一律只显登录入口（避免闪现受守卫链接）。
   const authed = status === 'authed';
+
+  // 全局登出（镜像 dashboard 既有范式）：signOut 后弹回登录页，useSession 随 pathname 变化即时收口导航。
+  async function onSignOut() {
+    setPending(true);
+    try {
+      await signOut();
+      await navigate({ to: '/login' });
+    } finally {
+      setPending(false);
+    }
+  }
   return (
     <div className="mx-auto min-h-screen max-w-3xl bg-white p-6 font-sans text-slate-800 dark:bg-slate-950 dark:text-slate-100">
       <header className="mb-8 flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
@@ -66,8 +81,22 @@ function RootLayout() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          {authed && user && (
+            <>
+              <span className="max-w-[16rem] truncate text-xs text-slate-500 dark:text-slate-400">
+                {user.email}
+              </span>
+              <button
+                type="button"
+                onClick={onSignOut}
+                disabled={pending}
+                className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              >
+                {pending ? '登出中…' : '登出'}
+              </button>
+            </>
+          )}
           <ThemeToggle />
-          <span className="text-xs text-slate-400 dark:text-slate-500">F2 自助面 · apps/web</span>
         </div>
       </header>
       <main>
