@@ -56,13 +56,15 @@ describe('TenantStatusSubscriptionLinkHandler（治理档消费者）', () => {
     expect(convergeStatus).not.toHaveBeenCalled();
   });
 
-  it('幂等（at-least-once 硬要求）：同事件重投 N 次 = 同样 N 次收敛调用且零异常——幂等归端口契约（changed=false 即 no-op），handler 不计数不分叉', async () => {
+  it('幂等（at-least-once 硬要求 · ES R3a ⓑ 契约锁）：同事件重投 N 次 = 同样 N 次【同参数】收敛调用且零异常——幂等归端口契约（changed=false 即 no-op），handler 不计数不分叉', async () => {
     const { handler, convergeStatus } = makeHandler();
     const ev = makeEvent(TENANT_STATUS.SUSPENDED);
     convergeStatus.mockResolvedValueOnce(true).mockResolvedValue(false);
     await handler.handle(ev);
     await handler.handle(ev); // 重投：端口返 false（无 from 行）→ 行为不变、零副作用
     expect(convergeStatus).toHaveBeenCalledTimes(2);
+    // ⓑ 契约硬化：重投必发出【同形态】收敛请求（同租户·同 from→to）——非按计数分叉、非携漂移参数
+    expect(convergeStatus.mock.calls[0]).toEqual(convergeStatus.mock.calls[1]);
   });
 
   it('类同一性锁：@EventsHandler 匹配类 === EVENT_TYPE_REGISTRY 重建类（relay 投递必达本 handler）', () => {
