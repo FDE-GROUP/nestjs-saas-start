@@ -13,13 +13,13 @@
 
 | # | 报告命名项 | 核验证据（当前代码） | disposition | 后续 |
 |---|---|---|---|---|
-| 1 | `mapBaError` errorCode 透传 | `apps/api/src/modules/tenants/api/ba-error.mapping.ts`：`if (err instanceof HttpException) throw err` 前置拒绝直透保 `errorCode`；由 `tenants-org-facade.test.ts` 锁测 | **部分已闭**：前置拒绝路径已闭（有锁测）；但 4xx 分支 `new HttpException(String(message), status)` **不附业务 errorCode**（轻·仍开） | 4xx 附码留待错误码面切片（承 global-readiness-error-pagination） |
-| 2 | 文本字段 `maxLength` | 全 `libs/contracts` 仅 3 处 `.max()`：`request/platform.ts` `reason` 500、`request/pagination.ts` `limit` 100 / `cursor` 512；实体文本列（post title/body 等）入参无长度上界 | **仍开**：实体业务文本入参无 `maxLength` 约束 | 逐 DTO 补 `maxLength` 留独立 expand 片（触契约面·须过审计门） |
+| 1 | `mapBaError` errorCode 透传 | `apps/api/src/modules/tenants/api/ba-error.mapping.ts`：`if (err instanceof HttpException) throw err` 前置拒绝直透保 `errorCode`；由 `tenants-org-facade.test.ts` 锁测 | **已闭**：前置拒绝路径（有锁测）+ 4xx 分支附码均已闭 | 4xx 分支改 object response 携泛用码 `TENANCY:PROVIDER_REJECTED`（filter 透传入 envelope.errorCode·细分仍据 status·不逐态猜码）→ 落地 `62fcfea`（承 global-readiness-error-pagination·过码表契约锁测 + L1 全链） |
+| 2 | 文本字段 `maxLength` | 核验时全 `libs/contracts` 仅 3 处 `.max()`（`platform.reason` 500、`pagination.limit` 100/`cursor` 512）；实体文本列入参原无上界 | **已闭**：实体业务文本入参已按分类补 `maxLength` 上界（输入卫生·非防溢出，列系 PG text） | 已施加（name/title 200·slug/key/id 128·email 254·content/description 20000·search 200·i18n `validate.text.maxLength` 单源）→ 落地 `af525bd`（触契约面·已过审计门） |
 | 3 | REST 一致性簇（状态码/method 语义） | 9 控制器使用 `@HttpCode`、5 处 `@Delete`；delete 返 204/200、POST 201、`@ApiResponse` vs 实抛的逐路由一致性未系统核验 | **待办**：未逐路由核验（需全 controller 扫描对表） | 登记为 REST 一致性核验片（只读盘点→逐路由订正·触 api 面） |
 | 4 | 请求/查询瘦身 | `libs/contracts` 分页 DTO 已 typed（`CursorPage`/`Page`）；其余 GET 查询/列表 DTO 是否夹带冗余字段未逐端点核 | **部分**：分页契约已 typed；余下查询面**待办** | 逐端点查询瘦身盘点留后续 |
 | 5 | 数据导出流式 | `GET /users/me/data-export` 返 `UserDataExportReadModel` 全量入内存；租户导出为六表聚合 JSON 一次性序列化（见 `module-tenancy-data-export.md`） | **仍开**：导出为非流式全量入内存 | 流式导出留独立片（NFR·大租户场景驱动·触 IO） |
 
-**对账小结**：5 项中 1 项主体已闭（残留轻微微差）、2 项仍开、2 项部分/待办——**均不在本片实现**，各自留待已审切片。
+**对账小结**（呈报成文时）：5 项中 1 项主体已闭、2 项仍开、2 项部分/待办——**均不在本片实现**，各自留待已审切片。**后续落地勾稽**：项①（`62fcfea`）与项②（`af525bd`）已分别经独立后端主线片闭之；项③④⑤ 仍开/待办。
 
 ## 3. ⑤ stories 路径漂移登记（建议项·不实现）
 
@@ -46,8 +46,9 @@
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-21 | 0.1.0 | 评估报告 ④⑤ 落实 | 首版（对账表 + stories 漂移登记） |
+| 2026-10-22 | 0.2.0 | 项①② 落地后勾稽 | 项①（mapBaError 4xx 附码 `62fcfea`）、项②（maxLength 上界 `af525bd`）disposition 更新为已闭 + 落地指针；小结补后续 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.1.0 成文，以当前代码只读取证为准。
+正文已于 2026-10-21 / v0.1.0 成文；v0.2.0（2026-10-22）勾稽项①② 落地（`62fcfea`/`af525bd`）为已闭，余项以当前代码为准。
