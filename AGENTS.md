@@ -46,6 +46,7 @@ pnpm run migration:generate / migration:run / db:setup   # 迁移/数据
 
 ## 5. 目录地图
 pnpm workspace 四包：`libs/core/src`（@core 共享内核：`shared-kernel` + `tenancy`/`authorization`/`platform` 契约 + `modules/{subscriptions,workspaces}` 领域层）、`libs/contracts/src`（@saas/contracts 跨端传输契约单源：请求/响应/envelope 的 zod schema + 派生型·零依赖 @core·wire enum 内联由 apps 对拍测锁漂移·见 global-validation-zod 修宪）、`apps/api/src`（参考应用·目录名取行业惯例：`modules/<上下文>/{domain,application,infrastructure,api}`（users/auth/authorization/tenants/workspaces/platform/payment/storage/subscriptions/posts）+ `tenancy/` 边界层 + `{common,config,database,i18n,logger,mailer}`）与 `apps/web`（前端壳·React+Vite·global-frontend-adoption F0）；文档四区 `docs/{specs,plans,research,recycle}`（`recycle/` 只进不出）。
+- **分支说明**：`main` 为唯一工作分支；远端 `gh-pages` 是 CI（`.github/workflows/deploy-swagger.yml` 经 `peaceiris/actions-gh-pages`）自动生成的 GitHub Pages 发布分支（孤儿分支·只装 Swagger 静态产物·与 `main` 无共同祖先），**勿与 `main` 合并、勿手工改动、勿更名**（更名会连带 workflow + 仓库 Pages 源设置双处断裂）。
 
 ## 6. 地域与语言
 面向**中国大陆**用户：依赖镜像 `npmmirror` / Docker 国内源；第三方选型见 [global-cn-adaptation](./docs/plans/global-cn-adaptation.md)；**文档 / 注释中文优先**。
