@@ -20,11 +20,12 @@ const VALIDATION_TEXTS: Record<string, string> = {
  * `ZodObject` 结构可赋值于此。
  */
 interface Parseable {
-  safeParse(
-    data: unknown,
-  ):
+  safeParse(data: unknown):
     | { success: true; data: unknown }
-    | { success: false; error: { issues: readonly { message: string }[] } };
+    | {
+        success: false;
+        error: { issues: readonly { message: string; path: readonly PropertyKey[] }[] };
+      };
 }
 
 /** 用共享 schema 校验表单值：通过返 `null`，否则返以「；」连接的友好中文文案。 */
@@ -34,4 +35,20 @@ export function clientValidate(schema: Parseable, values: unknown): string | nul
   const issues = result.error.issues;
   if (issues.length === 0) return '输入不合法';
   return issues.map((it) => VALIDATION_TEXTS[it.message] ?? it.message).join('；');
+}
+
+/**
+ * 逐字段版：按顶层字段产出「字段→首条友好中文错误」映射，无错返回 `{}`。
+ * 供 `Field`/`Select` 的 `error` 形逐字段现形 + 无障碍关联；非 Field 控件（如 Select）字段亦入表。
+ */
+export function clientValidateFields(schema: Parseable, values: unknown): Record<string, string> {
+  const result = schema.safeParse(values);
+  if (result.success) return {};
+  const out: Record<string, string> = {};
+  for (const it of result.error.issues) {
+    const field = it.path.length > 0 ? String(it.path[0]) : '_form';
+    const msg = VALIDATION_TEXTS[it.message] ?? it.message;
+    if (!(field in out)) out[field] = msg;
+  }
+  return out;
 }

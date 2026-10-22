@@ -13,7 +13,7 @@ import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 import { probeTenantContext } from '../lib/tenant-context-guide';
-import { clientValidate } from '../lib/validation';
+import { clientValidateFields } from '../lib/validation';
 
 interface InvitationRow {
   id?: string;
@@ -56,7 +56,7 @@ function InvitationsAdminPage() {
   const create = useAction();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
-  const [formErr, setFormErr] = useState<string | null>(null);
+  const [fieldErr, setFieldErr] = useState<Record<string, string>>({});
 
   if (result.kind === 'guide')
     return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
@@ -66,13 +66,13 @@ function InvitationsAdminPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    // 共享契约前置校验：与后端同一 createInvitationSchema·本地即时拦空免无效往返。
-    const err = clientValidate(createInvitationSchema, { email, role });
-    if (err) {
-      setFormErr(err);
+    // 共享契约前置校验：与后端同一 createInvitationSchema·本地即时逐字段拦空免无效往返。
+    const fields = clientValidateFields(createInvitationSchema, { email, role });
+    if (Object.keys(fields).length > 0) {
+      setFieldErr(fields);
       return;
     }
-    setFormErr(null);
+    setFieldErr({});
     const ok = await create.run({
       path: '/api/v1/tenants/invitations',
       method: 'POST',
@@ -98,11 +98,19 @@ function InvitationsAdminPage() {
             value={email}
             onChange={setEmail}
             required
+            error={fieldErr.email}
           />
-          <Select label="角色" name="role" options={INVITE_ROLES} value={role} onChange={setRole} />
+          <Select
+            label="角色"
+            name="role"
+            options={INVITE_ROLES}
+            value={role}
+            onChange={setRole}
+            error={fieldErr.role}
+          />
           <SubmitButton pending={create.pending}>邀请</SubmitButton>
         </FormWrap>
-        <Feedback error={formErr ?? create.error} success={create.success} />
+        <Feedback error={create.error} success={create.success} />
       </section>
 
       <section className="flex flex-col gap-3">

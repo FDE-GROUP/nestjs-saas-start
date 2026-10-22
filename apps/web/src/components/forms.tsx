@@ -4,7 +4,7 @@
  */
 import type { FormEvent, ReactNode } from 'react';
 
-/** 标签 + 输入框。 */
+/** 标签 + 输入框（`error` 现形时逐字段标红 + 无障碍关联·不传时与现状一致）。 */
 export function Field({
   label,
   name,
@@ -13,6 +13,7 @@ export function Field({
   value,
   onChange,
   required,
+  error,
 }: {
   label: string;
   name: string;
@@ -21,7 +22,9 @@ export function Field({
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
+  error?: string;
 }) {
+  const errorId = `${name}-error`;
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="text-slate-600">
@@ -35,26 +38,38 @@ export function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`rounded border px-2 py-1.5 text-sm focus:outline-none ${
+          error ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-500'
+        }`}
       />
+      {error ? (
+        <p id={errorId} className="text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
     </label>
   );
 }
 
-/** 下拉选择。 */
+/** 下拉选择（`error` 现形时逐字段标红 + 无障碍关联·不传时与现状一致）。 */
 export function Select({
   label,
   name,
   options,
   value,
   onChange,
+  error,
 }: {
   label: string;
   name: string;
   options: { value: string; label: string }[];
   value: string;
   onChange: (v: string) => void;
+  error?: string;
 }) {
+  const errorId = `${name}-error`;
   return (
     <label className="flex flex-col gap-1 text-sm">
       <span className="text-slate-600">{label}</span>
@@ -62,7 +77,11 @@ export function Select({
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`rounded border px-2 py-1.5 text-sm focus:outline-none ${
+          error ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-500'
+        }`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -70,6 +89,11 @@ export function Select({
           </option>
         ))}
       </select>
+      {error ? (
+        <p id={errorId} className="text-xs text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
     </label>
   );
 }

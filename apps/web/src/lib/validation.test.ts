@@ -1,7 +1,7 @@
 import { createInvitationSchema, createPostSchema, createWorkspaceSchema } from '@saas/contracts';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { clientValidate } from './validation';
+import { clientValidate, clientValidateFields } from './validation';
 
 // 客户端前置校验基元纯件测：引真 @saas/contracts schema（无网络），锁 i18n key→中文映射与回落。
 describe('clientValidate（共享契约客户端前置校验）', () => {
@@ -36,5 +36,34 @@ describe('clientValidate（共享契约客户端前置校验）', () => {
     expect(msg).toContain('；');
     expect(msg).toContain('邮箱不能为空');
     expect(msg).toContain('角色不能为空');
+  });
+});
+
+// 逐字段版：锁「字段→首条友好中文」映射，供 Field/Select 的 error 形逐字段现形。
+describe('clientValidateFields（逐字段错误映射）', () => {
+  it('合法输入 → 空映射', () => {
+    expect(clientValidateFields(createWorkspaceSchema, { name: 'x', slug: 'ok-1' })).toEqual({});
+  });
+
+  it('必填缺失 → 按顶层字段键位给对应文案', () => {
+    const out = clientValidateFields(createWorkspaceSchema, { name: '', slug: 'ok-1' });
+    expect(out.name).toContain('名称不能为空');
+    expect(out.slug).toBeUndefined();
+  });
+
+  it('格式非法（slug 正则）→ 命键 slug 且为格式文案（非必填）', () => {
+    const out = clientValidateFields(createWorkspaceSchema, { name: 'x', slug: 'Bad Slug!' });
+    expect(out.slug).toContain('Slug 格式不正确');
+  });
+
+  it('同字段多 issue → 取首条', () => {
+    const schema = z.object({ x: z.string().min(1, 'A').regex(/^z$/, 'B') });
+    expect(clientValidateFields(schema, { x: '' })).toEqual({ x: 'A' });
+  });
+
+  it('email+role 全缺 → 双键并立', () => {
+    const out = clientValidateFields(createInvitationSchema, { email: '', role: '' });
+    expect(out.email).toContain('邮箱不能为空');
+    expect(out.role).toContain('角色不能为空');
   });
 });

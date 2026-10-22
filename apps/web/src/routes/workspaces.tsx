@@ -9,7 +9,7 @@ import { describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
-import { clientValidate } from '../lib/validation';
+import { clientValidateFields } from '../lib/validation';
 
 type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
 type WorkspaceItem = WorkspacePageResponse['items'][number];
@@ -32,19 +32,19 @@ function WorkspacesPage() {
   const create = useAction();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [createErr, setCreateErr] = useState<string | null>(null);
+  const [fieldErr, setFieldErr] = useState<Record<string, string>>({});
 
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    // 共享契约前置校验：slug 正则等格式原生 required 拦不住，本地即时拦截免无效往返。
-    const err = clientValidate(createWorkspaceSchema, { name, slug });
-    if (err) {
-      setCreateErr(err);
+    // 共享契约前置校验：slug 正则等格式原生 required 拦不住，本地即时逐字段拦截免无效往返。
+    const fields = clientValidateFields(createWorkspaceSchema, { name, slug });
+    if (Object.keys(fields).length > 0) {
+      setFieldErr(fields);
       return;
     }
-    setCreateErr(null);
+    setFieldErr({});
     const ok = await create.run({
       path: '/api/v1/workspaces',
       method: 'POST',
@@ -65,11 +65,25 @@ function WorkspacesPage() {
       <section className="flex flex-col gap-3">
         <SectionHeading>新建 Workspace</SectionHeading>
         <FormWrap onSubmit={handleCreate}>
-          <Field label="名称" name="name" value={name} onChange={setName} required />
-          <Field label="Slug" name="slug" value={slug} onChange={setSlug} required />
+          <Field
+            label="名称"
+            name="name"
+            value={name}
+            onChange={setName}
+            required
+            error={fieldErr.name}
+          />
+          <Field
+            label="Slug"
+            name="slug"
+            value={slug}
+            onChange={setSlug}
+            required
+            error={fieldErr.slug}
+          />
           <SubmitButton pending={create.pending}>创建</SubmitButton>
         </FormWrap>
-        <Feedback error={createErr ?? create.error} success={create.success} />
+        <Feedback error={create.error} success={create.success} />
       </section>
 
       {result.page?.items?.length ? (
@@ -88,18 +102,18 @@ function WorkspacesPage() {
 function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(ws.name);
-  const [renameErr, setRenameErr] = useState<string | null>(null);
+  const [renameFieldErr, setRenameFieldErr] = useState<Record<string, string>>({});
   const rename = useAction();
   const del = useAction();
 
   async function handleRename(e: React.FormEvent) {
     e.preventDefault();
-    const err = clientValidate(updateWorkspaceSchema, { name: editName });
-    if (err) {
-      setRenameErr(err);
+    const fields = clientValidateFields(updateWorkspaceSchema, { name: editName });
+    if (Object.keys(fields).length > 0) {
+      setRenameFieldErr(fields);
       return;
     }
-    setRenameErr(null);
+    setRenameFieldErr({});
     const ok = await rename.run({
       path: `/api/v1/workspaces/${ws.id}`,
       method: 'PATCH',
@@ -128,7 +142,13 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
     <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
       {editing ? (
         <FormWrap onSubmit={handleRename} className="flex items-end gap-2">
-          <Field label="新名称" name="editName" value={editName} onChange={setEditName} />
+          <Field
+            label="新名称"
+            name="editName"
+            value={editName}
+            onChange={setEditName}
+            error={renameFieldErr.name}
+          />
           <SubmitButton pending={rename.pending}>保存</SubmitButton>
           <button
             type="button"
@@ -156,10 +176,7 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
       <DangerButton pending={del.pending} onClick={handleDelete}>
         删除
       </DangerButton>
-      <Feedback
-        error={renameErr ?? rename.error ?? del.error}
-        success={rename.success ?? del.success}
-      />
+      <Feedback error={rename.error ?? del.error} success={rename.success ?? del.success} />
     </div>
   );
 }
