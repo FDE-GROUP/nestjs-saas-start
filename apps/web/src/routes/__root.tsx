@@ -103,6 +103,13 @@ function RootLayout() {
                 账号
               </Link>
               <Link
+                to="/settings/storage"
+                className={NAV_BASE}
+                activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}
+              >
+                存储
+              </Link>
+              <Link
                 to="/settings/billing"
                 className={NAV_BASE}
                 activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}

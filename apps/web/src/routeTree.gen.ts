@@ -23,6 +23,7 @@ import { Route as SettingsBillingRouteImport } from './routes/settings.billing'
 import { Route as SettingsInvitationsRouteImport } from './routes/settings.invitations'
 import { Route as SettingsMembersRouteImport } from './routes/settings.members'
 import { Route as SettingsRolesRouteImport } from './routes/settings.roles'
+import { Route as SettingsStorageRouteImport } from './routes/settings.storage'
 import { Route as PlatformTenantsIdRouteImport } from './routes/platform.tenants.$id'
 import { Route as SettingsRolesRoleKeyRouteImport } from './routes/settings.roles.$roleKey'
 
@@ -96,6 +97,11 @@ const SettingsRolesRoute = SettingsRolesRouteImport.update({
   path: '/settings/roles',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsStorageRoute = SettingsStorageRouteImport.update({
+  id: '/settings/storage',
+  path: '/settings/storage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlatformTenantsIdRoute = PlatformTenantsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/storage': typeof SettingsStorageRoute
   '/platform/tenants/$id': typeof PlatformTenantsIdRoute
   '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/storage': typeof SettingsStorageRoute
   '/platform/tenants/$id': typeof PlatformTenantsIdRoute
   '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/settings/invitations': typeof SettingsInvitationsRoute
   '/settings/members': typeof SettingsMembersRoute
   '/settings/roles': typeof SettingsRolesRouteWithChildren
+  '/settings/storage': typeof SettingsStorageRoute
   '/platform/tenants/$id': typeof PlatformTenantsIdRoute
   '/settings/roles/$roleKey': typeof SettingsRolesRoleKeyRoute
 }
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
+    | '/settings/storage'
     | '/platform/tenants/$id'
     | '/settings/roles/$roleKey'
   fileRoutesByTo: FileRoutesByTo
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
+    | '/settings/storage'
     | '/platform/tenants/$id'
     | '/settings/roles/$roleKey'
   id:
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/settings/invitations'
     | '/settings/members'
     | '/settings/roles'
+    | '/settings/storage'
     | '/platform/tenants/$id'
     | '/settings/roles/$roleKey'
   fileRoutesById: FileRoutesById
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   SettingsInvitationsRoute: typeof SettingsInvitationsRoute
   SettingsMembersRoute: typeof SettingsMembersRoute
   SettingsRolesRoute: typeof SettingsRolesRouteWithChildren
+  SettingsStorageRoute: typeof SettingsStorageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -334,6 +347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/storage': {
+      id: '/settings/storage'
+      path: '/settings/storage'
+      fullPath: '/settings/storage'
+      preLoaderRoute: typeof SettingsStorageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/platform/tenants/$id': {
       id: '/platform/tenants/$id'
       path: '/$id'
@@ -402,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsInvitationsRoute: SettingsInvitationsRoute,
   SettingsMembersRoute: SettingsMembersRoute,
   SettingsRolesRoute: SettingsRolesRouteWithChildren,
+  SettingsStorageRoute: SettingsStorageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
