@@ -5,7 +5,7 @@
 > **支付通道现状（非「三通道并存」）**：`PaymentProviderId` 类型声明 stripe/alipay/wechat_pay 三种，但**当前仅 Stripe 实现并注册，且需配 `STRIPE secretKey` 才进入 providers 表**；alipay/wechat_pay 仅存于类型 + `payment.module` 里**注释掉的注册行**（无实现文件）——属 [`global-cn-adaptation`](../plans/global-cn-adaptation.md) 规划 / **D9 暂缓未落地**，“三通道”是设计意图非现状。
 > **503 懒解析降级（NFR-2·对齐 Epic 01 warn 家族）**：`PaymentService.resolve()` 构造不校验；wanted 通道未注册则回退 stripe，**仅当无任何 provider（连 Stripe 都未配 key）才 503** `BILLING_PROVIDER_NOT_CONFIGURED` ⇒ 未配 Stripe 时整个支付面（含 6.2 建订阅）皆 503。
 > **支付面安全边界（诚实）**：payment 各端点 `@TenantExempt`、无 `@Can`、不绑租户 ⇒ **任何登录用户皆可建 Stripe customer/checkout、发起退款**（用户级 by design·模板参考切片·非租户隔离）；真实产品需自加鉴权/归属校验。
-> 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
+> 版本: 0.2.1（2026-10-21·【§6.9】溯源补规划指针）
 
 ---
 
@@ -53,11 +53,11 @@
 - **作为** 支付服务商，**我想** 向我推送支付事件，**以便** 系统验签并接收事件（当前不驱动状态收敛）。
 - **验收**：Given `stripe-signature` 有效，When `POST /payment/webhooks`，Then 验签后按 `event.type` 分发并回执 `{received:true}`；Given 签名无效，Then 400；未配 Stripe 时 `verifyWebhook` 先 503。
   - **空实现边界（as-built 纠正）**：`payment_intent.succeeded` / `payment_intent.payment_failed` 两 case **体为空（仅 `break`+注释）**——验签与分发骨架就位，但**收款/失败后的状态落账/订阅收敛尚未接线**，webhook 当前实际只做验签回执。
-- **溯源**：`POST /api/v1/payment/webhooks` · `PaymentController.handleWebhook` · `@Public()`（旁路会话墙·靠签名而非会话·raw body 验签）· `PaymentService.verifyWebhook` · 契约 `webhookAckSchema` · 关联 [`module-auth-http-surface`](../plans/module-auth-http-surface.md)（@Public 例外语义）。
+- **溯源**：`POST /api/v1/payment/webhooks` · `PaymentController.handleWebhook` · `@Public()`（旁路会话墙·靠签名而非会话·raw body 验签）· `PaymentService.verifyWebhook` · 契约 `webhookAckSchema` · 关联 [`module-auth-http-surface`](../plans/module-auth-http-surface.md)（@Public 例外语义）· **相关规划（未实现）**：[`module-payment-event-intake`](../plans/module-payment-event-intake.md)（webhook 耐久落库 + eventId 幂等的前置切片）→ [`module-es-billing-reconciliation-spike`](../plans/module-es-billing-reconciliation-spike.md)（计费对账勘察）；二者均为候选稿·待审计·未进主干，**本条 6.9「空实现」仍为现状**（若 intake 落地验收后需翻正）。
 
 ---
 
 ← [故事索引](./README.md)
 
 <!-- 变更戳 -->
-正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论：路由/码位（6.1/6.2/6.3 及 6.4–6.8 的状态码）均准；**纠正两处 overclaim**——（一）「支付三通道并存」→实为仅 Stripe 落地且需配 secretKey、alipay/wechat_pay 仅类型占位+注释未实现（D9 暂缓）；（二）6.9「据实收款/失败更新状态」→webhook 两分支实为空实现（仅 break·无落账）；另补 503 懒解析降级条件与支付面无 RBAC/租户归属的安全边界（诚实）。
+正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论：路由/码位（6.1/6.2/6.3 及 6.4–6.8 的状态码）均准；**纠正两处 overclaim**——（一）「支付三通道并存」→实为仅 Stripe 落地且需配 secretKey、alipay/wechat_pay 仅类型占位+注释未实现（D9 暂缓）；（二）6.9「据实收款/失败更新状态」→webhook 两分支实为空实现（仅 break·无落账）；另补 503 懒解析降级条件与支付面无 RBAC/租户归属的安全边界（诚实）。v0.2.1（2026-10-21）：【§6.9】溯源追加**规划·未实现**指针（`module-payment-event-intake` / `module-es-billing-reconciliation-spike`）以便发现性；未改现状叙述（webhook 仍为空实现）——intake 落地验收后才翻正 6.9。

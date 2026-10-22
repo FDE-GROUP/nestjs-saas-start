@@ -2,7 +2,7 @@
 
 > 旅程: 一个用户如何申请开租户、平台如何审批放行/驳回、未放行前如何 fail-closed 失能 | 上下文: `tenants`（申请/审批切片 + 生命周期状态机）
 > 审批制准入（S4·FR-1）：自助即时开通在 BA 层封死（`allowUserToCreateOrganization:false`），建租唯一通道 = 服务端系统动作。状态机 `pending_approval → active ⇄ suspended → deleted`（纯函数 `canTransition`·`tenant-lifecycle.ts`·迁移表 `TRANSITIONS`）。
-> 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
+> 版本: 0.2.1（2026-10-21·溯源去内联行号）
 
 ---
 
@@ -40,7 +40,7 @@
 - **作为** 平台，**我想** 未通过审批（或被暂停/删除）的租户其业务路由一律不可用，**以便** 审批制与失能语义闭环（deny-list）。
 - **验收**：
   - Given 租户处于 `pending_approval/suspended/deleted`（`isTenantBlocked` deny-list），When 其成员访问需 active 租户的业务路由，Then `TenantMiddleware` **不绑定**该租户上下文 → 全局 `TenantScopeGuard` 无 tenantId → 403（`TENANCY_NO_ACTIVE_CONTEXT`·wire 值 `TENANCY:NO_ACTIVE_CONTEXT`·401 先于 403）。
-  - **双层失能汇于同码 403**：中间件先查**用户层** `userStatus.isBlocked`（暂停用户 → 不绑任何身份/租户·L69）再查**租户层** `tenantStatus.isBlocked`（deny-list 态·L84）；任一层命中都塌成「无 tenantId → 403」。（落点区别于 [Epic 01 §1.7](./epic-01-authentication.md)：会话墙出 401/403，此处是租户墙 403。）
+  - **双层失能汇于同码 403**：中间件先查**用户层** `userStatus.isBlocked`（暂停用户 → 不绑任何身份/租户）再查**租户层** `tenantStatus.isBlocked`（deny-list 态）；任一层命中都塌成「无 tenantId → 403」。（落点区别于 [Epic 01 §1.7](./epic-01-authentication.md)：会话墙出 401/403，此处是租户墙 403。）
   - **态读取异常亦 fail-closed**：`TenantMiddleware` 对读态 `.catch(() => bind(undefined))`——租户状态不可解析（如 DB 抖动）时按失能处理（宁误拦不漏放）。
   - Given 无户籍行（存量/seeded），When 解析，Then 视同 `active` 不拦（deny-list 缺省）。**fail-open 依据**：`organization` 本体无行则下游租户解析早已 fail，故「无状态记录 → 不拦」仅在「有 org 无 status 行」的窄边界生效（收权案 `tenant.status` 回填后基本抹平），与 fail-closed 隔离不矛盾。
 - **溯源**：`TenantMiddleware`（`libs/core/src/tenancy`·双层 isBlocked + catch fail-closed）· `TenantScopeGuard`（`!tenantId → 403`）· `isTenantBlocked`（deny-list {pending,suspended,deleted}）/ `isActive`（allow-list·仅 active）双谓词并存（`tenant-lifecycle.ts`）· `UserStatusService.isBlocked` / `TenantStatusService.isBlocked` 单源 · 关联 [`global-tenant-entity-reclamation`](../plans/global-tenant-entity-reclamation.md)（`tenant.status` 真列）/ [`module-rbac-casl`](../plans/module-rbac-casl.md)。
@@ -50,4 +50,4 @@
 ← [故事索引](./README.md)
 
 <!-- 变更戳 -->
-正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论后校正：2.1 补重提/幂等边界（无每用户去重·换 slug 可再申请·相同 slug 靠 BA 应用层拦而 DDL 无唯一约束·并发非原子属推断）；2.2 依迁移表更正 409 精确域（仅 deleted 终态·active→active 幂等重批合法·suspended→active 复活合法）+ 补 approve 结构化审计 + 如实标注成功返 201；2.3 补 S5 收紧（仅 pending 可驳·非 pending→409 TENANCY_NOT_PENDING）+ 物理硬删 FK 级联（硬删≠置 deleted 态）+ `tenant.rejected` 事件 + 「无 status 行可被删成 204」诚实观察；2.4 补双层失能汇于同码 403 + 态读取异常 fail-closed + deny/allow 双谓词与 fail-open 依据。
+正文 v0.1.0（2026-10-20）依当前代码逐路由取证成文；v0.2.0（2026-10-20）经逐条对照代码讨论后校正：2.1 补重提/幂等边界（无每用户去重·换 slug 可再申请·相同 slug 靠 BA 应用层拦而 DDL 无唯一约束·并发非原子属推断）；2.2 依迁移表更正 409 精确域（仅 deleted 终态·active→active 幂等重批合法·suspended→active 复活合法）+ 补 approve 结构化审计 + 如实标注成功返 201；2.3 补 S5 收紧（仅 pending 可驳·非 pending→409 TENANCY_NOT_PENDING）+ 物理硬删 FK 级联（硬删≠置 deleted 态）+ `tenant.rejected` 事件 + 「无 status 行可被删成 204」诚实观察；2.4 补双层失能汇于同码 403 + 态读取异常 fail-closed + deny/allow 双谓词与 fail-open 依据。v0.2.1（2026-10-21）：2.4 溯源去除内联行号（原 `L69`/`L84`）——符号 `userStatus.isBlocked`/`tenantStatus.isBlocked` 已足以锚定，行号属易漂移引用（承「溯源只用文件名/方法名」纪律）。
