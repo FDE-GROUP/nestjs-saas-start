@@ -52,6 +52,8 @@ describe('壳层 header 会话面板', () => {
     expect(screen.queryByText('角色权限')).toBeNull();
     expect(screen.queryByText('成员')).toBeNull();
     expect(screen.queryByRole('button', { name: '登出' })).toBeNull();
+    // 当前路由 /login 命中「登录」链 → aria-current="page"（active 标识机制生效）。
+    expect(screen.getByRole('link', { name: '登录' }).getAttribute('aria-current')).toBe('page');
   });
 
   it('已登录：展开控制台导航 + 邮箱 + 全局登出，无「登录」入口', async () => {
@@ -66,6 +68,8 @@ describe('壳层 header 会话面板', () => {
     expect(screen.getByText('a@b.c')).toBeTruthy();
     expect(screen.getByRole('button', { name: '登出' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: '登录' })).toBeNull();
+    // /login 路由下控制台链非命中 → 无 aria-current（不误激活）。
+    expect(screen.getByRole('link', { name: '平台运营' }).getAttribute('aria-current')).toBeNull();
   });
 
   it('点「登出」→ 调 signOut 一次', async () => {
