@@ -32,6 +32,7 @@
     "ci:db": "pnpm run check && pnpm run test && pnpm run test:fullstack",
     "verify:prod-boot": "node scripts/verify-prod-boot.ts",
     "verify:i18n-assets": "node scripts/verify-i18n-assets.ts",
+    "verify:i18n-key-parity": "node scripts/verify-i18n-key-parity.ts",
     "verify:compose-contract": "node scripts/verify-compose-contract.ts",
     "verify:config-contract": "node scripts/verify-config-contract.ts",
     "verify:type-escape": "node scripts/verify-type-escape-ratchet.ts",

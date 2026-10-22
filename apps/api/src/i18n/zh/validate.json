@@ -6,5 +6,13 @@
   "name.required": "请输入名称",
   "slug.required": "请输入标识符",
   "slug.invalid": "标识符仅可包含小写字母、数字和连字符",
-  "text.maxLength": "内容长度超出上限"
+  "text.maxLength": "内容长度超出上限",
+  "cursor.invalid": "请输入有效的游标",
+  "grantConditions.object": "请输入有效的授权条件对象",
+  "invitationId.required": "请输入邀请 ID",
+  "memberId.required": "请输入成员 ID",
+  "organizationId.required": "请输入组织 ID",
+  "role.required": "请输入角色",
+  "roleKey.required": "请输入角色标识",
+  "roleName.required": "请输入角色名称"
 }

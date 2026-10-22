@@ -6,5 +6,13 @@
   "name.required": "Please enter a name",
   "slug.required": "Please enter a slug",
   "slug.invalid": "Slug may only contain lowercase letters, digits and hyphens",
-  "text.maxLength": "Value exceeds the maximum allowed length"
+  "text.maxLength": "Value exceeds the maximum allowed length",
+  "cursor.invalid": "Please enter a valid cursor",
+  "grantConditions.object": "Please provide a valid grant conditions object",
+  "invitationId.required": "Please enter the invitation ID",
+  "memberId.required": "Please enter the member ID",
+  "organizationId.required": "Please enter the organization ID",
+  "role.required": "Please enter the role",
+  "roleKey.required": "Please enter the role key",
+  "roleName.required": "Please enter the role name"
 }
