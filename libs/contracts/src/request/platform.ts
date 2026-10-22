@@ -1,18 +1,19 @@
 import { z } from 'zod';
+import { optStringMax } from '../helpers';
 import { strictObject } from '../strict';
 import { pageShape } from './pagination';
 
 /** 跨租户列表查询（旧 `ListPlatformTenantsDto extends ListPageDto` + search 模糊）。 */
 export const listPlatformTenantsQuerySchema = strictObject({
   ...pageShape,
-  search: z.string().optional(),
+  search: optStringMax(200),
 });
 export type ListPlatformTenantsQuery = z.infer<typeof listPlatformTenantsQuerySchema>;
 
 /** 跨平台用户列表查询（旧 `ListPlatformUsersDto extends ListPageDto` + search 模糊）。 */
 export const listPlatformUsersQuerySchema = strictObject({
   ...pageShape,
-  search: z.string().optional(),
+  search: optStringMax(200),
 });
 export type ListPlatformUsersQuery = z.infer<typeof listPlatformUsersQuerySchema>;
 

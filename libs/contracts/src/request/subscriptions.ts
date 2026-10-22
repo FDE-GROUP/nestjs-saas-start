@@ -15,7 +15,7 @@ export const TENANT_PLAN_IDS = ['free', 'pro', 'enterprise'] as const;
  */
 export const createSubscriptionSchema = strictObject({
   plan: z.enum(TENANT_PLAN_IDS),
-  customerEmail: z.string().email(),
+  customerEmail: z.string().email().max(254),
   seatsLimit: z.coerce.number().int().min(1).optional(),
   storageQuota: z.coerce.number().int().min(0).optional(),
   apiQuota: z.coerce.number().int().min(0).optional(),

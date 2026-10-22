@@ -1,13 +1,15 @@
 import type { z } from 'zod';
-import { reqString } from '../helpers';
+import { reqStringMax } from '../helpers';
 import { strictObject } from '../strict';
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
 /** 申请创建租户入参（旧 `CreateTenantApplicationDto`·口径同 workspace）。 */
 export const createTenantApplicationSchema = strictObject({
-  name: reqString('validate.name.required'),
-  slug: reqString('validate.slug.required').regex(SLUG_PATTERN, { error: 'validate.slug.invalid' }),
+  name: reqStringMax('validate.name.required', 200),
+  slug: reqStringMax('validate.slug.required', 128).regex(SLUG_PATTERN, {
+    error: 'validate.slug.invalid',
+  }),
 });
 export type CreateTenantApplication = z.infer<typeof createTenantApplicationSchema>;
 
@@ -17,33 +19,33 @@ export type CreateTenantApplication = z.infer<typeof createTenantApplicationSche
  * 门面在服务端查库 fail-closed 裁决），故此处只锁非空串，不校验邮箱格式、不判角色词表。
  */
 export const updateMemberRoleSchema = strictObject({
-  memberId: reqString('validate.memberId.required'),
-  role: reqString('validate.role.required'),
+  memberId: reqStringMax('validate.memberId.required', 128),
+  role: reqStringMax('validate.role.required', 128),
 });
 export type UpdateMemberRole = z.infer<typeof updateMemberRoleSchema>;
 
 export const removeMemberSchema = strictObject({
-  memberId: reqString('validate.memberId.required'),
+  memberId: reqStringMax('validate.memberId.required', 128),
 });
 export type RemoveMember = z.infer<typeof removeMemberSchema>;
 
 export const leaveTenantSchema = strictObject({
-  organizationId: reqString('validate.organizationId.required'),
+  organizationId: reqStringMax('validate.organizationId.required', 128),
 });
 export type LeaveTenant = z.infer<typeof leaveTenantSchema>;
 
 export const createInvitationSchema = strictObject({
-  email: reqString('validate.email.required'),
-  role: reqString('validate.role.required'),
+  email: reqStringMax('validate.email.required', 254),
+  role: reqStringMax('validate.role.required', 128),
 });
 export type CreateInvitation = z.infer<typeof createInvitationSchema>;
 
 export const invitationIdSchema = strictObject({
-  invitationId: reqString('validate.invitationId.required'),
+  invitationId: reqStringMax('validate.invitationId.required', 128),
 });
 export type InvitationId = z.infer<typeof invitationIdSchema>;
 
 export const setActiveTenantSchema = strictObject({
-  organizationId: reqString('validate.organizationId.required'),
+  organizationId: reqStringMax('validate.organizationId.required', 128),
 });
 export type SetActiveTenant = z.infer<typeof setActiveTenantSchema>;

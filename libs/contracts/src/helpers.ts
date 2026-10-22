@@ -11,3 +11,22 @@ import { z } from 'zod';
 export function reqString(key: string) {
   return z.string({ error: key }).min(1, { error: key });
 }
+
+/**
+ * 必填非空串 + 长度上界（承 followups 项②「业务文本入参无 maxLength」输入卫生）。
+ * 超界回 `validate.text.maxLength`（三语可译），与 `reqString` 同走 i18n `issue.message` 通道。
+ */
+export function reqStringMax(key: string, max: number) {
+  return z
+    .string({ error: key })
+    .min(1, { error: key })
+    .max(max, { error: 'validate.text.maxLength' });
+}
+
+/**
+ * 可选串 + 长度上界（content/search 等「present 才校验」面）。
+ * 未给即过；present 且超界回 `validate.text.maxLength`。不加 `min(1)` 保持原可选语义（允许空串）。
+ */
+export function optStringMax(max: number) {
+  return z.string().max(max, { error: 'validate.text.maxLength' }).optional();
+}

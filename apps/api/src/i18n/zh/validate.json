@@ -5,5 +5,6 @@
   "title.required": "请输入标题",
   "name.required": "请输入名称",
   "slug.required": "请输入标识符",
-  "slug.invalid": "标识符仅可包含小写字母、数字和连字符"
+  "slug.invalid": "标识符仅可包含小写字母、数字和连字符",
+  "text.maxLength": "内容长度超出上限"
 }

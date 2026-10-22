@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { reqString } from '../helpers';
+import { reqStringMax } from '../helpers';
 import { strictObject } from '../strict';
 
 /**
@@ -20,21 +20,21 @@ export const TENANT_ACTION_VALUES = ['create', 'read', 'update', 'delete', 'canc
 
 /** 创建角色入参（旧 `CreateRoleDto`）。 */
 export const createRoleSchema = strictObject({
-  key: reqString('validate.roleKey.required'),
-  name: reqString('validate.roleName.required'),
+  key: reqStringMax('validate.roleKey.required', 128),
+  name: reqStringMax('validate.roleName.required', 200),
 });
 export type CreateRole = z.infer<typeof createRoleSchema>;
 
 /** 重命名角色入参（旧 `RenameRoleDto`·形同 CreateRole）。 */
 export const renameRoleSchema = strictObject({
-  key: reqString('validate.roleKey.required'),
-  name: reqString('validate.roleName.required'),
+  key: reqStringMax('validate.roleKey.required', 128),
+  name: reqStringMax('validate.roleName.required', 200),
 });
 export type RenameRole = z.infer<typeof renameRoleSchema>;
 
 /** 删除角色入参（旧 `DeleteRoleDto`）。 */
 export const deleteRoleSchema = strictObject({
-  key: reqString('validate.roleKey.required'),
+  key: reqStringMax('validate.roleKey.required', 128),
 });
 export type DeleteRole = z.infer<typeof deleteRoleSchema>;
 
@@ -43,7 +43,7 @@ export type DeleteRole = z.infer<typeof deleteRoleSchema>;
  * `conditions` 旧 `@IsObject({message})`：present 非对象即回 key（服务端策略闸 `isValidGrantConditions` 判内容）。
  */
 export const grantRolePermissionSchema = strictObject({
-  roleKey: reqString('validate.roleKey.required'),
+  roleKey: reqStringMax('validate.roleKey.required', 128),
   subject: z.enum(TENANT_SUBJECT_VALUES),
   action: z.enum(TENANT_ACTION_VALUES),
   conditions: z

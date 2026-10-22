@@ -8,24 +8,24 @@ import { strictObject } from '../strict';
 /** 创建 checkout（支付意图）入参（旧 `CreateCheckoutDto`）。 */
 export const createCheckoutSchema = strictObject({
   amount: z.coerce.number().min(1),
-  currency: z.string().min(1),
-  description: z.string().optional(),
+  currency: z.string().min(1).max(10),
+  description: z.string().max(20000).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
 });
 export type CreateCheckout = z.infer<typeof createCheckoutSchema>;
 
 /** 创建 provider customer 入参（旧 `CreateCustomerDto`·`email` 旧 `@IsEmail` 校验格式）。 */
 export const createCustomerSchema = strictObject({
-  email: z.string().email(),
-  name: z.string().optional(),
+  email: z.string().email().max(254),
+  name: z.string().max(200).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
 });
 export type CreateCustomer = z.infer<typeof createCustomerSchema>;
 
 /** 退款入参（旧 `RefundPaymentDto`·amount 省略即全额退）。 */
 export const refundPaymentSchema = strictObject({
-  checkoutId: z.string().min(1),
+  checkoutId: z.string().min(1).max(128),
   amount: z.coerce.number().min(1).optional(),
-  reason: z.string().optional(),
+  reason: z.string().max(20000).optional(),
 });
 export type RefundPayment = z.infer<typeof refundPaymentSchema>;

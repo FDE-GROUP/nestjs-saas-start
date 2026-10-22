@@ -262,3 +262,88 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
     });
   });
 });
+
+describe('@saas/contracts · 业务文本入参 maxLength 输入卫生（承 followups 项②）', () => {
+  const TOO = (n: number) => 'x'.repeat(n);
+
+  it('有 i18n key 面：恰界过·超界回 validate.text.maxLength', () => {
+    // post.title 200 / content 20000
+    parseOk(createPostSchema, { title: TOO(200) });
+    expectIssueKey(createPostSchema, { title: TOO(201) }, 'title', 'validate.text.maxLength');
+    parseOk(createPostSchema, { title: 't', content: TOO(20000) });
+    expectIssueKey(
+      createPostSchema,
+      { title: 't', content: TOO(20001) },
+      'content',
+      'validate.text.maxLength',
+    );
+    // workspace name 200 / slug 128
+    expectIssueKey(
+      createWorkspaceSchema,
+      { name: TOO(201), slug: 'ok' },
+      'name',
+      'validate.text.maxLength',
+    );
+    expectIssueKey(
+      createWorkspaceSchema,
+      { name: 'n', slug: TOO(129) },
+      'slug',
+      'validate.text.maxLength',
+    );
+    // updateWorkspace.name 200（可选·present 才校验）
+    expectIssueKey(updateWorkspaceSchema, { name: TOO(201) }, 'name', 'validate.text.maxLength');
+    // tenant name 200 / email 254 / memberId 128
+    expectIssueKey(
+      createTenantApplicationSchema,
+      { name: TOO(201), slug: 'ok' },
+      'name',
+      'validate.text.maxLength',
+    );
+    parseOk(createInvitationSchema, { email: TOO(254), role: 'member' });
+    expectIssueKey(
+      createInvitationSchema,
+      { email: TOO(255), role: 'member' },
+      'email',
+      'validate.text.maxLength',
+    );
+    expectIssueKey(
+      updateMemberRoleSchema,
+      { memberId: TOO(129), role: 'admin' },
+      'memberId',
+      'validate.text.maxLength',
+    );
+    // authorization key 128 / name 200
+    expectIssueKey(
+      createRoleSchema,
+      { key: TOO(129), name: 'n' },
+      'key',
+      'validate.text.maxLength',
+    );
+    expectIssueKey(
+      createRoleSchema,
+      { key: 'k', name: TOO(201) },
+      'name',
+      'validate.text.maxLength',
+    );
+    // platform search 200（可选）
+    parseOk(listPlatformTenantsQuerySchema, { search: TOO(200) });
+    expectIssueKey(
+      listPlatformTenantsQuerySchema,
+      { search: TOO(201) },
+      'search',
+      'validate.text.maxLength',
+    );
+  });
+
+  it('无 key 面（payment·透传默认英文）：超界仅在该 path 报错', () => {
+    expectIssueAt(createCheckoutSchema, { amount: 1, currency: TOO(11) }, 'currency');
+    expectIssueAt(
+      createCheckoutSchema,
+      { amount: 1, currency: 'usd', description: TOO(20001) },
+      'description',
+    );
+    expectIssueAt(createCustomerSchema, { email: 'a@b.com', name: TOO(201) }, 'name');
+    expectIssueAt(refundPaymentSchema, { checkoutId: TOO(129) }, 'checkoutId');
+    expectIssueAt(refundPaymentSchema, { checkoutId: 'pi_1', reason: TOO(20001) }, 'reason');
+  });
+});

@@ -5,5 +5,6 @@
   "title.required": "Please enter a title",
   "name.required": "Please enter a name",
   "slug.required": "Please enter a slug",
-  "slug.invalid": "Slug may only contain lowercase letters, digits and hyphens"
+  "slug.invalid": "Slug may only contain lowercase letters, digits and hyphens",
+  "text.maxLength": "Value exceeds the maximum allowed length"
 }
