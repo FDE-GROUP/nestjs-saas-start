@@ -65,7 +65,7 @@
 - [x] ⓐ–ⓔ 全部有归人裁决留痕后方可动码（2026-10-22 过审·见 §4）；
 - [x] R3a（2026-10-22 部分）：ⓑ 消费者幂等锁测**硬化落链**（handler.test 重投断言升到「同参数收敛请求」 `mock.calls[0]`==`[1]`·5 测绿）；relay 头 `at-least-once-to-claim` 口径**前序已成文**（outbox-relay.e2e L188 已锁重投）；architecture ES 条对拍注 = 宪法且口径随 R3b 真变（to-claim→to-consumer），**并入 R3b 一次成文防双写**（宪法段改动仍需亲签）；
 - [ ] R3b：gated e2e 崩溃-重启-补收演练绿（登 `GATED_E2E_FILES`·恒等闸过）；既有 `outbox-relay.e2e` 零语义弱化；
-- [ ] R3c：滞后检测脚本真库跑对拍存照（fold==投影逐字段）；
+- [x] R3c（2026-10-22）：新增 `scripts/es-projection-doctor.ts`——跨上下文（tenants+subscriptions）只读巡检 fold⇄投影 + `--rebuild` catch-up 恢复面（bootstrap `--verify` 只检不修·此为真增量）；dev 真库演练存照：注入投影漂移(suspended)→医生检出可修(fold=active⇄投影=suspended)→`--rebuild` 回写真相→复验漂移消失（净还原·零 DDL 不动流·tsc+biome 绿）；空流者诚实归类「须 bootstrap·非本工具可修」；
 - [ ] `pnpm run ci` 全绿 + `pnpm run test:fullstack` 全链绿 +（若触 schema）`migration:generate` 空 diff 证明。
 
 ## 6. 演变记录
@@ -75,8 +75,9 @@
 | 2026-10-22 | 0.1.0 | 起草（承 ES 主线代裁方向·母案 §4 R3 细化提案） | 首版：现状取证（relay/实体/handler 实读）+ 甲/乙档 + R3a–R3c 切片 + 裁点 ⓐ–ⓔ |
 | 2026-10-22 | 0.2.0 | 过审计门·定案 | §4 裁 ⓐ–ⓔ 全采纳推荐档（ⓐ 甲档落地·乙档触发判据缓行）；§5 首判据勾选；R3a/R3c 非高危可直启·R3b 半高危待逐片亲签 |
 | 2026-10-22 | 0.3.0 | R3a 实施（部分） | ⓑ 幂等锁硬化：handler.test 重投断言升到「同参数收敛调用」（`mock.calls[0]`==`[1]`）·5 测绿；取证发现 relay 头口径 + 端口幂等真测前序已落，architecture 对拍注并入 R3b（防双写·宪法高危） |
+| 2026-10-22 | 0.4.0 | R3c 实施 | 新增 `scripts/es-projection-doctor.ts`（只读检测默认 + `--rebuild` 可选修投影·零 DDL·不动流）；dev 真库跑 catch-up 闭环存照（漂移注入→检出→修复→净还原）·tsc/biome 绿；沿 es-bootstrap 先例不注 package.json |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-22 / v0.3.0 变更，以当前正文内容为准。
+正文已于 2026-10-22 / v0.4.0 变更，以当前正文内容为准。
