@@ -54,6 +54,11 @@ step('Domain layout guard', run('run', 'verify:domain-layout'));
 // 删除致讲解性 as-built 文档静默指向不存在之物）。纯文本 + 源树扫描、便宜，与 type-escape/domain-layout
 // 同置 full/quick 均跑、早失败。诚实边界：只锁引用产物实存性（机械 drift），不校验散文语义正确性（归人评）。
 step('Stories drift guard', run('run', 'verify:stories-drift'));
+// i18n 键级完整性恒等闸（借鉴线 X3 · module-i18n-key-parity 切片 C · 半高危经人签核 2026-10-23）：
+// ①跨语言（zh/en）逐 namespace 键集恒等 ②源码静态引用键⇄默认 locale 存在——防新增漏译/引用不存在的
+// i18n 键致生产校验/邮件静默回退成 key 串（切片 B 首跑即抓修 8 处 lost-ref）。纯源树 + JSON 扫描、无构建依赖，
+// 与 type-escape/domain-layout/stories-drift 同置 full/quick 均跑、早失败。诚实边界：动态拼键 out-of-scope·不做反向死键硬闸。
+step('i18n key parity guard', run('run', 'verify:i18n-key-parity'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 前端类型面纳入门禁（外部评审暴露第二盲区：ci 曾不 typecheck apps/web——

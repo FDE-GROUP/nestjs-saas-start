@@ -58,11 +58,11 @@
 
 ## 4. 审计记录
 
-> 无已审方案不写码。本案**已审（人令全取荐 2026-10-23）·切片 A/B 已落地**；切片 C（`ci.ts` 接线）属半高危·待另签。
+> 无已审方案不写码。本案**已审（人令全取荐 2026-10-23）·切片 A/B/C 全落地**（C：`ci.ts` 接线经人 2026-10-23 亲签·半高危）。
 
-- 结论：**已审·人令「X3 过审·ⓐ–ⓤ 全取荐」2026-10-23** → 切片 A/B 已落地（`ci.ts` 未接·ⓓ）。
+- 结论：**已审·人令「X3 过审·ⓐ–ⓤ 全取荐」2026-10-23** → 切片 A/B/C 全部落地（`ci.ts` 门禁接线经人 2026-10-23 亲签「同意」·闸入 full+quick 链）。
 - 落地记录：新增 `scripts/verify-i18n-key-parity.ts`（node type-strip·零三方 dep）+ package.json `verify:i18n-key-parity` 别名。**首跑切片 B 即抓到 8 个 lost-ref 真缺陷**（`libs/contracts` 请求 schema 引用 `validate.{cursor.invalid,grantConditions.object,invitationId.required,memberId.required,organizationId.required,role.required,roleKey.required,roleName.required}`·zh/en 资产皆无→生产校验静默回退成 key串），已按人「取荐补译」补入 zh+en `validate.json`（8 键·两语对称）。复验：切片 A en/zh 三 namespace 恒等（validate 16/emails 24/login 1）·切片 B 去重 14 静态引用键全命中·动态豁免 1 处（mailer）·**负向实证**（注假引用→EXIT=1 点名·删净→EXIT=0）·`pnpm run ci` PASSED 885/52skip。
-- 归人裁点（未裁）：
+- 归人裁点（**均已裁·人令全取荐 2026-10-23**）：
   - **ⓐ 反向死键**：不硬闸（荐·FP 高）/ warn-only / 硬闸？
   - **ⓑ 动态键**：out-of-scope + 文档登记（荐）/ 另设结构约束？
   - **ⓒ 默认 locale**：zh（荐·fallback 现回落 zh 实证 `validation-i18n.e2e` L88）？
@@ -77,7 +77,7 @@
 - [x] 切片 B：静态引用键⇄zh 存在——去重 14 非测试静态引用全命中；**首跑暴露并修复 8 个 lost-ref**（补 zh/en 各 8 键）·动态豁免面（mailer）已登记·脚本头注诚实标注正向闸非全量；
 - [x] flatten 键路径口径与 nestjs-i18n 装载语义一致（namespace=文件 basename·全键=`<ns>.<flatPath>`·实证与 22 源码引用前缀吻合）；
 - [x] 负向实证：注入假引用→闸 fail-loud EXIT=1 点名·删净→EXIT=0（零足迹）；
-- [ ] 切片 C：`ci.ts` 门禁接线**经高危亲签后**执行（当前未接·ⓓ）；
+- [x] 切片 C：`ci.ts` 门禁接线已落地（人亲签「同意」2026-10-23·置廉价组 full+quick 均跑·`ci:quick` 实证闸在链触发绿）；
 - [x] `pnpm run ci` 全绿（未接线前手动链：885 passed | 52 skipped·零 HTTP/schema/OpenAPI 变更）。
 
 ## 6. 演变记录
@@ -87,8 +87,9 @@
 | 2026-10-22 | 0.1.0 | 起草 | 承借鉴线 X3（人「选 3→X3」）首版候选稿：取证现有两闸不覆盖键级恒等·定切片 A（跨语言键集恒等）/B（静态引用⇄默认 locale 存在·动态键 out-of-scope）/C（门禁接入·改 ci.ts=半高危须签）；归人裁点 ⓐ–ⓥ 待裁 |
 | 2026-10-22 | 0.2.0 | ⓥ 定案 | 承用户「仅保留 zh/en」→另案 `module-i18n-drop-ja` 高危签 A 摘除 ja·ⓥ 定「闸仅约束 zh/en」 |
 | 2026-10-23 | 0.3.0 | 审结 + 切片 A/B 落地 | 人令「X3 过审·ⓐ–ⓤ 全取荐」→落 `verify-i18n-key-parity.ts`（A 跨语言键集恒 + B 静态引用⇄zh）+ package 别名（`ci.ts` 未接·ⓓ）；**首跑切片 B 抓到 8 lost-ref 真缺陷·取荐补译入 zh/en**；负向实证 + `ci` 全绿存照 |
+| 2026-10-23 | 0.4.0 | 切片 C 接线 | 人亲签「同意」（半高危·触 `ci.ts`）→ 新步 `step('i18n key parity guard', ...)` 置廉价组（full+quick 均跑·早失败）·`ci:quick` 实证闸在链触发绿；本案三切片全落地 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-23 / v0.3.0 变更，以当前正文内容为准。
+正文已于 2026-10-23 / v0.4.0 变更，以当前正文内容为准。
