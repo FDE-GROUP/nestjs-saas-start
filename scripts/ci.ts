@@ -49,6 +49,11 @@ step('Type-escape ratchet', run('run', 'verify:type-escape'));
 // 扫 apps/api/*/domain，根散件 / 非规范子目录即 fail-loud（防归位后再漂移）。纯目录扫描、便宜，
 // 故与 type-escape 同置 full/quick 均跑、早失败；libs/core 另规则不纳入（防误红）。
 step('Domain layout guard', run('run', 'verify:domain-layout'));
+// stories-drift 恒等闸（docs/stories 溯源纪律「只指文件名/方法名」的机制强制·新增门禁·高危经人签核）：
+// 校验故事引用的关联 plan / `.ts` 文件名 / wire 错误码在仓内实存，断链即 fail-loud（防重命名/搬迁/
+// 删除致讲解性 as-built 文档静默指向不存在之物）。纯文本 + 源树扫描、便宜，与 type-escape/domain-layout
+// 同置 full/quick 均跑、早失败。诚实边界：只锁引用产物实存性（机械 drift），不校验散文语义正确性（归人评）。
+step('Stories drift guard', run('run', 'verify:stories-drift'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 前端类型面纳入门禁（外部评审暴露第二盲区：ci 曾不 typecheck apps/web——
