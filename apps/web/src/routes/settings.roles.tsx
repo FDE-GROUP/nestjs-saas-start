@@ -69,7 +69,7 @@ function RolesPage() {
       <section className="flex flex-col gap-3">
         <SectionHeading>新建自定义角色</SectionHeading>
         <FormWrap onSubmit={handleCreate}>
-          <Field label="Key（租户内唯一）" name="key" value={key} onChange={setKey} required />
+          <Field label="Key（组织内唯一）" name="key" value={key} onChange={setKey} required />
           <Field label="名称" name="name" value={name} onChange={setName} required />
           <SubmitButton pending={create.pending}>创建</SubmitButton>
         </FormWrap>
@@ -180,7 +180,7 @@ export function RolesView({ roles }: { roles?: TenantRoleView[] }) {
     <section className="flex flex-col gap-4">
       <SectionHeading>角色</SectionHeading>
       {list.length === 0 ? (
-        <EmptyPanel label="当前租户暂无角色数据。" />
+        <EmptyPanel label="当前组织暂无角色数据。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>

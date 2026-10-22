@@ -57,7 +57,7 @@ export function SubscriptionSummaryView({ snap }: { snap: SubscriptionSnapshot }
   if (!snap.hasSubscription) {
     return (
       <p className="text-sm text-slate-400 dark:text-slate-500">
-        本租户尚无生效订阅，可在下方开通档位。
+        本组织尚无生效订阅，可在下方开通档位。
       </p>
     );
   }

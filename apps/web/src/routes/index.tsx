@@ -114,7 +114,7 @@ function DashboardPage() {
         {!hasActiveTenant && tenants.length === 0 ? (
           <TenantOnboardingPanel />
         ) : !hasActiveTenant ? (
-          <EmptyPanel label="尚无活跃租户，请在「我的租户」切换到一个组织。" />
+          <EmptyPanel label="尚无活跃组织，请在「我的组织」中切换。" />
         ) : note ? (
           <ErrorPanel message={note} />
         ) : (
@@ -128,7 +128,7 @@ function DashboardPage() {
 /** 纯展示（收 typed 订阅快照·可脱离 router 组件测）。 */
 export function SubscriptionView({ subscription }: { subscription?: SubscriptionResponse | null }) {
   if (!subscription?.hasSubscription) {
-    return <EmptyPanel label="当前租户尚无生效订阅。" />;
+    return <EmptyPanel label="当前组织尚无生效订阅。" />;
   }
   return (
     <dl className="grid grid-cols-1 gap-x-2 gap-y-1 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-[8rem_1fr] dark:border-slate-700">
@@ -167,7 +167,7 @@ function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeading>我的租户</SectionHeading>
+      <SectionHeading>我的组织</SectionHeading>
       <div className="flex flex-col gap-2">
         {tenants.map((t) => (
           <div
@@ -179,7 +179,7 @@ function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
               pending={switchAction.pending}
               onClick={() => t.id && handleSwitch(t.id, t.name ?? t.id)}
             >
-              切换到此租户
+              切换到此组织
             </SubmitButton>
           </div>
         ))}

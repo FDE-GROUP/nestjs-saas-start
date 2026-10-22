@@ -59,7 +59,7 @@ describe('缺活跃租户引导分派（/settings/roles 路由级）', () => {
     await vi.waitFor(() =>
       expect(
         screen.getByText(
-          '你尚未加入任何租户。请到首页提交租户申请（待平台审批），或等待管理员邀请入组。',
+          '你尚未加入任何组织。请到首页提交组织申请（待平台审批），或等待管理员邀请入组。',
         ),
       ).toBeTruthy(),
     );
@@ -74,7 +74,7 @@ describe('缺活跃租户引导分派（/settings/roles 路由级）', () => {
       return Promise.resolve({ data: { data: [{ id: 'o1' }] }, error: null });
     });
     mountAt('/settings/roles');
-    await vi.waitFor(() => expect(screen.getByText(/切换到一个组织/)).toBeTruthy());
+    await vi.waitFor(() => expect(screen.getByText(/请到首页「我的组织」/)).toBeTruthy());
   });
 
   it('非该码错误 → 维持 ErrorPanel 原文（语义不变·不吞不改）', async () => {

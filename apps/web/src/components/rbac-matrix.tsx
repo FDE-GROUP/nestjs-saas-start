@@ -31,7 +31,7 @@ export const SUBJECTS: readonly TenantSubject[] = [
 export const ACTIONS: readonly TenantAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
 
 const SUBJECT_LABELS: Record<TenantSubject, string> = {
-  Organization: '租户',
+  Organization: '组织',
   Member: '成员',
   Invitation: '邀请',
   Workspace: '工作区',

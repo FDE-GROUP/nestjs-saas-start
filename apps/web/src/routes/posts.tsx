@@ -167,7 +167,7 @@ export function PostsView({ posts }: { posts?: Post[] }) {
     <section className="flex flex-col gap-4">
       <SectionHeading>文章</SectionHeading>
       {list.length === 0 ? (
-        <EmptyPanel label="当前租户暂无文章。" />
+        <EmptyPanel label="当前组织暂无文章。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>

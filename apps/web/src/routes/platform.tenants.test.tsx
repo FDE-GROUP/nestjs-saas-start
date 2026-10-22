@@ -43,12 +43,12 @@ describe('TenantsListView（纯展示 · typed 渲染 / 空态 / 状态徽标）
 
   it('空态（items=[]）', () => {
     render(<TenantsListView items={[]} />);
-    expect(screen.getByText('平台暂无租户数据。')).toBeTruthy();
+    expect(screen.getByText('平台暂无组织数据。')).toBeTruthy();
   });
 
   it('缺省（undefined）→ 空态，不崩', () => {
     render(<TenantsListView />);
-    expect(screen.getByText('平台暂无租户数据。')).toBeTruthy();
+    expect(screen.getByText('平台暂无组织数据。')).toBeTruthy();
   });
 });
 

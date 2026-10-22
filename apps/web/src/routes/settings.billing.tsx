@@ -70,7 +70,7 @@ function BillingPage() {
         {result.snap ? (
           <SubscriptionSummaryView snap={result.snap} />
         ) : result.snapDenied ? (
-          <ErrorPanel message="无活跃租户上下文，请先选择或加入一个租户后再查看订阅。" />
+          <ErrorPanel message="无活跃组织上下文，请先选择或加入一个组织后再查看订阅。" />
         ) : (
           <ErrorPanel message={result.snapErr ?? '订阅快照不可用。'} />
         )}

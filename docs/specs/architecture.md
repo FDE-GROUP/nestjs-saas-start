@@ -216,8 +216,8 @@ the rules and whom it serves** — one topic can split in two:
 
 > Operational consequence: when placing a new capability, run it through the four axes above (change-driver / paradigm / testing / tool placement). Mechanism-side changes go through the horizontal & guard review surface (fallow/purity/identity gates); domain-side changes go through the vertical-slice & reviewed-plan surface (entity doctrine / projection / kernel criteria). Misplacing either way (treating a gateway context as a facility, or scattering mechanism policy into contexts as business rules) is structural debt.
 
-Terminology discipline: a **tenant** is a business concept (the `tenants` core-domain
-aggregate, with lifecycle, invariants and language); its physical entity is the
+Terminology discipline: a **tenant** is a business concept (a `tenants` core-domain
+**storage entity · NOT a DDD aggregate** — the kernel is the functional trio record `TENANT_STATUS` + port `TenantStatusStore` + function `canTransition`·worded the same as glossary §1—with lifecycle, invariants and language); its physical entity is the
 self-owned registry table `tenant` (owned by the `tenants` context·the general rule is the
 Entity Doctrine + Projection-Mapping Doctrine above: domain entity ↔ separate data entity mapped
 by the repository adapter·`id` = proxy PK
@@ -227,9 +227,11 @@ global-tenant-entity-reclamation amendment 2026-10-20 supersedes the old implici
 authentication/membership projection); **multi-tenancy** is an isolation
 mechanism (infrastructure, no aggregate, no lifecycle: request recognition → ALS
 propagation → boundary enforcement → exemption axis). The two never co-inhabit:
-`tenancy/` hosts no tenant-aggregate business writes, and business contexts never
+`tenancy/` hosts no tenant-lifecycle business writes, and business contexts never
 re-implement isolation. `tenancy/` consumes `authorization` ruling ports; it no longer
 houses the CASL checker (slice A) or platform governance (slice D).
+
+**Presentation-layer naming discipline** (global-userfacing-tenant-naming, human ruling 2026-10-23): "tenant/Tenant" above is an **internal domain & mechanism term** (kept in code/guards/ALS/`tenant.status`/`TENANCY_*` error codes/route slugs `/tenants`·not user-facing); **user-facing surfaces (frontend rendered copy, nav labels, end-user prompts) always say "organization" (top unit) / "workspace" (second-level group)** — "tenant" must not leak into user copy. The two map one-to-one and the translation happens only at the presentation layer (**no model/storage/API-contract change**).
 
 Context identities fixed by the domain-refactor plan (global-domain-context-refactor):
 `authorization` is an **independent supporting domain** serving both `tenants` (members

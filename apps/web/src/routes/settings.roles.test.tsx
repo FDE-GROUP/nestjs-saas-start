@@ -28,11 +28,11 @@ describe('RolesView（纯展示 · typed 渲染 / 空态 / 系统标记）', () 
 
   it('空态（无角色）', () => {
     render(<RolesView roles={[]} />);
-    expect(screen.getByText('当前租户暂无角色数据。')).toBeTruthy();
+    expect(screen.getByText('当前组织暂无角色数据。')).toBeTruthy();
   });
 
   it('缺省（undefined）→ 空态，不崩', () => {
     render(<RolesView />);
-    expect(screen.getByText('当前租户暂无角色数据。')).toBeTruthy();
+    expect(screen.getByText('当前组织暂无角色数据。')).toBeTruthy();
   });
 });

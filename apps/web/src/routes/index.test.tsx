@@ -36,11 +36,11 @@ describe('SubscriptionView（typed 订阅快照 / 空态）', () => {
 
   it('无生效订阅 → 空态', () => {
     render(<SubscriptionView subscription={null} />);
-    expect(screen.getByText('当前租户尚无生效订阅。')).toBeTruthy();
+    expect(screen.getByText('当前组织尚无生效订阅。')).toBeTruthy();
   });
 
   it('hasSubscription=false → 空态', () => {
     render(<SubscriptionView subscription={{ ...active, hasSubscription: false }} />);
-    expect(screen.getByText('当前租户尚无生效订阅。')).toBeTruthy();
+    expect(screen.getByText('当前组织尚无生效订阅。')).toBeTruthy();
   });
 });

@@ -99,7 +99,7 @@ export function TenantActions({
       <button
         type="button"
         disabled={!en.reject || pending}
-        title={en.reject ? '驳回申请（不可逆硬删待审批租户）' : '仅待审批态可驳回'}
+        title={en.reject ? '驳回申请（不可逆硬删待审批组织）' : '仅待审批态可驳回'}
         onClick={onReject}
         className={DANGER}
       >

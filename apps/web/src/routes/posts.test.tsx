@@ -49,11 +49,11 @@ describe('PostsView（纯展示 · typed 渲染 / 空态 / 缺省）', () => {
 
   it('空态（无文章）', () => {
     render(<PostsView posts={[]} />);
-    expect(screen.getByText('当前租户暂无文章。')).toBeTruthy();
+    expect(screen.getByText('当前组织暂无文章。')).toBeTruthy();
   });
 
   it('缺省（undefined）→ 空态，不崩', () => {
     render(<PostsView />);
-    expect(screen.getByText('当前租户暂无文章。')).toBeTruthy();
+    expect(screen.getByText('当前组织暂无文章。')).toBeTruthy();
   });
 });

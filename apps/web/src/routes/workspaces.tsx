@@ -63,7 +63,7 @@ function WorkspacesPage() {
       <WorkspacesView page={result.page} />
 
       <section className="flex flex-col gap-3">
-        <SectionHeading>新建 Workspace</SectionHeading>
+        <SectionHeading>新建工作区</SectionHeading>
         <FormWrap onSubmit={handleCreate}>
           <Field
             label="名称"
@@ -186,21 +186,21 @@ export function WorkspacesView({ page }: { page?: WorkspacePageResponse }) {
   const items = page?.items ?? [];
   return (
     <section className="flex flex-col gap-4">
-      <SectionHeading>Workspaces</SectionHeading>
+      <SectionHeading>工作区</SectionHeading>
       {page ? (
         <p className="text-xs text-slate-400 dark:text-slate-500">
           共 {page.total} 条 · 页宽 {page.limit} · 偏移 {page.offset}
         </p>
       ) : null}
       {items.length === 0 ? (
-        <EmptyPanel label="当前租户下暂无 workspace。" />
+        <EmptyPanel label="当前组织下暂无工作区。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">名称</th>
               <th className="py-2 pr-4 font-medium">Slug</th>
-              <th className="py-2 pr-4 font-medium">所属租户</th>
+              <th className="py-2 pr-4 font-medium">所属组织</th>
               <th className="py-2 font-medium">创建日期</th>
             </tr>
           </thead>

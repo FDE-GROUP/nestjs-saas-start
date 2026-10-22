@@ -81,7 +81,7 @@ function PlatformTenantsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeading>租户治理</SectionHeading>
+      <SectionHeading>组织治理</SectionHeading>
 
       <FormWrap onSubmit={submitSearch} className="flex items-end gap-3">
         <Field
@@ -163,7 +163,7 @@ export function TenantsListView({ items }: { items?: TenantRow[] }) {
   return (
     <section className="flex flex-col gap-3">
       {list.length === 0 ? (
-        <EmptyPanel label="平台暂无租户数据。" />
+        <EmptyPanel label="平台暂无组织数据。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>

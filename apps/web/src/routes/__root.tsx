@@ -58,7 +58,7 @@ function RootLayout() {
                 className={NAV_BASE}
                 activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}
               >
-                Workspaces
+                工作区
               </Link>
               <Link
                 to="/posts"

@@ -56,7 +56,7 @@ function TenantDetailPage() {
   if (result.kind === 'error') {
     return <ErrorPanel message={result.denied ? `无平台运营权限：${result.body}` : result.body} />;
   }
-  if (result.kind === 'notFound') return <ErrorPanel message={`租户不存在：${result.id}`} />;
+  if (result.kind === 'notFound') return <ErrorPanel message={`组织不存在：${result.id}`} />;
 
   const { tenant, diag } = result;
   const id = tenant.organizationId;
@@ -94,7 +94,7 @@ function TenantDetailPage() {
 
   // 驳回（epic-02 §2.3 · reject=物理硬删·不可逆）：确认后才发 · 成功后 org 行消失→跳列表避免详情 404。
   async function doReject() {
-    if (!window.confirm('驳回将不可逆硬删该待审批租户（reject=物理删除 · FK 级联），确认？'))
+    if (!window.confirm('驳回将不可逆硬删该待审批组织（reject=物理删除 · FK 级联），确认？'))
       return;
     const ok = await action.run({
       path: `/api/v1/tenants/applications/${id}/reject`,
@@ -108,7 +108,7 @@ function TenantDetailPage() {
   }
 
   async function doSoftDelete() {
-    if (!window.confirm(`确认软删除租户「${tenant.name}」（→ deleted · 行保留供导出）？`)) return;
+    if (!window.confirm(`确认软删除组织「${tenant.name}」（→ deleted · 行保留供导出）？`)) return;
     await action.run({
       path: `/api/v1/platform/tenants/${id}`,
       method: 'DELETE',
@@ -174,7 +174,7 @@ function TenantDetailPage() {
         search={{ offset: 0 }}
         className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       >
-        ← 返回租户列表
+        ← 返回组织列表
       </Link>
 
       <section className="flex flex-col gap-2">
@@ -183,7 +183,7 @@ function TenantDetailPage() {
           <StatusBadge status={tenant.status} />
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          slug：{tenant.slug} · 租户 ID：{tenant.organizationId} · 创建：
+          slug：{tenant.slug} · 组织 ID：{tenant.organizationId} · 创建：
           {formatDate(tenant.createdAt)}
         </p>
       </section>

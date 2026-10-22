@@ -25,7 +25,7 @@ function PlatformShell() {
           search={{ offset: 0 }}
           className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
         >
-          租户治理
+          组织治理
         </Link>
         <Link
           to="/platform/users"

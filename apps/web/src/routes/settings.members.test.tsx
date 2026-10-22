@@ -25,7 +25,7 @@ describe('MembersView（BA 透传面 · 防御性渲染 / 空态）', () => {
 
   it('非预期形（无 members 数组）→ 空态，不崩', () => {
     render(<MembersView raw={{ unexpected: true }} />);
-    expect(screen.getByText('当前租户暂无成员数据。')).toBeTruthy();
+    expect(screen.getByText('当前组织暂无成员数据。')).toBeTruthy();
   });
 
   it('缺字段行 → 占位破折号', () => {

@@ -39,6 +39,6 @@ describe('WorkspacesView（纯展示 · typed 渲染 / 空态）', () => {
 
   it('空态（items 为空）', () => {
     render(<WorkspacesView page={{ items: [], total: 0, limit: 20, offset: 0 }} />);
-    expect(screen.getByText('当前租户下暂无 workspace。')).toBeTruthy();
+    expect(screen.getByText('当前组织下暂无工作区。')).toBeTruthy();
   });
 });

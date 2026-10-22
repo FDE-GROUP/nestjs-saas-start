@@ -55,7 +55,7 @@ function MembersPage() {
       path: '/api/v1/tenants/members/leave',
       method: 'POST',
       scope: 'member.leave',
-      successMessage: '已退出租户',
+      successMessage: '已退出组织',
       thunk: () =>
         api.POST('/api/v1/tenants/members/leave', {
           body: { organizationId: orgId },
@@ -77,9 +77,9 @@ function MembersPage() {
       )}
 
       <section className="flex flex-col gap-2">
-        <SectionHeading>退出当前租户</SectionHeading>
+        <SectionHeading>退出当前组织</SectionHeading>
         <DangerButton pending={leave.pending} onClick={handleLeave}>
-          退出租户
+          退出组织
         </DangerButton>
         <Feedback error={leave.error} success={leave.success} />
       </section>
@@ -162,7 +162,7 @@ export function MembersView({ raw }: { raw?: unknown }) {
         数据来源：Better Auth membership 透传面（非 Nest 契约类型）。
       </p>
       {members.length === 0 ? (
-        <EmptyPanel label="当前租户暂无成员数据。" />
+        <EmptyPanel label="当前组织暂无成员数据。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>

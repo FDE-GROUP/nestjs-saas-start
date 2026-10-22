@@ -102,7 +102,7 @@ describe('dashboard loader 引导落租', () => {
     ]);
     renderAt('/');
     await vi.waitFor(() =>
-      expect(screen.getByText('尚无活跃租户，请在「我的租户」切换到一个组织。')).toBeTruthy(),
+      expect(screen.getByText('尚无活跃组织，请在「我的组织」中切换。')).toBeTruthy(),
     );
     expect(mocks.POST).not.toHaveBeenCalled();
     expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
