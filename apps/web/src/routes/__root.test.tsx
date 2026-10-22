@@ -36,6 +36,20 @@ function renderAtLogin() {
   );
 }
 
+// 泛化：从任意路径初载，返回 router 以便断言重定向后的最终 location。
+function renderAt(path: string) {
+  const router = createRouter({
+    routeTree,
+    history: createMemoryHistory({ initialEntries: [path] }),
+  });
+  render(
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>,
+  );
+  return router;
+}
+
 beforeEach(() => {
   mocks.getSession.mockReset();
   mocks.signOut.mockReset();
@@ -89,5 +103,41 @@ describe('壳层 header 会话面板', () => {
     renderAtLogin();
     await vi.waitFor(() => expect(screen.getByRole('link', { name: '登录' })).toBeTruthy());
     expect(screen.queryByText('平台运营')).toBeNull();
+  });
+});
+
+describe('深链守卫 beforeLoad（deep-link return）', () => {
+  it('anon 命中受保护页 → 重定向 /login?next=<原路径>', async () => {
+    mocks.getSession.mockResolvedValue(null);
+    const router = renderAt('/posts');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+    expect(router.state.location.search).toEqual({ next: '/posts' });
+  });
+
+  it('anon 携查询深链 → next 完整保留查询串', async () => {
+    mocks.getSession.mockResolvedValue(null);
+    const router = renderAt('/platform/tenants?q=acme');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/login'));
+    // 目标 route 的 validateSearch 会给 searchStr 补默认 offset，故用 stringContaining 保宽松（回跳仍为正确深链）。
+    expect(router.state.location.search).toMatchObject({
+      next: expect.stringContaining('/platform/tenants?q=acme'),
+    });
+  });
+
+  it('anon 命中公开白名单 /register → 不重定向，停留原页', async () => {
+    mocks.getSession.mockResolvedValue(null);
+    const router = renderAt('/register');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/register'));
+  });
+
+  it('authed 命中受保护页 → beforeLoad 放行、不被弹回登录', async () => {
+    mocks.getSession.mockResolvedValue({
+      user: { id: 'u1', email: 'a@b.c' },
+      session: { id: 's1', expiresAt: '2099-01-01T00:00:00.000Z' },
+    });
+    const router = renderAt('/posts');
+    // 已登录直打受守卫 /posts：beforeLoad requireSession 通过→停留 /posts（未被弹回 /login）。
+    // 仅断言落点即足以证明守卫放行（/posts loader 报错与本守卫无关，此测不接 defaultErrorComponent）。
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/posts'));
   });
 });

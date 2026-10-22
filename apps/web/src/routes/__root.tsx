@@ -3,9 +3,19 @@ import { useState } from 'react';
 import { RouteError, RouteNotFound } from '../components/route-feedback';
 import { ThemeToggle } from '../components/theme-toggle';
 import { signOut } from '../lib/auth';
+import { requireSession } from '../lib/session';
 import { useSession } from '../lib/use-session';
 
+// anon 唯一可达页（与既有 anon 导航只露「登录」一致；/invitations 现仍受守卫，行为不变）。
+const PUBLIC_PATHS = new Set(['/login', '/register']);
+
 export const Route = createRootRoute({
+  // 深链守卫（集中式·纯追加）：anon 命中非公开页 → 跳 /login?next=<原路径含查询>，登录后回跳。
+  // 走可 mock 的会话接缝 requireSession（与 14 个 loader 同一入口）；采用 beforeLoad 的 location 不改动 loader。
+  beforeLoad: async ({ location }) => {
+    if (PUBLIC_PATHS.has(location.pathname)) return;
+    await requireSession({ pathname: location.pathname, searchStr: location.searchStr });
+  },
   component: RootLayout,
   errorComponent: RouteError,
   notFoundComponent: RouteNotFound,

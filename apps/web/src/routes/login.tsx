@@ -1,8 +1,12 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { type SignInOutcome, signInEmail, signInMagicLink } from '../lib/auth';
+import { safeInternalPath } from '../lib/safe-redirect';
 
 export const Route = createFileRoute('/login')({
+  // 深链回跳载体：读取守卫生成的 ?next=<原路径含查询>（见 __root.beforeLoad）。
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === 'string' ? { next: search.next } : {},
   component: LoginPage,
 });
 
@@ -11,6 +15,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { next } = Route.useSearch();
   const navigate = useNavigate();
 
   async function onSubmit(e: FormEvent) {
@@ -20,7 +25,10 @@ function LoginPage() {
     const outcome: SignInOutcome = await signInEmail(email, password);
     setPending(false);
     if (outcome.ok) {
-      await navigate({ to: '/' });
+      // 安全回跳：仅站内相对路径走 SPA 跳转，否则回落首页（开放重定向防护）。
+      const target = safeInternalPath(next);
+      if (target) await navigate({ href: target });
+      else await navigate({ to: '/' });
       return;
     }
     setError(outcome.error ?? '登录失败');

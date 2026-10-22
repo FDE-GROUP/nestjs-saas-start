@@ -1,12 +1,16 @@
 /**
  * 注册页（dev only·后端 emailAndPassword 仅非生产启用）。
- * 成功后自动登录（BA 发 session cookie）并跳首页。
+ * 成功后自动登录（BA 发 session cookie）并安全回跳 `?next`（默认首页）。
  */
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { type SignInOutcome, signUpEmail } from '../lib/auth';
+import { safeInternalPath } from '../lib/safe-redirect';
 
 export const Route = createFileRoute('/register')({
+  // 与登录页一致的回跳载体（注册极少携 next·失败面回落首页）。
+  validateSearch: (search: Record<string, unknown>): { next?: string } =>
+    typeof search.next === 'string' ? { next: search.next } : {},
   component: RegisterPage,
 });
 
@@ -16,6 +20,7 @@ function RegisterPage() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { next } = Route.useSearch();
   const navigate = useNavigate();
 
   async function onSubmit(e: FormEvent) {
@@ -25,7 +30,9 @@ function RegisterPage() {
     const outcome: SignInOutcome = await signUpEmail(email, password, name);
     setPending(false);
     if (outcome.ok) {
-      await navigate({ to: '/' });
+      const target = safeInternalPath(next);
+      if (target) await navigate({ href: target });
+      else await navigate({ to: '/' });
       return;
     }
     setError(outcome.error ?? '注册失败');
