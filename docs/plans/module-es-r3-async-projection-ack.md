@@ -40,6 +40,21 @@
 - 高危命中预判：R3a/R3c 非高危（文档+镜测+脚本）；**R3b 触 relay 运行期行为但零 schema**（半高危——门禁行为变更，按 R1c 先例逐次亲签）；乙档若被裁启用则高危#1（迁移）另立子案。
 - 旋钮延续：一切新行为挂在既有 `EVENT_PUBLISH_MODE=outbox` 之下（缺省 inproc 不动=零回归面）；**不新增 env 键**（重投是 mode 内语义修正非新能力开关——若审计认为须独立旋钮，裁点 ⓒ 补列）。
 
+### 2.4 R3b 实施前设计复核（v0.5.0·呈裁ⓐ 再决·**再判前不动 relay·零码**）
+
+> 触发：承「授权裁定」，R3b 半高危、实施前对其做取证复核（实读 `outbox-relay.ts` + `subscriptions.module.ts` 消费者接线·非推断）。发现两处须在签核前明判，且**不推翻** R3a/R3c（皆已落链有效）。
+
+**F1 · 甲档原理性触不到缺口②「跨重启」部分（目标-手段错配）**：relay 拉取谓词 `dispatchedAt IS NULL`（L93）一旦 claim 即永不重取；进程重启后内存态（`seenEventIds`/拟加的 ack map）全空，唯一耐久标记 `dispatchedAt` **无法区分**「已投」与「提交后崩溃前从未投」。故 §2.2「对 `dispatchedAt` 已置未 ack 行重投」在 fresh boot = **全量已投历史每启动重放一遍**（幂等托底=安全，但 O(全表)·re-fire 早已落定的跨上下文副作用·非「仅补在途窗」）。内存 ack（裁ⓒ）**无法把重投范围界定到崩溃在途窗**；真·跨重启续投须耐久进度=**乙档**。甲档自称「端到端 ack」实为「run 内」，而它要闭合的「提交后-投递前崩溃窗」定义上跨进程——手段触不到目标。
+
+**F2 · 崩溃窗真实业务后果 = lost 跨上下文 link·且现 R3c 医生检不出（盲区坐实）**：唯一进程内消费者 `TenantStatusSubscriptionLinkHandler`（`@EventsHandler`·`subscriptions.module.ts` EventHandlers·tenant→subscription 联动·裁点乙商业规则）。若 `tenant.status.transitioned` 已入库但投递在崩溃窗丢失 → 订阅未联动挂起；而该订阅**自有流/投影同步地都没有这条 transition**，R3c 医生比对「自有流 ⇄ 投影」遂判一致——**盲区**。即缺口②的实际代价 =「tenant 已 suspended 而其 subscription 仍 active」的跨上下文不变量违反，当前无任何防线检测/修复。
+
+**出路（呈裁ⓐ 再决·荐序）**：
+- **丙（荐·新增）· 跨上下文联动不变量对拍**：把 R3c 医生**扩一档「不变量」面**——检查 `tenant.status=suspended ⇒ 其 subscription 无 active 残留`（及 resume 反向一致性），违例点名/补收敛。**非高危·零 DDL·纯脚本**（沿 R3c 同构）·直击 F2 真盲区·**不触 relay 运行期行为**。缺口②的实际后果由「检测+修复」闭合——对本仓单消费者+可重建投影，这是比「名义端到端 ack」更稳且诚实的等价保障。
+- **甲′（降级）· 启动全量重投**：照 §2.2 原样实现·靠幂等托底·承认 F1 全量重放代价。价值有限且带噪声。
+- **乙（维持缓行）· 耐久投递账**：真·跨重启续投唯一解·高危#1 新表·触发判据（外部 MQ/多独立消费者/非幂等消费者）未到·缓行不变。
+
+**荐**：R3b 目标从「relay 端到端 ack 改造」**重定向为「丙·跨上下文不变量对拍」**——用非高危手段补上 F2 真盲区，甲′/乙按判据挂账。不改母案分期精神（能力完备收口），且避半高危 relay 运行期改动。**裁ⓐ 系人裁 GO·是否重定向归人再判**；再判前不动 relay、不写码。此复核防的是「为名义实施一个触不到其目标的手段」（过度工程/反效）。
+
 ## 3. 影响面与风险
 
 - **blast radius**：`database/eventing/`（relay 本体 + 启动时序）+ subscriptions handler 锁测 + gated 清单；HTTP 契约零变更；OpenAPI 零漂移。
@@ -64,7 +79,7 @@
 
 - [x] ⓐ–ⓔ 全部有归人裁决留痕后方可动码（2026-10-22 过审·见 §4）；
 - [x] R3a（2026-10-22 部分）：ⓑ 消费者幂等锁测**硬化落链**（handler.test 重投断言升到「同参数收敛请求」 `mock.calls[0]`==`[1]`·5 测绿）；relay 头 `at-least-once-to-claim` 口径**前序已成文**（outbox-relay.e2e L188 已锁重投）；architecture ES 条对拍注 = 宪法且口径随 R3b 真变（to-claim→to-consumer），**并入 R3b 一次成文防双写**（宪法段改动仍需亲签）；
-- [ ] R3b：gated e2e 崩溃-重启-补收演练绿（登 `GATED_E2E_FILES`·恒等闸过）；既有 `outbox-relay.e2e` 零语义弱化；
+- [ ] R3b：gated e2e 崩溃-重启-补收演练绿（登 `GATED_E2E_FILES`·恒等闸过）；既有 `outbox-relay.e2e` 零语义弱化；**⚠ v0.5.0 实施前复核（§2.4）：甲档+内存 ack 原理性触不到跨重启丢投窗（F1）·真实后果=lost 跨上下文 link 且 R3c 医生盲区（F2）·呈裁ⓐ 再决（荐重定向「丙·跨上下文不变量对拍」）·再判前不动 relay 零码**；
 - [x] R3c（2026-10-22）：新增 `scripts/es-projection-doctor.ts`——跨上下文（tenants+subscriptions）只读巡检 fold⇄投影 + `--rebuild` catch-up 恢复面（bootstrap `--verify` 只检不修·此为真增量）；dev 真库演练存照：注入投影漂移(suspended)→医生检出可修(fold=active⇄投影=suspended)→`--rebuild` 回写真相→复验漂移消失（净还原·零 DDL 不动流·tsc+biome 绿）；空流者诚实归类「须 bootstrap·非本工具可修」；
 - [ ] `pnpm run ci` 全绿 + `pnpm run test:fullstack` 全链绿 +（若触 schema）`migration:generate` 空 diff 证明。
 
@@ -76,8 +91,9 @@
 | 2026-10-22 | 0.2.0 | 过审计门·定案 | §4 裁 ⓐ–ⓔ 全采纳推荐档（ⓐ 甲档落地·乙档触发判据缓行）；§5 首判据勾选；R3a/R3c 非高危可直启·R3b 半高危待逐片亲签 |
 | 2026-10-22 | 0.3.0 | R3a 实施（部分） | ⓑ 幂等锁硬化：handler.test 重投断言升到「同参数收敛调用」（`mock.calls[0]`==`[1]`）·5 测绿；取证发现 relay 头口径 + 端口幂等真测前序已落，architecture 对拍注并入 R3b（防双写·宪法高危） |
 | 2026-10-22 | 0.4.0 | R3c 实施 | 新增 `scripts/es-projection-doctor.ts`（只读检测默认 + `--rebuild` 可选修投影·零 DDL·不动流）；dev 真库跑 catch-up 闭环存照（漂移注入→检出→修复→净还原）·tsc/biome 绿；沿 es-bootstrap 先例不注 package.json |
+| 2026-10-22 | 0.5.0 | R3b 实施前设计复核（呈再裁·零码） | 取证坐实 F1（甲档+内存 ack 触不到跨重启窗·全量重放代价）与 F2（真后果=lost 跨上下文 link·R3c 医生盲区）；新增 §2.4 丙/甲′/乙 三出路·荐将 R3b 重定向为「丙·跨上下文不变量对拍」·归裁ⓐ 再判·再判前不动 relay |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-22 / v0.4.0 变更，以当前正文内容为准。
+正文已于 2026-10-22 / v0.5.0 变更，以当前正文内容为准。
