@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../lib/theme-provider';
 import { routeTree } from '../routeTree.gen';
@@ -12,7 +12,8 @@ import { routeTree } from '../routeTree.gen';
  * - authed（getSession→有效会话）→ 展开控制台链接 + 邮箱 + 全局「登出」按钮，无「登录」入口；
  * - 点「登出」→ 调 signOut 一次；
  * - getSession 抛错（服务不可用）→ 降级按 anon（不崩壳层）。
- * 落 /login 路由（无 loader·不触数据面），只断言 header。
+ * anon 落 /login（无 loader）；authed 经反向守卫会被弹向 /（dashboard）——因本测只验 root 壳层，
+ * 对易与 dashboard 内容重名的 email/「登出」按 banner（header）作用域限定查询。
  */
 const mocks = vi.hoisted(() => ({ getSession: vi.fn(), signOut: vi.fn() }));
 
@@ -22,6 +23,16 @@ vi.mock('../lib/auth', () => ({
   signUpEmail: vi.fn(),
   signOut: mocks.signOut,
   signInMagicLink: vi.fn(),
+}));
+
+// authed 反向守卫会把 /login 弹向 /（首页 dashboard）；其 loader 走 openapi `api.GET`，jsdom 下
+// 相对 URL 的 `new Request` 必抛（已知陷阱），错误冒泡顶掉 root header。本测只验 root 会话面板，
+// 故 mock `api` 数据接缝令 / 干净渲染（requireSession 内部走已 mock 的 getSession）。
+vi.mock('../lib/api', () => ({
+  api: {
+    GET: vi.fn(async () => ({ data: { data: [] }, error: undefined })),
+    POST: vi.fn(async () => ({ data: {}, error: undefined })),
+  },
 }));
 
 function renderAtLogin() {
@@ -77,13 +88,18 @@ describe('壳层 header 会话面板', () => {
     });
     renderAtLogin();
     await vi.waitFor(() => expect(screen.getByText('平台运营')).toBeTruthy());
-    expect(screen.getByText('角色权限')).toBeTruthy();
-    expect(screen.getByText('成员')).toBeTruthy();
-    expect(screen.getByText('a@b.c')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '登出' })).toBeTruthy();
+    // authed 已被反向守卫弹向 /（dashboard 自带 email/登出）→ header 作用域限定避免重名歧义。
+    const banner = screen.getByRole('banner');
+    expect(within(banner).getByText('平台运营')).toBeTruthy();
+    expect(within(banner).getByText('角色权限')).toBeTruthy();
+    expect(within(banner).getByText('成员')).toBeTruthy();
+    expect(within(banner).getByText('a@b.c')).toBeTruthy();
+    expect(within(banner).getByRole('button', { name: '登出' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: '登录' })).toBeNull();
-    // /login 路由下控制台链非命中 → 无 aria-current（不误激活）。
-    expect(screen.getByRole('link', { name: '平台运营' }).getAttribute('aria-current')).toBeNull();
+    // 当前落 /（非 /platform/tenants）→ 控制台链非命中 → 无 aria-current（不误激活）。
+    expect(
+      within(banner).getByRole('link', { name: '平台运营' }).getAttribute('aria-current'),
+    ).toBe(null);
   });
 
   it('点「登出」→ 调 signOut 一次', async () => {
@@ -93,8 +109,11 @@ describe('壳层 header 会话面板', () => {
     });
     mocks.signOut.mockResolvedValue(undefined);
     renderAtLogin();
-    await vi.waitFor(() => expect(screen.getByRole('button', { name: '登出' })).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: '登出' }));
+    const banner = await vi.waitFor(() => screen.getByRole('banner'));
+    await vi.waitFor(() =>
+      expect(within(banner).getByRole('button', { name: '登出' })).toBeTruthy(),
+    );
+    fireEvent.click(within(banner).getByRole('button', { name: '登出' }));
     await vi.waitFor(() => expect(mocks.signOut).toHaveBeenCalledTimes(1));
   });
 

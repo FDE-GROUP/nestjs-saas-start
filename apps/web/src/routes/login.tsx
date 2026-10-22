@@ -2,11 +2,14 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { type SignInOutcome, signInEmail, signInMagicLink } from '../lib/auth';
 import { safeInternalPath } from '../lib/safe-redirect';
+import { redirectIfAuthenticated } from '../lib/session';
 
 export const Route = createFileRoute('/login')({
   // 深链回跳载体：读取守卫生成的 ?next=<原路径含查询>（见 __root.beforeLoad）。
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
     typeof search.next === 'string' ? { next: search.next } : {},
+  // 反向守卫：已登录访问 /login → 弹离（有合法 next 回原目标、否则回首页），不再渲染多余表单。
+  beforeLoad: ({ search }) => redirectIfAuthenticated(search.next),
   component: LoginPage,
 });
 

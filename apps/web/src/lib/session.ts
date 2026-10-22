@@ -1,5 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 import { getSession, type SessionResult } from './auth';
+import { safeInternalPath } from './safe-redirect';
 
 /**
  * 受保护页的统一会话守卫（deny-by-default 的前端映射·与后端会话墙同向）。
@@ -18,4 +19,24 @@ export async function requireSession(attempted?: {
     throw redirect({ to: '/login', search: target ? { next: target } : {} });
   }
   return session;
+}
+
+/**
+ * 反向守卫（已登录访问 /login·/register）：与 requireSession 同源走可 mock 的 getSession 接缝。
+ * 已登录 → 弹离：有合法站内 `next` 回原目标（`safeInternalPath` 白名单），否则回落首页。
+ * 严格判 `session?.user`（空体 `{}` 不算已登录）；`getSession` 抛错（5xx/网络）按 anon 放行表单——
+ * 会话面抖动不应挡住登录入口。
+ */
+export async function redirectIfAuthenticated(next?: string): Promise<void> {
+  let session: SessionResult | null;
+  try {
+    session = await getSession();
+  } catch {
+    return;
+  }
+  if (session?.user) {
+    const target = safeInternalPath(next);
+    if (target) throw redirect({ href: target });
+    throw redirect({ to: '/' });
+  }
 }

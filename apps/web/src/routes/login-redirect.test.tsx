@@ -45,10 +45,17 @@ async function submitLogin() {
   fireEvent.click(screen.getByRole('button', { name: '登录' }));
 }
 
+// 正向回跳测的真实时序：进 /login 时 anon（表单渲染）→ 提交登录成功后才 authed（供回跳目标页 loader）。
+// （反向守卫会拦截「已登录访问 /login」，若 beforeEach 恒置 authed 则挂载即弹离、表单渲不出。）
+let authed = false;
+
 beforeEach(() => {
-  // 两测均需登录成功 + 登录后可达受保护页（getSession 返有效会话）。
-  mocks.getSession.mockResolvedValue(SESSION);
-  mocks.signInEmail.mockResolvedValue({ ok: true });
+  authed = false;
+  mocks.getSession.mockImplementation(async () => (authed ? SESSION : null));
+  mocks.signInEmail.mockImplementation(async () => {
+    authed = true;
+    return { ok: true };
+  });
 });
 
 afterEach(() => {
@@ -67,5 +74,40 @@ describe('登录后深链回跳', () => {
     const router = renderLoginAt('/login?next=%2F%2Fevil.com');
     await submitLogin();
     await vi.waitFor(() => expect(router.state.location.pathname).toBe('/'));
+  });
+});
+
+describe('已登录反向守卫（redirectIfAuthenticated）', () => {
+  // 反向测需挂载即 authed（覆盖 beforeEach 的 anon-before 时序）。
+  function renderAuthedAt(path: string) {
+    authed = true;
+    return renderLoginAt(path);
+  }
+
+  it('authed + 合法 next → 离开登录页弹回原目标', async () => {
+    const router = renderAuthedAt('/login?next=%2Fposts');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/posts'));
+  });
+
+  it('authed + 无 next → 回落首页', async () => {
+    const router = renderAuthedAt('/login');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/'));
+  });
+
+  it('authed + 非法 next（外链）→ 回落首页', async () => {
+    const router = renderAuthedAt('/login?next=%2F%2Fevil.com');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/'));
+  });
+
+  it('authed + register 同守卫携合法 next → 弹回原目标', async () => {
+    const router = renderAuthedAt('/register?next=%2Fposts');
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/posts'));
+  });
+
+  it('anon + 合法 next → 停留登录页且表单可达（next 保留）', async () => {
+    const router = renderLoginAt('/login?next=%2Fposts');
+    await vi.waitFor(() => expect(screen.getByLabelText('邮箱')).toBeTruthy());
+    expect(router.state.location.pathname).toBe('/login');
+    expect(router.state.location.search).toEqual({ next: '/posts' });
   });
 });

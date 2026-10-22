@@ -6,11 +6,14 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { type SignInOutcome, signUpEmail } from '../lib/auth';
 import { safeInternalPath } from '../lib/safe-redirect';
+import { redirectIfAuthenticated } from '../lib/session';
 
 export const Route = createFileRoute('/register')({
   // 与登录页一致的回跳载体（注册极少携 next·失败面回落首页）。
   validateSearch: (search: Record<string, unknown>): { next?: string } =>
     typeof search.next === 'string' ? { next: search.next } : {},
+  // 反向守卫（与登录页同构）：已登录访问 /register → 弹离（合法 next 回原目标、否则回首页）。
+  beforeLoad: ({ search }) => redirectIfAuthenticated(search.next),
   component: RegisterPage,
 });
 
