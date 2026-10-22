@@ -88,11 +88,13 @@ function DashboardPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-4">
         <SectionHeading>当前会话</SectionHeading>
-        <dl className="grid grid-cols-[6rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">
+        <dl className="grid grid-cols-1 gap-x-2 gap-y-1 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-[6rem_1fr] dark:border-slate-700">
           <dt className="text-slate-500 dark:text-slate-400">邮箱</dt>
-          <dd data-testid="session-email">{user.email}</dd>
+          <dd data-testid="session-email" className="min-w-0 break-words">
+            {user.email}
+          </dd>
           <dt className="text-slate-500 dark:text-slate-400">用户 ID</dt>
-          <dd>{user.id}</dd>
+          <dd className="min-w-0 break-all">{user.id}</dd>
         </dl>
         <div>
           <button
@@ -129,13 +131,15 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
     return <EmptyPanel label="当前租户尚无生效订阅。" />;
   }
   return (
-    <dl className="grid grid-cols-[8rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">
+    <dl className="grid grid-cols-1 gap-x-2 gap-y-1 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-[8rem_1fr] dark:border-slate-700">
       <dt className="text-slate-500 dark:text-slate-400">档位</dt>
-      <dd data-testid="sub-plan">{subscription.plan}</dd>
+      <dd data-testid="sub-plan" className="min-w-0 break-words">
+        {subscription.plan}
+      </dd>
       <dt className="text-slate-500 dark:text-slate-400">座位上限</dt>
-      <dd>{subscription.seatsLimit}</dd>
+      <dd className="min-w-0 break-words">{subscription.seatsLimit}</dd>
       <dt className="text-slate-500 dark:text-slate-400">已用 / 剩余</dt>
-      <dd>
+      <dd className="min-w-0 break-words">
         {subscription.used} / {subscription.remaining}
       </dd>
     </dl>
