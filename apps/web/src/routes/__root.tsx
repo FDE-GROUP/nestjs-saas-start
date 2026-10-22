@@ -45,14 +45,14 @@ function RootLayout() {
     }
   }
   return (
-    <div className="mx-auto min-h-screen max-w-3xl bg-white p-6 font-sans text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-      <header className="mb-8 flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
-        <div className="flex items-center gap-6">
+    <div className="mx-auto min-h-screen max-w-3xl bg-white p-4 font-sans text-slate-800 sm:p-6 dark:bg-slate-950 dark:text-slate-100">
+      <header className="mb-8 flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Link to="/" className="text-lg font-semibold">
             SaaS Console
           </Link>
           {authed ? (
-            <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
               <Link
                 to="/workspaces"
                 className={NAV_BASE}
@@ -119,7 +119,7 @@ function RootLayout() {
               </Link>
             </nav>
           ) : (
-            <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
               <Link
                 to="/login"
                 className={NAV_BASE}
@@ -130,7 +130,7 @@ function RootLayout() {
             </nav>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {authed && user && (
             <>
               <span className="max-w-[16rem] truncate text-xs text-slate-500 dark:text-slate-400">

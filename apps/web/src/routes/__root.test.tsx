@@ -79,6 +79,11 @@ describe('壳层 header 会话面板', () => {
     expect(screen.queryByRole('button', { name: '登出' })).toBeNull();
     // 当前路由 /login 命中「登录」链 → aria-current="page"（active 标识机制生效）。
     expect(screen.getByRole('link', { name: '登录' }).getAttribute('aria-current')).toBe('page');
+    // 响应式意图锁（防窄屏换行能力被回退）：header 小屏纵向堆叠·≥sm 单行；导航可换行。
+    const header = screen.getByRole('banner');
+    expect(header.className).toContain('flex-col');
+    expect(header.className).toContain('sm:flex-row');
+    expect(document.querySelector('nav')?.className).toContain('flex-wrap');
   });
 
   it('已登录：展开控制台导航 + 邮箱 + 全局登出，无「登录」入口', async () => {
@@ -95,6 +100,8 @@ describe('壳层 header 会话面板', () => {
     expect(within(banner).getByText('成员')).toBeTruthy();
     expect(within(banner).getByText('a@b.c')).toBeTruthy();
     expect(within(banner).getByRole('button', { name: '登出' })).toBeTruthy();
+    // authed 导航同样可换行（响应式意图锁）。
+    expect(banner.querySelector('nav')?.className).toContain('flex-wrap');
     expect(screen.queryByRole('link', { name: '登录' })).toBeNull();
     // 当前落 /（非 /platform/tenants）→ 控制台链非命中 → 无 aria-current（不误激活）。
     expect(
