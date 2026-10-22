@@ -55,6 +55,16 @@
 
 **荐**：R3b 目标从「relay 端到端 ack 改造」**重定向为「丙·跨上下文不变量对拍」**——用非高危手段补上 F2 真盲区，甲′/乙按判据挂账。不改母案分期精神（能力完备收口），且避半高危 relay 运行期改动。**裁ⓐ 系人裁 GO·是否重定向归人再判**；再判前不动 relay、不写码。此复核防的是「为名义实施一个触不到其目标的手段」（过度工程/反效）。
 
+### 2.5 丙-ii（relink 自动修复）实施前取证——证伪「可脚本直施」·不强造（v0.7.0）
+
+> 触发：承人「同意」（含「顺手做丙-ii」），实施前探针取证（非推断）。结论：丙-i（detect）已落链且为**非高危脚本面的正确终态**；丙-ii（一键自动修复）**无干净 tsx 载体**，强推会得脆弱/错代码，故据实停下回改记录。
+
+- **取证事实**：临时探针以 `tsx` 跑 `Test.createTestingModule({ imports: [AppModule] })` 取 `SUBSCRIPTION_LIFECYCLE` 真件 → `UnknownDependenciesException`（`ThrottlerGuard` 无法解析 class-token `Reflector`@index[2]）。根因坐实：[vitest.config.ts](../../vitest.config.ts) L6–7 明注「**esbuild alone cannot emit metadata**」，本仓靠 `unplugin-swc(decoratorMetadata:true)` 产 `design:paramtypes` 才让**同款 harness** 在 vitest 下绿；doctor 走 `tsx`（esbuild）不产装饰器元数据 → class-DI 倒。与 AGENTS §2「Node-ESM+装饰器元数据」约束同源。
+- **为何不能降级为 raw 写**：link 违例修复的本质是「让订阅进入 suspended 真相态」。若订阅已被 R4b bootstrap 成自有流，`nativeUpdate(status=suspended)` 会使 fold(仍 active)≠投影(suspended)——**直接破坏 fold==投影不变量**（正是医生要守的律）。正确修复必须**经生产耐久 append 写路径**（`convergeStatus` 旋钮开→`publishDurable` append `subscription.status.transitioned`+乐观锁+投影=fold 结果），而该路径的可靠装配需 SWC/运行应上下文，非 tsx 脚本能担。
+- **出路（归人裁·非「我可直接实施」）**：**（A·荐）检测→人重驱治理**——医生丙-i 已点名 lost-link，操作员走正常治理 API 重发 suspend（实路活运行已正确 append·零新码）；医生输出即操作指引。**（B）乙档耐久投递账**——从源头消除崩溃窗（高危#1·触发判据未到·缓行）。**（C）若须真一键自动修复**——只能落在 SWC-gated 载（如 gated e2e 式管理命令/应用内 admin 命令）·较更重且近半高危边缘·需人另定。
+- **定调**：R3b 脚本可达终态 = **丙-i（detect）收口**；丙-ii（自动 relink）**不强造**，按 A/B/C 归人裁。先前 §2.4「丙-ii 可脚本直施」措辞为误（未料装饰器元数据）——本节证伪并改正，体现「取证优先·遇边界停·不膜测」。
+
+
 ## 3. 影响面与风险
 
 - **blast radius**：`database/eventing/`（relay 本体 + 启动时序）+ subscriptions handler 锁测 + gated 清单；HTTP 契约零变更；OpenAPI 零漂移。
@@ -73,14 +83,14 @@
   - **ⓒ ack 记账 = 内存态**（甲档够用·重启再投托底；表列 `ackedAt` 属乙档·本片不触 DDL）。
   - **ⓓ 滞后检测 = 不进 CI**：runbook 手动 + gated 演练测进链即可（replay-truth 已锁 fold==投影·每拍全量对拍无新信息量且拖慢链）。
   - **ⓔ R3b 签核序 = 逐次亲签**（触 relay 运行期行为·虽零 schema 仍按半高危走·不并档）。
-- 裁ⓐ 再判（2026-10-22·承 §2.4 复核）：人「同意」= 采纳推荐——R3b 目标由甲档「relay 端到端 ack」**重定向为「丙·跨上下文不变量对拍」**（非高危·零 DDL·不动 relay），甲′/乙 按判据挂账；丙-i（detect）授权直施已落链，丙-ii（relink 修复）待续片。
+- 裁ⓐ 再判（2026-10-22·承 §2.4 复核）：人「同意」= 采纳推荐——R3b 目标由甲档「relay 端到端 ack」**重定向为「丙·跨上下文不变量对拍」**（非高危·零 DDL·不动 relay），甲′/乙 按判据挂账；丙-i（detect）授权直施已落链；丙-ii（relink 修复）经 v0.7.0 取证（§2.5）**证伪「可脚本直施」**（tsx 不产装饰器元数据→ class-DI 倒·降级 raw 写会破 fold==投影）·**不强造**·修复面归人裁 A/B/C。
 - 审计人 / 日期：用户（FDE）· 2026-10-22
 
 ## 5. 完成判据（可核验 + 穷尽 · 案级，过审后逐片细化）
 
 - [x] ⓐ–ⓔ 全部有归人裁决留痕后方可动码（2026-10-22 过审·见 §4）；
 - [x] R3a（2026-10-22 部分）：ⓑ 消费者幂等锁测**硬化落链**（handler.test 重投断言升到「同参数收敛请求」 `mock.calls[0]`==`[1]`·5 测绿）；relay 头 `at-least-once-to-claim` 口径**前序已成文**（outbox-relay.e2e L188 已锁重投）；architecture ES 条对拍注 = 宪法且口径随 R3b 真变（to-claim→to-consumer），**并入 R3b 一次成文防双写**（宪法段改动仍需亲签）；
-- [ ] R3b（裁ⓐ 再判 2026-10-22·采纳丙·见 §2.4/§4）：目标由「relay 端到端 ack」重定向为「丙·跨上下文 lost-link 不变量对拍」；**丙-i（detect·非高危·零 DDL·零 relay 改动）已落链**——扩 `scripts/es-projection-doctor.ts` 加 `scanLinkInvariant`（tenant suspended ⇒ 其订阅无 active 残留·前向不变量·link 违例单列非 raw 可修不并入 `--rebuild`）·dev 真库闭环演练存照（基线 0→注入 suspended+active 子→检测点名→清场归 0·净还原）·tsc/biome 绿；原甲′ gated e2e 崩溃-重启-补收项**随重定向作废**（relay 未改·无新链）；**丙-ii（relink 修复·经 convergeStatus 端口重放缺失联动）待续片**（非 raw·需端口装配·归人按需启）；
+- [ ] R3b（裁ⓐ 再判 2026-10-22·采纳丙·见 §2.4/§4）：目标由「relay 端到端 ack」重定向为「丙·跨上下文 lost-link 不变量对拍」；**丙-i（detect·非高危·零 DDL·零 relay 改动）已落链**——扩 `scripts/es-projection-doctor.ts` 加 `scanLinkInvariant`（tenant suspended ⇒ 其订阅无 active 残留·前向不变量·link 违例单列非 raw 可修不并入 `--rebuild`）·dev 真库闭环演练存照（基线 0→注入 suspended+active 子→检测点名→清场归 0·净还原）·tsc/biome 绿；原甲′ gated e2e 崩溃-重启-补收项**随重定向作废**（relay 未改·无新链）；**丙-ii（relink 修复）经 v0.7.0 取证（§2.5）判无干净 tsx 载体·不强造**（真修复须经生产耐久 append 路径·需 SWC/运行上下文·降级 raw 写会破 fold==投影）——R3b 脚本可达终态=丙-i（detect）收口·修复面归人裁 A（检测→人重驱治理 API·荐）/B（乙档源头消除）/C（SWC-gated 一键自修·另定）；
 - [x] R3c（2026-10-22）：新增 `scripts/es-projection-doctor.ts`——跨上下文（tenants+subscriptions）只读巡检 fold⇄投影 + `--rebuild` catch-up 恢复面（bootstrap `--verify` 只检不修·此为真增量）；dev 真库演练存照：注入投影漂移(suspended)→医生检出可修(fold=active⇄投影=suspended)→`--rebuild` 回写真相→复验漂移消失（净还原·零 DDL 不动流·tsc+biome 绿）；空流者诚实归类「须 bootstrap·非本工具可修」；
 - [ ] `pnpm run ci` 全绿 + `pnpm run test:fullstack` 全链绿 +（若触 schema）`migration:generate` 空 diff 证明。
 
@@ -94,8 +104,9 @@
 | 2026-10-22 | 0.4.0 | R3c 实施 | 新增 `scripts/es-projection-doctor.ts`（只读检测默认 + `--rebuild` 可选修投影·零 DDL·不动流）；dev 真库跑 catch-up 闭环存照（漂移注入→检出→修复→净还原）·tsc/biome 绿；沿 es-bootstrap 先例不注 package.json |
 | 2026-10-22 | 0.5.0 | R3b 实施前设计复核（呈再裁·零码） | 取证坐实 F1（甲档+内存 ack 触不到跨重启窗·全量重放代价）与 F2（真后果=lost 跨上下文 link·R3c 医生盲区）；新增 §2.4 丙/甲′/乙 三出路·荐将 R3b 重定向为「丙·跨上下文不变量对拍」·归裁ⓐ 再判·再判前不动 relay |
 | 2026-10-22 | 0.6.0 | 裁ⓐ 再判采纳丙·R3b-丙-i 实施 | 人「同意」采纳推荐·R3b 重定向为丙；扩 `es-projection-doctor.ts` 加 `scanLinkInvariant`（跨上下文 lost-link 不变量只读检测·非高危零 DDL 不动 relay）·dev 真库闭环演练（注入→点名→净还原）·tsc/biome 绿；丙-ii relink 修复待续片 | 
+| 2026-10-22 | 0.7.0 | 丙-ii 实施前取证·证伪「可脚本直施」 | 探针以 tsx 跑 AppModule DI 取 convergeStatus 真件→`UnknownDependenciesException`（Reflector class-token）；根因坐实 vitest 靠 unplugin-swc 产元数据·esbuild/tsx 不产；降级 raw 写会破 fold==投影 → 丙-ii 无干净 tsx 载体·不强造；新增 §2.5（出路 A/B/C）·R3b 脚本终态=丙-i detect 收口·修复归人裁 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-22 / v0.6.0 变更，以当前正文内容为准。
+正文已于 2026-10-22 / v0.7.0 变更，以当前正文内容为准。
