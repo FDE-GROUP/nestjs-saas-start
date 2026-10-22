@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import { RouteError, RoutePending } from './components/route-feedback';
+import { ThemeProvider } from './lib/theme-provider';
 // 文件式路由生成物（@tanstack/router-plugin 在 dev/build 时重写·提交入库保 tsc 可过）。
 import { routeTree } from './routeTree.gen';
 
@@ -24,6 +25,8 @@ declare module '@tanstack/react-router' {
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </StrictMode>,
 );

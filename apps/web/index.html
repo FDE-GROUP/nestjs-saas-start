@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SaaS Console</title>
+    <!-- 防 FOUC：绘制前按存储模式/系统偏好预置 .dark（与 lib/theme.ts 语义同构·同 saas-theme key）。 -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('saas-theme');
+          var mode = stored === 'light' || stored === 'dark' ? stored : 'system';
+          var dark =
+            mode === 'dark' ||
+            (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

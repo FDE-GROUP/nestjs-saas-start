@@ -139,7 +139,7 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
+    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
       {editing ? (
         <FormWrap onSubmit={handleRename} className="flex items-end gap-2">
           <Field
@@ -153,22 +153,22 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-xs text-slate-500 hover:text-slate-700"
+            className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             取消
           </button>
         </FormWrap>
       ) : (
-        <span className="flex-1 font-medium text-slate-800">
+        <span className="flex-1 font-medium text-slate-800 dark:text-slate-100">
           {ws.name}
-          <span className="ml-2 text-xs text-slate-400">({ws.slug})</span>
+          <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">({ws.slug})</span>
         </span>
       )}
       {!editing && (
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-blue-600 hover:underline dark:text-blue-400"
         >
           改名
         </button>
@@ -188,7 +188,7 @@ export function WorkspacesView({ page }: { page?: WorkspacePageResponse }) {
     <section className="flex flex-col gap-4">
       <SectionHeading>Workspaces</SectionHeading>
       {page ? (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           共 {page.total} 条 · 页宽 {page.limit} · 偏移 {page.offset}
         </p>
       ) : null}
@@ -197,7 +197,7 @@ export function WorkspacesView({ page }: { page?: WorkspacePageResponse }) {
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">名称</th>
               <th className="py-2 pr-4 font-medium">Slug</th>
               <th className="py-2 pr-4 font-medium">所属租户</th>
@@ -206,11 +206,17 @@ export function WorkspacesView({ page }: { page?: WorkspacePageResponse }) {
           </thead>
           <tbody>
             {items.map((ws) => (
-              <tr key={ws.id} className="border-b border-slate-100">
-                <td className="py-2 pr-4 font-medium text-slate-800">{ws.name}</td>
-                <td className="py-2 pr-4 text-slate-600">{ws.slug}</td>
-                <td className="py-2 pr-4 text-slate-600">{ws.organizationId}</td>
-                <td className="py-2 text-slate-600">{formatDate(ws.createdAt)}</td>
+              <tr key={ws.id} className="border-b border-slate-100 dark:border-slate-800">
+                <td className="py-2 pr-4 font-medium text-slate-800 dark:text-slate-100">
+                  {ws.name}
+                </td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">{ws.slug}</td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">
+                  {ws.organizationId}
+                </td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">
+                  {formatDate(ws.createdAt)}
+                </td>
               </tr>
             ))}
           </tbody>

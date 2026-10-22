@@ -81,7 +81,7 @@ function BillingPage() {
         {result.status ? (
           <PaymentStatusView status={result.status} />
         ) : (
-          <p className="text-sm text-slate-400">支付通道状态不可用。</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">支付通道状态不可用。</p>
         )}
       </section>
 

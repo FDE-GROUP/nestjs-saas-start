@@ -91,7 +91,7 @@ function PlatformUsersPage() {
         />
         <button
           type="submit"
-          className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+          className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           搜索
         </button>
@@ -99,12 +99,12 @@ function PlatformUsersPage() {
 
       <UsersListView items={items} renderActions={(u) => <UserGovernanceRow user={u} />} />
 
-      <div className="flex items-center gap-4 text-sm text-slate-600">
+      <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
         <button
           type="button"
           onClick={() => goPage(offset - LIMIT)}
           disabled={offset <= 0}
-          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           上一页
         </button>
@@ -115,7 +115,7 @@ function PlatformUsersPage() {
           type="button"
           onClick={() => goPage(offset + LIMIT)}
           disabled={offset + LIMIT >= total}
-          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           下一页
         </button>
@@ -182,7 +182,7 @@ function UserGovernanceRow({ user }: { user: UserRow }) {
               setEditing(false);
               setReason('');
             }}
-            className="text-xs text-slate-500 hover:text-slate-700"
+            className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             取消
           </button>

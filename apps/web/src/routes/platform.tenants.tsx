@@ -93,7 +93,7 @@ function PlatformTenantsPage() {
         />
         <button
           type="submit"
-          className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700"
+          className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           搜索
         </button>
@@ -101,12 +101,12 @@ function PlatformTenantsPage() {
 
       <TenantsListView items={items} />
 
-      <div className="flex items-center gap-4 text-sm text-slate-600">
+      <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
         <button
           type="button"
           onClick={() => goPage(offset - LIMIT)}
           disabled={offset <= 0}
-          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           上一页
         </button>
@@ -117,7 +117,7 @@ function PlatformTenantsPage() {
           type="button"
           onClick={() => goPage(offset + LIMIT)}
           disabled={offset + LIMIT >= total}
-          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
         >
           下一页
         </button>
@@ -138,15 +138,15 @@ function PlatformTenantsPage() {
 /** 单租户详情入口（含 Link·页面级·不入纯展示测）。 */
 function TenantRowLink({ tenant }: { tenant: TenantRow }) {
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
-      <span className="flex-1 font-medium text-slate-800">{tenant.name}</span>
-      <span className="text-xs text-slate-400">{tenant.slug}</span>
+    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
+      <span className="flex-1 font-medium text-slate-800 dark:text-slate-100">{tenant.name}</span>
+      <span className="text-xs text-slate-400 dark:text-slate-500">{tenant.slug}</span>
       <StatusBadge status={tenant.status} />
       <Link
         to="/platform/tenants/$id"
         params={{ id: tenant.organizationId }}
         search={{ offset: 0 }}
-        className="text-xs text-blue-600 hover:underline"
+        className="text-xs text-blue-600 hover:underline dark:text-blue-400"
       >
         详情 →
       </Link>
@@ -167,7 +167,7 @@ export function TenantsListView({ items }: { items?: TenantRow[] }) {
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">名称</th>
               <th className="py-2 pr-4 font-medium">Slug</th>
               <th className="py-2 pr-4 font-medium">状态</th>
@@ -176,13 +176,20 @@ export function TenantsListView({ items }: { items?: TenantRow[] }) {
           </thead>
           <tbody>
             {list.map((t) => (
-              <tr key={t.organizationId} className="border-b border-slate-100">
-                <td className="py-2 pr-4 font-medium text-slate-800">{t.name}</td>
-                <td className="py-2 pr-4 text-slate-600">{t.slug}</td>
+              <tr
+                key={t.organizationId}
+                className="border-b border-slate-100 dark:border-slate-800"
+              >
+                <td className="py-2 pr-4 font-medium text-slate-800 dark:text-slate-100">
+                  {t.name}
+                </td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">{t.slug}</td>
                 <td className="py-2 pr-4">
                   <StatusBadge status={t.status} />
                 </td>
-                <td className="py-2 text-slate-500">{formatDate(t.createdAt)}</td>
+                <td className="py-2 text-slate-500 dark:text-slate-400">
+                  {formatDate(t.createdAt)}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -91,10 +91,12 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 px-3 py-2 text-sm">
-      <span className="flex-1 text-slate-800">
+    <div className="flex items-center gap-3 rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+      <span className="flex-1 text-slate-800 dark:text-slate-100">
         {invitation.organizationName ?? invitation.email}
-        <span className="ml-2 text-xs text-slate-400">({invitation.role ?? '—'})</span>
+        <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">
+          ({invitation.role ?? '—'})
+        </span>
       </span>
       <SubmitButton pending={accept.pending} onClick={handleAccept}>
         接受

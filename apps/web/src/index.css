@@ -1,1 +1,14 @@
 @import 'tailwindcss';
+
+/* Tailwind v4 class 策略暗色：`dark:` 响应 <html class="dark">（非默认媒体查询）。 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 基础 color-scheme 随主题，联动原生控件/滚动条/表单渲染。 */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+}

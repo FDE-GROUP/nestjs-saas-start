@@ -64,7 +64,9 @@ function AccountPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-3">
         <SectionHeading>数据导出（PIPL 可携带权）</SectionHeading>
-        <p className="text-sm text-slate-500">下载个人数据聚合快照（不含凭据）。</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          下载个人数据聚合快照（不含凭据）。
+        </p>
         <SubmitButton pending={exportAction.pending} onClick={handleExport}>
           导出个人数据
         </SubmitButton>

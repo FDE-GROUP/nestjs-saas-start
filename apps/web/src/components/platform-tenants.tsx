@@ -15,17 +15,17 @@ const LABELS: Record<TenantStatus, string> = {
 };
 
 const STYLES: Record<TenantStatus, string> = {
-  pending_approval: 'bg-amber-50 text-amber-700',
-  active: 'bg-green-50 text-green-700',
-  suspended: 'bg-orange-50 text-orange-700',
-  deleted: 'bg-slate-100 text-slate-500',
+  pending_approval: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  active: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400',
+  suspended: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
+  deleted: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
 
 /** 状态徽标（未知值回落原串·防渲染崩）。 */
 export function StatusBadge({ status }: { status: TenantStatus }) {
   return (
     <span
-      className={`rounded px-2 py-0.5 text-xs ${STYLES[status] ?? 'bg-slate-100 text-slate-500'}`}
+      className={`rounded px-2 py-0.5 text-xs ${STYLES[status] ?? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}
     >
       {LABELS[status] ?? status}
     </span>
@@ -57,9 +57,9 @@ export function actionEnabled(status: TenantStatus): {
 }
 
 const BTN =
-  'rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40';
+  'rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800';
 const DANGER =
-  'rounded border border-red-300 px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40';
+  'rounded border border-red-300 px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-500/50 dark:text-red-400 dark:hover:bg-red-500/10';
 
 /**
  * 生命周期动作按钮组（纯·回调外置·可脱离 router/mutation 测 enable/disable 矩阵）。

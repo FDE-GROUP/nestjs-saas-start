@@ -121,8 +121,10 @@ function MemberActions({ member }: { member: MemberRow }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
-      <span className="w-32 truncate text-slate-600">{member.userId ?? member.id}</span>
+    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
+      <span className="w-32 truncate text-slate-600 dark:text-slate-300">
+        {member.userId ?? member.id}
+      </span>
       <FormWrap onSubmit={handleChangeRole} className="flex items-center gap-2">
         <Select label="角色" name="role" options={ROLES} value={role} onChange={setRole} />
         <SubmitButton pending={roleAction.pending}>改角色</SubmitButton>
@@ -156,7 +158,7 @@ export function MembersView({ raw }: { raw?: unknown }) {
   return (
     <section className="flex flex-col gap-4">
       <SectionHeading>成员</SectionHeading>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-400 dark:text-slate-500">
         数据来源：Better Auth membership 透传面（非 Nest 契约类型）。
       </p>
       {members.length === 0 ? (
@@ -164,16 +166,19 @@ export function MembersView({ raw }: { raw?: unknown }) {
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">用户 ID</th>
               <th className="py-2 font-medium">角色</th>
             </tr>
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id ?? m.userId} className="border-b border-slate-100">
-                <td className="py-2 pr-4 text-slate-800">{m.userId ?? '—'}</td>
-                <td className="py-2 text-slate-600">{m.role ?? '—'}</td>
+              <tr
+                key={m.id ?? m.userId}
+                className="border-b border-slate-100 dark:border-slate-800"
+              >
+                <td className="py-2 pr-4 text-slate-800 dark:text-slate-100">{m.userId ?? '—'}</td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">{m.role ?? '—'}</td>
               </tr>
             ))}
           </tbody>

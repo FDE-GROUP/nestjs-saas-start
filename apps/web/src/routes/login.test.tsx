@@ -2,6 +2,7 @@
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ThemeProvider } from '../lib/theme-provider';
 import { routeTree } from '../routeTree.gen';
 
 // 登录页组件级渲染：经真实 routeTree 的 memory router，fetch 全 mock。
@@ -15,7 +16,11 @@ function renderLoginAt() {
     routeTree,
     history: createMemoryHistory({ initialEntries: ['/login'] }),
   });
-  return render(<RouterProvider router={router} />);
+  return render(
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>,
+  );
 }
 
 describe('登录页（F0 最小闭环）', () => {

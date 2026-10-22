@@ -172,7 +172,7 @@ function TenantDetailPage() {
       <Link
         to="/platform/tenants"
         search={{ offset: 0 }}
-        className="text-xs text-slate-500 hover:text-slate-700"
+        className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       >
         ← 返回租户列表
       </Link>
@@ -182,7 +182,7 @@ function TenantDetailPage() {
           <SectionHeading>{tenant.name}</SectionHeading>
           <StatusBadge status={tenant.status} />
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           slug：{tenant.slug} · 租户 ID：{tenant.organizationId} · 创建：
           {formatDate(tenant.createdAt)}
         </p>
@@ -191,14 +191,14 @@ function TenantDetailPage() {
       <section className="flex flex-col gap-2">
         <SectionHeading>诊断</SectionHeading>
         {diag ? (
-          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-300">
             <span>成员 {diag.memberCount}</span>
             <span>待处理邀请 {diag.invitationCount}</span>
             <span>工作区 {diag.workspaceCount}</span>
             <span>帖子 {diag.postCount}</span>
           </div>
         ) : (
-          <p className="text-sm text-slate-400">诊断数据不可用。</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500">诊断数据不可用。</p>
         )}
       </section>
 
@@ -229,8 +229,8 @@ function TenantDetailPage() {
           onPermanentDelete={doPermanentDelete}
         />
         {tenant.status === 'deleted' && (
-          <div className="flex flex-col gap-1 rounded border border-red-200 bg-red-50 p-3">
-            <label htmlFor="hard-delete-slug" className="text-xs text-red-700">
+          <div className="flex flex-col gap-1 rounded border border-red-200 bg-red-50 p-3 dark:border-red-500/40 dark:bg-red-500/10">
+            <label htmlFor="hard-delete-slug" className="text-xs text-red-700 dark:text-red-400">
               不可逆硬删：请键入 slug「{tenant.slug}」以解禁上方「硬删除」
             </label>
             <input
@@ -238,12 +238,12 @@ function TenantDetailPage() {
               value={hardInput}
               onChange={(e) => setHardInput(e.target.value)}
               placeholder={tenant.slug}
-              className="rounded border border-red-300 px-2 py-1 text-sm"
+              className="rounded border border-red-300 px-2 py-1 text-sm dark:border-red-500/50"
             />
-            {hardHint && <span className="text-xs text-red-700">{hardHint}</span>}
+            {hardHint && <span className="text-xs text-red-700 dark:text-red-400">{hardHint}</span>}
           </div>
         )}
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           非法状态转移将由后端 409 拒绝（前端 disable 仅为止损）。
         </p>
         <div className="pt-1">
@@ -251,14 +251,14 @@ function TenantDetailPage() {
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded border px-2.5 py-1 text-xs hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
           >
             {exporting ? '导出中…' : '导出数据（JSON 下载）'}
           </button>
         </div>
-        {exportErr && <p className="text-xs text-red-700">{exportErr}</p>}
+        {exportErr && <p className="text-xs text-red-700 dark:text-red-400">{exportErr}</p>}
         <p className="mt-1">
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-400 dark:text-slate-500">
             {action.success ?? action.error ?? '动作结果将显示于此'}
           </span>
         </p>

@@ -78,22 +78,22 @@ export function RbacMatrix({ grants, pendingCell, disabled, onToggle }: RbacMatr
   return (
     <table className="w-full border-collapse text-sm">
       <thead>
-        <tr className="border-b border-slate-200 text-left text-slate-500">
+        <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
           <th className="py-2 pr-4 font-medium">主体 \ 动作</th>
           {ACTIONS.map((a) => (
             <th key={a} className="py-2 px-2 text-center font-medium">
               {ACTION_LABELS[a]}
-              <span className="ml-1 text-xs text-slate-400">({a})</span>
+              <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">({a})</span>
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
         {SUBJECTS.map((s) => (
-          <tr key={s} className="border-b border-slate-100">
-            <td className="py-2 pr-4 text-slate-800">
+          <tr key={s} className="border-b border-slate-100 dark:border-slate-800">
+            <td className="py-2 pr-4 text-slate-800 dark:text-slate-100">
               {SUBJECT_LABELS[s]}
-              <span className="ml-1 text-xs text-slate-400">({s})</span>
+              <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">({s})</span>
             </td>
             {ACTIONS.map((a) => {
               const key = cellKey(s, a);
@@ -107,7 +107,7 @@ export function RbacMatrix({ grants, pendingCell, disabled, onToggle }: RbacMatr
                     checked={checked}
                     disabled={disabled || pending}
                     onChange={() => onToggle(s, a, checked)}
-                    className="h-4 w-4 cursor-pointer accent-slate-800 disabled:opacity-40"
+                    className="h-4 w-4 cursor-pointer accent-slate-800 disabled:opacity-40 dark:accent-slate-200"
                   />
                 </td>
               );

@@ -88,17 +88,17 @@ function DashboardPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-4">
         <SectionHeading>当前会话</SectionHeading>
-        <dl className="grid grid-cols-[6rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm">
-          <dt className="text-slate-500">邮箱</dt>
+        <dl className="grid grid-cols-[6rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">
+          <dt className="text-slate-500 dark:text-slate-400">邮箱</dt>
           <dd data-testid="session-email">{user.email}</dd>
-          <dt className="text-slate-500">用户 ID</dt>
+          <dt className="text-slate-500 dark:text-slate-400">用户 ID</dt>
           <dd>{user.id}</dd>
         </dl>
         <div>
           <button
             type="button"
             onClick={onSignOut}
-            className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+            className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
           >
             登出
           </button>
@@ -129,12 +129,12 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
     return <EmptyPanel label="当前租户尚无生效订阅。" />;
   }
   return (
-    <dl className="grid grid-cols-[8rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm">
-      <dt className="text-slate-500">档位</dt>
+    <dl className="grid grid-cols-[8rem_1fr] gap-y-1 rounded-lg border border-slate-200 p-4 text-sm dark:border-slate-700">
+      <dt className="text-slate-500 dark:text-slate-400">档位</dt>
       <dd data-testid="sub-plan">{subscription.plan}</dd>
-      <dt className="text-slate-500">座位上限</dt>
+      <dt className="text-slate-500 dark:text-slate-400">座位上限</dt>
       <dd>{subscription.seatsLimit}</dd>
-      <dt className="text-slate-500">已用 / 剩余</dt>
+      <dt className="text-slate-500 dark:text-slate-400">已用 / 剩余</dt>
       <dd>
         {subscription.used} / {subscription.remaining}
       </dd>
@@ -168,9 +168,9 @@ function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
         {tenants.map((t) => (
           <div
             key={t.id}
-            className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm"
+            className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
           >
-            <span className="font-medium text-slate-800">{t.name ?? t.id}</span>
+            <span className="font-medium text-slate-800 dark:text-slate-100">{t.name ?? t.id}</span>
             <SubmitButton
               pending={switchAction.pending}
               onClick={() => t.id && handleSwitch(t.id, t.name ?? t.id)}
@@ -208,8 +208,8 @@ function TenantOnboardingPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4">
-      <p className="text-sm text-slate-600">
+    <div className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         你尚未加入任何组织。可申请创建自己的组织（提交后进入平台审批），或经由邀请链接加入既有组织。
       </p>
       <FormWrap onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -220,9 +220,9 @@ function TenantOnboardingPanel() {
         </div>
       </FormWrap>
       <Feedback error={applyAction.error} success={applyAction.success} />
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         收到邀请？
-        <Link to="/invitations" className="ml-1 text-blue-600 hover:underline">
+        <Link to="/invitations" className="ml-1 text-blue-600 hover:underline dark:text-blue-400">
           前往接受邀请
         </Link>
       </p>

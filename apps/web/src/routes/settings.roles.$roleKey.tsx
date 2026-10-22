@@ -100,7 +100,7 @@ function RoleMatrixPage() {
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
         <SectionHeading>权限矩阵</SectionHeading>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           角色：{role.name}（key：{role.key}）
           {role.isSystem && ' · 系统角色（授权可调整，名称受保护）'}
         </p>

@@ -18,19 +18,19 @@ export const Route = createFileRoute('/platform')({
 function PlatformShell() {
   return (
     <div className="flex flex-col gap-6">
-      <nav className="flex items-center gap-4 border-b border-slate-200 pb-2 text-sm">
-        <span className="font-semibold text-slate-800">平台运营</span>
+      <nav className="flex items-center gap-4 border-b border-slate-200 pb-2 text-sm dark:border-slate-700">
+        <span className="font-semibold text-slate-800 dark:text-slate-100">平台运营</span>
         <Link
           to="/platform/tenants"
           search={{ offset: 0 }}
-          className="text-slate-600 hover:text-slate-900"
+          className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
         >
           租户治理
         </Link>
         <Link
           to="/platform/users"
           search={{ offset: 0 }}
-          className="text-slate-600 hover:text-slate-900"
+          className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
         >
           用户治理
         </Link>

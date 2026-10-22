@@ -146,10 +146,12 @@ function InvitationCancelRow({ invitation }: { invitation: InvitationRow }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 px-3 py-2 text-sm">
-      <span className="flex-1 text-slate-800">
+    <div className="flex items-center gap-3 rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+      <span className="flex-1 text-slate-800 dark:text-slate-100">
         {invitation.email}
-        <span className="ml-2 text-xs text-slate-400">({invitation.role ?? '—'})</span>
+        <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">
+          ({invitation.role ?? '—'})
+        </span>
       </span>
       <DangerButton pending={cancel.pending} onClick={handleCancel}>
         撤回

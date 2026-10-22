@@ -27,7 +27,7 @@ export function Field({
   const errorId = `${name}-error`;
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-slate-600">
+      <span className="text-slate-600 dark:text-slate-300">
         {label}
         {required && <span className="text-red-500"> *</span>}
       </span>
@@ -40,12 +40,14 @@ export function Field({
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`rounded border px-2 py-1.5 text-sm focus:outline-none ${
-          error ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-500'
+        className={`rounded border px-2 py-1.5 text-sm bg-white text-slate-900 focus:outline-none dark:bg-slate-900 dark:text-slate-100 ${
+          error
+            ? 'border-red-400 focus:border-red-500 dark:border-red-500'
+            : 'border-slate-300 focus:border-slate-500 dark:border-slate-700'
         }`}
       />
       {error ? (
-        <p id={errorId} className="text-xs text-red-600" role="alert">
+        <p id={errorId} className="text-xs text-red-600 dark:text-red-400" role="alert">
           {error}
         </p>
       ) : null}
@@ -72,15 +74,17 @@ export function Select({
   const errorId = `${name}-error`;
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-slate-600">{label}</span>
+      <span className="text-slate-600 dark:text-slate-300">{label}</span>
       <select
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`rounded border px-2 py-1.5 text-sm focus:outline-none ${
-          error ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-slate-500'
+        className={`rounded border px-2 py-1.5 text-sm bg-white text-slate-900 focus:outline-none dark:bg-slate-900 dark:text-slate-100 ${
+          error
+            ? 'border-red-400 focus:border-red-500 dark:border-red-500'
+            : 'border-slate-300 focus:border-slate-500 dark:border-slate-700'
         }`}
       >
         {options.map((o) => (
@@ -90,7 +94,7 @@ export function Select({
         ))}
       </select>
       {error ? (
-        <p id={errorId} className="text-xs text-red-600" role="alert">
+        <p id={errorId} className="text-xs text-red-600 dark:text-red-400" role="alert">
           {error}
         </p>
       ) : null}
@@ -113,7 +117,7 @@ export function SubmitButton({
       type={onClick ? 'button' : 'submit'}
       onClick={onClick}
       disabled={pending}
-      className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+      className="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
     >
       {pending ? '处理中…' : children}
     </button>
@@ -135,7 +139,7 @@ export function DangerButton({
       type="button"
       onClick={onClick}
       disabled={pending}
-      className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+      className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40"
     >
       {children}
     </button>
@@ -146,13 +150,19 @@ export function DangerButton({
 export function Feedback({ error, success }: { error: string | null; success: string | null }) {
   if (error)
     return (
-      <p className="rounded bg-red-50 px-3 py-1.5 text-xs text-red-700" role="alert">
+      <p
+        className="rounded bg-red-50 px-3 py-1.5 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300"
+        role="alert"
+      >
         {error}
       </p>
     );
   if (success)
     return (
-      <p className="rounded bg-green-50 px-3 py-1.5 text-xs text-green-700" role="status">
+      <p
+        className="rounded bg-green-50 px-3 py-1.5 text-xs text-green-700 dark:bg-green-950/40 dark:text-green-300"
+        role="status"
+      >
         {success}
       </p>
     );

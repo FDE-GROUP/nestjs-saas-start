@@ -2,6 +2,7 @@
 import { createMemoryHistory, createRouter, RouterProvider } from '@tanstack/react-router';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ThemeProvider } from '../lib/theme-provider';
 import { routeTree } from '../routeTree.gen';
 
 /**
@@ -14,7 +15,11 @@ function renderRegister() {
     routeTree,
     history: createMemoryHistory({ initialEntries: ['/register'] }),
   });
-  return render(<RouterProvider router={router} />);
+  return render(
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>,
+  );
 }
 
 afterEach(() => {

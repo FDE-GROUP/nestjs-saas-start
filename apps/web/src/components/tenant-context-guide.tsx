@@ -9,18 +9,18 @@ import { SectionHeading } from './panels';
  */
 export function TenantContextGuidePanel({ hasMemberships }: { hasMemberships: boolean }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
       <SectionHeading>无活跃租户</SectionHeading>
       {hasMemberships ? (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           你已有租户成员身份，但尚未激活任一租户，管理页暂不可入。请到首页「我的租户」切换到一个组织。
         </p>
       ) : (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           你尚未加入任何租户。请到首页提交租户申请（待平台审批），或等待管理员邀请入组。
         </p>
       )}
-      <Link to="/" className="text-sm text-blue-600 hover:underline">
+      <Link to="/" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
         前往首页
       </Link>
     </div>

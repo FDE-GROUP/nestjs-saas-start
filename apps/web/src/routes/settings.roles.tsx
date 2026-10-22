@@ -119,7 +119,7 @@ function RoleRow({ role }: { role: TenantRoleView }) {
   }
 
   return (
-    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm">
+    <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
       {editing ? (
         <FormWrap onSubmit={handleRename} className="flex items-end gap-2">
           <Field label="新名称" name="editName" value={editName} onChange={setEditName} />
@@ -127,17 +127,17 @@ function RoleRow({ role }: { role: TenantRoleView }) {
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="text-xs text-slate-500 hover:text-slate-700"
+            className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             取消
           </button>
         </FormWrap>
       ) : (
-        <span className="flex-1 font-medium text-slate-800">
+        <span className="flex-1 font-medium text-slate-800 dark:text-slate-100">
           {role.name}
-          <span className="ml-2 text-xs text-slate-400">({role.key})</span>
+          <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">({role.key})</span>
           {role.isSystem && (
-            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               系统
             </span>
           )}
@@ -148,7 +148,7 @@ function RoleRow({ role }: { role: TenantRoleView }) {
           <Link
             to="/settings/roles/$roleKey"
             params={{ roleKey: role.key }}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-blue-600 hover:underline dark:text-blue-400"
           >
             权限矩阵
           </Link>
@@ -157,7 +157,7 @@ function RoleRow({ role }: { role: TenantRoleView }) {
             onClick={() => setEditing(true)}
             disabled={role.isSystem}
             title={role.isSystem ? '系统角色受保护' : undefined}
-            className="text-xs text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+            className="text-xs text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline dark:text-blue-400 dark:disabled:text-slate-600"
           >
             改名
           </button>
@@ -184,7 +184,7 @@ export function RolesView({ roles }: { roles?: TenantRoleView[] }) {
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">名称</th>
               <th className="py-2 pr-4 font-medium">Key</th>
               <th className="py-2 font-medium">类型</th>
@@ -192,10 +192,14 @@ export function RolesView({ roles }: { roles?: TenantRoleView[] }) {
           </thead>
           <tbody>
             {list.map((r) => (
-              <tr key={r.id} className="border-b border-slate-100">
-                <td className="py-2 pr-4 font-medium text-slate-800">{r.name}</td>
-                <td className="py-2 pr-4 text-slate-600">{r.key}</td>
-                <td className="py-2 text-slate-600">{r.isSystem ? '系统' : '自定义'}</td>
+              <tr key={r.id} className="border-b border-slate-100 dark:border-slate-800">
+                <td className="py-2 pr-4 font-medium text-slate-800 dark:text-slate-100">
+                  {r.name}
+                </td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">{r.key}</td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">
+                  {r.isSystem ? '系统' : '自定义'}
+                </td>
               </tr>
             ))}
           </tbody>

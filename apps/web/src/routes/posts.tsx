@@ -128,17 +128,17 @@ function PostsPage() {
             placeholder="文章标题"
           />
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-600">正文</span>
+            <span className="text-slate-600 dark:text-slate-400">正文</span>
             <textarea
               name="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="内容（可选）"
               rows={4}
-              className="rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+              className="rounded border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
           </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <input
               type="checkbox"
               name="published"
@@ -171,7 +171,7 @@ export function PostsView({ posts }: { posts?: Post[] }) {
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-slate-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">标题</th>
               <th className="py-2 pr-4 font-medium">摘要</th>
               <th className="py-2 pr-4 font-medium">状态</th>
@@ -180,23 +180,23 @@ export function PostsView({ posts }: { posts?: Post[] }) {
           </thead>
           <tbody>
             {list.map((p) => (
-              <tr key={p.id} className="border-b border-slate-100">
-                <td className="py-2 pr-4 text-slate-800">{p.title}</td>
-                <td className="py-2 pr-4 text-slate-600">
+              <tr key={p.id} className="border-b border-slate-100 dark:border-slate-800">
+                <td className="py-2 pr-4 text-slate-800 dark:text-slate-100">{p.title}</td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">
                   {p.content ? p.content.slice(0, 40) : '—'}
                 </td>
                 <td className="py-2 pr-4">
                   {p.published ? (
-                    <span className="rounded bg-green-50 px-2 py-0.5 text-xs text-green-700">
+                    <span className="rounded bg-green-50 px-2 py-0.5 text-xs text-green-700 dark:bg-green-500/15 dark:text-green-400">
                       已发布
                     </span>
                   ) : (
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                       草稿
                     </span>
                   )}
                 </td>
-                <td className="py-2 text-slate-500">
+                <td className="py-2 text-slate-500 dark:text-slate-400">
                   {p.createdAt ? new Date(p.createdAt).toLocaleString() : '—'}
                 </td>
               </tr>
