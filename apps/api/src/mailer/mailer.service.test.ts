@@ -71,9 +71,9 @@ describe('MailerService (i18n localization)', () => {
   });
 
   it('sendForgotPasswordEmail localizes subject', async () => {
-    await service.sendForgotPasswordEmail('a@b.com', 'tok', 30, 'ja');
-    expect(i18n.translate).toHaveBeenCalledWith('emails.forgot-password.subject', { lang: 'ja' });
-    expect(sendMail.mock.calls[0][0].subject).toBe('T[emails.forgot-password.subject|ja]');
+    await service.sendForgotPasswordEmail('a@b.com', 'tok', 30, 'en');
+    expect(i18n.translate).toHaveBeenCalledWith('emails.forgot-password.subject', { lang: 'en' });
+    expect(sendMail.mock.calls[0][0].subject).toBe('T[emails.forgot-password.subject|en]');
   });
 
   it('sendMagicLinkEmail localizes subject + carries magicLinkUrl context', async () => {

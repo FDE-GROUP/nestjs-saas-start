@@ -1,7 +1,7 @@
 # i18n 键级完整性恒等闸（X3 借鉴 · module-i18n-key-parity）
 
 > 适用范围: `模块(i18n)` + `门禁接入`（blast radius：新增 `scripts/verify-i18n-key-parity.ts` + `package.json` 脚本项 + `scripts/ci.ts` 一步）
-> 关联: `research/external-borrowing-backlog.md` X3（ixartz `check:i18n` 反照）· `docs/plans/module-i18n-assets-resolution`（产物资产根闸先例）· `apps/api/src/i18n/validation-i18n.e2e.test.ts`
+> 关联: `research/external-borrowing-backlog.md` X3（ixartz `check:i18n` 反照）· `docs/plans/module-i18n-drop-ja`（前置：ja 已由该另案高危签核 A 摘除·本闸仅约束 zh/en）· `docs/plans/module-i18n-assets-resolution`（产物资产根闸先例）· `apps/api/src/i18n/validation-i18n.e2e.test.ts`
 > 性质: **增量（expand）**——纯新增只读对拍闸，不改任何 i18n 资产内容、不改源码引用（除非对拍出真缺需补译，那属另一内容决策）
 > 状态**不在此**：审计 / 执行状态单源于 [`README.md`](./README.md) 索引表
 
@@ -66,7 +66,7 @@
   - **ⓑ 动态键**：out-of-scope + 文档登记（荐）/ 另设结构约束？
   - **ⓒ 默认 locale**：zh（荐·fallback 现回落 zh 实证 `validation-i18n.e2e` L88）？
   - **ⓓ 门禁接入序**：脚本先落·`ci.ts` step 单独随高危签核（荐·承 verify 片先例）/ 一并在本案？
-  - **ⓥ 多语言入闸范围**：zh/en/ja 全等强约束（**荐·已只读对拍坐实基线干净**：2026-10-22 现算 zh/en/ja 三语言 validate(8)/emails(24)/login(1)=33 键**逐键全等·无缺键无孤立键**，故入闸即时不红·无需先补译）/ 若日后某语言扩键滞后则暂列基线渐进。
+  - **ⓥ 多语言入闸范围**：**已裁（承用户「仅保留 zh/en」→另案 `module-i18n-drop-ja` 高危签核 A 2026-10-22 摘除 ja）**——本闸仅约束 **zh/en** 两 locale 逐键全等（闸本身从文件系统发现 locale·不硬编码语言数）；历史取证：摘除前 zh/en/ja 三语言 validate(8)/emails(24)/login(1)=33 键已逐键全等→zh/en 子集仍恒等、入闸即时不红。
 - 审计人 / 日期：__
 
 ## 5. 完成判据（可核验 + 穷尽 · 过审后逐片细化）

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 //
 // 背景：编译侧（tsc/swc，`include: apps/** + libs/**`、不设 rootDir）产物保留 `apps/api/src`
 // 前缀，落 `dist/apps/api/src/i18n/*.js`；资产侧（nest-cli `assets`）剥 `sourceRoot` 前缀落
-// `dist/i18n/{zh,en,ja}`。两套语义自目录搬迁起分叉——旧代码用 `dirname(import.meta.url)` 直当
+// `dist/i18n/{zh,en}`。两套语义自目录搬迁起分叉——旧代码用 `dirname(import.meta.url)` 直当
 // 资产根，在生产产物下指向「只有 .js、没有 json/mjml」的目录，导致译文静默回退 key、发信 ENOENT。
 //
 // 本 helper 是**唯一**解析机制：从本模块所在目录向上逐级探测「真正的资产根」（判据 = 其下有 `zh/`），
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 // （fail-closed），把「资产没拷对」从静默功能失效转为显式启动失败——与数据驻留守卫同一精神。
 
 /** 语言子目录探测集：任一存在即视为合法资产根（zh 为 fallback 语言，必存）。 */
-const PROBE_LANGS = ['zh', 'en', 'ja'] as const;
+const PROBE_LANGS = ['zh', 'en'] as const;
 
 function isAssetsRoot(dir: string): boolean {
   return PROBE_LANGS.some((lang) => fs.existsSync(path.join(dir, lang)));
@@ -44,7 +44,7 @@ export function resolveI18nAssetsRoot(
   throw new Error(
     `i18n 资产根解析失败：自 ${fromDir} 向上未找到含 <lang>/ 的目录。` +
       `已试路径：\n  - ${tried.join('\n  - ')}\n` +
-      `请确认 nest-cli assets 已把 i18n 数据（zh/en/ja + emails）拷入产物。`,
+      `请确认 nest-cli assets 已把 i18n 数据（zh/en + emails）拷入产物。`,
   );
 }
 
