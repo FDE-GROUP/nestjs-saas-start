@@ -18,10 +18,17 @@
  * 恢复 runbook 保序（案 §2.2-R3c）：① 先只读巡检定位漂移面 →② 判因（多系未 bootstrap/异步投影滞后·
  * 非流损坏）→③ 带 `--rebuild` 修复（空流=未 bootstrap 者不在可修列，须先跑对应 bootstrap 成流再来）→
  * ④ 复验绿。回滚窗：本工具无 schema 变更、不动流，修投影=向真相源对齐，无需亦不应「回滚投影到旧错误值」。
+ *
+ * **R3b·丙（案 §2.4 R3b 重定向）**：额外只读对拍「跨上下文 lost-link 不变量」（tenant suspended ⇒
+ * 其订阅不应残留 active·治理裁点乙商业规则）——这是 fold⇄投影医生**检不出**的盲区（订阅自有流里
+ * 本就没那条联动 transition）。违例仅点名不 raw 修（raw 改会破 fold==投影），真修复须经 convergeStatus
+ * 端口重放 link（归后续 relink 片）。仍零 DDL·缺省只读。
  */
 import '../apps/api/src/load-env.ts';
 
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { replayTenantLifecycle } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle-fold';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
@@ -128,6 +135,34 @@ async function heal(em: EntityManager, report: CtxReport): Promise<number> {
   return healed;
 }
 
+interface LinkViolation {
+  tenantId: string;
+  activeSubCount: number;
+}
+
+/**
+ * 丙 · 跨上下文 lost-link 不变量只读对拍（案 §2.4·R3b 重定向）：治理商业规则「tenant suspended ⇒
+ * 其订阅不应残留 active」（`TenantStatusSubscriptionLinkHandler`·裁点乙）。若 tenant.status.transitioned
+ * 已入库但进程内投递在崩溃窗丢失，订阅未联动挂起——而其自有流/投影同步地都没这条 transition，故
+ * fold⇄投影医生检不出（盲区）。本对拍专补该盲区：只读·不 raw 改投影，违例点名归后续 relink 片。
+ */
+async function scanLinkInvariant(em: EntityManager): Promise<LinkViolation[]> {
+  const suspended = (await em.find(Tenant, { status: TENANT_STATUS.SUSPENDED } as never, {
+    orderBy: { id: QueryOrder.ASC },
+  })) as Array<{ id: string }>;
+  const violations: LinkViolation[] = [];
+  for (const t of suspended) {
+    const activeSubs = await em.count(TenantSubscription, {
+      tenantId: t.id,
+      status: SUBSCRIPTION_STATUS.ACTIVE,
+    } as never);
+    if (activeSubs > 0) {
+      violations.push({ tenantId: t.id, activeSubCount: activeSubs });
+    }
+  }
+  return violations;
+}
+
 const orm = await initMikroOrm(url, MIKRO_SYS_ENTITIES);
 const em = orm.em.fork();
 
@@ -184,19 +219,50 @@ try {
   }
 
   const residual = reports.reduce((n, r) => n + r.drift.length, 0);
-  if (residual > 0) {
-    if (driftCount > 0 && !rebuild) {
-      console.error(
-        `[doctor] FAIL-LOUD——检出 ${residual} 处漂移（只读·未修）；确系投影滞后/漂移可加 --rebuild 修复，空流者须先跑对应 bootstrap。`,
+
+  // R3b·丙：跨上下文 lost-link 不变量只读对拍（tenant suspended ⇒ 其订阅无 active 残留）。
+  // 注：--rebuild 只修 fold 漂移·link 违例非 raw 可修（会破 fold==投影），故单列，须经 convergeStatus 端口重放。
+  const checkLink = want('tenants') && want('subscriptions');
+  let linkViolations: LinkViolation[] = [];
+  if (checkLink) {
+    linkViolations = await scanLinkInvariant(em);
+    if (linkViolations.length === 0) {
+      console.log(
+        '[link-invariant] 0 违例（无「tenant suspended 而其订阅仍 active」的 lost-link 签名）',
       );
     } else {
+      for (const v of linkViolations) {
+        console.log(
+          `  ✗ lost-link: tenant=${v.tenantId} suspended 但其下 ${v.activeSubCount} 条订阅仍 active（跨上下文不变量违反·现 fold 防线盲区）`,
+        );
+      }
+    }
+  } else {
+    console.log('[link-invariant] 跳过（需同时巡检 tenants+subscriptions·--only 限定了单侧）');
+  }
+
+  if (residual > 0 || linkViolations.length > 0) {
+    if (residual > 0) {
+      if (driftCount > 0 && !rebuild) {
+        console.error(
+          `[doctor] FAIL-LOUD——检出 ${residual} 处漂移（只读·未修）；确系投影滞后/漂移可加 --rebuild 修复，空流者须先跑对应 bootstrap。`,
+        );
+      } else {
+        console.error(
+          `[doctor] FAIL-LOUD——仍有 ${residual} 处不可由本工具修复（空流/幂等律破坏），须查 bootstrap 面。`,
+        );
+      }
+    }
+    if (linkViolations.length > 0) {
       console.error(
-        `[doctor] FAIL-LOUD——仍有 ${residual} 处不可由本工具修复（空流/幂等律破坏），须查 bootstrap 面。`,
+        `[doctor] FAIL-LOUD——${linkViolations.length} 处 lost-link 跨上下文违例（非 raw 可修·会破 fold==投影·须经 convergeStatus 端口重放 link·见案 §2.4 丙 repair 续片）。`,
       );
     }
     process.exit(1);
   }
-  console.log('✅ 全上下文 replay fold ⇄ 投影逐字段一致（R3c 滞后检测·catch-up 判据）');
+  console.log(
+    '✅ 全上下文 fold⇄投影逐字段一致 + 无 lost-link 跨上下文违例（R3c 滞后检测 + 丙 不变量对拍）',
+  );
 } catch (error) {
   console.error('[es-projection-doctor] failed:', error);
   process.exitCode = 1;
