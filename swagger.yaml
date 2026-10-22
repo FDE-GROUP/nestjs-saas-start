@@ -205,9 +205,11 @@ paths:
                 key:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 name:
                   type: string
                   minLength: 1
+                  maxLength: 200
               required:
                 - key
                 - name
@@ -252,9 +254,11 @@ paths:
                 key:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 name:
                   type: string
                   minLength: 1
+                  maxLength: 200
               required:
                 - key
                 - name
@@ -290,6 +294,7 @@ paths:
                 key:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - key
               additionalProperties: false
@@ -354,6 +359,7 @@ paths:
                 roleKey:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 subject:
                   type: string
                   enum:
@@ -416,6 +422,7 @@ paths:
                 roleKey:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 subject:
                   type: string
                   enum:
@@ -477,6 +484,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 200
       responses:
         '200':
           description: A page of tenants with lifecycle status.
@@ -754,6 +762,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 200
       responses:
         '200':
           description: A page of users with suspension status.
@@ -960,8 +969,10 @@ paths:
                 title:
                   type: string
                   minLength: 1
+                  maxLength: 200
                 content:
                   type: string
+                  maxLength: 20000
                 published:
                   type: boolean
               required:
@@ -1041,9 +1052,11 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                  maxLength: 200
                 slug:
                   type: string
                   minLength: 1
+                  maxLength: 128
                   pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
               required:
                 - name
@@ -1088,8 +1101,10 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                  maxLength: 200
                 slug:
                   type: string
+                  maxLength: 128
                   pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
               additionalProperties: false
       responses:
@@ -1145,9 +1160,11 @@ paths:
                 name:
                   type: string
                   minLength: 1
+                  maxLength: 200
                 slug:
                   type: string
                   minLength: 1
+                  maxLength: 128
                   pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
               required:
                 - name
@@ -1283,9 +1300,11 @@ paths:
                 memberId:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 role:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - memberId
                 - role
@@ -1325,6 +1344,7 @@ paths:
                 memberId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - memberId
               additionalProperties: false
@@ -1389,9 +1409,11 @@ paths:
                 email:
                   type: string
                   minLength: 1
+                  maxLength: 254
                 role:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - email
                 - role
@@ -1431,6 +1453,7 @@ paths:
                 invitationId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - invitationId
               additionalProperties: false
@@ -1497,6 +1520,7 @@ paths:
                 organizationId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - organizationId
               additionalProperties: false
@@ -1543,6 +1567,7 @@ paths:
                 organizationId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - organizationId
               additionalProperties: false
@@ -1587,6 +1612,7 @@ paths:
                 invitationId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - invitationId
               additionalProperties: false
@@ -1635,6 +1661,7 @@ paths:
                 invitationId:
                   type: string
                   minLength: 1
+                  maxLength: 128
               required:
                 - invitationId
               additionalProperties: false
@@ -1736,6 +1763,7 @@ paths:
                     - enterprise
                 customerEmail:
                   type: string
+                  maxLength: 254
                   format: email
                   pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 seatsLimit:
@@ -1898,10 +1926,12 @@ paths:
               properties:
                 email:
                   type: string
+                  maxLength: 254
                   format: email
                   pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
                 name:
                   type: string
+                  maxLength: 200
                 metadata:
                   type: object
                   additionalProperties:
@@ -1940,8 +1970,10 @@ paths:
                 currency:
                   type: string
                   minLength: 1
+                  maxLength: 10
                 description:
                   type: string
+                  maxLength: 20000
                 metadata:
                   type: object
                   additionalProperties:
@@ -2014,11 +2046,13 @@ paths:
                 checkoutId:
                   type: string
                   minLength: 1
+                  maxLength: 128
                 amount:
                   type: number
                   minimum: 1
                 reason:
                   type: string
+                  maxLength: 20000
               required:
                 - checkoutId
               additionalProperties: false
