@@ -91,7 +91,7 @@
 
 - [x] ⓐ–ⓔ 全部有归人裁决留痕后方可动码（2026-10-22 过审·见 §4）；
 - [x] R3a（2026-10-22 部分）：ⓑ 消费者幂等锁测**硬化落链**（handler.test 重投断言升到「同参数收敛请求」 `mock.calls[0]`==`[1]`·5 测绿）；relay 头 `at-least-once-to-claim` 口径**前序已成文**（outbox-relay.e2e L188 已锁重投）；architecture ES 条对拍注 = 宪法且口径随 R3b 真变（to-claim→to-consumer），**并入 R3b 一次成文防双写**（宪法段改动仍需亲签）；
-- [x] R3b（裁ⓐ 再判采纳丙 · 修复采 A · 2026-10-22 收口 · 见 §2.4/§2.5/§4）：目标由「relay 端到端 ack」重定向为「丙·跨上下文 lost-link 不变量对拍」；**丙-i（detect·非高危·零 DDL·零 relay 改动）已落链**——扩 `scripts/es-projection-doctor.ts` 加 `scanLinkInvariant`（tenant suspended ⇒ 其订阅无 active 残留·前向不变量·link 违例单列非 raw 可修不并入 `--rebuild`）·dev 真库闭环演练存照（基线 0→注入 suspended+active 子→检测点名→清场归 0·净还原）·tsc/biome/ci 绿；原甲′ gated e2e 崩溃-重启-补收项**随重定向作废**（relay 未改·无新链）；**丙-ii（relink 修复）经 v0.7.0 取证（§2.5）判无干净 tsx 载体·不强造**——修复改采 **A（检测→运维重驱治理 API·人 2026-10-22 定案）**·B（乙档）留判据缓行·C（SWC-gated 一键自修）未取；
+- [x] R3b（裁ⓐ 再判采纳丙 · 修复采 A · 2026-10-22 收口 · 见 §2.4/§2.5/§4）：目标由「relay 端到端 ack」重定向为「丙·跨上下文 lost-link 不变量对拍」；**丙-i（detect·非高危·零 DDL·零 relay 改动）已落链**——扩 `scripts/es-projection-doctor.ts` 加 `scanLinkInvariant`（tenant suspended ⇒ 其订阅无 active 残留·前向不变量·link 违例单列非 raw 可修不并入 `--rebuild`）·dev 真库闭环演练存照（基线 0→注入 suspended+active 子→检测点名→清场归 0·净还原）·tsc/biome/ci 绿；原甲′ gated e2e 崩溃-重启-补收项**随重定向作废**（relay 未改·无新链）；**丙-ii（relink 修复）经 v0.7.0 取证（§2.5）判无干净 tsx 载体·不强造**——修复改采 **A（检测→运维重驱治理 API·人 2026-10-22 定案）**·B（乙档）留判据缓行·C（SWC-gated 一键自修）未取；**2026-10-22 人类验收通过·R3 结项**（诚实口径：缺口②后果已检测+可操作修复闭合·端到端 ack 耐久投递源链未实现、按判据留乙档）；
 - [x] R3c（2026-10-22）：新增 `scripts/es-projection-doctor.ts`——跨上下文（tenants+subscriptions）只读巡检 fold⇄投影 + `--rebuild` catch-up 恢复面（bootstrap `--verify` 只检不修·此为真增量）；dev 真库演练存照：注入投影漂移(suspended)→医生检出可修(fold=active⇄投影=suspended)→`--rebuild` 回写真相→复验漂移消失（净还原·零 DDL 不动流·tsc+biome 绿）；空流者诚实归类「须 bootstrap·非本工具可修」；
 - [ ] `pnpm run ci` 全绿 + `pnpm run test:fullstack` 全链绿 +（若触 schema）`migration:generate` 空 diff 证明。
 
@@ -107,8 +107,9 @@
 | 2026-10-22 | 0.6.0 | 裁ⓐ 再判采纳丙·R3b-丙-i 实施 | 人「同意」采纳推荐·R3b 重定向为丙；扩 `es-projection-doctor.ts` 加 `scanLinkInvariant`（跨上下文 lost-link 不变量只读检测·非高危零 DDL 不动 relay）·dev 真库闭环演练（注入→点名→净还原）·tsc/biome 绿；丙-ii relink 修复待续片 | 
 | 2026-10-22 | 0.7.0 | 丙-ii 实施前取证·证伪「可脚本直施」 | 探针以 tsx 跑 AppModule DI 取 convergeStatus 真件→`UnknownDependenciesException`（Reflector class-token）；根因坐实 vitest 靠 unplugin-swc 产元数据·esbuild/tsx 不产；降级 raw 写会破 fold==投影 → 丙-ii 无干净 tsx 载体·不强造；新增 §2.5（出路 A/B/C）·R3b 脚本终态=丙-i detect 收口·修复归人裁 |
 | 2026-10-22 | 0.8.0 | 修复采 A 定案·R3 核心收口 | 人回 A：R3b 修复采「检测→运维重驱治理 API」（零新码·医生已点名）·B 乙档留判据缓行·C 未取；§5 R3b 置 [x] 收口（丙-i detect + A 指引）·§4 补定案行；本片未新增 gated e2e·未触 schema→`test:fullstack`/`migration` 不受影响·`ci` 已绿；**R3 能力完备收口片核心闭合**（缺口②后果=检测+可操作修复·端到端 ack 源链归乙档按判据） |
+| 2026-10-22 | 0.9.0 | 人类验收·R3 结项 | 人选「验收」= R3 能力完备收口片人类验收通过·R3b/R3 置结项；诚实口径：缺口②业务后果（lost 跨上下文 link）已由「丙-i 检测 + A 运维重驱」闭合·**端到端 ack 耐久投递源链未实现**（按判据留乙档）；README 状态单源同步〔已人类验收·结项〕；沿 R1/R4 先例不动非状态单源的母案 §4 描述 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-22 / v0.8.0 变更，以当前正文内容为准。
+正文已于 2026-10-22 / v0.9.0 变更，以当前正文内容为准。
