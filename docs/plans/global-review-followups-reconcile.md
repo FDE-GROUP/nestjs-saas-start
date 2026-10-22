@@ -27,7 +27,7 @@
 - **缓解已在**：故事溯源纪律「只指文件与方法名（不引行号，防漂移）」（见 `docs/stories/README.md`），故数轮目录搬迁（`src`→`apps/reference`→`apps/api`、`packages/core` 分包）对**文件名/方法名**引用冲击有限；实测 stories 内无 `apps/reference`/`src/modules` 陈旧全路径残留。
 - **缺口**：**无**「stories-drift 恒等闸」——没有任何门禁自动校验每条故事溯源指向的文件/方法/关联 plan 链接是否仍解析（对照 OpenAPI drift 三向闸、表所有权守卫均有恒等闸，stories 面缺位）。
 - **建议**：新增 stories-drift 恒等校验（解析每条溯源的文件/符号/`../plans/*.md` 链接存在性，纳入 `ci` full）。**实现属后续独立方案·触 CI 门禁需另签**，本窗仅登记不落地。
-- **落地（后续窗·经人签核）**：新增 `scripts/verify-stories-drift.ts`（三档硬闸：关联 plan 链接 / `.ts` 文件名 / `NS:NAME` wire 码·皆取仓内明确产物·基线全绿 28/42/2）+ 自测 6 例·登记 `verify:stories-drift` 与 ci.ts step（full/quick 均跑）。**诚实边界**：闸只锁「引用产物实存性」机械 drift，不校验散文语义（如故事 2.2 原记 approve 201——即由本闸立项时发现并随项③ 订正同步为 200·`893d9a7`）。闸本体 `550527b`。
+- **落地（后续窗·经人签核）**：新增 `scripts/verify-stories-drift.ts`——**四档硬闸**：关联 plan 链接 / `.ts` 文件名 / `NS:NAME` wire 码 / **后缀锚定 class-suffix 符号**（Controller|Command|CommandHandler|Service|Repository|Guard|Handler|Event·`.method` 尾剥离·class∪interface 索引·皆取仓内明确产物·基线全绿 28/42/2/48）+ 自测 9 例·登记 `verify:stories-drift` 与 ci.ts step（full/quick 均跑·闸实跑 110ms）。**诚实边界**：闸只锁「引用产物实存性」机械 drift（符号档仅断类名实存·不校方法名/所有权），不校散文语义（如故事 2.2 原记 approve 201——即由本闸立项时发现并随项③ 订正同步为 200·`893d9a7`）。闸本体 `550527b`·第四档扩 `ad1e1ad`（GO-E 经人签）。
 
 ## 4. 审计记录
 
@@ -51,8 +51,9 @@
 | 2026-10-22 | 0.3.0 | 项③ 核验+订正落地后勾稽 | 项③（REST 一致性核验·approve/webhook 补 @HttpCode(OK)·`9463a3f`）disposition 由待办更新为已闭；小结补后续 |
 | 2026-10-22 | 0.4.0 | 项⑤ 只读勘察后裁定 | 项⑤（数据导出流式）disposition 由仍开更新为缓行（附两端体量取证 + 触发判据·无码片） |
 | 2026-10-22 | 0.5.0 | ⑤-b stories-drift 闸落地 | ⑤-b 由建议项更新为已落地（`verify:stories-drift` 三档硬闸 `550527b` + epic-02 语义 drift 同步 `893d9a7`·高危 CI 门禁经人签） |
+| 2026-10-22 | 0.6.0 | ⑤-b 闸扩第四档符号 | 应选做追加 class-suffix 符号存在性档（后缀锚压 FP·class∪interface 索引·基线 48 绿·`ad1e1ad`·GO-E 经人签） |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.1.0 成文；v0.2.0勾稽项①②（`62fcfea`/`af525bd`）、v0.3.0（2026-10-22）勾稽项③（`9463a3f`）为已闭、v0.4.0 裁项⑤ 缓行，v0.5.0 勾稽⑤-b stories-drift 闸落地（`550527b`/`893d9a7`），余项④ 以当前代码为准。
+正文已于 2026-10-21 / v0.1.0 成文；v0.2.0勾稽项①②（`62fcfea`/`af525bd`）、v0.3.0（2026-10-22）勾稽项③（`9463a3f`）为已闭、v0.4.0 裁项⑤ 缓行，v0.5.0 勾稽⑤-b stories-drift 闸落地（`550527b`/`893d9a7`），v0.6.0 扩第四档 class-suffix 符号（`ad1e1ad`），余项④ 以当前代码为准。
