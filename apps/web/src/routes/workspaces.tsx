@@ -1,4 +1,5 @@
 import type { components } from '@saas/api-client';
+import { createWorkspaceSchema, updateWorkspaceSchema } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
@@ -8,6 +9,7 @@ import { describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { clientValidate } from '../lib/validation';
 
 type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
 type WorkspaceItem = WorkspacePageResponse['items'][number];
@@ -30,11 +32,19 @@ function WorkspacesPage() {
   const create = useAction();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [createErr, setCreateErr] = useState<string | null>(null);
 
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    // 共享契约前置校验：slug 正则等格式原生 required 拦不住，本地即时拦截免无效往返。
+    const err = clientValidate(createWorkspaceSchema, { name, slug });
+    if (err) {
+      setCreateErr(err);
+      return;
+    }
+    setCreateErr(null);
     const ok = await create.run({
       path: '/api/v1/workspaces',
       method: 'POST',
@@ -59,7 +69,7 @@ function WorkspacesPage() {
           <Field label="Slug" name="slug" value={slug} onChange={setSlug} required />
           <SubmitButton pending={create.pending}>创建</SubmitButton>
         </FormWrap>
-        <Feedback error={create.error} success={create.success} />
+        <Feedback error={createErr ?? create.error} success={create.success} />
       </section>
 
       {result.page?.items?.length ? (
@@ -78,11 +88,18 @@ function WorkspacesPage() {
 function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(ws.name);
+  const [renameErr, setRenameErr] = useState<string | null>(null);
   const rename = useAction();
   const del = useAction();
 
   async function handleRename(e: React.FormEvent) {
     e.preventDefault();
+    const err = clientValidate(updateWorkspaceSchema, { name: editName });
+    if (err) {
+      setRenameErr(err);
+      return;
+    }
+    setRenameErr(null);
     const ok = await rename.run({
       path: `/api/v1/workspaces/${ws.id}`,
       method: 'PATCH',
@@ -139,7 +156,10 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
       <DangerButton pending={del.pending} onClick={handleDelete}>
         删除
       </DangerButton>
-      <Feedback error={rename.error ?? del.error} success={rename.success ?? del.success} />
+      <Feedback
+        error={renameErr ?? rename.error ?? del.error}
+        success={rename.success ?? del.success}
+      />
     </div>
   );
 }

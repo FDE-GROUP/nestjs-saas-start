@@ -9,23 +9,13 @@ import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { clientValidate } from '../lib/validation';
 
 /** 真相源 = `PostResponse`（`@saas/api-client` schema 派生·编译期契约锁定）。 */
 type Post = components['schemas']['PostResponse'];
 
 // S8 前后端共享契约单源：客户端前置校验直接用 `@saas/contracts` 的 `createPostSchema`（与后端
-// `@Body({ schema: createPostSchema })` 同一实例·一份 schema 两消费者）。i18n 键属服务端译文面，
-// 前端按字段路径给友好中文提示、未命中回落原始 message。
-const POST_FIELD_LABELS: Record<string, string> = {
-  title: '标题',
-  content: '正文',
-  published: '状态',
-};
-function friendlyIssueMessage(issue: { path: readonly PropertyKey[]; message: string }): string {
-  const field = issue.path.map(String).join('.');
-  const label = POST_FIELD_LABELS[field];
-  return label ? `请填写${label}` : issue.message;
-}
+// `@Body({ schema: createPostSchema })` 同一实例），校验与友好文案映射统一走 `clientValidate` 基元。
 
 const PAGE_LIMIT = 20;
 
@@ -94,9 +84,9 @@ function PostsPage() {
     e.preventDefault();
     // 共享 schema 前置校验：命中即本地拦截，免去无效往返（与后端同一 createPostSchema·S8）。
     const draft = { title, content: content || undefined, published };
-    const parsed = createPostSchema.safeParse(draft);
-    if (!parsed.success) {
-      setFormErr(parsed.error.issues.map(friendlyIssueMessage).join('；'));
+    const err = clientValidate(createPostSchema, draft);
+    if (err) {
+      setFormErr(err);
       return;
     }
     setFormErr(null);
@@ -105,7 +95,7 @@ function PostsPage() {
       method: 'POST',
       scope: 'posts.create',
       successMessage: '文章已创建',
-      thunk: () => api.POST('/api/v1/posts', { body: parsed.data }),
+      thunk: () => api.POST('/api/v1/posts', { body: draft }),
     });
     if (ok) {
       setTitle('');
