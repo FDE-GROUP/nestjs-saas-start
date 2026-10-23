@@ -147,7 +147,9 @@ pnpm run start:prod         # 生产运行：node dist/apps/api/src/main.js
 pnpm run ci          # 完整门禁：check → 类型/布局守护 → build → 全量类型检查 → OpenAPI 契约对拍 → test
 pnpm run ci:quick    # 轻量门禁：check + test
 pnpm run test        # Vitest 测试
+pnpm run verify:test-types  # 全包测试类型检查（含 *.test.ts·补 build 排测试 + vitest transpile-only 盲区·full ci 内自动跑）
 pnpm run ci:db       # 带数据库全链：静态检查 + 测试 + 一次性 PostgreSQL 跑 gated e2e（用完即焚）
+pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编排器 scripts/ci-fullstack.ts）
 ```
 
 - **Git Hooks**（Husky）：`pre-commit` 跑 `lint:fix`、`commit-msg` 校验 Conventional Commits、`pre-push` 跑 `pnpm run ci`。
