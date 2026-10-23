@@ -36,7 +36,7 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   // 各业务上下文
   workspace: 'workspaces',
   post: 'posts',
-  tenantSubscription: 'subscriptions',
+  organizationSubscription: 'subscriptions',
   // module-rbac-dynamic-roles S1（甲裁三表）·领域细化重构后属 `authorization` 上下文：
   // 角色/授权/审计均属授权域自有表，唯一写通道 = MikroOrganizationRbacRepository（门面皆经端口读写，禁散点直访）。
   organizationRole: 'authorization',

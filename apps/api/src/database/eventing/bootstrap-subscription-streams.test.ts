@@ -1,6 +1,6 @@
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TenantSubscription } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { bootstrapSubscriptionStreams } from './bootstrap-subscription-streams';
 
 /**
@@ -28,7 +28,7 @@ function makeFakeEm(subs: FakeRow[], events: FakeEventRow[]) {
   const inserts: FakeEventRow[] = [];
   const find = vi.fn(
     async (entity: unknown, filter: Record<string, unknown>, options?: Record<string, unknown>) => {
-      if (entity === TenantSubscription) {
+      if (entity === OrganizationSubscription) {
         const idFilter = filter.id as { $in?: string[] } | undefined;
         return idFilter?.$in ? subs.filter((s) => idFilter.$in?.includes(s.id)) : [...subs];
       }
@@ -81,8 +81,8 @@ describe('bootstrapSubscriptionStreams（ES R4b 核心·镜测）', () => {
       eventType: BOOTSTRAP,
       payload: { status: 'active', plan: 'pro', actorId: 'bootstrap' },
     });
-    // PII 边界：payload 不含 tenantId/seatsLimit/provider 等列
-    expect(inserts[0].payload).not.toHaveProperty('tenantId');
+    // PII 边界：payload 不含 organizationId/seatsLimit/provider 等列
+    expect(inserts[0].payload).not.toHaveProperty('organizationId');
     expect(inserts[0].payload).not.toHaveProperty('seatsLimit');
   });
 

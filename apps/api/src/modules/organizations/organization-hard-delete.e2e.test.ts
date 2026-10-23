@@ -11,7 +11,7 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
@@ -87,9 +87,9 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       // updatedAt 列 NOT NULL 无 DB 默认（同 seed.ts R-η 教训）·写路径显式盖
       updatedAt: new Date(),
     } as never);
-    await em.insert(TenantSubscription, {
+    await em.insert(OrganizationSubscription, {
       id: `e2e-hd-sub-${stamp}`,
-      tenantId: id,
+      organizationId: id,
       plan: 'free',
       seatsLimit: 5,
       updatedAt: new Date(),
@@ -193,7 +193,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       await em.count(Member, { organizationId: orgId } as never),
       await em.count(Invitation, { organizationId: orgId } as never),
       await em.count(Workspace, { organizationId: orgId } as never),
-      await em.count(TenantSubscription, { tenantId: orgId } as never),
+      await em.count(OrganizationSubscription, { organizationId: orgId } as never),
       await em.count(PostEntity, { organizationId: orgId } as never),
     ];
     for (const count of counts) expect(count).toBe(0);

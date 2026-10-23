@@ -5,7 +5,7 @@ import {
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '@app/modules/organizations/infrastructure/entities/audit-log.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { ORGANIZATION_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
 import {
@@ -62,7 +62,7 @@ const POST_FACTS: SelfTableFacts = {
 
 const SELF_TABLES: SelfTableFacts[] = [
   metaFacts(WORKSPACE_META),
-  metaFacts(TENANT_SUBSCRIPTION_META),
+  metaFacts(ORGANIZATION_SUBSCRIPTION_META),
   metaFacts(EVENT_META),
   metaFacts(ORGANIZATION_ROLE_META),
   metaFacts(ORGANIZATION_ROLE_GRANT_META),

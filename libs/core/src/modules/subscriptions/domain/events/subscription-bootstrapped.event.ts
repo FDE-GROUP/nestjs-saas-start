@@ -3,7 +3,7 @@ import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-nam
 import type { SubscriptionStatus } from '../subscription-lifecycle';
 
 export interface SubscriptionBootstrappedPayload {
-  /** 存量行成流时刻的治理态快照（`tenant_subscription.status` 真列原值）。 */
+  /** 存量行成流时刻的治理态快照（`organization_subscription.status` 真列原值）。 */
   readonly status: SubscriptionStatus;
   /** 计划标识（存量快照携带·可空以容历史缺列）。 */
   readonly plan?: string;
@@ -12,14 +12,14 @@ export interface SubscriptionBootstrappedPayload {
 }
 
 /**
- * Raised by the R4b bootstrap script for each pre-existing `tenant_subscription` row
+ * Raised by the R4b bootstrap script for each pre-existing `organization_subscription` row
  * （ES R4 第二上下文推广 · module-es-r4-second-context-subscriptions·裁ⓒ·沿 tenants bootstrapped 律）。
  * eventType `subscription.bootstrapped`, eventVersion 1, aggregateType `subscription`。
  *
  * 语义：**存量流起点快照**——全流回放采「最后快照重启」（覆盖此前一切·不重排历史·同 tenants R1b）；
  * version 从流现有 max+1 续位·幂等律=流内已含本事件则跳过。aggregateId=订阅行 id（裁ⓐ甲）。
  *
- * PII 边界：payload 仅治理态 + opaque 计划码·无 subject PII（表列=id/tenantId/plan/status/limits/period/provider refs）。
+ * PII 边界：payload 仅治理态 + opaque 计划码·无 subject PII（表列=id/organizationId/plan/status/limits/period/provider refs）。
  */
 export class SubscriptionBootstrappedEvent extends DomainEvent<SubscriptionBootstrappedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.subscriptionBootstrapped;

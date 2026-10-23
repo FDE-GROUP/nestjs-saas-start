@@ -3,7 +3,7 @@ import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/orga
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OrganizationStatusSubscriptionLinkHandler } from './tenant-status-subscription-link.handler';
+import { OrganizationStatusSubscriptionLinkHandler } from './org-status-subscription-link.handler';
 
 /**
  * 治理联动消费者单测（module-es-first-real-consumer 治理档 S2）：映射裁决 + at-least-once
@@ -29,7 +29,7 @@ describe('OrganizationStatusSubscriptionLinkHandler（治理档消费者）', ()
     vi.restoreAllMocks();
   });
 
-  it('suspend → active 行收敛为 suspended（终态收敛式调用·显式 tenantId 取事件 aggregateId）', async () => {
+  it('suspend → active 行收敛为 suspended（终态收敛式调用·显式 organizationId 取事件 aggregateId）', async () => {
     const { handler, convergeStatus } = makeHandler();
     await handler.handle(makeEvent(ORGANIZATION_STATUS.SUSPENDED));
     expect(convergeStatus).toHaveBeenCalledExactlyOnceWith(

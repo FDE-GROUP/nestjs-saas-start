@@ -6,7 +6,7 @@ import {
   ORGANIZATION_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '../../../modules/organizations/infrastructure/entities/audit-log.entity';
-import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { ORGANIZATION_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
 import { buildMigrationEntity } from '../column-meta';
@@ -233,7 +233,7 @@ export const Post = defineEntity({
   ],
 });
 
-export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META, {
+export const OrganizationSubscription = buildMigrationEntity(ORGANIZATION_SUBSCRIPTION_META, {
   User,
   Organization,
 });
@@ -265,7 +265,7 @@ export const MIKRO_MIGRATION_ENTITIES = [
   Workspace,
   Consent,
   Post,
-  TenantSubscription,
+  OrganizationSubscription,
   Event,
   OrganizationRole,
   OrganizationRoleGrant,

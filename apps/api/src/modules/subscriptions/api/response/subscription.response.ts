@@ -1,10 +1,10 @@
-import type { TenantSubscriptionView } from '@core/saas-kit/modules/subscriptions/application/read-models/subscription.read-model';
+import type { OrganizationSubscriptionView } from '@core/saas-kit/modules/subscriptions/application/read-models/subscription.read-model';
 import { ApiProperty } from '@nestjs/swagger';
 import type { SubscriptionView } from '@saas/contracts/index';
 
 /**
  * 订阅/配额面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
- * 真相源 = `SubscriptionsController` 实际返回类型 `TenantSubscriptionView (≡ SeatQuotaSnapshot)`。
+ * 真相源 = `SubscriptionsController` 实际返回类型 `OrganizationSubscriptionView (≡ SeatQuotaSnapshot)`。
  * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红）。
  */
 export class SubscriptionResponse {
@@ -31,13 +31,13 @@ export class SubscriptionResponse {
   providerCustomerId!: string | null;
 }
 
-const _subf: SubscriptionResponse = {} as TenantSubscriptionView;
-const _subb: TenantSubscriptionView = {} as SubscriptionResponse;
+const _subf: SubscriptionResponse = {} as OrganizationSubscriptionView;
+const _subb: OrganizationSubscriptionView = {} as SubscriptionResponse;
 void _subf;
 void _subb;
 
 // —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源。——
-const _tsv1: SubscriptionView = {} as TenantSubscriptionView;
-const _tsv2: TenantSubscriptionView = {} as SubscriptionView;
+const _tsv1: SubscriptionView = {} as OrganizationSubscriptionView;
+const _tsv2: OrganizationSubscriptionView = {} as SubscriptionView;
 void _tsv1;
 void _tsv2;

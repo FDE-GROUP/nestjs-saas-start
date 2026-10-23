@@ -28,35 +28,35 @@ export class OrganizationStatusSubscriptionLinkHandler
   constructor(@Inject(SUBSCRIPTION_LIFECYCLE) private readonly lifecycle: SubscriptionLifecycle) {}
 
   async handle(event: OrganizationStatusTransitionedEvent): Promise<void> {
-    const tenantId = event.aggregateId;
+    const organizationId = event.aggregateId;
     const to = event.payload.to;
     if (to === ORGANIZATION_STATUS.SUSPENDED) {
       const changed = await this.lifecycle.convergeStatus(
-        tenantId,
+        organizationId,
         SUBSCRIPTION_STATUS.ACTIVE,
         SUBSCRIPTION_STATUS.SUSPENDED,
       );
       this.logger.log(
-        `tenant.suspended → 订阅联动: tenant=${tenantId} eventId=${event.eventId} changed=${changed}`,
+        `tenant.suspended → 订阅联动: tenant=${organizationId} eventId=${event.eventId} changed=${changed}`,
       );
       return;
     }
     if (to === ORGANIZATION_STATUS.ACTIVE) {
       // resume/approve：仅回收**本次治理挂起**的可恢复行；不回溯历史 cancelled/expired（1:N 历史纪律）
       const changed = await this.lifecycle.convergeStatus(
-        tenantId,
+        organizationId,
         SUBSCRIPTION_STATUS.SUSPENDED,
         SUBSCRIPTION_STATUS.ACTIVE,
       );
       this.logger.log(
-        `tenant.active → 订阅联动: tenant=${tenantId} eventId=${event.eventId} changed=${changed}`,
+        `tenant.active → 订阅联动: tenant=${organizationId} eventId=${event.eventId} changed=${changed}`,
       );
       return;
     }
-    // to=deleted：tenant_subscription FK cascade 已随租户硬删，零动作；to=pending_approval：
+    // to=deleted：organization_subscription FK cascade 已随租户硬删，零动作；to=pending_approval：
     // 订阅不应先于 approve 存在（S7 时序），no-op 留痕可观测。
     this.logger.debug(
-      `tenant.status.transitioned → 订阅无需联动: tenant=${tenantId} to=${to} eventId=${event.eventId}`,
+      `tenant.status.transitioned → 订阅无需联动: tenant=${organizationId} to=${to} eventId=${event.eventId}`,
     );
   }
 }

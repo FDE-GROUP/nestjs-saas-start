@@ -1,5 +1,5 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
@@ -11,10 +11,10 @@ import { MikroSubscriptionRepository } from './mikro-subscription.repository';
  * 切片 3c-ii-A 双轨**镜像断言**：与 `原订阅仓储镜像测试` 同一套隔离律（S7 · FR-5），
  * 谓词对象换为 Mikro `FilterQuery`。关键不变量：`requireTenantId()` fail-closed **先于** `fork()`。
  */
-function makeRepo(tenantId: string | null) {
+function makeRepo(organizationId: string | null) {
   const requireTenantId = vi.fn(() => {
-    if (!tenantId) throw new ForbiddenException('Missing active tenant context');
-    return tenantId;
+    if (!organizationId) throw new ForbiddenException('Missing active tenant context');
+    return organizationId;
   });
   const tenant = { requireTenantId } as unknown as TenantContextService;
 
@@ -51,7 +51,7 @@ describe('MikroSubscriptionRepository · tenant isolation (S7 · FR-5 choke-poin
     await repo.create({ plan: 'pro', seatsLimit: 20, providerCustomerId: 'cus_1' });
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
     expect(data).toMatchObject({
-      tenantId: 'orgA',
+      organizationId: 'orgA',
       status: 'active',
       plan: 'pro',
       seatsLimit: 20,
@@ -74,7 +74,7 @@ describe('MikroSubscriptionRepository · tenant isolation (S7 · FR-5 choke-poin
     spies.find.mockResolvedValueOnce([
       {
         id: 'sub1',
-        tenantId: 'orgA',
+        organizationId: 'orgA',
         plan: 'pro',
         status: 'active',
         seatsLimit: 20,
@@ -95,10 +95,15 @@ describe('MikroSubscriptionRepository · tenant isolation (S7 · FR-5 choke-poin
       Record<string, unknown>,
       Record<string, unknown>,
     ];
-    expect(entity).toBe(TenantSubscription);
-    expect(where).toEqual({ tenantId: 'orgA' });
+    expect(entity).toBe(OrganizationSubscription);
+    expect(where).toEqual({ organizationId: 'orgA' });
     expect(options).toMatchObject({ orderBy: { periodStart: QueryOrder.DESC } });
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ id: 'sub1', tenantId: 'orgA', plan: 'pro', status: 'active' });
+    expect(rows[0]).toMatchObject({
+      id: 'sub1',
+      organizationId: 'orgA',
+      plan: 'pro',
+      status: 'active',
+    });
   });
 });

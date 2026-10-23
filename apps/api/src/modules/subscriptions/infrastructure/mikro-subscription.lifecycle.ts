@@ -1,5 +1,5 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { SubscriptionStatusTransitionedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-status-transitioned.event';
 import type { SubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/ports/subscription-lifecycle.port';
 import { canTransition } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle';
@@ -25,18 +25,18 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 /**
  * `SUBSCRIPTION_LIFECYCLE` 的 MikroORM 适配（系统面 · module-es-first-real-consumer 治理档）。
  *
- * 终态收敛式的物理兑现：按显式 `tenantId`（治理事件 `aggregateId`·可信单源）找最新一条 `from` 态行
+ * 终态收敛式的物理兑现：按显式 `organizationId`（治理事件 `aggregateId`·可信单源）找最新一条 `from` 态行
  * （`periodStart` 倒序·`createdAt` 倒序决定性——新行 id 虽已 UUIDv7 可时序，但存量行混有 v4 时代
  * id，表内 id 序暂不可依赖，故排序仍走时间列），存在才置 `to` 态并显式盖 `updatedAt`；无 `from` 行
  * 零写返回 `false`——重投/滞后事件天然 no-op，at-least-once 的幂等硬要求在此闭环。
  *
- * 不走 `requireTenantId()`：本面属平台治理消费者（无目标租户请求 ALS），隔离语义由「tenantId 只
+ * 不走 `requireTenantId()`：本面属平台治理消费者（无目标租户请求 ALS），隔离语义由「organizationId 只
  * 源自治理卡点事件行」保证；用户面 port 的 ALS 卡点纪律（FR-5）不受本类影响。
  *
  * ES R4c 真相源写切换（module-es-r4-second-context-subscriptions §3-R4c·高危#1 逐次亲签）：
  * `ES_TRUTH_SOURCE_SUBSCRIPTIONS` 旋钮开（缺省关·既有单参 `new(mikro)` 逐字节不变），`convergeStatus`
  * 走「load→fold 前置态裁决（canTransition）→publishDurable(expectedVersion 乐观锁·同事务 append)→
- * 投影 nativeUpdate(fold 结果)」——订阅流为真相·`tenant_subscription.status` 降为投影。与 `EVENT_PUBLISH_MODE`
+ * 投影 nativeUpdate(fold 结果)」——订阅流为真相·`organization_subscription.status` 降为投影。与 `EVENT_PUBLISH_MODE`
  * 正交（后者决定派发通道）。四端口均 @Optional，装配见 `SubscriptionsModule` + @Global DatabaseModule。
  */
 @Injectable()
@@ -52,31 +52,31 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
   /** 选最新一条 `from` 态订阅行（终态收敛的读入口·OFF/ON 两路共用）。 */
   private async findFromRow(
     em: Awaited<ReturnType<MikroOrmService['fork']>>,
-    tenantId: string,
+    organizationId: string,
     from: SubscriptionStatus,
   ) {
     const rows = await em.find(
-      TenantSubscription,
-      { tenantId, status: from } as never,
+      OrganizationSubscription,
+      { organizationId, status: from } as never,
       { orderBy: { periodStart: QueryOrder.DESC, createdAt: QueryOrder.DESC }, limit: 1 } as never,
     );
     return rows[0];
   }
 
   async convergeStatus(
-    tenantId: string,
+    organizationId: string,
     from: SubscriptionStatus,
     to: SubscriptionStatus,
   ): Promise<boolean> {
     // —— 原路径（缺省·旋钮关·逐字节不变）——
     if (!this.truthSource) {
       const em = await this.mikro.fork();
-      const row = await this.findFromRow(em, tenantId, from);
+      const row = await this.findFromRow(em, organizationId, from);
       if (!row) {
         return false;
       }
       await em.nativeUpdate(
-        TenantSubscription,
+        OrganizationSubscription,
         { id: row.id } as never,
         { status: to, updatedAt: new Date() } as never,
       );
@@ -99,7 +99,7 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
     const uow = this.uow;
     const run = async () => {
       const em = await this.mikro.fork();
-      const row = await this.findFromRow(em, tenantId, from);
+      const row = await this.findFromRow(em, organizationId, from);
       if (!row) {
         return false;
       }
@@ -121,7 +121,7 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
       // 投影：fold 结果回写订阅行 status（严格等于重放态·非手推 to）。
       const next = applySubscriptionEvent(replay, event);
       await em.nativeUpdate(
-        TenantSubscription,
+        OrganizationSubscription,
         { id: row.id } as never,
         { status: next.status, updatedAt: new Date() } as never,
       );
@@ -144,7 +144,7 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
     if (!replay) return undefined;
     const em = await this.mikro.fork();
     await em.nativeUpdate(
-      TenantSubscription,
+      OrganizationSubscription,
       { id: subscriptionId } as never,
       { status: replay.status, updatedAt: new Date() } as never,
     );

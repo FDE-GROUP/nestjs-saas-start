@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { TenantContextService } from '../../../../../tenancy/tenant-context.service';
 import { QuotaService } from '../../../quota/quota.service';
-import type { TenantSubscriptionView } from '../../read-models/subscription.read-model';
+import type { OrganizationSubscriptionView } from '../../read-models/subscription.read-model';
 import { GetSubscriptionQuery } from '../get-current-subscription.query';
 
 /**
@@ -17,7 +17,7 @@ export class GetSubscriptionQueryHandler implements IQueryHandler<GetSubscriptio
   ) {}
 
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
-  async execute(_query: GetSubscriptionQuery): Promise<TenantSubscriptionView> {
+  async execute(_query: GetSubscriptionQuery): Promise<OrganizationSubscriptionView> {
     return this.quota.snapshot(this.tenant.requireTenantId());
   }
 }

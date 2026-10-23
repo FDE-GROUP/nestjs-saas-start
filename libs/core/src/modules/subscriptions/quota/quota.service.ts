@@ -36,26 +36,26 @@ export class QuotaService {
   constructor(@Inject(QUOTA_STORE) private readonly store: QuotaStore) {}
 
   /** 当前生效订阅（最新 active 行 by periodStart desc），无 → null。 */
-  async currentSubscription(tenantId: string): Promise<ActiveSubscriptionView | null> {
-    return this.store.currentActiveSubscription(tenantId);
+  async currentSubscription(organizationId: string): Promise<ActiveSubscriptionView | null> {
+    return this.store.currentActiveSubscription(organizationId);
   }
 
   /** 生效座位限额（P2 · Quota VO）：有 active 订阅 → 摄入其 seatsLimit；无 → FREE_PLAN 档。 */
-  async effectiveSeatsLimit(tenantId: string): Promise<Quota> {
-    const sub = await this.currentSubscription(tenantId);
+  async effectiveSeatsLimit(organizationId: string): Promise<Quota> {
+    const sub = await this.currentSubscription(organizationId);
     return sub ? Quota.of(sub.seatsLimit) : FREE_PLAN.seatsLimit;
   }
 
   /** 当前用量 = 该租户成员数。 */
-  async currentSeats(tenantId: string): Promise<number> {
-    return this.store.countMembers(tenantId);
+  async currentSeats(organizationId: string): Promise<number> {
+    return this.store.countMembers(organizationId);
   }
 
   /** 纯裁决（不抛·P1 result-union）：used + adding 是否仍在限额内。 */
-  async checkSeats(tenantId: string, adding = 1): Promise<SeatQuotaVerdict> {
+  async checkSeats(organizationId: string, adding = 1): Promise<SeatQuotaVerdict> {
     const [limit, used] = await Promise.all([
-      this.effectiveSeatsLimit(tenantId),
-      this.currentSeats(tenantId),
+      this.effectiveSeatsLimit(organizationId),
+      this.currentSeats(organizationId),
     ]);
     return { ok: used + adding <= limit.value, used, limit: limit.value };
   }
@@ -64,10 +64,10 @@ export class QuotaService {
    * 读侧单点快照（S7 · FR-7/FR-8）：当前生效订阅（缺行回落免费档）+ 座位用量 +
    * FR-8 customer 映射。复用 `currentSubscription`/`currentSeats`·限额逻辑不另起炉灶（禁散点）。
    */
-  async snapshot(tenantId: string): Promise<SeatQuotaSnapshot> {
-    const sub = await this.currentSubscription(tenantId);
+  async snapshot(organizationId: string): Promise<SeatQuotaSnapshot> {
+    const sub = await this.currentSubscription(organizationId);
     const limit = sub ? Quota.of(sub.seatsLimit) : FREE_PLAN.seatsLimit;
-    const used = await this.currentSeats(tenantId);
+    const used = await this.currentSeats(organizationId);
     return {
       hasSubscription: sub !== null,
       plan: sub?.plan ?? FREE_PLAN.plan,

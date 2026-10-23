@@ -24,14 +24,14 @@ import {
 import { resolvePlanDef } from '../../../quota/organization-plans';
 import { QuotaService } from '../../../quota/quota.service';
 import { Quota } from '../../../quota/quota.vo';
-import type { TenantSubscriptionView } from '../../read-models/subscription.read-model';
+import type { OrganizationSubscriptionView } from '../../read-models/subscription.read-model';
 import { CreateSubscriptionCommand } from '../create-subscription.command';
 
 /**
  * 开通/改档订阅（FR-7/FR-8）。流程：从 ALS 取活跃租户 → 解析档位限额 → **经 `CustomerProvisioner`
  * 端口建立 tenant↔customer 映射**（§9.5.4①B/④·具体 `PaymentService` 适配留应用侧、无可用通道时适配抛 503）
  * → 追加 active 订阅行（tenant 由仓储盖章·FR-5）→ 返回 `QuotaService.snapshot`。
- * 命令/处理器不命名 tenantId（port/adapter 从 ALS 注入·禁散点）。
+ * 命令/处理器不命名 organizationId（port/adapter 从 ALS 注入·禁散点）。
  */
 @CommandHandler(CreateSubscriptionCommand)
 export class CreateSubscriptionCommandHandler
@@ -51,8 +51,8 @@ export class CreateSubscriptionCommandHandler
     @Optional() @Inject(ES_TRUTH_SOURCE_SUBSCRIPTIONS) private readonly truthSource = false,
   ) {}
 
-  async execute(command: CreateSubscriptionCommand): Promise<TenantSubscriptionView> {
-    const tenantId = this.tenant.requireTenantId();
+  async execute(command: CreateSubscriptionCommand): Promise<OrganizationSubscriptionView> {
+    const organizationId = this.tenant.requireTenantId();
     const planDef = resolvePlanDef(command.plan);
     // FR-8: materialize the provider-side customer (via the port) and map it onto the subscription row.
     const customer = await this.customers.provisionCustomer(command.customerEmail);
@@ -69,7 +69,7 @@ export class CreateSubscriptionCommandHandler
     // —— 原路径（缺省·旋钮关·逐字节不变：仅 CRUD 插行·零事件）——
     if (!this.truthSource) {
       await this.subscriptions.create(draft);
-      return this.quota.snapshot(tenantId);
+      return this.quota.snapshot(organizationId);
     }
 
     // —— ES R4c 真相源写路径（新建即流起点 `subscription.created`·投影 insert + append 同事务）——
@@ -101,6 +101,6 @@ export class CreateSubscriptionCommandHandler
       await publishDurable([event], stream.length + 1);
       return rec;
     });
-    return this.quota.snapshot(record.tenantId);
+    return this.quota.snapshot(record.organizationId);
   }
 }

@@ -57,6 +57,6 @@ export const BA_CONTRACT_TABLES: readonly string[] = [
  */
 export const UPDATED_AT_NULLABLE_EXEMPT: readonly string[] = [
   'workspace',
-  'tenant_subscription',
+  'organization_subscription',
   'post',
 ];

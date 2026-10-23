@@ -6,7 +6,7 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
   ORGANIZATION_STATUS,
@@ -175,8 +175,8 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
       updatedAt: w.updatedAt,
     }));
 
-    const subscriptionEntities = await em.find(TenantSubscription, {
-      tenantId: organizationId,
+    const subscriptionEntities = await em.find(OrganizationSubscription, {
+      organizationId,
     } as never);
     const subscriptions = subscriptionEntities.map((s) => ({
       id: s.id,
@@ -209,7 +209,7 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
   }
 
   async destroy(organizationId: string): Promise<boolean> {
-    // 仅删主行；member/invitation/workspace/tenant_subscription/post 由 FK onDelete: 'cascade' 在 DB 层
+    // 仅删主行；member/invitation/workspace/organization_subscription/post 由 FK onDelete: 'cascade' 在 DB 层
     // 自动消灭（单一卡点·零迁移）。nativeDelete＝纯 SQL DELETE（R-B3·非 em.remove 免 ORM 级联分歧）。
     const em = await this.mikro.fork();
     const affected = await em.nativeDelete(Organization, { id: organizationId } as never);

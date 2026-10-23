@@ -55,7 +55,7 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
   }
 
   async remove(organizationId: string): Promise<boolean> {
-    // nativeDelete＝纯 SQL DELETE·FK cascade 由 DB 层清 member/invitation/workspace/tenant_subscription/post（R-B3 同律）。
+    // nativeDelete＝纯 SQL DELETE·FK cascade 由 DB 层清 member/invitation/workspace/organization_subscription/post（R-B3 同律）。
     const em = await this.mikro.fork();
     const affected = await em.nativeDelete(Organization, { id: organizationId } as never);
     return affected > 0;

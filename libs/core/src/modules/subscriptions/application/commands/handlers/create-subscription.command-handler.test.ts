@@ -88,7 +88,7 @@ describe('CreateSubscriptionCommandHandler (S7 · FR-8 tenant↔customer 映射)
 function makeTruthDeps(streamLen = 0) {
   const create = vi
     .fn()
-    .mockResolvedValue({ id: 'sub1', tenantId: 'orgA', plan: 'pro', status: 'active' });
+    .mockResolvedValue({ id: 'sub1', organizationId: 'orgA', plan: 'pro', status: 'active' });
   const subscriptions = { create } as unknown as SubscriptionRepository;
   const provisionCustomer = vi.fn().mockResolvedValue({ id: 'cus_1', providerId: 'stripe' });
   const customers = { provisionCustomer } as unknown as CustomerProvisioner;
@@ -144,7 +144,7 @@ describe('CreateSubscriptionCommandHandler.execute 真相源写切换（ES R4c �
   it('publishDurable 未实现时 fail-loud（零插行·拒静默降级）', async () => {
     const create = vi
       .fn()
-      .mockResolvedValue({ id: 'sub1', tenantId: 'orgA', plan: 'pro', status: 'active' });
+      .mockResolvedValue({ id: 'sub1', organizationId: 'orgA', plan: 'pro', status: 'active' });
     const handler = new CreateSubscriptionCommandHandler(
       { create } as unknown as SubscriptionRepository,
       {

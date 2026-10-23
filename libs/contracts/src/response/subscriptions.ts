@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * 订阅/配额面响应契约（S7b·真相源 = `TenantSubscriptionView (≡ SeatQuotaSnapshot)`）。
+ * 订阅/配额面响应契约（S7b·真相源 = `OrganizationSubscriptionView (≡ SeatQuotaSnapshot)`）。
  */
 export const subscriptionViewSchema = z.object({
   /** 是否已有生效订阅。 */

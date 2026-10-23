@@ -2,7 +2,7 @@ import { defineEntity, type EntitySchema, p } from '@mikro-orm/core';
 
 /**
  * ORM 修宪案 B · 切片 3c-ii（γ 抽列元数据单一源）—— 四表（`workspace`/`user_status`/
- * `tenant_subscription`/`event`）**列定义的唯一真相源** + 两变体工厂。
+ * `organization_subscription`/`event`）**列定义的唯一真相源** + 两变体工厂。
  *
  * 立意（人裁 γ·2026-10-16）：「迁移忠实实体」与「运行时实体」**从同一份列元数据派生**，消双描述——
  *  - `buildMigrationEntity(meta, targets)`：FK 走 `p.manyToOne(T).mapToPk().deleteRule()`，**逐字节复刻**

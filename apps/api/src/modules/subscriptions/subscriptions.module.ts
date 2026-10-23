@@ -11,7 +11,7 @@ import { ES_TRUTH_SOURCE_SUBSCRIPTIONS } from '@core/saas-kit/shared-kernel/doma
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { SubscriptionsController } from './api/subscriptions.controller';
-import { OrganizationStatusSubscriptionLinkHandler } from './infrastructure/dispatchers/tenant-status-subscription-link.handler';
+import { OrganizationStatusSubscriptionLinkHandler } from './infrastructure/dispatchers/org-status-subscription-link.handler';
 import { MikroQuotaStore } from './infrastructure/mikro-quota.store';
 import { MikroSubscriptionLifecycle } from './infrastructure/mikro-subscription.lifecycle';
 import { PaymentCustomerProvisioner } from './infrastructure/payment-customer.provisioner';
@@ -45,7 +45,7 @@ const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
     ...EventHandlers,
     // ORM 修宪案 B · 切片 3c-ii-A：订阅仓储绑定改指 Mikro 适配（MikroORM 为唯一实现）。
     { provide: SUBSCRIPTION_REPOSITORY, useClass: MikroSubscriptionRepository },
-    // 治理联动系统面端口（module-es-first-real-consumer·显式 tenantId·终态收敛）。
+    // 治理联动系统面端口（module-es-first-real-consumer·显式 organizationId·终态收敛）。
     { provide: SUBSCRIPTION_LIFECYCLE, useClass: MikroSubscriptionLifecycle },
     // ES R4c 真相源写切换（module-es-r4-second-context-subscriptions §3-R4c）：core/适配经 token 消费布尔，
     // 适配由本（参考）应用装配—读 ConfigService 单源（端口倒置·core 不感知 @app/config）。缺省 false·与 TENANTS 正交。

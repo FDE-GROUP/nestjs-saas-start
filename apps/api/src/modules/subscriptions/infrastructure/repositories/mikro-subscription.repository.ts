@@ -1,5 +1,5 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import type {
   SubscriptionDraft,
   SubscriptionRecord,
@@ -16,8 +16,8 @@ import { Inject, Injectable } from '@nestjs/common';
  *
  * **隔离唯一卡点不变**（global-tenancy S7 · FR-5/7/8）：port 不暴露 tenant 参数·所属租户从可信 ALS 经
  * `requireTenantId()` fail-closed 解析（无租户→403·且在取 em **之前**抛出→绝不查库）；`create` 盖章租户
- * 追加一条 `active` 行（1:N 历史·不改旧行），`history` 按 `tenantId` 过滤、`periodStart` 倒序。配额裁决/
- * 限额读取留在 `QuotaService`（tenancy 层单点），本类只管订阅行的写与历史读。去掉任一 `tenantId` 谓词
+ * 追加一条 `active` 行（1:N 历史·不改旧行），`history` 按 `organizationId` 过滤、`periodStart` 倒序。配额裁决/
+ * 限额读取留在 `QuotaService`（tenancy 层单点），本类只管订阅行的写与历史读。去掉任一 `organizationId` 谓词
  * 即令回归红（与旧实现 版同律）。
  *
  * 每次 `fork()` 取独立 em。`updatedAt`/`createdAt` 无 DB 默认（旧 ORM 侧靠 app 盖）·写路径显式赋 `now`；
@@ -30,10 +30,10 @@ export class MikroSubscriptionRepository implements SubscriptionRepository {
     @Inject(TenantContextService) private readonly tenant: TenantContextService,
   ) {}
 
-  private toRecord(entity: TenantSubscription): SubscriptionRecord {
+  private toRecord(entity: OrganizationSubscription): SubscriptionRecord {
     return {
       id: entity.id,
-      tenantId: entity.tenantId,
+      organizationId: entity.organizationId,
       plan: entity.plan,
       status: entity.status as SubscriptionRecord['status'],
       seatsLimit: entity.seatsLimit,
@@ -50,12 +50,12 @@ export class MikroSubscriptionRepository implements SubscriptionRepository {
   }
 
   async create(draft: SubscriptionDraft): Promise<SubscriptionRecord> {
-    const tenantId = this.tenant.requireTenantId();
+    const organizationId = this.tenant.requireTenantId();
     const now = new Date();
     const em = await this.mikro.fork();
-    const entity = em.create(TenantSubscription, {
+    const entity = em.create(OrganizationSubscription, {
       id: uuidv7(),
-      tenantId,
+      organizationId,
       plan: draft.plan,
       status: SUBSCRIPTION_STATUS.ACTIVE,
       seatsLimit: draft.seatsLimit,
@@ -74,9 +74,9 @@ export class MikroSubscriptionRepository implements SubscriptionRepository {
   }
 
   async history(): Promise<SubscriptionRecord[]> {
-    const tenantId = this.tenant.requireTenantId();
+    const organizationId = this.tenant.requireTenantId();
     const em = await this.mikro.fork();
-    const entities = await em.find(TenantSubscription, { tenantId } as never, {
+    const entities = await em.find(OrganizationSubscription, { organizationId } as never, {
       orderBy: { periodStart: QueryOrder.DESC },
     });
     return entities.map((entity) => this.toRecord(entity));

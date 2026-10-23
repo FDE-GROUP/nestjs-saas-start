@@ -8,4 +8,4 @@
  */
 
 export type { SubscriptionRecord as SubscriptionHistoryRow } from '../../domain/repositories/subscription.repository';
-export type { SeatQuotaSnapshot as TenantSubscriptionView } from '../../quota/quota.service';
+export type { SeatQuotaSnapshot as OrganizationSubscriptionView } from '../../quota/quota.service';

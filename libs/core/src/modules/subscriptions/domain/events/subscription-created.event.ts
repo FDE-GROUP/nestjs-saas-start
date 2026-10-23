@@ -12,7 +12,7 @@ export interface SubscriptionCreatedPayload {
 }
 
 /**
- * Raised when a new `tenant_subscription` row is created（ES R4 第二上下文推广 ·
+ * Raised when a new `organization_subscription` row is created（ES R4 第二上下文推广 ·
  * module-es-r4-second-context-subscriptions 裁ⓒ/裁ⓔ·全覆盖纳入真相源）。
  * eventType `subscription.created`, eventVersion 1, aggregateType `subscription`。
  *

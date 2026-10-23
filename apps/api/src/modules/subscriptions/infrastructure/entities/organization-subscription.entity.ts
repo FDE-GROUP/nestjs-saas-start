@@ -2,8 +2,8 @@ import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
 
 /**
- * `tenant_subscription` 表列元数据单源 + 运行时扁平实体（global-entity-context-placement 切片 B 归位：
- * 原 `database/mikro/four-tables.ts`·判据=`table-ownership.ts` 表属主 `tenantSubscription→subscriptions`）。
+ * `organization_subscription` 表列元数据单源 + 运行时扁平实体（global-entity-context-placement 切片 B 归位：
+ * 原 `database/mikro/four-tables.ts`·判据=`table-ownership.ts` 表属主 `organizationSubscription→subscriptions`）。
  * 同源双变体语义与相对导入约束见 `workspace.entity.ts` 头注。
  *
  * ES R4c 地位注记（module-es-r4-second-context-subscriptions §3-R4c·承 R1c `tenant-table` 先例·不改列律断言本体）：
@@ -13,12 +13,12 @@ import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/c
  * `entity-column-law` 断言恒成立（故无需随翻转放宽）。写切换的 DB 级实据见 `subscription-replay-truth.e2e` 段②③④。
  */
 
-export const TENANT_SUBSCRIPTION_META: TableMeta = {
-  name: 'TenantSubscription',
-  tableName: 'tenant_subscription',
+export const ORGANIZATION_SUBSCRIPTION_META: TableMeta = {
+  name: 'OrganizationSubscription',
+  tableName: 'organization_subscription',
   columns: [
     ['id', { k: 'text', primary: true }],
-    ['tenantId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
+    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
     ['plan', { k: 'text' }],
     ['status', { k: 'text', default: 'active' }],
     ['seatsLimit', { k: 'integer' }],
@@ -33,14 +33,17 @@ export const TENANT_SUBSCRIPTION_META: TableMeta = {
     ['updatedAt', { k: 'datetime' }],
   ],
   indexes: [
-    { name: 'tenant_subscription_tenant_status_idx', properties: ['tenantId', 'status'] },
-    { name: 'tenant_subscription_tenant_period_idx', properties: ['tenantId', 'periodStart'] },
+    { name: 'organization_subscription_org_status_idx', properties: ['organizationId', 'status'] },
+    {
+      name: 'organization_subscription_org_period_idx',
+      properties: ['organizationId', 'periodStart'],
+    },
   ],
 };
 
-export interface TenantSubscription {
+export interface OrganizationSubscription {
   id: string;
-  tenantId: string;
+  organizationId: string;
   plan: string;
   status: string;
   seatsLimit: number;
@@ -54,6 +57,6 @@ export interface TenantSubscription {
   createdAt: Date;
   updatedAt: Date;
 }
-export const TenantSubscription: EntitySchema<TenantSubscription> = buildRuntimeEntity(
-  TENANT_SUBSCRIPTION_META,
-) as EntitySchema<TenantSubscription>;
+export const OrganizationSubscription: EntitySchema<OrganizationSubscription> = buildRuntimeEntity(
+  ORGANIZATION_SUBSCRIPTION_META,
+) as EntitySchema<OrganizationSubscription>;

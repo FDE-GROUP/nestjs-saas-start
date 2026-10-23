@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
 import { Event } from '@app/database/eventing/entities/event.entity';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
-import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
@@ -93,12 +93,12 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   let scope: TransactionScope;
   let uow: MikroUnitOfWork;
   let relay: OutboxRelay;
-  const tenantId = uuidv7();
+  const organizationId = uuidv7();
   const subId = uuidv7();
 
   const transitionEvent = (to: string) =>
     new OrganizationStatusTransitionedEvent({
-      aggregateId: tenantId,
+      aggregateId: organizationId,
       payload: { from: null, to: to as never, actorId: 'op-link' },
     });
 
@@ -113,7 +113,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   // 本仓 DDL 列名为 camelCase（需双引号标识符）。
   async function subRow(): Promise<{ status: string; updatedAtMs: number } | null> {
     const rows = await raw(
-      'SELECT status, EXTRACT(EPOCH FROM "updatedAt") * 1000 AS ms FROM tenant_subscription WHERE id = ?',
+      'SELECT status, EXTRACT(EPOCH FROM "updatedAt") * 1000 AS ms FROM organization_subscription WHERE id = ?',
       [subId],
     );
     const r = rows[0];
@@ -166,8 +166,8 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
     const convergeStatus = async (tid: string, from: string, to: string) => {
       const em = await mikro.fork();
       const rows = await em.find(
-        TenantSubscription,
-        { tenantId: tid, status: from } as never,
+        OrganizationSubscription,
+        { organizationId: tid, status: from } as never,
         {
           orderBy: { periodStart: 'DESC', createdAt: 'DESC' },
           limit: 1,
@@ -176,7 +176,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
       const row = rows[0];
       if (!row) return false;
       await em.nativeUpdate(
-        TenantSubscription,
+        OrganizationSubscription,
         { id: row.id } as never,
         {
           status: to,
@@ -220,16 +220,16 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
     // 前置数据：org 行（FK 目标）+ 一条 active 订阅行（id 即 UUIDv7·本测顺带实证新形态落库）
     const em = await mikro.fork();
     await em.insert(Organization, {
-      id: tenantId,
-      name: `E2E Link Org ${tenantId}`,
-      slug: `e2e-link-${tenantId}`,
+      id: organizationId,
+      name: `E2E Link Org ${organizationId}`,
+      slug: `e2e-link-${organizationId}`,
       metadata: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     } as never);
-    await em.insert(TenantSubscription, {
+    await em.insert(OrganizationSubscription, {
       id: subId,
-      tenantId,
+      organizationId,
       plan: 'pro',
       status: SUBSCRIPTION_STATUS.ACTIVE,
       seatsLimit: 20,
@@ -248,9 +248,12 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   afterAll(async () => {
     try {
       const em = await mikro.fork();
-      await em.nativeDelete(TenantSubscription, { id: subId } as never);
-      await em.nativeDelete(Event, { aggregateType: 'tenant', aggregateId: tenantId } as never);
-      await em.nativeDelete(Organization, { id: tenantId } as never);
+      await em.nativeDelete(OrganizationSubscription, { id: subId } as never);
+      await em.nativeDelete(Event, {
+        aggregateType: 'tenant',
+        aggregateId: organizationId,
+      } as never);
+      await em.nativeDelete(Organization, { id: organizationId } as never);
       await (mikro as unknown as { onModuleDestroy(): Promise<void> }).onModuleDestroy();
     } finally {
       releaseRelayLock();
@@ -272,7 +275,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
     const before = await subRow();
     const evRows = await raw(
       'SELECT id, "eventId" FROM event WHERE "aggregateId" = ? ORDER BY id',
-      [tenantId],
+      [organizationId],
     );
     const evRow = evRows[0] as { id: string; eventId: string };
     await raw('UPDATE event SET "dispatchedAt" = NULL WHERE id = ?', [evRow.id]);
@@ -294,7 +297,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
 
   it('UUIDv7 实证：订阅行 id 与事件信封 eventId 均为 v7 形态且时间戳高位可解码为近时刻', async () => {
     const evRows = await raw('SELECT "eventId" FROM event WHERE "aggregateId" = ? ORDER BY id', [
-      tenantId,
+      organizationId,
     ]);
     const eventId = String((evRows[0] as { eventId: string }).eventId);
     for (const id of [subId, eventId]) {

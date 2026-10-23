@@ -4,7 +4,7 @@
  *
  * 配额值来自 Plan（§147）：每档位携带 `seatsLimit`（本片唯一落地维度），
  * `storageQuota`/`apiQuota` 为后续维度占位。订阅行也各自携带 `seatsLimit`
- * 快照（存于 `tenant_subscription`·改档不改历史）。无 active 订阅行时回落
+ * 快照（存于 `organization_subscription`·改档不改历史）。无 active 订阅行时回落
  * `FREE_PLAN`（带限额·非 fail-open·裁②）。
  */
 
