@@ -50,7 +50,7 @@ P1 is a pattern, not a folder — kernel pieces live across contexts. Admission 
 |---|---|---|
 | `core/modules/organizations/lifecycle/organization-lifecycle.ts` | Shared organization/**user** state-machine transition table + `canTransition` (result-union · reference sample) | zero imports |
 | `core/authorization/instance-predicate.ts` | RBAC query-level predicate grammar → DB predicate compilation | zero imports |
-| `apps/api …/authorization/domain/policies/tenant-rbac.policy.ts` | Role key/conditions policy gates | vocabulary only |
+| `apps/api …/authorization/domain/policies/rbac.policy.ts` | Role key/conditions policy gates | vocabulary only |
 | `core/modules/subscriptions/quota/organization-plans.ts` | Plan catalog + `resolvePlanDef` | self-owned VO only |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota non-negative-integer invariant (the single P2 VO) | zero imports |
 
@@ -59,7 +59,7 @@ P1 is a pattern, not a folder — kernel pieces live across contexts. Admission 
 
 ## Directory Structure
 
-> **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenancy/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`) physically live in `libs/core` (`organizations`, by contrast, is a **full apps-local vertical slice** — only its shared pure state-machine kernel `libs/core/modules/organizations/lifecycle/organization-lifecycle.ts` is carved into the kit as a P1 functional-core piece, **not** a layer split). Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
+> **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenant-isolation/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`) physically live in `libs/core` (`organizations`, by contrast, is a **full apps-local vertical slice** — only its shared pure state-machine kernel `libs/core/modules/organizations/lifecycle/organization-lifecycle.ts` is carved into the kit as a P1 functional-core piece, **not** a layer split). Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
 
 ```
 src/
@@ -76,7 +76,7 @@ src/
 │   │   ├── api/             #   controller + DTOs (HTTP transport)
 │   │   └── users.module.ts  #   wires CqrsModule + handlers + port→adapter binding
 │   ├── auth/                # Authentication (constitution name; Better Auth adapter: credentials/session/factors/OAuth · membership data only)
-│   ├── authorization/       # Authorization supporting domain: roles/grants/adjudication/audit · two scope layers (tenant + platform)
+│   ├── authorization/       # Authorization supporting domain: roles/grants/adjudication/audit · two scope layers (organization + platform)
 │   ├── organizations/       # Organization core domain: lifecycle/members/invitations + deny-list status machine (organization/user status) + governance handlers
 │   ├── platform/            # Platform-governance facade: operator gate/audit/identity+settings ports (no owned tables)
 │   ├── workspaces/          # In-organization resource partitioning (an authorization subject; NOT a second isolation wall)
@@ -84,8 +84,8 @@ src/
 │   ├── subscriptions/       # Organization subscription/quota context
 │   ├── payment/             # Payment context
 │   └── storage/             # Cloud storage context (S3/OSS/COS)
-├── tenancy/                 # Cross-cutting multi-tenancy MECHANISM layer (not a business context): ALS tenant
-│                            #   context + TenantScopeGuard + middleware + exempt/public; session adapters
+├── tenant-isolation/        # Cross-cutting multi-tenancy MECHANISM layer (not a business context): ALS
+│                            #   organization context + TenantIsolationGuard + middleware + exempt/public; session adapters
 │                            #   (deny-list status machine relocated to `organizations`, seat quota to `subscriptions` —
 │                            #   open item 4 landed); CONSUMES authorization's ruling ports
 ├── database/                # Global infra: MikroORM client, migrations (DDL SSOT), seed, eventing/ (ES infra); BA
@@ -105,7 +105,7 @@ src/
 ```
 libs/core   (@core/saas-kit)                 # the kit — framework-light, portable, contains NO infrastructure
 ├── shared-kernel/                           # L0 tactical primitives (domain/cqrs/context/errors/util)
-├── tenancy/  authorization/  platform/      # L1 cross-context mechanism + published contracts/ports
+├── tenant-isolation/  authorization/  platform/      # L1 cross-context mechanism + published contracts/ports
 └── modules/{subscriptions,workspaces}       # L2 shipped contexts: domain/ (entities + repository PORTS) + application/ (CQRS handlers) — ports only
     modules/organizations/lifecycle/           # NOT a shipped slice — only the shared pure organization/user state-machine kernel (P1 functional-core piece); organizations' own domain/application live in apps/api (below)
 
@@ -216,25 +216,25 @@ This is the concrete reading of "a layer exists only if it has content" in the P
 
 Canonical four propositions (re-affirmed by the human, binding — they settle recurring tenant-vs-organization naming questions at the root; each points to its authoritative section, no restatement):
 
-1. **Tenant ≡ organization — now a single vocabulary** (amended by the human, 2026-10-23, superseding proposition ① as first written and the dual-vocabulary clause of global-userfacing-tenant-naming — “这条纪律应该推翻，过时了”): within this framework a tenant **is** an organization, and the business object is called **`organization` everywhere** (context, entities, tables, routes, user copy) — `tenant`/`Tenant` survives **only** as (a) internal naming of the isolation **machinery** (`tenancy/`, `TenantScopeGuard`, CASL adjudication keys `TenantPermission/TenantAction/TenantSubject`, `TENANCY_*` error codes) and (b) the industry term **multi-tenancy** (proposition 2). No third “unit” concept may be introduced (see [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) · glossary).
-2. **Multi-tenancy is a data-isolation technique & mechanism**: the `tenancy/` layer is mechanism — request recognition → ALS propagation → isolation guardrails; it does not care what a tenant *is*, only how data is fenced (see §Mechanism Layer vs Business Domain below).
+1. **Tenant ≡ organization — now a single vocabulary** (amended by the human, 2026-10-23, superseding proposition ① as first written and the dual-vocabulary clause of global-userfacing-tenant-naming — “这条纪律应该推翻，过时了”): within this framework a tenant **is** an organization, and the business object is called **`organization` everywhere** (context, entities, tables, routes, user copy) — `tenant`/`Tenant` survives **only** as (a) the compound internal name of the isolation **machinery** (`tenant-isolation/`, `TenantIsolationGuard`/`TenantIsolationService`, `@TenantIsolationExempt`) and (b) the industry term **multi-tenancy** (proposition 2); the bare-mechanism `tenancy/`, `TenantScopeGuard`, the CASL adjudication keys `TenantSubject/TenantAction` and the `TENANCY_*` error-code family were all pivoted away by [global-tenant-isolation-vocabulary](../plans/global-tenant-isolation-vocabulary.md) 2026-10-23 (authorization keys now `AuthorizationSubject/AuthorizationAction`; lifecycle/governance codes split into `ORG_/ROLE_/GRANT_/AUTHZ_/ISOLATION_*`). No third “unit” concept may be introduced (see [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) · glossary).
+2. **Multi-tenancy is a data-isolation technique & mechanism**: the `tenant-isolation/` layer is mechanism — request recognition → ALS propagation → isolation guardrails; it does not care what a tenant *is*, only how data is fenced (see §Mechanism Layer vs Business Domain below).
 3. **BA tables are shared, not BA-exclusive**: `organization`/`member`/`invitation` and the other BA-convention tables are shared with the business domains — domains read them and may extend them **additively** (see **BA Table Sharing** in the appendix).
 4. **BA contract takes precedence on any modification**: when altering these tables, the BA contract is the first consideration — the BA-convention **fields, their data types, and their table relations are all inalienable** (this declaration **extends the recorded red line** from fields + data types to *relations* as well); extension is additive-only (own columns, modeling rationale first).
 
 ### Mechanism Layer vs Business Domain: placement criteria (human ruling, 2026-10-21)
 
 The terminology discipline above (Tenant ≠ Multi-tenancy) is a special case of this criterion. The
-general test is **not the topic** (whether something is "about" auth or tenancy) but **who defines
+general test is **not the topic** (whether something is "about" auth or tenant isolation) but **who defines
 the rules and whom it serves** — one topic can split in two:
 
 | Placement | Repo locations | Criteria (four axes) |
 |---|---|---|
-| **System mechanism** | `modules/auth` (identity machinery + `AUTH_*_STORE` ports) · authorization's **ruling machinery** (core guards / CASL projection / predicate-compiler kernel pieces) · the `tenancy/` horizontal layer (ALS propagation / isolation guards / deny-list) · infrastructure **in the narrow sense** (database/config/common/logger/mailer/i18n + provider adapters) | Changes for **technical** reasons (framework upgrades, BA replacement, performance); strictest CA dependency enforcement (core purity guard · port inversion · table-ownership ledger); tested mostly via matrix/wiring identity gates; **tools (BA/CASL/MikroORM) live inside mechanisms** (library constrains the interface, domain owns the facts) |
+| **System mechanism** | `modules/auth` (identity machinery + `AUTH_*_STORE` ports) · authorization's **ruling machinery** (core guards / CASL projection / predicate-compiler kernel pieces) · the `tenant-isolation/` horizontal layer (ALS propagation / isolation guards / deny-list) · infrastructure **in the narrow sense** (database/config/common/logger/mailer/i18n + provider adapters) | Changes for **technical** reasons (framework upgrades, BA replacement, performance); strictest CA dependency enforcement (core purity guard · port inversion · table-ownership ledger); tested mostly via matrix/wiring identity gates; **tools (BA/CASL/MikroORM) live inside mechanisms** (library constrains the interface, domain owns the facts) |
 | **Business domain** | the bounded contexts: `organizations` (lifecycle/governance) · `workspaces` · `posts` · `subscriptions` · `payment` · `storage` · `users` (PIPL compliance) · `platform` (operations facade) · authorization's **management face** (three tables / role CRUD / `domain/policies` — supporting domain) | Changes for **business** reasons; main arena of the functional core + projection doctrine + entity separation; tested via zero-mock kernel tests + compile-time structural locks + gated e2e; **consume mechanism capabilities only through ports** |
 
 **Three cuts where the knife goes wrong most easily**:
-1. **One topic, two placements**: the multi-tenancy **mechanism** (`tenancy/` — does not care what a tenant *is*) ≠ the organization **business domain** (`modules/organizations` — defines how organizations live and die); the authentication **mechanism** (`auth` — identity machinery) ≠ the user **compliance domain** (`users` — PIPL export/erase) — the same `user` table seen from two angles, stitched by the `AUTH_USER_STORE` port (global-ba-entity-domain-placement ruling ①).
-2. **authorization is dual-natured**: its ruling machinery is mechanism (core kernel pieces, zero imports, purity-guarded); its authorization facts and management face are a supporting domain (own tables, four-layer slice, role-management use cases) — this is the documented reason it is a **bounded context** rather than a horizontal layer (and why its shape differs from `tenancy/`).
+1. **One topic, two placements**: the multi-tenancy **mechanism** (`tenant-isolation/` — does not care what a tenant *is*) ≠ the organization **business domain** (`modules/organizations` — defines how organizations live and die); the authentication **mechanism** (`auth` — identity machinery) ≠ the user **compliance domain** (`users` — PIPL export/erase) — the same `user` table seen from two angles, stitched by the `AUTH_USER_STORE` port (global-ba-entity-domain-placement ruling ①).
+2. **authorization is dual-natured**: its ruling machinery is mechanism (core kernel pieces, zero imports, purity-guarded); its authorization facts and management face are a supporting domain (own tables, four-layer slice, role-management use cases) — this is the documented reason it is a **bounded context** rather than a horizontal layer (and why its shape differs from `tenant-isolation/`).
 3. **Infrastructure in the narrow sense**: `storage`/`payment` are **outbound-gateway contexts with domain policies** (channel fallback, upload validation, money & currency, object-key naming sunk into `domain/` — a backflow example of pillar 2's "DDD by cost/benefit"), **not** infrastructure; the actual facilities are the providers behind them (S3/OSS/COS, Stripe channels) and the database/config layer.
 
 > Operational consequence: when placing a new capability, run it through the four axes above (change-driver / paradigm / testing / tool placement). Mechanism-side changes go through the horizontal & guard review surface (fallow/purity/identity gates); domain-side changes go through the vertical-slice & reviewed-plan surface (entity doctrine / projection / kernel criteria). Misplacing either way (treating a gateway context as a facility, or scattering mechanism policy into contexts as business rules) is structural debt.
@@ -252,11 +252,11 @@ organization identity collapses onto `organization` with status as its own colum
 is thus both the authentication/membership projection and the organization-lifecycle carrier); **multi-tenancy** is an isolation
 mechanism (infrastructure, no aggregate, no lifecycle: request recognition → ALS
 propagation → boundary enforcement → exemption axis). The two never co-inhabit:
-`tenancy/` hosts no organization-lifecycle business writes, and business contexts never
-re-implement isolation. `tenancy/` consumes `authorization` ruling ports; it no longer
+`tenant-isolation/` hosts no organization-lifecycle business writes, and business contexts never
+re-implement isolation. `tenant-isolation/` consumes `authorization` ruling ports; it no longer
 houses the CASL checker (slice A) or platform governance (slice D).
 
-**Presentation-layer naming discipline** (superseded as *dual-vocabulary* by global-organization-vocabulary-pivot, human ruling 2026-10-23; originally global-userfacing-tenant-naming): user-facing and business surfaces say **"organization"** (top unit) / **"workspace"** (second-level group) — "tenant" must not leak into user copy **or into business-entity naming anywhere** (code contexts/entities/tables/routes now say organization per the pivot); the `tenant` vocabulary remains only inside the isolation machinery (guards/ALS/`organization.status` adjudication keys/`TENANCY_*` error codes — proposition ① carve-out).
+**Presentation-layer naming discipline** (superseded as *dual-vocabulary* by global-organization-vocabulary-pivot, human ruling 2026-10-23; originally global-userfacing-tenant-naming): user-facing and business surfaces say **"organization"** (top unit) / **"workspace"** (second-level group) — "tenant" must not leak into user copy **or into business-entity naming anywhere** (code contexts/entities/tables/routes now say organization per the pivot); the `tenant` word now survives **only** inside the compound isolation-machinery name (`tenant-isolation/`, `TenantIsolation*` guards/ALS) and the industry term multi-tenancy — the CASL adjudication keys and the `TENANCY_*` error-code family no longer say tenant (proposition ① carve-out, as tightened by global-tenant-isolation-vocabulary).
 
 Context identities fixed by the domain-refactor plan (global-domain-context-refactor):
 `authorization` is an **independent supporting domain** serving both `organizations` (members
@@ -268,8 +268,8 @@ role keys and foreign ids are plain string columns (no cross-context ORM relatio
 contexts meet only through published ports (e.g. `ROLE_ASSIGNABILITY_READER`).
 
 The three-layer permission chain: `PlatformOperatorGuard` (platform layer) →
-`TenantScopeGuard`/ALS (tenant isolation) → `TenantPermissionGuard` + `@Can`
-(tenant layer + instance-level conditions).
+`TenantIsolationGuard`/ALS (tenant isolation) → `AuthorizationGuard` + `@Can`
+(organization layer + instance-level conditions).
 
 ## Cross-Context Communication
 
@@ -314,7 +314,7 @@ A constant's home is decided by its **qualification as a contract**, not by reus
    `ERROR_CODES`—single-sourced literals, each **bidirectionally locked** by its mechanism
    (rehydration registry / error-code response tests). New constants of this class always
    go into the dictionary first.
-2. **Context-owned enums**: domain state-machine enums (`TENANT_STATUS`, `SUBSCRIPTION_STATUS`,
+2. **Context-owned enums**: domain state-machine enums (`ORGANIZATION_STATUS`, `SUBSCRIPTION_STATUS`,
    PLANS, etc.) stay inside their **owning context**; if the enum is part of an event payload,
    it cohabits with the event class under the producing context on the core side (consumers
    importing it are importing the contract itself—legitimate). Never hoist them into any
@@ -335,7 +335,7 @@ directory centralization.
 - **Architecture**: Clean Architecture + DDD + CQRS (`@nestjs/cqrs`)
 - **Database**: PostgreSQL + MikroORM (explicit migrations)
 - **Authentication**: Better Auth (**a tool library of the auth domain** — re-adjudicated 2026-10-20 by global-ba-entity-domain-placement, replacing the old "pure auth & membership data source / centralized contract-surface storage view" framing with the CASL-isomorphic principle *the library constrains the interface, the domain owns the facts*): identity-machinery tables (user/session/account/verification/consent) belong to the **auth** domain, org-container tables (organization/member/invitation) to the **organizations** domain — shapes constrained by the BA interface contract (registered in the column law's `BA_CONTRACT_TABLES`; per the **BA Table Sharing** clause below these are *shared, not exclusive*—domains may **additively add their own columns** (modeling rationale first), while the red line is only *do not delete/alter the BA-convention fields, their data types, or their table relations*), operations via the `auth.api.*` tool surface (**owning the tables ≠ taking over the operations**); its built-in org authorization HTTP endpoints are sealed (module-rbac-casl ruling A), member/invitation endpoints served by our own facades via server-side calls; the organization lifecycle status lives in the governance column `organization.status` (real column + DB CHECK·an additive domain column on the BA shared `organization` table·global-governance-lifecycle-consolidation 2026-10-23 supersedes the old self-owned `tenant` side table), and BA `organization.metadata` carries no keys of ours — both promises hold verbatim)
-- **Authorization**: CASL (`@casl/ability` v7) — the sole organization-level RBAC ruling engine (mechanism vocabulary `tenant*` retained per proposition ① carve-out). **The authorization-fact SSOT lives in DB grant rows** (`organization_role`/`organization_role_grant`·per-organization dynamic roles·module-rbac-dynamic-roles ruling C supersedes the old "`tenant-rules` TS table is the SSOT" ruling); **the code vocabulary `tenant-rules` is the language SSOT** (compile-time `TenantSubject/TenantAction` type domain only); **CASL rules are the runtime projection** (the checker lazily projects per-organization via the repository port + in-process version cache·`invalidateTenant` for hot reload). Endpoints declare `@Can(action, subject)` and `TenantPermissionGuard` rules from an ALS-preinjected role (no scattered special-casing); instance-level authorization runs at check level (`TenantPermissionCheck.resource` + condition rows matched by CASL mongo after resolving the `{{userId}}` template); query-level list filtering is its same-source extension (`TenantPermissionChecker.listPredicate` pushes restricted grant rows down into the list read chain as an instance predicate merged with the tenant filter under a fixed spread order·module-rbac-query-level-filtering)
+- **Authorization**: CASL (`@casl/ability` v7) — the sole organization-level RBAC ruling engine (its mechanism vocabulary was pivoted off `tenant*` by global-tenant-isolation-vocabulary; see proposition ① carve-out). **The authorization-fact SSOT lives in DB grant rows** (`organization_role`/`organization_role_grant`·per-organization dynamic roles·module-rbac-dynamic-roles ruling C supersedes the old "`tenant-rules` TS table is the SSOT" ruling); **the code vocabulary `authorization-rules` is the language SSOT** (compile-time `AuthorizationSubject/AuthorizationAction` type domain only); **CASL rules are the runtime projection** (the checker lazily projects per-organization via the repository port + in-process version cache·`invalidate` for hot reload). Endpoints declare `@Can(action, subject)` and `AuthorizationGuard` rules from an ALS-preinjected role (no scattered special-casing); instance-level authorization runs at check level (`PermissionCheckInput.resource` + condition rows matched by CASL mongo after resolving the `{{userId}}` template); query-level list filtering is its same-source extension (`PermissionChecker.listPredicate` pushes restricted grant rows down into the list read chain as an instance predicate merged with the isolation (organization) filter under a fixed spread order·module-rbac-query-level-filtering)
 - **Testing**: Vitest (+ `unplugin-swc` for decorator metadata)
 - **Linting/Formatting**: Biome
 - **Frontend (adopted 2026-10-17, phased per [global-frontend-adoption](../plans/global-frontend-adoption.md))**: React 19 + Vite 8 + TanStack Router + Tailwind CSS 4 with shadcn-style on-demand primitives (cva/clsx/tailwind-merge/lucide/sonner); same repo & workspace, dev-time same-origin reverse proxy (vite proxy → :7009, no CORS). The typed consumption surface is `packages/api-client`, generated from the OpenAPI contract. **No reverse penetration**: the backend never depends on frontend artifacts; Biome/pnpm/Vitest tooling standards apply unchanged.
@@ -360,7 +360,7 @@ only sanctioned list-result shapes — build list endpoints on them, never ad-ho
   binding is `(createdAt DESC, id DESC)` (id is the unique tiebreaker for same-timestamp rows) —
   so it stays correct and index-friendly as data grows, with no `OFFSET` scan. The cursor is an
   opaque base64url of the sort key: it hides storage internals and is **not** an authorization
-  substitute (tenancy guards still run). Malformed cursors are a 400, surfaced by the adapter's
+  substitute (tenant-isolation guards still run). Malformed cursors are a 400, surfaced by the adapter's
   `decodeCursor`, after the DTO has already gated the character set.
 - **`Page<T>` (offset: `items` + `total` + echoed `limit`/`offset`) is the exception**, retained
   for admin/governance surfaces that need a total count or arbitrary-page jump. It is not
@@ -383,7 +383,7 @@ side and reach the port as `PageRequest` / `CursorPageRequest`.
 > this appendix states the semantics only — never copy the list here.
 
 - **Strict on the write side**: any `insert/update/delete` target table must belong to the
-  bounded context owning the file (`modules/<ctx>/**`; `tenancy/**` counts as `organizations`).
+  bounded context owning the file (`modules/<ctx>/**`; `tenant-isolation/**` counts as `organizations`).
   Enforced in CI by `table-ownership.guard.test.ts` (grep-level scan, no AST toolchain).
 - **Lenient on the read side**: cross-context `select/join` is allowed and is the natural
   shape of CQRS read-models / governance statistics; it is governed by file placement

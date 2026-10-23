@@ -48,7 +48,7 @@ P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度
 |---|---|---|
 | `core/modules/organizations/lifecycle/organization-lifecycle.ts` | 组织/用户**共用**状态机迁移表 + `canTransition`（result-union·旗舰样例） | 零 import |
 | `core/authorization/instance-predicate.ts` | RBAC 查询级谓词语法 → DB 谓词编译 | 零 import |
-| `apps/api …/authorization/domain/policies/tenant-rbac.policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
+| `apps/api …/authorization/domain/policies/rbac.policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
 | `core/modules/subscriptions/quota/organization-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
 | `core/modules/subscriptions/quota/quota.vo.ts` | Quota 非负整数不变量（P2 唯一认定 VO） | 零 import |
 
@@ -57,7 +57,7 @@ P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度
 
 ## 目录结构
 
-> **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenancy/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces` 的 `domain/`+`application/`）实际位于 `libs/core`（`organizations` 则不然——它是**完整 apps 本地垂直切片**，仅其共用的纯状态机内核 `libs/core/modules/organizations/lifecycle/organization-lifecycle.ts` 作为 P1 函数核件上抽至 kit、**非层拆分**）。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。
+> **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenant-isolation/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces` 的 `domain/`+`application/`）实际位于 `libs/core`（`organizations` 则不然——它是**完整 apps 本地垂直切片**，仅其共用的纯状态机内核 `libs/core/modules/organizations/lifecycle/organization-lifecycle.ts` 作为 P1 函数核件上抽至 kit、**非层拆分**）。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。
 
 ```
 src/
@@ -74,7 +74,7 @@ src/
 │   │   ├── api/             #   Controller + DTO（HTTP 传输层）
 │   │   └── users.module.ts  #   装配 CqrsModule + 处理器 + 端口→适配器绑定
 │   ├── auth/                # 认证（宪法名 authentication·Better Auth 适配层：凭证/会话/因子/OAuth 渠道；仅成员数据面）
-│   ├── authorization/       # 授权支撑域：角色/授予/裁决/审计·两作用域层（租户 scope + 平台 scope）
+│   ├── authorization/       # 授权支撑域：角色/授予/裁决/审计·两作用域层（组织 scope + 平台 scope）
 │   ├── organizations/       # 组织核心域：生命周期/成员/邀请 + deny-list 状态机（organization/user status）+ 治理命令 handlers
 │   ├── platform/            # 平台治理门面：operator 闸门/审计/身份+配置端口（无自有表）
 │   ├── workspaces/          # 组织内资源分区（是授权的 subject·非第二道隔离墙）
@@ -82,8 +82,8 @@ src/
 │   ├── subscriptions/       # 组织订阅/配额上下文
 │   ├── payment/             # 支付上下文
 │   └── storage/             # 云存储上下文（S3/OSS/COS）
-├── tenancy/                 # 横切多租户隔离机制层（非业务上下文）：ALS 租户上下文 +
-│                            #   TenantScopeGuard + middleware + exempt/public；会话适配
+├── tenant-isolation/        # 横切多租户隔离机制层（非业务上下文）：ALS 组织上下文 +
+│                            #   TenantIsolationGuard + middleware + exempt/public；会话适配
 │                            #   （deny-list 状态机已归位 `organizations`、席位配额已归位 `subscriptions`·未决项 4 已落地）；
 │                            #   消费 authorization 的裁决端口
 ├── database/                # 全局基础设施：MikroORM 客户端、迁移（DDL SSOT）、seed、eventing/（事件基建）——BA 实体
@@ -102,7 +102,7 @@ src/
 ```
 libs/core   (@core/saas-kit)                 # kit——轻框架、可移植，**不含任何基础设施**
 ├── shared-kernel/                           # L0 战术原语（domain/cqrs/context/errors/util）
-├── tenancy/  authorization/  platform/      # L1 跨上下文机制 + 已发布契约/端口
+├── tenant-isolation/  authorization/  platform/      # L1 跨上下文机制 + 已发布契约/端口
 └── modules/{subscriptions,workspaces}       # L2 随 kit 发售的上下文：domain/（实体 + 仓储**端口**）+ application/（CQRS 处理器）——仅端口
     modules/organizations/lifecycle/           # 非发售切片——仅共用的纯组织/用户状态机内核（P1 函数核件）；organizations 自身的 domain/application 在 apps/api（见下）
 
@@ -204,8 +204,8 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 
 四条正典命题（人再次明确·约束性——从根源上终结反复出现的 tenant/organization 用词之争；各条只作指针、指向既有权威段，不复述）：
 
-1. **租户 ≡ 组织——现收敛为单一词汇**（人改裁 2026-10-23，取代本命题初稿与 global-userfacing-tenant-naming 的双词汇条款——「这条纪律应该推翻，过时了」）：本框架内租户**就是**组织，且该业务对象**全栈只称 `organization`**（上下文、实体、表、路由、用户文案皆然）——`tenant`/`Tenant` 仅存于（a）隔离**机器**的内部命名（`tenancy/`、`TenantScopeGuard`、CASL 判定键 `TenantPermission/TenantAction/TenantSubject`、错误码 `TENANCY_*`）与（b）业界术语**多租户（multi-tenancy）**（命题 2）。不得引入第三种「单元」概念（见 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md)·glossary）。
-2. **多租户（multi-tenancy）是一种数据隔离的技术与机制**：`tenancy/` 层是机制——请求识别 → ALS 传播 → 隔离守卫——它不关心租户「是什么」，只关心数据如何围隔（见下方 §机制层 vs 业务域）。
+1. **租户 ≡ 组织——现收敛为单一词汇**（人改裁 2026-10-23，取代本命题初稿与 global-userfacing-tenant-naming 的双词汇条款——「这条纪律应该推翻，过时了」）：本框架内租户**就是**组织，且该业务对象**全栈只称 `organization`**（上下文、实体、表、路由、用户文案皆然）——`tenant`/`Tenant` 仅存于（a）隔离**机器**的复合内部命名（`tenant-isolation/`、`TenantIsolationGuard`/`TenantIsolationService`、`@TenantIsolationExempt`）与（b）业界术语**多租户（multi-tenancy）**（命题 2）；裸机制名 `tenancy/`、`TenantScopeGuard`、CASL 判定键 `TenantSubject/TenantAction` 与错误码 `TENANCY_*` 族已由 [global-tenant-isolation-vocabulary](../plans/global-tenant-isolation-vocabulary.md) 2026-10-23 全量 pivot（判定键现 `AuthorizationSubject/AuthorizationAction`；生命周期/治理码拆为 `ORG_/ROLE_/GRANT_/AUTHZ_/ISOLATION_*`）。不得引入第三种「单元」概念（见 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md)·glossary）。
+2. **多租户（multi-tenancy）是一种数据隔离的技术与机制**：`tenant-isolation/` 层是机制——请求识别 → ALS 传播 → 隔离守卫——它不关心租户「是什么」，只关心数据如何围隔（见下方 §机制层 vs 业务域）。
 3. **BA 相关表非 BA 专用表，与业务共享**：`organization`/`member`/`invitation` 等 BA 约定表与业务域共享——域可读、可 **additive** 扩列（见附录「BA 表共享」条）。
 4. **修改这些表时 BA 契约优先**：BA 约定的**字段、其数据类型及其表关系皆不可修改**（本宣示将成文红线由「字段+类型」扩展至「关系」）；扩展只允许 additive 增自撰列（建模合理性优先）。
 
@@ -216,12 +216,12 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 
 | 归属 | 仓库落位 | 判据特征（四维） |
 |---|---|---|
-| **系统机制** | `modules/auth`（身份机器 + `AUTH_*_STORE` 端口）· authorization 的**裁决机器**（core 守卫/CASL 投影/谓词编译内核件）· `tenancy/` 横切层（ALS 传播/隔离守卫/deny-list 失能）· **窄义**基础设施（database/config/common/logger/mailer/i18n + 各 provider 通道适配） | 变更动因**技术性**（框架升级/BA 换代/性能）；CA 依赖规则最严处（core 纯度守卫·端口倒置·表所有权台账）；测试以矩阵/wiring 恒等闸为主；**工具（BA/CASL/MikroORM）住在机制里**（库约束接口·域拥有事实） |
+| **系统机制** | `modules/auth`（身份机器 + `AUTH_*_STORE` 端口）· authorization 的**裁决机器**（core 守卫/CASL 投影/谓词编译内核件）· `tenant-isolation/` 横切层（ALS 传播/隔离守卫/deny-list 失能）· **窄义**基础设施（database/config/common/logger/mailer/i18n + 各 provider 通道适配） | 变更动因**技术性**（框架升级/BA 换代/性能）；CA 依赖规则最严处（core 纯度守卫·端口倒置·表所有权台账）；测试以矩阵/wiring 恒等闸为主；**工具（BA/CASL/MikroORM）住在机制里**（库约束接口·域拥有事实） |
 | **业务域** | 各限界上下文：`organizations`（生命周期/治理）· `workspaces` · `posts` · `subscriptions` · `payment` · `storage` · `users`（PIPL 合规）· `platform`（运营门面）· authorization 的**管理面**（三表/角色 CRUD/`domain/policies`——支撑域） | 变更动因**业务性**；FC 内核 + 投影教义 + 实体分离的主战场；测试以内核零 mock + 编译期结构锁 + gated e2e 为主；**只经端口消费机制能力** |
 
 **三处易切错的刀口**：
-1. **同一主题两分**：多租户**机制**（`tenancy/`·不关心"租户是什么"）≠ 组织**业务域**（`modules/organizations`·定义"组织如何存在与消亡"）；认证**机制**（`auth`·身份机器）≠ 用户**合规域**（`users`·PIPL 导出/硬删）——同批 user 表两个视角，经 `AUTH_USER_STORE` 端口缝合（global-ba-entity-domain-placement 裁①先例）。
-2. **authorization 双栖**：裁决机器=机制（core 内部件·零 import·受纯度守卫）；授权事实与管理面=支撑域（自有三表 + 四层切片 + 角色管理用例）——这是它作为**限界上下文**而非横切层存在的成文理由（形态与 `tenancy/` 有别的根因）。
+1. **同一主题两分**：多租户**机制**（`tenant-isolation/`·不关心"租户是什么"）≠ 组织**业务域**（`modules/organizations`·定义"组织如何存在与消亡"）；认证**机制**（`auth`·身份机器）≠ 用户**合规域**（`users`·PIPL 导出/硬删）——同批 user 表两个视角，经 `AUTH_USER_STORE` 端口缝合（global-ba-entity-domain-placement 裁①先例）。
+2. **authorization 双栖**：裁决机器=机制（core 内部件·零 import·受纯度守卫）；授权事实与管理面=支撑域（自有三表 + 四层切片 + 角色管理用例）——这是它作为**限界上下文**而非横切层存在的成文理由（形态与 `tenant-isolation/` 有别的根因）。
 3. **基础设施取窄义**：`storage`/`payment` 是**有领域策略的出站网关上下文**（通道降级/上传校验/金额货币/对象键命名策略已下沉 `domain/`——四支柱 2「DDD 量力」的回流例证），**不是**基础设施；真正的设施是其身后的 providers（S3/OSS/COS、Stripe 通道）与 database/config 层。
 
 > 操作后果：新能力落位时先过本表四维（动因/范式/测试/工具归属）判归属——机制面变更走横切与守卫评审面（fallow/纯度/恒等闸），业务面变更走垂直切片与已审方案面（实体教义/投影/内核判据）。判错归属（如把网关上下文当设施、或把机制策略当业务规则散入上下文）即结构债。
@@ -230,11 +230,11 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 其物理实体为 **`organization` 行上的 `status` 治理列**（真列 + DB CHECK·`organizations` 上下文属主·系加于 BA **共享**表 `organization` 上的自撰域列·遵下方「BA 表共享」条·与 organization 同主键 1:1·通则见上方实体教义 + 投影镜射教义：领域实体 ↔ 数据实体由仓储适配器映射）；
 旧 1:1 自有户籍表 `tenant`（含 2026-10-20 首立该表的 global-tenant-entity-reclamation 收权案）已被 **global-governance-lifecycle-consolidation 2026-10-23 反悔并 DROP**——其两根承重柱（BA 可替换→schema 隔离、ES「回放即真相」试点宿主）被新约束抽掉，治理生命周期不需回放真相，故组织身份即 `organization` 自身、态归其自有 `status` 列；`organization` 自此一身兼认证/成员面投影与组织生命周期载体）；
 **多租户（Multi-tenancy）**是隔离机制（基础设施·无聚合无生命周期：请求识别 → ALS 传播 →
-边界执行 → 豁免轴）。两者不可混住：`tenancy/` 不住组织生命周期的业务写面，业务上下文也不得
-自实现隔离。`tenancy/` **消费** `authorization` 的裁决端口；经重构 A 片不再自住 CASL
+边界执行 → 豁免轴）。两者不可混住：`tenant-isolation/` 不住组织生命周期的业务写面，业务上下文也不得
+自实现隔离。`tenant-isolation/` **消费** `authorization` 的裁决端口；经重构 A 片不再自住 CASL
 checker、经 D 片不再自住平台治理。
 
-用户面/业务面词面纪律（**presentation & business naming**·原 global-userfacing-tenant-naming 双词汇条款已被 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 2026-10-23 人裁取代）：前端渲染文案、导航标签、面向终端用户的提示一律称**「组织」（顶层单元）/「工作区」（二级分组）**，「租户」不得外泄至用户文案；且按 pivot 案，业务实体命名**在所有层面**（代码上下文/实体/表/路由）均已统一为 organization——`tenant` 词面仅存于隔离机器内部命名（守卫/ALS/判定键/`TENANCY_*` 错误码——命题①豁免清单）。
+用户面/业务面词面纪律（**presentation & business naming**·原 global-userfacing-tenant-naming 双词汇条款已被 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 2026-10-23 人裁取代）：前端渲染文案、导航标签、面向终端用户的提示一律称**「组织」（顶层单元）/「工作区」（二级分组）**，「租户」不得外泄至用户文案；且按 pivot 案，业务实体命名**在所有层面**（代码上下文/实体/表/路由）均已统一为 organization——`tenant` 词面仅存于隔离机器的复合命名（`tenant-isolation/`、`TenantIsolation*` 守卫/ALS）与业界术语多租户；CASL 判定键与 `TENANCY_*` 错误码族不再用 tenant（命题①豁免清单·经 global-tenant-isolation-vocabulary 收紧）。
 
 领域细化重构（global-domain-context-refactor）定型的上下文身份：`authorization` 是
 **独立支撑域**，同时服务 `organizations`（成员挂角色 key）与 `platform`（经营者闸门）——绝非
@@ -243,8 +243,8 @@ checker、经 D 片不再自住平台治理。
 弱耦合：角色 key 与外键 id 皆为普通 string 列（不建跨上下文 ORM 实体关系），上下文之间
 仅经 published port 相接（如 `ROLE_ASSIGNABILITY_READER`）。
 
-三层权限链：`PlatformOperatorGuard`（平台层）→ `TenantScopeGuard`/ALS（租户隔离）→
-`TenantPermissionGuard` + `@Can`（租户层 + 实例层 conditions）。
+三层权限链：`PlatformOperatorGuard`（平台层）→ `TenantIsolationGuard`/ALS（租户隔离）→
+`AuthorizationGuard` + `@Can`（组织层 + 实例层 conditions）。
 
 ## 上下文间通信
 
@@ -278,7 +278,7 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
    所读的常量，必须居契约字典层——事件名进 `DOMAIN_EVENTS`、业务错误码进 `ERROR_CODES`，
    字面量全仓单点，且各以其机制（重建注册表/码表响应测）**双向锁死**防旁逸。新增此类
    常量一律先加字典。
-2. **上下文自有枚举**：领域状态机枚举（`TENANT_STATUS`、`SUBSCRIPTION_STATUS`、PLANS 等）
+2. **上下文自有枚举**：领域状态机枚举（`ORGANIZATION_STATUS`、`SUBSCRIPTION_STATUS`、PLANS 等）
    留驻其**属主上下文**目录；若该枚举是事件 payload 的一部分，则与事件类同栖于 core 侧
    生产上下文目录（消费方 import 的是契约本身，合法）。禁止为「集中」把它们抽入任何全局枢纽。
 3. **非常量契约不入册**：结果对象字面量、读模型内部形等实现细节的 `as const`，不因被复用
@@ -294,7 +294,7 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
 - **架构**：Clean Architecture + DDD + CQRS（`@nestjs/cqrs`）
 - **数据库**：PostgreSQL + MikroORM（显式迁移）
 - **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **organizations 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·按下方「BA 表共享」条此系**非专用·共享表**——域可 **additive 增自撰域列**（建模合理性优先），红线仅「不得删减/修改 BA 约定字段、其数据类型及其表关系」），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；组织生命周期态存治理列 `organization.status`（真列 + DB CHECK·系加于 BA 共享表 `organization` 上的自撰域列·global-governance-lifecycle-consolidation 2026-10-23 取代旧自有 `tenant` 旁表），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
-- **授权**：CASL（`@casl/ability` v7）——组织级 RBAC 唯一裁决引擎（机制词面 `tenant*` 按命题①豁免保留）。**授权事实 SSOT 在 DB grant 行**（`organization_role`/`organization_role_grant`·per-organization 动态角色·module-rbac-dynamic-roles 丙裁取代旧「`tenant-rules` TS 表是 SSOT」裁），**代码词汇表 `tenant-rules` 是语言 SSOT**（仅编译期 `TenantSubject/TenantAction` 类型域），**CASL rules 是运行时投影**（checker 经仓储端口 per-organization 懒投影 + 进程内版本缓存·`invalidateTenant` 热改生效）。端点以 `@Can(action, subject)` 声明、`TenantPermissionGuard` 经 ALS 预注入角色判定（无散点特判）；实例级授权走 check 级（`TenantPermissionCheck.resource` + conditions 行按 `{{userId}}` 模板交 CASL mongo 匹配）；query 级列表过滤为其同源延伸（`TenantPermissionChecker.listPredicate` 把受限 grant 下推为列表面实例谓词·与 tenantFilter 固定展开序合并·module-rbac-query-level-filtering）
+- **授权**：CASL（`@casl/ability` v7）——组织级 RBAC 唯一裁决引擎（机制词面 `tenant*` 已由 global-tenant-isolation-vocabulary pivot 走开·见命题①豁免清单）。**授权事实 SSOT 在 DB grant 行**（`organization_role`/`organization_role_grant`·per-organization 动态角色·module-rbac-dynamic-roles 丙裁取代旧「`tenant-rules` TS 表是 SSOT」裁），**代码词汇表 `authorization-rules` 是语言 SSOT**（仅编译期 `AuthorizationSubject/AuthorizationAction` 类型域），**CASL rules 是运行时投影**（checker 经仓储端口 per-organization 懒投影 + 进程内版本缓存·`invalidate` 热改生效）。端点以 `@Can(action, subject)` 声明、`AuthorizationGuard` 经 ALS 预注入角色判定（无散点特判）；实例级授权走 check 级（`PermissionCheckInput.resource` + conditions 行按 `{{userId}}` 模板交 CASL mongo 匹配）；query 级列表过滤为其同源延伸（`PermissionChecker.listPredicate` 把受限 grant 下推为列表面实例谓词·与隔离（组织）过滤固定展开序合并·module-rbac-query-level-filtering）
 - **测试**：Vitest（+ `unplugin-swc` 输出装饰器元数据）
 - **Lint/格式化**：Biome
 
@@ -315,7 +315,7 @@ Controller 经**官方 standard-schema 路径**校验（`@Body/@Param/@Query({ s
 - **`CursorPage<T>`（`items` + `hasMore` + 可选不透明 `nextCursor`）为新列表端点的默认选择。**
   它是基于确定性全序的键集（keyset）分页——参考绑定为 `(createdAt DESC, id DESC)`（`id` 作同刻
   并发行的唯一兜底）——故随数据增长仍保持正确且对索引友好，无 `OFFSET` 扫描。游标是排序键
-  的不透明 base64url：隐藏存储内部结构，且**不是**授权的替代品（租户守卫照旧生效）。畸形游标为 400，
+  的不透明 base64url：隐藏存储内部结构，且**不是**授权的替代品（租户隔离守卫照旧生效）。畸形游标为 400，
   由适配层 `decodeCursor` 报出（DTO 已先把字符集关卡）。
 - **`Page<T>`（offset：`items` + `total` + 回显 `limit`/`offset`）为例外**，保留给需要全量计数或
   任意跳页的治理面。它**不**被删除；将 offset 端点迁为游标是一次有意为之、逐端点的破坏性变更。

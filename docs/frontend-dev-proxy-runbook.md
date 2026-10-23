@@ -76,7 +76,7 @@ curl -s -c /tmp/ck.txt -X POST http://localhost:5173/api/v1/auth/sign-in/email \
 # ③ workspaces（F2a 旗舰 typed 面·经反代）
 curl -s -b /tmp/ck.txt http://localhost:5173/api/v1/workspaces | head -c 400; echo
 #   期望 200：{"data":{"items":[...],"total":N,"limit":..,"offset":0},"statusCode":200,"message":..}
-#   无 active tenant → 403：{...,"errorCode":"TENANCY:..."} —— 即页面 ErrorPanel 的窄化输入
+#   无 active organization → 403：{...,"errorCode":"ISOLATION:NO_ACTIVE_CONTEXT"} —— 即页面 ErrorPanel 的窄化输入
 
 # ④ 订阅摘要（首页面板数据源）
 curl -s -b /tmp/ck.txt http://localhost:5173/api/v1/subscriptions/current | head -c 300; echo

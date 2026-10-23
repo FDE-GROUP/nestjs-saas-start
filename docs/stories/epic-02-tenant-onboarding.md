@@ -20,8 +20,8 @@
 - **验收**：
   - Given operator 身份 + 目标为 `pending_approval`，When `POST /organizations/applications/:id/approve`，Then 状态迁移 `→ active`（`OrganizationStatusService.transition` 单点），租户业务路由随即放行；落结构化审计（`logTenantGovernance('approve', from, to)`·FR-6）。
   - Given 非 operator，When 调用，Then 403（`PlatformOperatorGuard`·跨租治理判据）。
-  - Given 租户不存在，When 调用，Then 404（`TENANCY_APPLICATION_NOT_FOUND`）。
-  - **非法迁移 409 的精确域**（迁移表实证·非推断）：`pending_approval→active`、`active→active`（幂等重批·设计保留）、`suspended→active`（复活）皆**合法**；**仅 `deleted` 终态**（`TRANSITIONS[DELETED]=[]`）触发 409 `TENANCY_ILLEGAL_TRANSITION`。
+  - Given 租户不存在，When 调用，Then 404（`ORG_PROVISIONING_NOT_FOUND`）。
+  - **非法迁移 409 的精确域**（迁移表实证·非推断）：`pending_approval→active`、`active→active`（幂等重批·设计保留）、`suspended→active`（复活）皆**合法**；**仅 `deleted` 终态**（`TRANSITIONS[DELETED]=[]`）触发 409 `ORG_ILLEGAL_TRANSITION`。
   - **成功码 as-built 注**：approve 路由已显式 `@HttpCode(200)`（REST 一致性核验片·项③ 订正——激活既有 `pending_approval` 租户属对已有资源的操作、非新建，Nest 对 POST 默认 201 系语义偏差，已与 OpenAPI 文档 200 对齐）。
 - **溯源**：`POST /api/v1/organizations/applications/:id/approve` · `OrganizationsController.approve` · `ApproveOrganizationCommand` → `governedTenantTransition`（S4 修宪·approve/suspend/resume 三分支收敛共用用例）· `TRANSITIONS`（`organization-lifecycle.ts`）· `@UseGuards(PlatformOperatorGuard)` · `@HttpCode(200)`（项③ 订正）· 关联 [`global-tenancy`](../plans/global-tenancy.md) S4/S5。
 
@@ -30,7 +30,7 @@
 - **验收**：
   - Given operator + 目标**恰为 `pending_approval`**，When `POST /organizations/applications/:id/reject`，Then **物理硬删** `organization` 行（FK `onDelete:cascade` 级联清 `member`/`invitation`·pending 期零业务数据），返回 204（无返回体）。
   - **硬删 ≠ 置 `deleted` 态**：reject 是不可逆物理移除，审计记 `to:DELETED` 仅是「移除」标签，该租户从不进入 `deleted` 生命周期态。
-  - Given 目标为**非 pending 的已知名**（active/suspended/deleted），When 调用，Then **409 `TENANCY_NOT_PENDING`**（S5 收紧：生效租的暂停/删除走平台治理端点，见 [Epic 07](./epic-07-platform-governance.md)·reject 只管未通过的申请）。
+  - Given 目标为**非 pending 的已知名**（active/suspended/deleted），When 调用，Then **409 `ORG_NOT_PENDING`**（S5 收紧：生效租的暂停/删除走平台治理端点，见 [Epic 07](./epic-07-platform-governance.md)·reject 只管未通过的申请）。
   - Given 非 operator，When 调用，Then 403；租户不存在 Then 404。
   - **硬删成功产 `tenant.rejected` 耐久事件**（同事务 `uow.run`）：org 行物理消失后，这是「存在过并被驳回」的唯一可追溯痕迹（not-found/409 零发）。
   - **诚实观察（边角·未穷证）**：`read` 对「不存在」与「无 `tenant.status` 行的存量」都返 undefined、无法区分 ⇒ undefined **绕过 409 检查**交 `remove` 谓词——若 org 行实存（历史/seeded 无 status 行）则被删成 204（与中间件「无行视同 active」方向相反）。收权案回填 status 后理论罕见。

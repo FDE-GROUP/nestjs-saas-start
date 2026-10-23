@@ -52,7 +52,7 @@
 
 ### 3.8 修改成员角色
 - **作为** owner/admin，**我想** 调整某成员的角色，**以便** 变更其职权。
-- **验收**：Given `update Member` + 目标角色 ∈（系统三 key ∪ 本租在库自定义角色），When `POST /organizations/members/role`，Then BA 更新角色；Given 角色词汇外，Then 400（`TENANCY_ROLE_NOT_FOUND`·严格在库 fail-closed）；Given last-owner，Then 403（BA）。
+- **验收**：Given `update Member` + 目标角色 ∈（系统三 key ∪ 本租在库自定义角色），When `POST /organizations/members/role`，Then BA 更新角色；Given 角色词汇外，Then 400（`ROLE_NOT_FOUND`·严格在库 fail-closed）；Given last-owner，Then 403（BA）。
 - **溯源**：`POST /api/v1/organizations/members/role` · `OrganizationsOrgAdminController.updateMemberRole` · `@Can('update','Member')` · **先过我方 `assertRoleAssignable`（`RoleAssignabilityReader`·fail-closed 在库存在性闸）再直调 BA** · 契约 `updateMemberRoleSchema` · 关联 [`module-rbac-dynamic-roles`](../plans/module-rbac-dynamic-roles.md) S3 §2.5。
 
 ### 3.9 移除成员

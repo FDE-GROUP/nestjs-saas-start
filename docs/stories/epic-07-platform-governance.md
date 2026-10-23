@@ -13,7 +13,7 @@
 
 ### 7.2 查看单个租户详情
 - **作为** 平台经营者，**我想** 查看某租户详情，**以便** 定位其状态与归属。
-- **验收**：Given operator + 租户存在，When `GET /platform/tenants/:id`，Then 返回租户行；不存在 Then 404（`TENANCY_NOT_FOUND`）。
+- **验收**：Given operator + 租户存在，When `GET /platform/tenants/:id`，Then 返回租户行；不存在 Then 404（`ORG_NOT_FOUND`）。
 - **溯源**：`GET /api/v1/platform/tenants/:id` · `PlatformOrganizationsController.detail` · `GetPlatformTenantQuery` · 契约 `platformTenantRowSchema`。
 
 ### 7.3 查看租户诊断
