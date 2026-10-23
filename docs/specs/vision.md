@@ -1,6 +1,6 @@
 # 项目愿景（Vision）
 
-> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.7.0 | 日期: 2026-10-23
+> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.8.0 | 日期: 2026-10-23
 > 归属: `docs/specs/`（**宪法顶层** · 人/团队平面）| 性质: **重写型**（正文整体重写 + 变更戳 + 演变单列）
 > 地位: 本文件是项目宪法顶层——其余 `specs`（architecture / workflow / tooling-standards）与 `plans` 以其为纲；与它冲突时，**以实现/方案让位于愿景方向**（愿景只指方向，不作技术门禁）。
 > 关联: [workflow.md](./workflow.md)（工作原则）· [architecture.md](./architecture.md)（结构 SSOT）· [tooling-standards.md](./tooling-standards.md)（工具 SSOT）
@@ -61,7 +61,7 @@
 愿景的落地方式继承既有宪法，不新造：
 
 - **架构**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + **函数式领域内核**（functional core, imperative shell·含 2026-10-21 投影镜射/实体教义一期）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。四点定位（CA 为底 · DDD 量力 · FC 三映射为突破 · CQRS/ES/EDA 按需但备能）已升为宪法定位、canonical 见 [architecture.md](./architecture.md)「Positioning — Four Pillars」。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
-- **落位判据（机制层 vs 业务域）**：新能力落位按「谁定义规则、为谁服务」（非话题）判归属，同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属）——**系统机制**（`auth` 身份机器、authorization 裁决机器、`tenancy/` 横切层、窄义基础设施 database/config/…）与**业务域**（各限界上下文 + authorization 管理面）；三处易错刀口：多租户机制 ≠ 组织业务域、认证机制 ≠ 用户合规域；authorization 双栖（裁决机器=机制 / 授权事实与管理面=支撑域，故为限界上下文非横切层）；`storage`/`payment` 是带领域策略的出站网关上下文、**非**基础设施。判错归属即结构债；四维判据与完整归属表 canonical 见 [architecture.md](./architecture.md)「Mechanism Layer vs Business Domain」。
+- **落位判据（机制层 vs 业务域）**：新能力落位按「谁定义规则、为谁服务」（非话题）判归属，同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属）——**系统机制**（`auth` 身份机器、authorization 裁决机器、`tenant-isolation/` 横切层、窄义基础设施 database/config/…）与**业务域**（各限界上下文 + authorization 管理面）；三处易错刀口：多租户机制 ≠ 组织业务域、认证机制 ≠ 用户合规域；authorization 双栖（裁决机器=机制 / 授权事实与管理面=支撑域，故为限界上下文非横切层）；`storage`/`payment` 是带领域策略的出站网关上下文、**非**基础设施。判错归属即结构债；四维判据与完整归属表 canonical 见 [architecture.md](./architecture.md)「Mechanism Layer vs Business Domain」。
 - **工程**：本地 CI 为 L1 裁决、fallow 为 L2 佐证（须二判）、**无已审方案不写码**、完成判据可核验+穷尽（[workflow.md](./workflow.md) · [tooling-standards.md](./tooling-standards.md)）。
 - **决策**：权威归人；多租户隔离级别、计费模型等**不可逆决策须人签核**（workflow §3 高危清单）。
 - **地域与合规约束**：本项目面向**中国大陆**用户——技术栈与第三方资源须**境内可访问、合规可用**；依赖镜像（npm / Docker）、支付、登录、短信、监控/日志等**优先境内方案**，并预留 **ICP 备案 / 数据驻留 / 个人信息保护法（PIPL）** 合规要求。**例外**：Google / GitHub 等海外 OAuth 登录**不受本约束影响、予以保留**。与现有假设冲突处的选型（支付已定：**Stripe + 微信 + 支付宝** 三通道并存，见 §4.3；登录已定：保留 Google/GitHub **+ 新增微信、企业微信、钉钉、飞书**（Better Auth 自定义 provider），**不做手机验证码登录**（实名走平台人工审批）；镜像 / 日志后端等**待决策**）统一落 [tooling-standards.md](./tooling-standards.md)。
@@ -101,8 +101,9 @@
 | 2026-10-21 | 0.5.0 | 宪法成文「机制层 vs 业务域归属判据」（人裁·architecture 总纲）上承至愿景顶层：§6 新增「落位判据」条；同时回正版本头（上一笔 0.4.0 漏更头部） | §6 / 版本头 |
 | 2026-10-21 | 0.6.0 | 首要术语翻正回 Clean Architecture 为纲（四支柱 #1 本就是「CA 为底」）：§6 架构条「六边形」居首改为 CA 居首·六边形降为同族别名；ports & adapters 保留为边界机制。纯措辞·不动代码/目录/依赖方向 | §6 |
 | 2026-10-23 | 0.7.0 | **业务词面随 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 对齐**（人裁 2026-10-23 推翻双词汇纪律·高危#5 随此签）：业务实体「租户」→「组织」、隔离列描述 `tenant_id`→实码 `organizationId`、`(user, tenant)`→`(user, organization)`、阶段名「租户域」→「组织域」；**保留**业界术语「多租户/multi-tenancy」与机制层词面（Tenancy/tenant & workspace scope/单租户结构/schema-per-tenant 等） | §2 / §3 / §4 / §6 / §7 / §8 |
+| 2026-10-23 | 0.8.0 | **文档漂移订正随 [global-tenant-residual-cleanup](../plans/global-tenant-residual-cleanup.md)**（人「同意」·高危#5 随此签）：§6 落位判据中横切层目录失效引用 `tenancy/`→现名 `tenant-isolation/`（与 architecture±zh 同步口径）；机制/概念词面（tenant & workspace scope、多租户/multi-tenancy）按豁免清单保留不改 | §6 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-23 / v0.7.0 变更（业务词面随 global-organization-vocabulary-pivot 收敛为「组织/organization」·多租户业界术语与机制层词面保留），以当前正文内容为准。
+正文已于 2026-10-23 / v0.8.0 变更（随 global-tenant-residual-cleanup 将 §6 横切层目录失效引用 `tenancy/` 订正为现名 `tenant-isolation/`·机制/概念词面按豁免清单保留），以当前正文内容为准。

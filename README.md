@@ -78,17 +78,17 @@
 
 ```
 libs/
-├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenancy/authorization 契约，以及 subscriptions/workspaces 领域层
+├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenant-isolation/authorization 契约，以及 subscriptions/workspaces 领域层
 ├─ contracts/src/     # @saas/contracts 跨端传输契约单源（请求/响应/envelope 的 zod schema + 派生类型）
 └─ ba-mikro-adapter/  # Better Auth × MikroORM 适配层
 apps/
 ├─ api/src/           # 后端参考应用（NestJS + Fastify）
-│  ├─ modules/<上下文>/        # 限界上下文：users / auth / authorization / tenants / workspaces / platform / payment / storage / subscriptions / posts
+│  ├─ modules/<上下文>/        # 限界上下文：users / auth / authorization / organizations / workspaces / platform / payment / storage / subscriptions / posts
 │  │  ├─ domain/               # 纯领域内核：entities / value-objects / events / repositories / ports / policies / constants
 │  │  ├─ application/          # 用例编排（command/query + handler，或简单 service 直调）
 │  │  ├─ infrastructure/       # 仓储实现与外部集成（MikroORM、provider 适配等）
 │  │  └─ api/                  # Controller / HTTP 边界
-│  ├─ tenancy/                 # 多租户横切机制：请求上下文传播、隔离守卫、失权清单
+│  ├─ tenant-isolation/        # 多租户横切机制：请求上下文传播、隔离守卫、失权清单
 │  ├─ common/ config/ database/ i18n/ logger/ mailer/   # 基础设施
 │  └─ main.ts / app.module.ts
 └─ web/               # 前端租户自助控制台（React + Vite，经 @saas/api-client 消费后端）
@@ -100,9 +100,9 @@ packages/
 
 代码归属看「**谁定义规则、为谁服务**」，而不是看话题是否"关于"认证或租户——同一主题可以拆成机制与业务两面：
 
-- **系统机制**：`auth`（身份认证机器）、`authorization` 的裁决内核（能力投影 / 谓词编译，纯函数、零框架依赖、受纯度守卫）、`tenancy/` 横切层（请求级租户上下文传播、隔离守卫、即时失权），以及 `database` / `config` 等基础设施。这些组件因技术演进（框架升级、第三方换代、性能）而变化。
-- **业务域**：各限界上下文的领域规则——`tenants`（租户生命周期与治理）、`workspaces`、`users`、`subscriptions`、`platform` 等，以及 `authorization` 的管理面（角色与授权数据的维护）。这些组件因业务需求而变化，是函数式内核与领域建模的主战场。
-- **易混点**：多租户**机制**（`tenancy/`，不关心"租户是什么"）不同于租户**业务域**（`modules/tenants`，定义租户如何创建、暂停、消亡）；`storage` / `payment` 是带领域策略（上传校验、通道降级、金额与货币）的**出站网关上下文**，而非基础设施——真正的设施是其身后的 provider 适配器。
+- **系统机制**：`auth`（身份认证机器）、`authorization` 的裁决内核（能力投影 / 谓词编译，纯函数、零框架依赖、受纯度守卫）、`tenant-isolation/` 横切层（请求级租户上下文传播、隔离守卫、即时失权），以及 `database` / `config` 等基础设施。这些组件因技术演进（框架升级、第三方换代、性能）而变化。
+- **业务域**：各限界上下文的领域规则——`organizations`（租户生命周期与治理）、`workspaces`、`users`、`subscriptions`、`platform` 等，以及 `authorization` 的管理面（角色与授权数据的维护）。这些组件因业务需求而变化，是函数式内核与领域建模的主战场。
+- **易混点**：多租户**机制**（`tenant-isolation/`，不关心"租户是什么"）不同于租户**业务域**（`modules/organizations`，定义租户如何创建、暂停、消亡）；`storage` / `payment` 是带领域策略（上传校验、通道降级、金额与货币）的**出站网关上下文**，而非基础设施——真正的设施是其身后的 provider 适配器。
 
 > 完整结构规则见 [`docs/specs/architecture.md`](./docs/specs/architecture.md)。
 
@@ -113,7 +113,7 @@ packages/
 | `users` | 平台全局用户与成员关系（membership）；PIPL 合规（数据导出 / 硬删级联清除） |
 | `auth` | 认证：邮箱密码 / 魔法链接、社交 OAuth、会话与 CSRF；全局会话墙（默认拒绝 + `@Public` 旁路） |
 | `authorization` | 授权：CASL 能力投影 + 三层 RBAC 管理面；跨租户鉴权边界默认拒绝 |
-| `tenants` | 租户生命周期与治理：审批制状态机、暂停 / 恢复 / 硬删、结构化审计 |
+| `organizations` | 租户生命周期与治理：审批制状态机、暂停 / 恢复 / 硬删、结构化审计 |
 | `workspaces` | 工作区：租户之下的强数据分区（查询默认按工作区复合过滤） |
 | `subscriptions` | 订阅与配额：计划、席位、额度（领域层居 `@core`） |
 | `payment` | 支付：Stripe 客户 / 支付意图集成；境内通道经 provider 抽象预留 |
