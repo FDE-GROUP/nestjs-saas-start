@@ -3,7 +3,7 @@ import { strictObject } from '../strict';
 
 /**
  * subscription 流事件 payload 契约单源（ES R4 第二上下文推广 ·
- * module-es-r4-second-context-subscriptions §2 裁ⓒ · 裁⑥甲 · 沿 tenant-events 先例）。
+ * module-es-r4-second-context-subscriptions §2 裁ⓒ · 裁⑥甲 · 沿 organization-events 先例）。
  *
  * 定位：event store「回放即真相」的被回放载荷 = 跨时间契约（upcast 键 = 外层信封
  * `eventVersion`），故 zod schema 居 `@saas/contracts` 单源；事件**类**仍在

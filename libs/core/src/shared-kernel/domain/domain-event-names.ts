@@ -6,10 +6,10 @@
  * 「实际产出的事件 eventType ∈ 本常量值集」（P3：发布方为 service/handler·非聚合），防旁逸。新增事件名一律先加这里。
  */
 export const DOMAIN_EVENTS = {
-  tenantStatusTransitioned: 'tenant.status.transitioned',
+  organizationStatusTransitioned: 'tenant.status.transitioned',
   userStatusTransitioned: 'user.status.transitioned',
-  tenantRejected: 'tenant.rejected',
-  tenantBootstrapped: 'tenant.bootstrapped',
+  organizationRejected: 'tenant.rejected',
+  organizationBootstrapped: 'tenant.bootstrapped',
   subscriptionStatusTransitioned: 'subscription.status.transitioned',
   subscriptionCreated: 'subscription.created',
   subscriptionBootstrapped: 'subscription.bootstrapped',

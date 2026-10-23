@@ -22,7 +22,7 @@ export interface OrganizationBootstrappedPayload {
  * R1a 实核订正 plan 原表述）。id 即 aggregateId，不重复携带。
  */
 export class OrganizationBootstrappedEvent extends DomainEvent<OrganizationBootstrappedPayload> {
-  static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantBootstrapped;
+  static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationBootstrapped;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
 

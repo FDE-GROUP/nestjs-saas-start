@@ -18,7 +18,7 @@ export interface OrganizationStatusTransitionedPayload {
  * 由 `OrganizationStatusService.transition` 成功分支产出（shadow append·`tenant.status` 真列仍是唯一真相源）。
  */
 export class OrganizationStatusTransitionedEvent extends DomainEvent<OrganizationStatusTransitionedPayload> {
-  static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantStatusTransitioned;
+  static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationStatusTransitioned;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
 

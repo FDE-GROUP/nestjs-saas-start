@@ -19,7 +19,7 @@ export interface OrganizationRejectedPayload {
  * 驳回即应抹掉申请内容。aggregateType 取 `tenant` 与 tenant.transitioned 同流。
  */
 export class OrganizationRejectedEvent extends DomainEvent<OrganizationRejectedPayload> {
-  static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantRejected;
+  static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationRejected;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
 
