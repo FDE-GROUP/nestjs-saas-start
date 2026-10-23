@@ -218,20 +218,22 @@ the rules and whom it serves** — one topic can split in two:
 
 Terminology discipline: a **tenant** is a business concept (a `tenants` core-domain
 **storage entity · NOT a DDD aggregate** — the kernel is the functional trio record `TENANT_STATUS` + port `TenantStatusStore` + function `canTransition`·worded the same as glossary §1—with lifecycle, invariants and language); its physical entity is the
-self-owned registry table `tenant` (owned by the `tenants` context·the general rule is the
-Entity Doctrine + Projection-Mapping Doctrine above: domain entity ↔ separate data entity mapped
-by the repository adapter·`id` = proxy PK
-equal to `organization.id`·`status` as a real column + DB CHECK — the
-global-tenant-entity-reclamation amendment 2026-10-20 supersedes the old implicit shift
-“tenant identity = organization, status parked in `metadata`”; `organization` is its
-authentication/membership projection); **multi-tenancy** is an isolation
+**`status` governance column (real column + DB CHECK) living on the `organization` row** (owned by the `tenants` context·an additive domain column on a BA **shared** table per the *BA Table Sharing* clause below·same-PK 1:1 with the organization·the general rule is the
+Entity Doctrine + Projection-Mapping Doctrine above: domain entity ↔ data entity mapped
+by the repository adapter). The old self-owned 1:1 side table `tenant` (and the reclamation
+amendment 2026-10-20 that first created it) was **superseded and dropped by
+[global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md)
+2026-10-23** once its two load-bearing pillars (BA-replaceability → schema isolation, ES
+replay-as-truth pilot) were removed—governance lifecycle does not need replay-truth, so the
+tenant identity collapses onto `organization` with status as its own column; `organization`
+is thus both the authentication/membership projection and the tenant-lifecycle carrier); **multi-tenancy** is an isolation
 mechanism (infrastructure, no aggregate, no lifecycle: request recognition → ALS
 propagation → boundary enforcement → exemption axis). The two never co-inhabit:
 `tenancy/` hosts no tenant-lifecycle business writes, and business contexts never
 re-implement isolation. `tenancy/` consumes `authorization` ruling ports; it no longer
 houses the CASL checker (slice A) or platform governance (slice D).
 
-**Presentation-layer naming discipline** (global-userfacing-tenant-naming, human ruling 2026-10-23): "tenant/Tenant" above is an **internal domain & mechanism term** (kept in code/guards/ALS/`tenant.status`/`TENANCY_*` error codes/route slugs `/tenants`·not user-facing); **user-facing surfaces (frontend rendered copy, nav labels, end-user prompts) always say "organization" (top unit) / "workspace" (second-level group)** — "tenant" must not leak into user copy. The two map one-to-one and the translation happens only at the presentation layer (**no model/storage/API-contract change**).
+**Presentation-layer naming discipline** (global-userfacing-tenant-naming, human ruling 2026-10-23): "tenant/Tenant" above is an **internal domain & mechanism term** (kept in code/guards/ALS/`organization.status`/`TENANCY_*` error codes/route slugs `/tenants`·not user-facing); **user-facing surfaces (frontend rendered copy, nav labels, end-user prompts) always say "organization" (top unit) / "workspace" (second-level group)** — "tenant" must not leak into user copy. The two map one-to-one and the translation happens only at the presentation layer (**no model/storage/API-contract change**).
 
 Context identities fixed by the domain-refactor plan (global-domain-context-refactor):
 `authorization` is an **independent supporting domain** serving both `tenants` (members
@@ -307,7 +309,7 @@ directory centralization.
 - **Framework**: NestJS 12 + Fastify
 - **Architecture**: Clean Architecture + DDD + CQRS (`@nestjs/cqrs`)
 - **Database**: PostgreSQL + MikroORM (explicit migrations)
-- **Authentication**: Better Auth (**a tool library of the auth domain** — re-adjudicated 2026-10-20 by global-ba-entity-domain-placement, replacing the old "pure auth & membership data source / centralized contract-surface storage view" framing with the CASL-isomorphic principle *the library constrains the interface, the domain owns the facts*): identity-machinery tables (user/session/account/verification/consent) belong to the **auth** domain, org-container tables (organization/member/invitation) to the **tenants** domain — shapes constrained by the BA interface contract (registered in the column law's `BA_CONTRACT_TABLES`; altering columns = contract violation), operations via the `auth.api.*` tool surface (**owning the tables ≠ taking over the operations**); its built-in org authorization HTTP endpoints are sealed (module-rbac-casl ruling A), member/invitation endpoints served by our own facades via server-side calls; the tenant lifecycle status lives in the self-owned registry table column `tenant.status` (global-tenant-entity-reclamation), and BA `organization.metadata` carries no keys of ours — both promises hold verbatim)
+- **Authentication**: Better Auth (**a tool library of the auth domain** — re-adjudicated 2026-10-20 by global-ba-entity-domain-placement, replacing the old "pure auth & membership data source / centralized contract-surface storage view" framing with the CASL-isomorphic principle *the library constrains the interface, the domain owns the facts*): identity-machinery tables (user/session/account/verification/consent) belong to the **auth** domain, org-container tables (organization/member/invitation) to the **tenants** domain — shapes constrained by the BA interface contract (registered in the column law's `BA_CONTRACT_TABLES`; per the **BA Table Sharing** clause below these are *shared, not exclusive*—domains may **additively add their own columns** (modeling rationale first), while the red line is only *do not delete/alter the BA-convention fields or their data types*), operations via the `auth.api.*` tool surface (**owning the tables ≠ taking over the operations**); its built-in org authorization HTTP endpoints are sealed (module-rbac-casl ruling A), member/invitation endpoints served by our own facades via server-side calls; the tenant lifecycle status lives in the governance column `organization.status` (real column + DB CHECK·an additive domain column on the BA shared `organization` table·global-governance-lifecycle-consolidation 2026-10-23 supersedes the old self-owned `tenant` side table), and BA `organization.metadata` carries no keys of ours — both promises hold verbatim)
 - **Authorization**: CASL (`@casl/ability` v7) — the sole tenant-level RBAC ruling engine. **The authorization-fact SSOT lives in DB grant rows** (`tenant_role`/`tenant_role_grant`·per-tenant dynamic roles·module-rbac-dynamic-roles ruling C supersedes the old "`tenant-rules` TS table is the SSOT" ruling); **the code vocabulary `tenant-rules` is the language SSOT** (compile-time `TenantSubject/TenantAction` type domain only); **CASL rules are the runtime projection** (the checker lazily projects per-tenant via the repository port + in-process version cache·`invalidateTenant` for hot reload). Endpoints declare `@Can(action, subject)` and `TenantPermissionGuard` rules from an ALS-preinjected role (no scattered special-casing); instance-level authorization runs at check level (`TenantPermissionCheck.resource` + condition rows matched by CASL mongo after resolving the `{{userId}}` template); query-level list filtering is its same-source extension (`TenantPermissionChecker.listPredicate` pushes restricted grant rows down into the list read chain as an instance predicate merged with the tenant filter under a fixed spread order·module-rbac-query-level-filtering)
 - **Testing**: Vitest (+ `unplugin-swc` for decorator metadata)
 - **Linting/Formatting**: Biome

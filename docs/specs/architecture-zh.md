@@ -204,15 +204,14 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 > 操作后果：新能力落位时先过本表四维（动因/范式/测试/工具归属）判归属——机制面变更走横切与守卫评审面（fallow/纯度/恒等闸），业务面变更走垂直切片与已审方案面（实体教义/投影/内核判据）。判错归属（如把网关上下文当设施、或把机制策略当业务规则散入上下文）即结构债。
 
 术语纪律：**租户（Tenant）**是业务概念（`tenants` 核心域·**存储实体·非 DDD 聚合回归**——内核采函数式三件套 record `TENANT_STATUS` + port `TenantStatusStore` + function `canTransition`·与 glossary §1 同源·有生命周期/不变量/语言）；
-其物理实体为自有户籍表 `tenant`（`tenants` 上下文属主·通则见上方实体教义 + 投影镜射教义：领域实体 ↔ 独立数据实体由仓储适配器映射·`id` = `organization.id` 同值代理键·
-`status` 真列 + DB CHECK——global-tenant-entity-reclamation 2026-10-20 改判旧「租户身份=organization·
-态寄居 `metadata`」隐含位移；`organization` 为其认证/成员面投影）；
+其物理实体为 **`organization` 行上的 `status` 治理列**（真列 + DB CHECK·`tenants` 上下文属主·系加于 BA **共享**表 `organization` 上的自撰域列·遵下方「BA 表共享」条·与 organization 同主键 1:1·通则见上方实体教义 + 投影镜射教义：领域实体 ↔ 数据实体由仓储适配器映射）；
+旧 1:1 自有户籍表 `tenant`（含 2026-10-20 首立该表的 global-tenant-entity-reclamation 收权案）已被 **global-governance-lifecycle-consolidation 2026-10-23 反悔并 DROP**——其两根承重柱（BA 可替换→schema 隔离、ES「回放即真相」试点宿主）被新约束抽掉，治理生命周期不需回放真相，故租户身份塌缩回 `organization`、态归其自有 `status` 列；`organization` 自此一身兼认证/成员面投影与租户生命周期载体）；
 **多租户（Multi-tenancy）**是隔离机制（基础设施·无聚合无生命周期：请求识别 → ALS 传播 →
 边界执行 → 豁免轴）。两者不可混住：`tenancy/` 不住租户生命周期的业务写面，业务上下文也不得
 自实现隔离。`tenancy/` **消费** `authorization` 的裁决端口；经重构 A 片不再自住 CASL
 checker、经 D 片不再自住平台治理。
 
-用户面译名纪律（**presentation-layer naming**·global-userfacing-tenant-naming 2026-10-23 人裁成文）：上述「租户 / Tenant」是**内部领域与机制词**（代码/守卫/ALS/`tenant.status`/错误码 `TENANCY_*`/路由 slug `/tenants` 沿用·不属用户面）；**用户可见面（前端渲染文案、导航标签、面向终端用户的提示）一律称「组织」（顶层单元）/「工作区」（二级分组）**，「租户」不得外泄至用户文案。二者一一对应、翻译只发生在呈现层（**不改模型/存储/API 契约**）。
+用户面译名纪律（**presentation-layer naming**·global-userfacing-tenant-naming 2026-10-23 人裁成文）：上述「租户 / Tenant」是**内部领域与机制词**（代码/守卫/ALS/`organization.status`/错误码 `TENANCY_*`/路由 slug `/tenants` 沿用·不属用户面）；**用户可见面（前端渲染文案、导航标签、面向终端用户的提示）一律称「组织」（顶层单元）/「工作区」（二级分组）**，「租户」不得外泄至用户文案。二者一一对应、翻译只发生在呈现层（**不改模型/存储/API 契约**）。
 
 领域细化重构（global-domain-context-refactor）定型的上下文身份：`authorization` 是
 **独立支撑域**，同时服务 `tenants`（成员挂角色 key）与 `platform`（经营者闸门）——绝非
@@ -270,7 +269,7 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
 - **框架**：NestJS 12 + Fastify
 - **架构**：Clean Architecture + DDD + CQRS（`@nestjs/cqrs`）
 - **数据库**：PostgreSQL + MikroORM（显式迁移）
-- **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **tenants 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·改列=违契约），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存自有户籍表 `tenant.status` 真列（global-tenant-entity-reclamation 收权案），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
+- **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **tenants 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·按下方「BA 表共享」条此系**非专用·共享表**——域可 **additive 增自撰域列**（建模合理性优先），红线仅「不得删减/修改 BA 约定字段及其数据类型」），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存治理列 `organization.status`（真列 + DB CHECK·系加于 BA 共享表 `organization` 上的自撰域列·global-governance-lifecycle-consolidation 2026-10-23 取代旧自有 `tenant` 旁表），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
 - **授权**：CASL（`@casl/ability` v7）——租户级 RBAC 唯一裁决引擎。**授权事实 SSOT 在 DB grant 行**（`tenant_role`/`tenant_role_grant`·per-tenant 动态角色·module-rbac-dynamic-roles 丙裁取代旧「`tenant-rules` TS 表是 SSOT」裁），**代码词汇表 `tenant-rules` 是语言 SSOT**（仅编译期 `TenantSubject/TenantAction` 类型域），**CASL rules 是运行时投影**（checker 经仓储端口 per-tenant 懒投影 + 进程内版本缓存·`invalidateTenant` 热改生效）。端点以 `@Can(action, subject)` 声明、`TenantPermissionGuard` 经 ALS 预注入角色判定（无散点特判）；实例级授权走 check 级（`TenantPermissionCheck.resource` + conditions 行按 `{{userId}}` 模板交 CASL mongo 匹配）；query 级列表过滤为其同源延伸（`TenantPermissionChecker.listPredicate` 把受限 grant 下推为列表面实例谓词·与 tenantFilter 固定展开序合并·module-rbac-query-level-filtering）
 - **测试**：Vitest（+ `unplugin-swc` 输出装饰器元数据）
 - **Lint/格式化**：Biome

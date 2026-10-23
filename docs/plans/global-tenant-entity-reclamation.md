@@ -3,6 +3,8 @@
 > 用途: **方案（提案–审计–实施）** | 状态: 已完成（人验收） | 版本: 0.2.2
 > 定位: 用户由「为什么没有 Tenant 实体」追问，自查出 **BA 责任面被放大**——租户生命周期态机寄居 `organization.metadata`（jsonb），而宪法对 BA 定位是「纯认证与成员数据源」（±zh），租户生命周期既非认证也非成员。用户裁「同意乙」（建自有 tenant 表收权），并令参考外部文章（已鉴定：CSDN 内容农场文·所述系同名 Java 项目·非本仓 better-auth.dev·仅取其多租户工程惯例旁证，全部支持乙档方向；设计先例采本仓 `user_status` 旁表模式）。
 > 关联: S4 审批制（metadata 态机出处·本案修订其存储决策）· global-entity-column-law（新表受 L1/L2 管辖·16→17 表恒等账）· table-ownership（organization 属主=tenants 不变·新表入账）· module-rbac-casl 甲裁（org HTTP 封端·不动）。
+>
+> ⚠️ **修订注（2026-10-23 · 不改史 · 仅标反悔）**：本案所立 `tenant` 自有户籍表（及同构先例 `user_status` 旁表）已被 [global-governance-lifecycle-consolidation](./global-governance-lifecycle-consolidation.md) **反悔并 DROP**——其两根承重柱（「BA 可替换→schema 隔离」「ES『回放即真相』试点宿主」）被新约束抽掉（认证库永久锁 Better Auth·治理生命周期不需回放真相），租户治理态回归 `organization.status` 真列（BA 表共享条款下的 additive 自撰域列）、用户失能态回归 `user.status`。本文件正文作为**当时决策的历史快照保留原样**（workflow §2.4「只进不改史」），当前真相以 architecture ±zh / glossary / consolidation 方案为准。
 
 ## 0. 概览（TL;DR）
 - **新表 `tenant`**（tenants 上下文自有·垂直切片 `modules/tenants/infrastructure/entities/tenant.entity.ts`）：`id` PK 且 = `organization.id`（同值代理键·沿 `user_status` 以 `userId` 为 PK-FK 的先例）、`status` **真列**（text + DB CHECK·值域沿用状态机枚举）、`created_at/approved_at/suspended_at` 等生命周期戳、领域扩展位归位；受实体列定律管辖（createdAt 必有·可变表 updatedAt **nullable**＝L2 新表方向·零豁免）。
