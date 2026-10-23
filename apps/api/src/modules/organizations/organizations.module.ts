@@ -58,7 +58,7 @@ const QueryHandlers = [
  * resolved without extra imports.
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：deny-list 状态机
- * （`OrganizationStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenancyModule 归位
+ * （`OrganizationStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenantIsolationModule 归位
  * 本上下文（租户/用户状态机是租户治理域策略·借用机制的域策略还家）；沿 Authorization/Platform
  * 先例升 `@Global` 保持原可见性语义（tenancy 中间件 deny-list 消费、auth 会话墙/platform 闸门注入零行为变更）。
  */
@@ -66,7 +66,7 @@ const QueryHandlers = [
 @Module({
   imports: [CqrsModule],
   // module-rbac-casl 甲裁：BA 内置 org 授权 HTTP 面封堵后，成员/邀请管理门面（@Can·CASL）
-  // 与个人通道门面（TenantExempt·BA 数据面自裁决）接管对外端点。
+  // 与个人通道门面（TenantIsolationExempt·BA 数据面自裁决）接管对外端点。
   controllers: [
     OrganizationsController,
     OrganizationsOrgAdminController,
@@ -91,7 +91,7 @@ const QueryHandlers = [
     },
     // S6 user governance: platform-level cross-user read model (no tenant filter)。
     { provide: USER_GOVERNANCE_REPOSITORY, useClass: MikroUserGovernanceRepository },
-    // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenancyModule 归位本上下文。
+    // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenantIsolationModule 归位本上下文。
     // §9.5.4①B 端口倒置：core 服务经端口消费持久化，适配由本（参考）应用装配。
     OrganizationStatusService,
     UserStatusService,

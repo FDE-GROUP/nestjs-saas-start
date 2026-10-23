@@ -1,7 +1,7 @@
 # Epic 09 · 支撑面：对象存储与存活探针
 
 > 旅程: 用户如何上传/取回文件、平台如何暴露存活探针供编排 | 上下文: `storage`（对象存储·用户级）+ `health`（存活探针·公开）
-> storage 属**用户级**（上传/下载·不经租户仓储 `requireTenantId`）→ 类级 `@TenantExempt`（仍靠会话墙）。health 是 Dockerfile `HEALTHCHECK` 声明的探针端点，类级 `@Public()`（旁路会话+租户墙）+ `@SkipThrottle()`（探活/CI 不得被限流锁）。
+> storage 属**用户级**（上传/下载·不经租户仓储 `requireActiveOrganizationId`）→ 类级 `@TenantIsolationExempt`（仍靠会话墙）。health 是 Dockerfile `HEALTHCHECK` 声明的探针端点，类级 `@Public()`（旁路会话+租户墙）+ `@SkipThrottle()`（探活/CI 不得被限流锁）。
 > **provider 选型属实（与支付面对照）**：`S3` / `AliOSS` / `TencentCOS` **三 provider 均真实实现**（非仅类型占位）；`StorageService` 按 `storageConfig.provider` 命中已注册则用之，否则**回落 S3 作默认**——与 [Epic 06](./epic-06-billing-subscriptions-payment.md) 支付面「仅 Stripe 落地」不同，此处“三通道选型”为现状非规划。
 > 版本: 0.3.0（2026-10-20·9.1 出口链据 `module-storage-upload-error-surface` 甲档收口翻正）
 

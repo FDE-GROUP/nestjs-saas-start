@@ -12,7 +12,7 @@ type StoredFile = components['schemas']['FileUploadResultDto'];
 
 /**
  * 前端 F5 · Storage 消费面（module-frontend-storage）。
- * 后端 `StorageController` 类级 `@TenantExempt`（用户级·仅需会话·无需 active 租户）；三 op 已全 typed。
+ * 后端 `StorageController` 类级 `@TenantIsolationExempt`（用户级·仅需会话·无需 active 租户）；三 op 已全 typed。
  * 对象存储无状态、后端无 LIST op → 非列表页：仅「本次会话上传件」+「手动输入既有 key」可操作。
  * 体积/MIME 限制属后端 config 单源，前端不重复造二源，仅 surface 后端 `STORAGE_*` errorCode 文案（经 useAction）。
  */

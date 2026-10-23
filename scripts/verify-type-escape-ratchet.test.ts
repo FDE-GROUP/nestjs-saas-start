@@ -4,7 +4,7 @@ import { evaluate, shouldScan } from './verify-type-escape-ratchet';
 describe('shouldScan（扫描口径·产物/生成物/测试不计）', () => {
   it('普通生产 .ts 纳入', () => {
     expect(shouldScan('apps/api/src/main.ts')).toBe(true);
-    expect(shouldScan('libs/core/src/tenancy/tenant.middleware.ts')).toBe(true);
+    expect(shouldScan('libs/core/src/tenant-isolation/tenant-isolation.middleware.ts')).toBe(true);
   });
   it('测试/生成物/声明/产物/依赖一律排除', () => {
     expect(shouldScan('apps/api/src/a.test.ts')).toBe(false);

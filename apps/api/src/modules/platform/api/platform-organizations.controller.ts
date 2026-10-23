@@ -20,7 +20,7 @@ import type {
 } from '@app/modules/organizations/application/read-models/platform-organization.read-model';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Controller,
   Delete,
@@ -67,7 +67,7 @@ import {
  * Every route is gated by `PlatformOperatorGuard` (the sole cross-tenant authority —
  * the unique platform operator, DB email matches `platform.operatorEmail`, fail-closed).
  * These handlers read/write WITHOUT a tenant scope on purpose: platform-level governance
- * spans all tenants (FR-11①), so they deliberately never bind TenantScopeGuard.
+ * spans all tenants (FR-11①), so they deliberately never bind TenantIsolationGuard.
  *
  * Lifecycle transitions route through `OrganizationStatusService.transition` (single choke-point on
  * the `tenant.status` column, §9.4 state machine): suspend (active→suspended), resume (suspended→active),
@@ -84,7 +84,7 @@ import {
 )
 @ApiTags('platform')
 // S11 复合全局：跨租平台治理（列表/详情/诊断/suspend·resume·delete）无关单一租户上下文 → 类级豁免租户墙。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('platform/organizations')
 @UseGuards(PlatformOperatorGuard)
 export class PlatformOrganizationsController {

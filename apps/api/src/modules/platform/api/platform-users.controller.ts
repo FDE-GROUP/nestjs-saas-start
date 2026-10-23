@@ -9,7 +9,7 @@ import type {
 } from '@app/modules/organizations/application/read-models/platform-user.read-model';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Body,
   Controller,
@@ -48,7 +48,7 @@ import {
  *
  * Every route is gated by `PlatformOperatorGuard` (the sole cross-platform authority, fail-closed).
  * These handlers act WITHOUT a tenant scope on purpose: suspending a platform user revokes their
- * access across every tenant and the platform layer (FR-10/FR-11), so they never bind TenantScopeGuard.
+ * access across every tenant and the platform layer (FR-10/FR-11), so they never bind TenantIsolationGuard.
  *
  * suspend (active→suspended) additionally hard-invalidates the user's sessions (D4 · §159);
  * resume (suspended→active) lifts the deny-list. Each success/failure emits a structured audit line (FR-6).
@@ -61,7 +61,7 @@ import {
 )
 @ApiTags('platform')
 // S11 复合全局：跨租平台治理（operator 行动时无关租户上下文）→ 类级豁免租户墙（仍由 PlatformOperatorGuard 逐路由卡）。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('platform/users')
 @UseGuards(PlatformOperatorGuard)
 export class PlatformUsersController {

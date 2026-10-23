@@ -2,7 +2,7 @@
 
 > 旅程: 租户管理员如何自建角色、给角色配授权格，实现差异化授权策略 | 上下文: `authorization`（动态角色三表 `tenant_role`/`tenant_role_grant`/`tenant_role_audit`）
 > 新宪（丙《全 DB 化删代码表》·2026-10-17）：**DB 是授权事实 SSOT**（角色/权限=表行·热改生效）· **代码词汇表是语言 SSOT**（`tenant-rules.ts` subject/action 编译期域）· **CASL rules 是运行时投影**。系统三角色（owner/admin/member）lazy-ensure 落行、不可改删；自定义角色由此门面 CRUD。
-> 全部经 `@UseGuards(TenantScopeGuard, TenantPermissionGuard)` + `@Can(<动作>, 'Role'|'RoleGrant')`；owner/admin 持 Role/RoleGrant 职权，member 无 → 非管理员 403（fail-closed）。
+> 全部经 `@UseGuards(TenantIsolationGuard, TenantPermissionGuard)` + `@Can(<动作>, 'Role'|'RoleGrant')`；owner/admin 持 Role/RoleGrant 职权，member 无 → 非管理员 403（fail-closed）。
 > **审计贯穿五写**：create/rename/delete/grant/revoke 每次变更均同事务追加 `tenant_role_audit`（before/after JSON 规范化快照·只插不改不删·甲裁可查证）。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 

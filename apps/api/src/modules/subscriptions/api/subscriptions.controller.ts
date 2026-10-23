@@ -3,7 +3,7 @@ import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permi
 import { CreateSubscriptionCommand } from '@core/saas-kit/modules/subscriptions/application/commands/create-subscription.command';
 import { GetSubscriptionQuery } from '@core/saas-kit/modules/subscriptions/application/queries/get-current-subscription.query';
 import type { OrganizationSubscriptionView } from '@core/saas-kit/modules/subscriptions/application/read-models/subscription.read-model';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   Body,
   Controller,
@@ -34,7 +34,7 @@ import { SubscriptionResponse } from './response/subscription.response';
  * Tenant subscription slice (global-tenancy S7 · FR-7/FR-8/D5).
  *
  * Per-route guards only — the global APP_GUARD stays a signed decision (高危#4):
- * - `GET /subscriptions/current`: `TenantScopeGuard` (fail-closed · any authenticated
+ * - `GET /subscriptions/current`: `TenantIsolationGuard` (fail-closed · any authenticated
  *   member of the active organization reads their own plan/usage/mapping).
  * - `POST /subscriptions`: additionally `TenantPermissionGuard` + `organization:update`
  *   (owner/admin change the plan). The route never names a tenant id — the repository
@@ -54,7 +54,7 @@ export class SubscriptionsController {
   ) {}
 
   @Get('current')
-  @UseGuards(TenantScopeGuard)
+  @UseGuards(TenantIsolationGuard)
   @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({
     summary: 'Current organization subscription: plan, seat quota, usage, customer mapping',
@@ -73,7 +73,7 @@ export class SubscriptionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(TenantScopeGuard, TenantPermissionGuard)
+  @UseGuards(TenantIsolationGuard, TenantPermissionGuard)
   @Can('update', 'Organization')
   @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({

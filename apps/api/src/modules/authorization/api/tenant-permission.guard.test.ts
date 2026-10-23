@@ -19,18 +19,18 @@ function makeContext(): ExecutionContext {
  * 「规则 → CASL ability 判定」由工厂/适配测覆盖，守卫测试只锁声明→端口的形状。
  */
 function makeGuard({
-  tenantId,
+  organizationId,
   role,
   requirement,
   allowed,
 }: {
-  tenantId?: string;
+  organizationId?: string;
   role?: 'owner' | 'admin' | 'member';
   requirement?: CanRequirement;
   allowed?: boolean;
 }) {
   const reflector = { getAllAndOverride: vi.fn().mockReturnValue(requirement) };
-  const tenantContext = { tenantId, role } as never;
+  const tenantContext = { organizationId, role } as never;
   const can = vi.fn().mockResolvedValue(allowed ?? false);
   const checker = { can } as unknown as TenantPermissionChecker;
   const guard = new TenantPermissionGuard(reflector as never, tenantContext, checker);
@@ -42,7 +42,7 @@ describe('TenantPermissionGuard（CASL 换形）', () => {
 
   it('fail-closed: rejects when there is no active tenant', async () => {
     const { guard, can } = makeGuard({
-      tenantId: undefined,
+      organizationId: undefined,
       requirement: { action: 'create', subject: 'Member' },
     });
     await expect(guard.canActivate(makeContext())).rejects.toThrow(ForbiddenException);
@@ -50,14 +50,14 @@ describe('TenantPermissionGuard（CASL 换形）', () => {
   });
 
   it('allows an in-tenant request that declares no @Can requirement', async () => {
-    const { guard, can } = makeGuard({ tenantId: 'org_1' });
+    const { guard, can } = makeGuard({ organizationId: 'org_1' });
     await expect(guard.canActivate(makeContext())).resolves.toBe(true);
     expect(can).not.toHaveBeenCalled();
   });
 
   it('grants when the checker reports the requirement is satisfied（端口收 ALS 注入的角色 + 租户）', async () => {
     const { guard, can } = makeGuard({
-      tenantId: 'org_1',
+      organizationId: 'org_1',
       role: 'admin',
       requirement: { action: 'create', subject: 'Member' },
       allowed: true,
@@ -73,7 +73,7 @@ describe('TenantPermissionGuard（CASL 换形）', () => {
 
   it('rejects (403) when the member lacks the required permission', async () => {
     const { guard } = makeGuard({
-      tenantId: 'org_1',
+      organizationId: 'org_1',
       role: 'member',
       requirement: { action: 'delete', subject: 'Organization' },
       allowed: false,
@@ -83,7 +83,7 @@ describe('TenantPermissionGuard（CASL 换形）', () => {
 
   it('缺角色（ALS 未注入）以 role=undefined 交端口 → 桩拒 → 403（fail-closed 贯通）', async () => {
     const { guard, can } = makeGuard({
-      tenantId: 'org_1',
+      organizationId: 'org_1',
       role: undefined,
       requirement: { action: 'read', subject: 'Workspace' },
       allowed: false,

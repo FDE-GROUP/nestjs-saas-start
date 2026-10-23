@@ -9,7 +9,7 @@
  * - 用冒号而非点分：点分与领域事件名（`user.registered`）相撞，且撞 nestjs-i18n 键语法。
  * - code 是机器标识，与人面可读消息（`message`，随 i18n 翻译）**解耦**——前端据 code 分支、据 message 展示。
  *
- * 命名空间 = 按限界上下文（甲裁）：`AUTH / TENANCY / USER / WORKSPACE / BILLING / STORAGE`。
+ * 命名空间 = 按限界上下文（甲裁）：`AUTH / ISOLATION / TENANCY / USER / WORKSPACE / BILLING / STORAGE`。
  * 新增码一律先加此处，再在抛错点以 object response 携带（filter 透传·零新异常类）。
  */
 export const ERROR_CODES = {
@@ -19,8 +19,10 @@ export const ERROR_CODES = {
   AUTH_ACCOUNT_SUSPENDED: 'AUTH:ACCOUNT_SUSPENDED',
   AUTH_CSRF_ORIGIN_MISMATCH: 'AUTH:CSRF_ORIGIN_MISMATCH',
 
+  // —— 隔离机制（区域 A·global-tenant-isolation-vocabulary：ALS 无活跃上下文 fail-closed 唯一一条）——
+  ISOLATION_NO_ACTIVE_CONTEXT: 'ISOLATION:NO_ACTIVE_CONTEXT',
+
   // —— 租户域（生命周期状态机 / 治理动作 / 上下文与权限守卫 / 平台经营者）——
-  TENANCY_NO_ACTIVE_CONTEXT: 'TENANCY:NO_ACTIVE_CONTEXT',
   TENANCY_PERMISSION_DENIED: 'TENANCY:PERMISSION_DENIED',
   TENANCY_OPERATOR_NOT_CONFIGURED: 'TENANCY:OPERATOR_NOT_CONFIGURED',
   TENANCY_OPERATOR_ONLY: 'TENANCY:OPERATOR_ONLY',

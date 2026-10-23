@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { UserStatusService } from '../modules/organizations/lifecycle/user-status.service';
 import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
-import { type RequestSessionReader, SESSION_READER } from '../tenancy/session/request-session.port';
+import {
+  type RequestSessionReader,
+  SESSION_READER,
+} from '../tenant-isolation/session/request-session.port';
 import { PLATFORM_SETTINGS, type PlatformSettings } from './platform-config.port';
 import { PLATFORM_IDENTITY_LOOKUP, type PlatformIdentityLookup } from './platform-identity.port';
 

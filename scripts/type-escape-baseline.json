@@ -31,5 +31,5 @@
   "apps/api/src/modules/workspaces/infrastructure/repositories/mikro-workspace.repository.ts": 5,
   "libs/ba-mikro-adapter/src/mikro-auth-adapter.ts": 5,
   "libs/core/src/authorization/instance-predicate.ts": 1,
-  "libs/core/src/tenancy/tenant.middleware.ts": 1
+  "libs/core/src/tenant-isolation/tenant-isolation.middleware.ts": 1
 }

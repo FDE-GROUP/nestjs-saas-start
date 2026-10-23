@@ -2,7 +2,7 @@ import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Post } from '@app/modules/posts/domain/entities/post';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { encodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
@@ -12,14 +12,14 @@ import { MikroPostRepository } from './mikro-post.repository';
 /**
  * 切片 2 双轨**镜像断言** + 就绪预备切片 B（游标分页）：posts 隔离律不变（S2 FR-5 / S3 D2·§8-6），
  * `list` 由 offset(`findAndCount`) 换为 keyset(`find` limit+1 探页)。fake `em` 由 `MikroOrmService.fork()`
- * 供给——关键不变量：`requireTenantId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * 供给——关键不变量：`requireActiveOrganizationId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
  */
 function makeRepo(tenantId: string | null, workspaceId?: string) {
-  const requireTenantId = vi.fn(() => {
-    if (!tenantId) throw new ForbiddenException('Missing active tenant context');
+  const requireActiveOrganizationId = vi.fn(() => {
+    if (!tenantId) throw new ForbiddenException('Missing active organization context');
     return tenantId;
   });
-  const tenant = { requireTenantId, workspaceId } as unknown as TenantContextService;
+  const tenant = { requireActiveOrganizationId, workspaceId } as unknown as TenantIsolationService;
 
   const find = vi.fn().mockResolvedValue([]);
   const findOne = vi.fn().mockResolvedValue(null);
@@ -32,7 +32,7 @@ function makeRepo(tenantId: string | null, workspaceId?: string) {
 
   return {
     repo: new MikroPostRepository(mikro, tenant),
-    spies: { requireTenantId, fork, find, findOne, create, persist, flush },
+    spies: { requireActiveOrganizationId, fork, find, findOne, create, persist, flush },
   };
 }
 

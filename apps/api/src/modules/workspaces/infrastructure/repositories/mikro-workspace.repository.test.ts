@@ -3,7 +3,7 @@ import {
   WORKSPACE_META,
   Workspace,
 } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { ForbiddenException } from '@nestjs/common';
@@ -13,14 +13,14 @@ import { MikroWorkspaceRepository } from './mikro-workspace.repository';
 /**
  * 切片 3c-ii-A 双轨**镜像断言**：与 `原工作区仓储镜像测试` 同一套隔离律（S3 · FR-5 卡点），
  * 只是把旧 ORM 谓词对象换成 Mikro `FilterQuery` 平面对象。fake `em` 由 `MikroOrmService.fork()` 供给——
- * 关键不变量：`requireTenantId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * 关键不变量：`requireActiveOrganizationId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
  */
 function makeRepo(tenantId: string | null) {
-  const requireTenantId = vi.fn(() => {
-    if (!tenantId) throw new ForbiddenException('Missing active tenant context');
+  const requireActiveOrganizationId = vi.fn(() => {
+    if (!tenantId) throw new ForbiddenException('Missing active organization context');
     return tenantId;
   });
-  const tenant = { requireTenantId } as unknown as TenantContextService;
+  const tenant = { requireActiveOrganizationId } as unknown as TenantIsolationService;
 
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
   const findOne = vi.fn().mockResolvedValue(null);
@@ -41,7 +41,16 @@ function makeRepo(tenantId: string | null) {
 
   return {
     repo: new MikroWorkspaceRepository(mikro, tenant),
-    spies: { requireTenantId, fork, findAndCount, findOne, create, persist, flush, nativeDelete },
+    spies: {
+      requireActiveOrganizationId,
+      fork,
+      findAndCount,
+      findOne,
+      create,
+      persist,
+      flush,
+      nativeDelete,
+    },
   };
 }
 

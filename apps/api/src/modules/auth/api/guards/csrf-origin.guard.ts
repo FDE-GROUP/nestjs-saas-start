@@ -1,6 +1,6 @@
 import { ConfigService } from '@app/config/config.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { IS_PUBLIC_KEY } from '@core/saas-kit/tenancy/public.decorator';
+import { IS_PUBLIC_KEY } from '@core/saas-kit/tenant-isolation/public.decorator';
 import {
   type CanActivate,
   type ExecutionContext,

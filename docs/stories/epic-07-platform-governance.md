@@ -1,7 +1,7 @@
 # Epic 07 · 平台治理
 
 > 旅程: 平台经营者如何跨租户查看与治理租户/用户生命周期 | 上下文: `platform`（租户治理面 + 用户治理面）
-> 平台级唯一权威（FR-11①/FR-13）：每路由 `@UseGuards(PlatformOperatorGuard)`——判据 = 会话用户 DB email 命中 `platform.operatorEmail`（seed 全局唯一 operator·不由他人任命），**与租户内任何角色无关**（租户 owner 不打平台端点照样 403）。治理面刻意**不绑租户作用域**（跨租·类级 `@TenantExempt`）；生命周期迁移全经 `OrganizationStatusService.transition` 单点 + 结构化审计行（FR-6）。
+> 平台级唯一权威（FR-11①/FR-13）：每路由 `@UseGuards(PlatformOperatorGuard)`——判据 = 会话用户 DB email 命中 `platform.operatorEmail`（seed 全局唯一 operator·不由他人任命），**与租户内任何角色无关**（租户 owner 不打平台端点照样 403）。治理面刻意**不绑租户作用域**（跨租·类级 `@TenantIsolationExempt`）；生命周期迁移全经 `OrganizationStatusService.transition` 单点 + 结构化审计行（FR-6）。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 
 ## 租户治理（`PlatformOrganizationsController`·`/platform/tenants`）

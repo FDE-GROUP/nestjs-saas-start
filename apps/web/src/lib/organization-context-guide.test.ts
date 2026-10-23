@@ -10,8 +10,8 @@ const { probeOrganizationContext } = await import('./organization-context-guide'
 
 const noCtx = {
   statusCode: 403,
-  message: 'No active tenant context',
-  errorCode: ERROR_CODES.TENANCY_NO_ACTIVE_CONTEXT,
+  message: 'No active organization context',
+  errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
 };
 
 beforeEach(() => {
@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 describe('probeOrganizationContext', () => {
-  it('非 TENANCY:NO_ACTIVE_CONTEXT 错误 → null（调用方维持 ErrorPanel），不发探测请求', async () => {
+  it('非 ISOLATION:NO_ACTIVE_CONTEXT 错误 → null（调用方维持 ErrorPanel），不发探测请求', async () => {
     await expect(
       probeOrganizationContext({ statusCode: 500, message: 'boom' }),
     ).resolves.toBeNull();

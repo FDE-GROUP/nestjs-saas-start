@@ -1,6 +1,6 @@
 import { Can } from '@core/saas-kit/authorization/can.decorator';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   BadRequestException,
   Body,
@@ -65,7 +65,7 @@ import {
 )
 @ApiTags('organizations')
 @Controller('organizations/roles')
-@UseGuards(TenantScopeGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
 export class AuthorizationAdminController {
   constructor(
     @Inject(OrganizationRbacAdminService) private readonly rbac: OrganizationRbacAdminService,

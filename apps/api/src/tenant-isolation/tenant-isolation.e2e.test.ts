@@ -26,9 +26,9 @@ import { AppModule } from '../app.module';
  * **真实登录链路整条跑起来**（服务端 API·`asResponse:true` 令 BA 自签含 HMAC 的真实 session cookie）：
  *   `signUpEmail` 建真实用户 → `signInEmail` 取真实会话 cookie → 服务端系统动作 `createOrganization`
  *   （绕 `allowUserToCreateOrganization:false`·申请人成首名 owner member）→ `setActiveOrganization`
- *   把 `activeOrganizationId` 落进真实 session 行。此后带**真 cookie** 打 `/posts`，`TenantMiddleware`
+ *   把 `activeOrganizationId` 落进真实 session 行。此后带**真 cookie** 打 `/posts`，`TenantIsolationMiddleware`
  *   经真实 `RequestSessionReader`→`auth.api.getSession` 解析会话绑进 ALS、全局 `SessionGuard`（会话墙）
- *   与全局 `TenantScopeGuard`（租户墙）逐级 fail-closed、CQRS/仓储注入 `organizationId` 谓词——
+ *   与全局 `TenantIsolationGuard`（租户墙）逐级 fail-closed、CQRS/仓储注入 `organizationId` 谓词——
  *   **全程无认证桩**，真实 user/session/organization/member 行，证真「邮箱+密码 → 会话 → 租户上下文 →
  *   跨租户隔离」这条编排端到端成立。
  *
@@ -249,6 +249,6 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
  *   DATABASE_URL=postgres://postgres:postgres@localhost:5432/nestjs_e2e pnpm run migration:run -- --fresh
  *   E2E_DATABASE_URL=postgres://postgres:postgres@localhost:5432/nestjs_e2e \
  *     DATABASE_URL=postgres://postgres:postgres@localhost:5432/nestjs_e2e \
- *     pnpm exec vitest run apps/api/src/tenancy/tenant-isolation.e2e.test.ts
+ *     pnpm exec vitest run apps/api/src/tenant-isolation/tenant-isolation.e2e.test.ts
  *   docker exec postgres-dev psql -U postgres -c "DROP DATABASE nestjs_e2e;"              # 用完清理（可选）
  */

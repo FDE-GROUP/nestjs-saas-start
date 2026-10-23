@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { OrganizationRole } from '../authorization/tenant-rules';
 import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
-import { type TenantContext, tenantStorage } from './tenant-context';
+import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
 
 /**
  * Accessor for the current request's tenant scope. Backed by AsyncLocalStorage so a
@@ -11,15 +11,15 @@ import { type TenantContext, tenantStorage } from './tenant-context';
  * S0 only exposes read access; the fail-closed enforcement guard (FR-5) lands in S2.
  */
 @Injectable()
-export class TenantContextService {
+export class TenantIsolationService {
   /** Current tenant context, or undefined outside a resolved request scope. */
-  get(): TenantContext | undefined {
-    return tenantStorage.getStore();
+  get(): TenantIsolationScope | undefined {
+    return tenantIsolationStorage.getStore();
   }
 
   /** Active tenant id (== organization id), or undefined when none is set. */
-  get tenantId(): string | undefined {
-    return tenantStorage.getStore()?.tenantId;
+  get organizationId(): string | undefined {
+    return tenantIsolationStorage.getStore()?.organizationId;
   }
 
   /**
@@ -28,7 +28,7 @@ export class TenantContextService {
    * the already-trusted tenant; it is never a security boundary on its own.
    */
   get workspaceId(): string | undefined {
-    return tenantStorage.getStore()?.workspaceId;
+    return tenantIsolationStorage.getStore()?.workspaceId;
   }
 
   /**
@@ -36,7 +36,7 @@ export class TenantContextService {
    * 无活动租户/封禁/词汇外角色——TenantPermissionGuard 据此 fail-closed。
    */
   get role(): OrganizationRole | undefined {
-    return tenantStorage.getStore()?.role;
+    return tenantIsolationStorage.getStore()?.role;
   }
 
   /**
@@ -45,21 +45,21 @@ export class TenantContextService {
    * 转换器留字面模板 = DB 匹配落空（保守 deny·与 check 级同向）。
    */
   get userId(): string | undefined {
-    return tenantStorage.getStore()?.userId;
+    return tenantIsolationStorage.getStore()?.userId;
   }
 
   /** Run `fn` within the given tenant context (used by the middleware / tests). */
-  run<T>(ctx: TenantContext, fn: () => T): T {
-    return tenantStorage.run(ctx, fn);
+  run<T>(ctx: TenantIsolationScope, fn: () => T): T {
+    return tenantIsolationStorage.run(ctx, fn);
   }
 
   /** Fail-closed: require an active tenant, else 403. For tenant-scoped endpoints. */
-  requireTenantId(): string {
-    const tenantId = tenantStorage.getStore()?.tenantId;
-    if (!tenantId)
-      throw new ForbiddenException('Missing active tenant context', {
-        errorCode: ERROR_CODES.TENANCY_NO_ACTIVE_CONTEXT,
+  requireActiveOrganizationId(): string {
+    const organizationId = tenantIsolationStorage.getStore()?.organizationId;
+    if (!organizationId)
+      throw new ForbiddenException('Missing active organization context', {
+        errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
-    return tenantId;
+    return organizationId;
   }
 }

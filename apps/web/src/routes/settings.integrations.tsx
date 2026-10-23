@@ -26,7 +26,7 @@ interface LoaderResult {
 
 /**
  * 前端 F6 · 运维与支付集成状态面（module-frontend-integrations·只读）。
- * 消费 `GET /api/v1/health`（`@Public`·零凭据）+ `GET /api/v1/payment/test`（`@TenantExempt`·仅需会话）。
+ * 消费 `GET /api/v1/health`（`@Public`·零凭据）+ `GET /api/v1/payment/test`（`@TenantIsolationExempt`·仅需会话）。
  * 诚实边界：payment 操作面（checkout/customer/refund·需真 PSP 键·无凭据仅 503）不建·缓至运维真值另片。
  */
 export const Route = createFileRoute('/settings/integrations')({

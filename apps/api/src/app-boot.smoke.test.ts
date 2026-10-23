@@ -7,7 +7,7 @@ import {
   TENANT_PERMISSION_INVALIDATOR,
 } from '@core/saas-kit/authorization/tenant-permission.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 import { AppModule } from './app.module';
@@ -31,7 +31,7 @@ describe('全 AppModule boot 冒烟（DI 图整树可解析 · DB-free · 进 CI
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
 
     // 关键接线节点均可被容器解析出实例（这些是历片只手工 new、从未走真实 DI 的类）。
-    expect(moduleRef.get(TenantScopeGuard)).toBeInstanceOf(TenantScopeGuard);
+    expect(moduleRef.get(TenantIsolationGuard)).toBeInstanceOf(TenantIsolationGuard);
     expect(moduleRef.get(TenantPermissionGuard)).toBeInstanceOf(TenantPermissionGuard);
     expect(moduleRef.get(PlatformOperatorGuard)).toBeInstanceOf(PlatformOperatorGuard);
     expect(moduleRef.get(SessionGuard)).toBeInstanceOf(SessionGuard);

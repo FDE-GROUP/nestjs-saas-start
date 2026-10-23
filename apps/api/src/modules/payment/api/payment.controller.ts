@@ -1,5 +1,5 @@
-import { Public } from '@core/saas-kit/tenancy/public.decorator';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { Public } from '@core/saas-kit/tenant-isolation/public.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import type { RawBodyRequest } from '@nestjs/common';
 import {
   Body,
@@ -63,7 +63,7 @@ import {
 @ApiTags('payment')
 // S11 复合全局：payment 非 webhook 属用户级（Stripe customer/checkout·不经租户仓储）→ 类级豁免租户墙（仍需会话）；
 // webhook 方法级 @Public 自动兼豁免会话+租户墙。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('payment')
 export class PaymentController {
   constructor(@Inject(PaymentService) private readonly payment: PaymentService) {}

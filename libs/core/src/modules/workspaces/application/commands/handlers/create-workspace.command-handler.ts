@@ -1,6 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import { TenantContextService } from '../../../../../tenancy/tenant-context.service';
+import { TenantIsolationService } from '../../../../../tenant-isolation/tenant-isolation.service';
 import {
   WORKSPACE_REPOSITORY,
   type WorkspaceRepository,
@@ -17,7 +17,7 @@ import { CreateWorkspaceCommand } from '../create-workspace.command';
 export class CreateWorkspaceCommandHandler implements ICommandHandler<CreateWorkspaceCommand> {
   constructor(
     @Inject(WORKSPACE_REPOSITORY) private readonly workspaces: WorkspaceRepository,
-    @Inject(TenantContextService) private readonly tenant: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
   async execute(command: CreateWorkspaceCommand): Promise<WorkspaceReadModel> {

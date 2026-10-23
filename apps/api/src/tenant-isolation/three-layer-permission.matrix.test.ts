@@ -6,9 +6,9 @@ import type { UserStatusService } from '@core/saas-kit/modules/organizations/lif
 import type { PlatformSettings } from '@core/saas-kit/platform/platform-config.port';
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
-import type { RequestSessionReader } from '@core/saas-kit/tenancy/session/request-session.port';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import type { RequestSessionReader } from '@core/saas-kit/tenant-isolation/session/request-session.port';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { type ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -93,9 +93,9 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
       await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
-    it('租户级：ALS 无 tenant → TenantScopeGuard 403', () => {
-      const tcs = new TenantContextService();
-      const guard = new TenantScopeGuard(tcs, reflectorStub());
+    it('租户级：ALS 无 tenant → TenantIsolationGuard 403', () => {
+      const tcs = new TenantIsolationService();
+      const guard = new TenantIsolationGuard(tcs, reflectorStub());
       const { ctx } = ctxWith();
       expect(() => tcs.run({ userId: 'u1' }, () => guard.canActivate(ctx))).toThrow(
         ForbiddenException,
@@ -116,9 +116,9 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
 
   describe('② 互不授予', () => {
     it('平台 operator 有效会话但无 activeOrganizationId → 进不了租户路由（平台权不授予租户作用域）', () => {
-      const tcs = new TenantContextService();
-      const scope = new TenantScopeGuard(tcs, reflectorStub());
-      // operator 已认证（有会话），但未选定任何租户 → ALS 无 tenantId
+      const tcs = new TenantIsolationService();
+      const scope = new TenantIsolationGuard(tcs, reflectorStub());
+      // operator 已认证（有会话），但未选定任何租户 → ALS 无 organizationId
       const { ctx } = ctxWith();
       expect(() => tcs.run({ userId: 'op-1' }, () => scope.canActivate(ctx))).toThrow(
         ForbiddenException,
@@ -147,22 +147,22 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
       expect(req.sessionUser).toEqual({ id: 'u9', email: 'u9@x.com' });
       // 认证 ≠ 租户访问：紧随其后的租户守卫在无 tenant 绑定时仍 403
-      const tcs = new TenantContextService();
-      const scope = new TenantScopeGuard(tcs, reflectorStub());
+      const tcs = new TenantIsolationService();
+      const scope = new TenantIsolationGuard(tcs, reflectorStub());
       expect(() => tcs.run({ userId: 'u9' }, () => scope.canActivate(ctx))).toThrow(
         ForbiddenException,
       );
     });
 
     it('租户权限缺失时 CASL 裁决 deny → TenantPermissionGuard 403（租户权不外溢）', async () => {
-      const tcs = new TenantContextService();
+      const tcs = new TenantIsolationService();
       const reflector = {
         getAllAndOverride: () => ({ action: 'delete', subject: 'Organization' }),
       };
       const guard = new TenantPermissionGuard(reflector as never, tcs, permissionChecker(false));
       const { ctx } = ctxWith({ cookie: 's' });
       await expect(
-        tcs.run({ tenantId: 'org_1', userId: 'm' }, () => guard.canActivate(ctx)),
+        tcs.run({ organizationId: 'org_1', userId: 'm' }, () => guard.canActivate(ctx)),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -190,11 +190,11 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
       await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(ForbiddenException);
     });
 
-    it('租户层：中间件对暂停用户不绑 tenant/identity → TenantScopeGuard 403', () => {
-      const tcs = new TenantContextService();
-      const scope = new TenantScopeGuard(tcs, reflectorStub());
+    it('租户层：中间件对暂停用户不绑 tenant/identity → TenantIsolationGuard 403', () => {
+      const tcs = new TenantIsolationService();
+      const scope = new TenantIsolationGuard(tcs, reflectorStub());
       const { ctx } = ctxWith();
-      // deny-list 结果：blocked 用户 → tenantId/userId 均 undefined
+      // deny-list 结果：blocked 用户 → organizationId/userId 均 undefined
       expect(() => tcs.run({}, () => scope.canActivate(ctx))).toThrow(ForbiddenException);
     });
   });

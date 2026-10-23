@@ -1,6 +1,6 @@
 import type { TenantListPredicate } from '@core/saas-kit/authorization/tenant-permission.port';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
 import type { WorkspaceRecord } from '../../../domain/repositories/workspace.repository';
 import type { WorkspaceReadModel } from '../../read-models/workspace.read-model';
@@ -14,13 +14,13 @@ import { ListWorkspacesQueryHandler } from './list-workspaces.query-handler';
  * `none`→短路空页**不触 port**（fail-closed·绝不回退全量）。
  */
 
-const ctx = { tenantId: 'orgA', userId: 'u1', role: 'editor' };
+const ctx = { organizationId: 'orgA', userId: 'u1', role: 'editor' };
 
 function makeHandler(predicate: TenantListPredicate) {
   const page: Page<WorkspaceRecord> = { items: [], total: 0, limit: 7, offset: 3 };
   const list = vi.fn().mockResolvedValue(page);
   const listPredicate = vi.fn().mockResolvedValue(predicate);
-  const tenant = new TenantContextService();
+  const tenant = new TenantIsolationService();
   const handler = new ListWorkspacesQueryHandler(
     { list } as never,
     { listPredicate } as never,

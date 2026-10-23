@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
-import { TenantContextService } from '../tenancy/tenant-context.service';
+import { TenantIsolationService } from '../tenant-isolation/tenant-isolation.service';
 import { CAN_KEY, type CanRequirement } from './can.decorator';
 import { TENANT_PERMISSION_CHECKER, type TenantPermissionChecker } from './tenant-permission.port';
 
@@ -26,16 +26,16 @@ import { TENANT_PERMISSION_CHECKER, type TenantPermissionChecker } from './tenan
 export class TenantPermissionGuard implements CanActivate {
   constructor(
     @Inject(Reflector) private readonly reflector: Reflector,
-    @Inject(TenantContextService) private readonly tenantContext: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenantContext: TenantIsolationService,
     @Inject(TENANT_PERMISSION_CHECKER) private readonly checker: TenantPermissionChecker,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Fail-closed: a tenant-scoped route requires an active tenant (FR-5 seed).
-    const organizationId = this.tenantContext.tenantId;
+    const organizationId = this.tenantContext.organizationId;
     if (!organizationId) {
-      throw new ForbiddenException('No active tenant context', {
-        errorCode: ERROR_CODES.TENANCY_NO_ACTIVE_CONTEXT,
+      throw new ForbiddenException('No active organization context', {
+        errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
     }
 

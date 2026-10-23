@@ -6,7 +6,7 @@ import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-eve
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CustomerProvisioner } from '../../../domain/ports/customer-provisioner.port';
 import type { SubscriptionRepository } from '../../../domain/repositories/subscription.repository';
@@ -29,7 +29,7 @@ function makeDeps() {
   const customers = { provisionCustomer } as unknown as CustomerProvisioner;
   const snapshot = vi.fn().mockResolvedValue(VIEW);
   const quota = { snapshot } as unknown as QuotaService;
-  const tenant = { requireTenantId: () => 'orgA' } as unknown as TenantContextService;
+  const tenant = { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService;
   return {
     handler: new CreateSubscriptionCommandHandler(subscriptions, customers, quota, tenant),
     create,
@@ -70,7 +70,7 @@ describe('CreateSubscriptionCommandHandler (S7 · FR-8 tenant↔customer 映射)
         provisionCustomer: vi.fn().mockRejectedValue(new Error('no provider')),
       } as unknown as CustomerProvisioner,
       { snapshot: vi.fn() } as unknown as QuotaService,
-      { requireTenantId: () => 'orgA' } as unknown as TenantContextService,
+      { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService,
     );
     await expect(
       failing.execute({ plan: 'free', customerEmail: 'a@b.com' } as never),
@@ -94,7 +94,7 @@ function makeTruthDeps(streamLen = 0) {
   const customers = { provisionCustomer } as unknown as CustomerProvisioner;
   const snapshot = vi.fn().mockResolvedValue(VIEW);
   const quota = { snapshot } as unknown as QuotaService;
-  const tenant = { requireTenantId: () => 'orgA' } as unknown as TenantContextService;
+  const tenant = { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService;
   const durable: Array<{ events: readonly DomainEvent[]; version: number }> = [];
   const events = {
     publishAll: vi.fn(async () => {
@@ -151,7 +151,7 @@ describe('CreateSubscriptionCommandHandler.execute 真相源写切换（ES R4c �
         provisionCustomer: vi.fn().mockResolvedValue({ id: 'cus_1', providerId: 'stripe' }),
       } as unknown as CustomerProvisioner,
       { snapshot: vi.fn() } as unknown as QuotaService,
-      { requireTenantId: () => 'orgA' } as unknown as TenantContextService,
+      { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService,
       { publishAll: vi.fn() } as unknown as DomainEventPublisher,
       { run: <T>(fn: () => Promise<T>) => fn() } as unknown as UnitOfWork,
       { load: vi.fn(async () => []) } as unknown as EventStore,

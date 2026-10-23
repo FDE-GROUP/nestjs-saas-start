@@ -1,5 +1,5 @@
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   BadRequestException,
   Controller,
@@ -48,8 +48,8 @@ import { StorageDeleteResponse, StorageUrlResponse } from './response/storage.re
   StorageUrlResponse,
 )
 @ApiTags('storage')
-// S11 复合全局：storage 属用户级（上传/下载·不经租户仓储 requireTenantId）→ 类级豁免全局租户墙（仍靠会话墙）。
-@TenantExempt()
+// S11 复合全局：storage 属用户级（上传/下载·不经租户仓储 requireActiveOrganizationId）→ 类级豁免全局租户墙（仍靠会话墙）。
+@TenantIsolationExempt()
 @Controller('storage')
 export class StorageController {
   private readonly logger = new Logger(StorageController.name);

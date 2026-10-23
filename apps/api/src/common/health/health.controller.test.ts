@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { IS_PUBLIC_KEY } from '@core/saas-kit/tenancy/public.decorator';
+import { IS_PUBLIC_KEY } from '@core/saas-kit/tenant-isolation/public.decorator';
 import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import type { HealthCheckService } from '@nestjs/terminus';

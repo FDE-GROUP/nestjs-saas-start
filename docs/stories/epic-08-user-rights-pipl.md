@@ -1,7 +1,7 @@
 # Epic 08 · 个人权益与 PIPL 合规
 
 > 旅程: 自然人如何行使查阅/删除自己个人数据的权利 | 上下文: `users`（用户自助面）
-> 暴露面收紧（人裁甲）：原 `POST /users`・`GET /users`・`GET /users/:id` 已删（`user` 表无租户列·三路由为跨租户 PII 冗余危险面且零消费方）；管理员查全用户走平台治理面（[Epic 7.9](./epic-07-platform-governance.md)），建号正道收口 better-auth sign-up。**此处仅存用户自助面**（本人导出/本人删除），各挂 `SessionGuard`·类级 `@TenantExempt`（用户级·不经租户仓储）。
+> 暴露面收紧（人裁甲）：原 `POST /users`・`GET /users`・`GET /users/:id` 已删（`user` 表无租户列·三路由为跨租户 PII 冗余危险面且零消费方）；管理员查全用户走平台治理面（[Epic 7.9](./epic-07-platform-governance.md)），建号正道收口 better-auth sign-up。**此处仅存用户自助面**（本人导出/本人删除），各挂 `SessionGuard`·类级 `@TenantIsolationExempt`（用户级·不经租户仓储）。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 
 ---

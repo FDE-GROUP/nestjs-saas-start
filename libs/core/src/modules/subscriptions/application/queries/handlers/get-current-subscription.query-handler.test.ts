@@ -2,7 +2,7 @@ import type {
   QuotaService,
   SeatQuotaSnapshot,
 } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetSubscriptionQueryHandler } from './get-current-subscription.query-handler';
 
@@ -21,7 +21,9 @@ describe('GetSubscriptionQueryHandler (S7 · FR-7/FR-8 读侧单点)', () => {
   it('assembles the snapshot for the ALS-resolved tenant', async () => {
     const snapshot = vi.fn().mockResolvedValue(VIEW);
     const quota = { snapshot } as unknown as QuotaService;
-    const tenant = { requireTenantId: () => 'orgA' } as unknown as TenantContextService;
+    const tenant = {
+      requireActiveOrganizationId: () => 'orgA',
+    } as unknown as TenantIsolationService;
     const handler = new GetSubscriptionQueryHandler(quota, tenant);
 
     const result = await handler.execute({} as never);

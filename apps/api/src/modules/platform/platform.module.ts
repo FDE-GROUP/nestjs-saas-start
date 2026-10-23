@@ -21,10 +21,10 @@ import { MikroPlatformIdentityLookup } from './infrastructure/mikro-platform-ide
  *  - **无自有表**（写能力留 tenants：approve/reject/suspend/diagnostics/export 等命令/查询
  *    handlers 与读模型不随门面搬入·controller 经 CQRS Bus 委派·未决项 3 裁「留 tenants」）；
  *  - **不自持角色模型**（平台层裁决概念归 authorization 平台 scope·实现维持 guard 现状）；
- *  - guard 依赖的 `UserStatusService`/`SESSION_READER` 由 @Global TenancyModule 供给（模块图无环）。
+ *  - guard 依赖的 `UserStatusService`/`SESSION_READER` 由 @Global TenantIsolationModule 供给（模块图无环）。
  *
  * `@Global` 导出 guard/audit/端口：tenants 治理 handlers 跨模块注入审计单点（此前由
- * TenancyModule 供给·现归本上下文）。
+ * TenantIsolationModule 供给·现归本上下文）。
  */
 @Global()
 @Module({

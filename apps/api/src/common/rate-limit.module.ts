@@ -7,7 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
  * 请求限流全局墙（module-common-rate-limit·甲裁）：Nest 路由面 deny-by-default，
  * 窗值丙裁 **300 次/60s·IP 宽档**（throttler v6 ttl 单位毫秒；主挡脚本级洪水，
  * 几乎不误伤重前端并发拉取）。执行序 = 本墙（最廉价拒绝）→ 会话墙 401（AuthModule）
- * → 租户墙 403（TenancyModule），故 AppModule imports 必须排在 AuthModule 之前。
+ * → 租户墙 403（TenantIsolationModule），故 AppModule imports 必须排在 AuthModule 之前。
  *
  * 边界（与 BA「各护各面」）：`/api/v1/auth/*` 是 Fastify 实例级通配路由
  * （AuthBootstrapService `all()` 接线），不经 Nest 守卫链——认证面由 BA 自有

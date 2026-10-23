@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ERROR_CODES } from '../../../shared-kernel/errors/error-codes';
-import { TenantContextService } from '../../../tenancy/tenant-context.service';
+import { TenantIsolationService } from '../../../tenant-isolation/tenant-isolation.service';
 import { QUOTA_KEY, type QuotaRequirement } from './quota.decorator';
 import { QuotaService } from './quota.service';
 
@@ -27,7 +27,7 @@ import { QuotaService } from './quota.service';
 export class QuotaGuard implements CanActivate {
   constructor(
     @Inject(Reflector) private readonly reflector: Reflector,
-    @Inject(TenantContextService) private readonly tenantContext: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenantContext: TenantIsolationService,
     @Inject(QuotaService) private readonly quota: QuotaService,
   ) {}
 
@@ -39,10 +39,10 @@ export class QuotaGuard implements CanActivate {
     // 未声明配额需求 → 非本守卫关注点，放行。
     if (!requirement) return true;
 
-    const organizationId = this.tenantContext.tenantId;
+    const organizationId = this.tenantContext.organizationId;
     if (!organizationId)
-      throw new ForbiddenException('No active tenant context', {
-        errorCode: ERROR_CODES.TENANCY_NO_ACTIVE_CONTEXT,
+      throw new ForbiddenException('No active organization context', {
+        errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
 
     const delta = requirement.seats ?? 1;

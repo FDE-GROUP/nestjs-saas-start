@@ -1,4 +1,4 @@
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
 import { CreateWorkspaceCommand } from '../create-workspace.command';
 import { CreateWorkspaceCommandHandler } from './create-workspace.command-handler';
@@ -10,7 +10,7 @@ import { CreateWorkspaceCommandHandler } from './create-workspace.command-handle
  */
 function makeHandler() {
   const create = vi.fn().mockResolvedValue({ id: 'w1' });
-  const tenant = new TenantContextService();
+  const tenant = new TenantIsolationService();
   const handler = new CreateWorkspaceCommandHandler({ create } as never, tenant);
   return { handler, create, tenant };
 }
@@ -22,7 +22,7 @@ describe('CreateWorkspaceCommandHandler · ALS 属主盖章（切片 α）', () 
   it('会话含 userId → Draft.ownerId = 可信会话值（body 伪造面为零）', async () => {
     const { handler, create, tenant } = makeHandler();
 
-    await tenant.run({ tenantId: 'orgA', userId: 'u9', role: 'admin' }, () =>
+    await tenant.run({ organizationId: 'orgA', userId: 'u9', role: 'admin' }, () =>
       handler.execute(command),
     );
 
@@ -32,7 +32,7 @@ describe('CreateWorkspaceCommandHandler · ALS 属主盖章（切片 α）', () 
   it('会话无 userId（如种子/系统路径）→ Draft.ownerId 缺省 → 列落 NULL·不 throw（人裁②）', async () => {
     const { handler, create, tenant } = makeHandler();
 
-    await tenant.run({ tenantId: 'orgA', role: 'admin' }, () => handler.execute(command));
+    await tenant.run({ organizationId: 'orgA', role: 'admin' }, () => handler.execute(command));
 
     expect(create).toHaveBeenCalledWith({ name: 'Design', slug: 'design', ownerId: undefined });
   });

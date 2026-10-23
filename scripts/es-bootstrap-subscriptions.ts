@@ -23,7 +23,7 @@ import { Event } from '../apps/api/src/database/eventing/entities/event.entity.t
 import { hydrateEventRows } from '../apps/api/src/database/eventing/event-hydration.ts';
 import { initMikroOrm } from '../apps/api/src/database/mikro/mikro-orm.factory.ts';
 import { MIKRO_SYS_ENTITIES } from '../apps/api/src/database/mikro/sys-entities.ts';
-import { TenantSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/tenant-subscription.entity.ts';
+import { OrganizationSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/organization-subscription.entity.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -37,7 +37,7 @@ const em = orm.em.fork();
 
 try {
   if (verify) {
-    const subs = await em.find(TenantSubscription, {}, { orderBy: { id: QueryOrder.ASC } });
+    const subs = await em.find(OrganizationSubscription, {}, { orderBy: { id: QueryOrder.ASC } });
     const failures: string[] = [];
     for (const row of subs) {
       const rows = await em.find(

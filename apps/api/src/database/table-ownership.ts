@@ -7,12 +7,12 @@
  * - 新表入 owned 集须改本文件并过审计门（本文件是清单 SSOT，文档只写语义不抄清单）。
  *
  * 键为 `schema.ts` 导出名（非物理表名），值为限界上下文标识：
- * `modules/<ctx>/**` 与 `tenancy/**`（归 `organizations`）为守卫扫描的上下文推导源。
+ * `modules/<ctx>/**` 与 `tenant-isolation/**`（归 `organizations`）为守卫扫描的上下文推导源。
  * 领域细化重构定态：RBAC 三表属主已翻账 `authorization`（A 片·守卫 `contextOf` 按
  * `modules/authorization/**` 自动推导）；`platform` 为治理门面上下文·**无自有表**（不在本清单出现）。
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：lifecycle 适配归 `modules/organizations/**`
  * （推导仍属 organizations·写侧红牌语义不变）·quota 适配归 `modules/subscriptions/**`（纯读侧·读侧宽松）；
- * `tenancy/**` 现仅剩会话/机制适配，推导源保留防散点。
+ * `tenant-isolation/**` 现仅剩会话/机制适配，推导源保留防散点。
  */
 export const TABLE_OWNERSHIP: Record<string, string> = {
   // 身份机器族（global-ba-entity-domain-placement 裁①）：user 表归 auth 域——BA adapter 为 auth 域工具

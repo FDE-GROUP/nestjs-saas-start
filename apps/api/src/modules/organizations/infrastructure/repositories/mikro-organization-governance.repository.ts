@@ -36,7 +36,7 @@ function effectiveStatus(status: OrganizationStatus | undefined): OrganizationSt
 /**
  * ORM 修宪案 B · 切片 3c-ii-B —— 平台租户治理读面 + 运营硬删的 **MikroORM 适配**（`ORGANIZATION_GOVERNANCE_REPOSITORY` 绑定改指本类·MikroORM 为唯一实现）。
  *
- * 跨租户视图：刻意**不注入任何租户上下文**（requireTenantId 于此无关·平台级天然全量·FR-11①）——访问
+ * 跨租户视图：刻意**不注入任何租户上下文**（requireActiveOrganizationId 于此无关·平台级天然全量·FR-11①）——访问
  * 裁决完全由 controller 侧 `PlatformOperatorGuard` 前置把守（fail-closed）。
  *
  * 保真闸（详见 §5.13）：

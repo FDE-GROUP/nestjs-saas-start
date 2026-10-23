@@ -1,10 +1,10 @@
 # Epic 06 · 订阅 · 配额 · 支付
 
 > 旅程: 租户如何开通/升级订阅、配额如何约束成员扩张、支付通道如何运作 | 上下文: `subscriptions`（订阅面）+ `payment`（支付通道）+ seats 配额 hook
-> 商业闭环（vision §7 阶段 2·FR-7/FR-8/D5）：订阅建立「租户 ↔ 支付客户」映射；席位配额在成员增量时点（accept-invitation）以 **402** 拒绝超限。payment 面属**用户级**（Stripe customer/checkout·不经租户仓储）→ 类级 `@TenantExempt`（仍需会话），webhook 方法级 `@Public`（靠签名校验）。
+> 商业闭环（vision §7 阶段 2·FR-7/FR-8/D5）：订阅建立「租户 ↔ 支付客户」映射；席位配额在成员增量时点（accept-invitation）以 **402** 拒绝超限。payment 面属**用户级**（Stripe customer/checkout·不经租户仓储）→ 类级 `@TenantIsolationExempt`（仍需会话），webhook 方法级 `@Public`（靠签名校验）。
 > **支付通道现状（非「三通道并存」）**：`PaymentProviderId` 类型声明 stripe/alipay/wechat_pay 三种，但**当前仅 Stripe 实现并注册，且需配 `STRIPE secretKey` 才进入 providers 表**；alipay/wechat_pay 仅存于类型 + `payment.module` 里**注释掉的注册行**（无实现文件）——属 [`global-cn-adaptation`](../plans/global-cn-adaptation.md) 规划 / **D9 暂缓未落地**，“三通道”是设计意图非现状。
 > **503 懒解析降级（NFR-2·对齐 Epic 01 warn 家族）**：`PaymentService.resolve()` 构造不校验；wanted 通道未注册则回退 stripe，**仅当无任何 provider（连 Stripe 都未配 key）才 503** `BILLING_PROVIDER_NOT_CONFIGURED` ⇒ 未配 Stripe 时整个支付面（含 6.2 建订阅）皆 503。
-> **支付面安全边界（诚实）**：payment 各端点 `@TenantExempt`、无 `@Can`、不绑租户 ⇒ **任何登录用户皆可建 Stripe customer/checkout、发起退款**（用户级 by design·模板参考切片·非租户隔离）；真实产品需自加鉴权/归属校验。
+> **支付面安全边界（诚实）**：payment 各端点 `@TenantIsolationExempt`、无 `@Can`、不绑租户 ⇒ **任何登录用户皆可建 Stripe customer/checkout、发起退款**（用户级 by design·模板参考切片·非租户隔离）；真实产品需自加鉴权/归属校验。
 > 版本: 0.2.1（2026-10-21·【§6.9】溯源补规划指针）
 
 ---
@@ -12,7 +12,7 @@
 ### 6.1 查看当前订阅快照
 - **作为** 租户成员，**我想** 查看本租户当前订阅（档位/席位配额/用量/客户映射），**以便** 了解套餐与余量。
 - **验收**：Given active 租户，When `GET /subscriptions/current`，Then 返回生效订阅快照（任何成员可读）；Given 无租户，Then 403。
-- **溯源**：`GET /api/v1/subscriptions/current` · `SubscriptionsController.getCurrent` · `@UseGuards(TenantScopeGuard)`（无 `@Can`·成员皆可读己方计划）· `GetSubscriptionQuery` → `TenantSubscriptionView` · 契约 `subscriptionViewSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S7 / [`module-tenancy-lifecycle-quota-relocation`](../plans/module-tenancy-lifecycle-quota-relocation.md)。
+- **溯源**：`GET /api/v1/subscriptions/current` · `SubscriptionsController.getCurrent` · `@UseGuards(TenantIsolationGuard)`（无 `@Can`·成员皆可读己方计划）· `GetSubscriptionQuery` → `OrganizationSubscriptionView` · 契约 `subscriptionViewSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S7 / [`module-tenancy-lifecycle-quota-relocation`](../plans/module-tenancy-lifecycle-quota-relocation.md)。
 
 ### 6.2 开通/升级订阅
 - **作为** owner/admin，**我想** 开通或升级本租户订阅，**以便** 提升席位/存储/API 配额。
@@ -32,7 +32,7 @@
 ### 6.5 创建支付客户
 - **作为** 系统/用户，**我想** 在支付服务商侧创建 customer，**以便** 建立计费主体。
 - **验收**：Given 已登录，When `POST /payment/customers`，Then 返回 customer 引用（201）。
-- **溯源**：`POST /api/v1/payment/customers` · `PaymentController.createCustomer` · `@TenantExempt`（用户级）· 契约 `createCustomerSchema`/`paymentCustomerRefSchema`。
+- **溯源**：`POST /api/v1/payment/customers` · `PaymentController.createCustomer` · `@TenantIsolationExempt`（用户级）· 契约 `createCustomerSchema`/`paymentCustomerRefSchema`。
 
 ### 6.6 创建收款会话（checkout / payment intent）
 - **作为** 用户，**我想** 发起一笔收款，**以便** 完成支付意向。

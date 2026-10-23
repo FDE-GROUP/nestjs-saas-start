@@ -17,7 +17,7 @@ describe('request-context（shared-kernel ALS）', () => {
     expect(currentRequestId()).toBeUndefined();
   });
 
-  it('嵌套 run 以内层为准（不与 tenantStorage 等其它上下文互串）', async () => {
+  it('嵌套 run 以内层为准（不与 tenantIsolationStorage 等其它上下文互串）', async () => {
     await requestStorage.run({ requestId: 'outer' }, () =>
       requestStorage.run({ requestId: 'inner' }, () => {
         expect(currentRequestId()).toBe('inner');

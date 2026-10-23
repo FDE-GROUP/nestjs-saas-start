@@ -17,10 +17,10 @@ import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.ser
 import { PLATFORM_SETTINGS } from '@core/saas-kit/platform/platform-config.port';
 import { PLATFORM_IDENTITY_LOOKUP } from '@core/saas-kit/platform/platform-identity.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
-import { SESSION_READER } from '@core/saas-kit/tenancy/session/request-session.port';
-import { TenantMiddleware } from '@core/saas-kit/tenancy/tenant.middleware';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { SESSION_READER } from '@core/saas-kit/tenant-isolation/session/request-session.port';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
+import { TenantIsolationMiddleware } from '@core/saas-kit/tenant-isolation/tenant-isolation.middleware';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
@@ -30,18 +30,18 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
 /**
  * S9 · NFR-7 DI / 租户上下文集成测试（对齐 `design:paramtypes` 回归）。
  *
- * 覆盖历片一直**未被真实 DI 容器**验证的接线面：`TenancyModule` 的守卫/中间件此前全部经
+ * 覆盖历片一直**未被真实 DI 容器**验证的接线面：`TenantIsolationModule` 的守卫/中间件此前全部经
  * `new Guard(...)` 手工实例化单测（矩阵/越界），`app.module.test.ts` 只做 `import()` 冒烟——
  * 二者都不触发 Nest 依 `design:paramtypes` 解析构造依赖。本切片把整条鉴权栈放进真实
  * `Test.createTestingModule`，锁死两件事：
  *
- * 1. **元数据擦除防线**（`import type` 陷阱）：`TenantScopeGuard`（裸 `TenantContextService`）与
- *    `TenantPermissionGuard`（裸 `Reflector`+`TenantContextService`）的构造参数**无 `@Inject` token**，
+ * 1. **元数据擦除防线**（`import type` 陷阱）：`TenantIsolationGuard`（裸 `TenantIsolationService`）与
+ *    `TenantPermissionGuard`（裸 `Reflector`+`TenantIsolationService`）的构造参数**无 `@Inject` token**，
  *    完全依赖 unplugin-swc 的 `emitDecoratorMetadata` 在 Vitest 下发出真实类。一旦被误改成纯类型导入
  *    擦除（metadata 变 `Object`），DI 当场崩、`design:paramtypes` 断言先红。
- * 2. **ALS 端到端传播**：真实 `TenantMiddleware` 把 `activeOrganizationId`/`x-workspace-id` 绑进
+ * 2. **ALS 端到端传播**：真实 `TenantIsolationMiddleware` 把 `activeOrganizationId`/`x-workspace-id` 绑进
  *    AsyncLocalStorage，`next()` 内读到的即守卫将读到的同一上下文；deny-list（无 cookie / 暂停租户）
- *    回落到「无租户」→ `TenantScopeGuard` fail-closed 403。
+ *    回落到「无租户」→ `TenantIsolationGuard` fail-closed 403。
  *
  * 刻意**不做** HTTP 全栈往返（`app.inject` 打真实路由）——那属仍在挂账的「全栈 e2e」，需真实
  * session/CSRF；此处聚焦 DI 解析 + ALS 传播，二者恰是历片测试的盲区。
@@ -66,7 +66,7 @@ function configStub(email = 'admin@x.com') {
 
 /** 在 ALS 作用域内驱动真实中间件，回传 next() 执行期间的观测值。 */
 function driveMiddleware(
-  mw: TenantMiddleware,
+  mw: TenantIsolationMiddleware,
   req: Record<string, unknown>,
   observe: () => void,
 ): Promise<void> {
@@ -84,15 +84,15 @@ function driveMiddleware(
 
 describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS 传播）', () => {
   describe('① design:paramtypes 元数据回归（裸类型注入不受 import type 擦除影响）', () => {
-    it('TenantScopeGuard 第一构造参数携带真实 TenantContextService 类（非 Object）', () => {
-      const types = Reflect.getMetadata('design:paramtypes', TenantScopeGuard) as unknown[];
-      expect(types[0]).toBe(TenantContextService);
+    it('TenantIsolationGuard 第一构造参数携带真实 TenantIsolationService 类（非 Object）', () => {
+      const types = Reflect.getMetadata('design:paramtypes', TenantIsolationGuard) as unknown[];
+      expect(types[0]).toBe(TenantIsolationService);
     });
 
-    it('TenantPermissionGuard 前两参携带真实 Reflector / TenantContextService（无 token，纯元数据解析）', () => {
+    it('TenantPermissionGuard 前两参携带真实 Reflector / TenantIsolationService（无 token，纯元数据解析）', () => {
       const types = Reflect.getMetadata('design:paramtypes', TenantPermissionGuard) as unknown[];
       expect(types[0]).toBe(Reflector);
-      expect(types[1]).toBe(TenantContextService);
+      expect(types[1]).toBe(TenantIsolationService);
       // 第三参 checker 经 @Inject(TENANT_PERMISSION_CHECKER) token 注入，元数据可为 Object（属预期）。
     });
   });
@@ -101,12 +101,12 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
     it('守卫/中间件均可由容器无手工 new 解析出实例', async () => {
       const moduleRef = await Test.createTestingModule({
         providers: [
-          TenantContextService,
-          TenantScopeGuard,
+          TenantIsolationService,
+          TenantIsolationGuard,
           TenantPermissionGuard,
           PlatformOperatorGuard,
           SessionGuard,
-          TenantMiddleware,
+          TenantIsolationMiddleware,
           Reflector,
           { provide: AuthInstanceInjectKey, useValue: authStub(null) },
           { provide: PLATFORM_SETTINGS, useValue: configStub() },
@@ -128,26 +128,26 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
       }).compile();
 
       // 解析（非 merely 注册）会执行构造，依赖不满足则 Nest 抛 "can't resolve"。
-      expect(moduleRef.get(TenantContextService)).toBeInstanceOf(TenantContextService);
-      expect(moduleRef.get(TenantScopeGuard)).toBeInstanceOf(TenantScopeGuard);
+      expect(moduleRef.get(TenantIsolationService)).toBeInstanceOf(TenantIsolationService);
+      expect(moduleRef.get(TenantIsolationGuard)).toBeInstanceOf(TenantIsolationGuard);
       expect(moduleRef.get(TenantPermissionGuard)).toBeInstanceOf(TenantPermissionGuard);
       expect(moduleRef.get(PlatformOperatorGuard)).toBeInstanceOf(PlatformOperatorGuard);
       expect(moduleRef.get(SessionGuard)).toBeInstanceOf(SessionGuard);
-      expect(moduleRef.get(TenantMiddleware)).toBeInstanceOf(TenantMiddleware);
+      expect(moduleRef.get(TenantIsolationMiddleware)).toBeInstanceOf(TenantIsolationMiddleware);
     });
   });
 
-  describe('③ ALS 端到端传播：真实 TenantMiddleware → TenantScopeGuard / TenantContextService', () => {
-    let tcs: TenantContextService;
-    let scope: TenantScopeGuard;
-    let mw: TenantMiddleware;
+  describe('③ ALS 端到端传播：真实 TenantIsolationMiddleware → TenantIsolationGuard / TenantIsolationService', () => {
+    let tcs: TenantIsolationService;
+    let scope: TenantIsolationGuard;
+    let mw: TenantIsolationMiddleware;
 
     beforeEach(async () => {
       const moduleRef = await Test.createTestingModule({
         providers: [
-          TenantContextService,
-          TenantScopeGuard,
-          TenantMiddleware,
+          TenantIsolationService,
+          TenantIsolationGuard,
+          TenantIsolationMiddleware,
           {
             provide: AuthInstanceInjectKey,
             useValue: authStub({ session: { activeOrganizationId: 'org_1' }, user: { id: 'u1' } }),
@@ -158,9 +158,9 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
         ],
       }).compile();
-      tcs = moduleRef.get(TenantContextService);
-      scope = moduleRef.get(TenantScopeGuard);
-      mw = moduleRef.get(TenantMiddleware);
+      tcs = moduleRef.get(TenantIsolationService);
+      scope = moduleRef.get(TenantIsolationGuard);
+      mw = moduleRef.get(TenantIsolationMiddleware);
     });
 
     it('携带会话 cookie + x-workspace-id → 中间件绑 tenant/workspace 进 ALS，守卫同请求内放行', async () => {
@@ -168,10 +168,10 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
       const seen: { tenant?: string; workspace?: string; ok?: boolean; required?: string } = {};
 
       await driveMiddleware(mw, req, () => {
-        seen.tenant = tcs.tenantId;
+        seen.tenant = tcs.organizationId;
         seen.workspace = tcs.workspaceId;
-        seen.required = tcs.requireTenantId();
-        // TenantScopeGuard 读同一 ALS store + 路由元数据（S11 全局化后需 getHandler/getClass·无豁免键则不旁路）。
+        seen.required = tcs.requireActiveOrganizationId();
+        // TenantIsolationGuard 读同一 ALS store + 路由元数据（S11 全局化后需 getHandler/getClass·无豁免键则不旁路）。
         seen.ok = scope.canActivate({
           getHandler: () => () => {},
           getClass: () => class {},
@@ -184,13 +184,13 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
       expect(seen.ok).toBe(true);
     });
 
-    it('无 cookie（公开/旁路路径）→ 中间件不绑 ALS → TenantScopeGuard fail-closed 403', async () => {
+    it('无 cookie（公开/旁路路径）→ 中间件不绑 ALS → TenantIsolationGuard fail-closed 403', async () => {
       const req = { headers: {}, url: '/posts' };
       let thrown: unknown = null;
       let tenantInView: string | undefined = 'sentinel';
 
       await driveMiddleware(mw, req, () => {
-        tenantInView = tcs.tenantId;
+        tenantInView = tcs.organizationId;
         try {
           scope.canActivate({ getHandler: () => () => {}, getClass: () => class {} } as never);
         } catch (err) {
@@ -207,9 +207,9 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
     it('租户被暂停（tenantStatus.isBlocked=true）→ 中间件绑空 → 守卫 403', async () => {
       const moduleRef = await Test.createTestingModule({
         providers: [
-          TenantContextService,
-          TenantScopeGuard,
-          TenantMiddleware,
+          TenantIsolationService,
+          TenantIsolationGuard,
+          TenantIsolationMiddleware,
           {
             provide: AuthInstanceInjectKey,
             useValue: authStub({
@@ -222,16 +222,16 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           { provide: OrganizationStatusService, useValue: { isBlocked: async () => true } },
         ],
       }).compile();
-      const tcs = moduleRef.get(TenantContextService);
-      const scope = moduleRef.get(TenantScopeGuard);
-      const mw = moduleRef.get(TenantMiddleware);
+      const tcs = moduleRef.get(TenantIsolationService);
+      const scope = moduleRef.get(TenantIsolationGuard);
+      const mw = moduleRef.get(TenantIsolationMiddleware);
 
       const req = { headers: { cookie: 'session=abc' }, url: '/posts' };
       let thrown: unknown = null;
       let tenantInView: string | undefined = 'sentinel';
 
       await driveMiddleware(mw, req, () => {
-        tenantInView = tcs.tenantId;
+        tenantInView = tcs.organizationId;
         try {
           scope.canActivate({ getHandler: () => () => {}, getClass: () => class {} } as never);
         } catch (err) {

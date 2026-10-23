@@ -4,7 +4,7 @@ import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Body,
   Controller,
@@ -39,7 +39,7 @@ import { mapBaError } from './ba-error.mapping';
  *
  * 与 {@link OrganizationsOrgAdminController} 的分工：本控制器全部端点是「个人对自己成员资格/
  * 邀请的操作」——**合法无 active 租户也可达**（列表/接受邀请皆发生于入组前），故类级
- * `@TenantExempt()` 旁路租户墙、逐路由 `SessionGuard` 保会话必需；授权语义由 BA 数据面
+ * `@TenantIsolationExempt()` 旁路租户墙、逐路由 `SessionGuard` 保会话必需；授权语义由 BA 数据面
  * 自身裁决（membership 归属、被邀请人=本人、last-owner 不可退等），CASL 不介入
  * （CASL 矩阵管的是「租户内管理职权」，见 admin 门面）。
  *
@@ -63,7 +63,7 @@ interface OrganizationSelfApi {
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('organizations')
 // 入组前/无租户态的合法个人操作（成员资格列表、接受/拒绝邀请）→ 类级豁免租户墙，登录仍必需。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('organizations')
 export class OrganizationsSelfController {
   constructor(@Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance) {}

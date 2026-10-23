@@ -64,10 +64,10 @@
 ### 1.6 获取当前会话 / 登出（BA 端点）
 - **作为** 已登录用户，**我想** 读取我的当前会话（含活动租户锚），**以便** 前端据此渲染、后端据此绑定租户上下文；并可主动登出销毁会话。
 - **验收**：
-  - Given 携带有效 session cookie，When `getSession`，Then 返回 `user` + `session`（含 `activeOrganizationId`·**租户上下文锚**·`TenantMiddleware` 据此绑 ALS）。
+  - Given 携带有效 session cookie，When `getSession`，Then 返回 `user` + `session`（含 `activeOrganizationId`·**租户上下文锚**·`TenantIsolationMiddleware` 据此绑 ALS）。
   - Given 用户点登出，When `signOut`，Then 销毁该会话。
   - **会话有效性与暂停失能**由全局 `SessionGuard` 统一把关（deny-by-default）；「无会话→401 / isBlocked→403」两层链见 [1.7](#17-全局会话墙deny-by-default)，本条只述 BA 两端点本身。
-- **溯源**：BA 原生 `getSession` / `signOut`（`/api/v1/auth/*`）· `session-resolver.ts`（`resolveRequestSession` 单源转发 `auth.api.getSession({headers})`）· `activeOrganizationId → TenantMiddleware`（ALS 绑定源）。
+- **溯源**：BA 原生 `getSession` / `signOut`（`/api/v1/auth/*`）· `session-resolver.ts`（`resolveRequestSession` 单源转发 `auth.api.getSession({headers})`）· `activeOrganizationId → TenantIsolationMiddleware`（ALS 绑定源）。
 
 ---
 
@@ -85,8 +85,8 @@
     - **主路径·即时**：平台 suspend 用户时于**同事务**（`uow.run`）硬删其全部 session 行（不留「已 suspend 但 session 仍活」窗口）→ 后续请求解析不到会话 → **401**；
     - **纵深防御**：若 session 仍解析得出（重登绕过/竞态），`SessionGuard` 的 `isBlocked` 命中 → **403** `Account suspended`。
   - **失能态 = `suspended ‖ deleted`**（非仅 suspended）；**无 `user_status` 行 → 不拦**（deny-list·视同 active·与租户侧同构）。
-  - **统一谓词·多点纵深**：`isBlocked` 系单源谓词，于 `SessionGuard`（用户层·全路由）/ `PlatformOperatorGuard`（平台治理层）/ `TenantMiddleware`（ALS 绑定时同查 user+tenant 两态 deny-list）三处复用，**非依赖单闸**。
-- **溯源**：`SessionGuard`（`auth.module.ts` 注册 `APP_GUARD`·先于 `CsrfOriginGuard`）· `@Public`（`tenancy/public.decorator`）· `UserStatusService.isBlocked`（`libs/core` `user-status.service.ts`·`suspended‖deleted`·无行不拦）· `SuspendUserCommandHandler`（`uow.run` + `AUTH_SESSION_STORE.deleteAllForUser` 同事务硬删）· `platform-operator.guard.ts` / `tenant.middleware.ts`（多点复用）· 关联 [`module-rbac-casl`](../plans/module-rbac-casl.md) 高危#4 收口。
+  - **统一谓词·多点纵深**：`isBlocked` 系单源谓词，于 `SessionGuard`（用户层·全路由）/ `PlatformOperatorGuard`（平台治理层）/ `TenantIsolationMiddleware`（ALS 绑定时同查 user+tenant 两态 deny-list）三处复用，**非依赖单闸**。
+- **溯源**：`SessionGuard`（`auth.module.ts` 注册 `APP_GUARD`·先于 `CsrfOriginGuard`）· `@Public`（`tenant-isolation/public.decorator`）· `UserStatusService.isBlocked`（`libs/core` `user-status.service.ts`·`suspended‖deleted`·无行不拦）· `SuspendUserCommandHandler`（`uow.run` + `AUTH_SESSION_STORE.deleteAllForUser` 同事务硬删）· `platform-operator.guard.ts` / `tenant-isolation.middleware.ts`（多点复用）· 关联 [`module-rbac-casl`](../plans/module-rbac-casl.md) 高危#4 收口。
 
 ### 1.8 CSRF Origin/Referer 纵深防御
 - **作为** 平台，**我想** 对依赖 cookie 会话的状态改变请求校验跨站来源、并给会话 cookie 钉 `SameSite`，**以便** 抵御 CSRF（并为「将来翻 `SameSite=None`」预设第二防线）。

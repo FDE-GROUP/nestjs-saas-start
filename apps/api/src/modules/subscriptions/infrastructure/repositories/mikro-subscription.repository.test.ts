@@ -1,6 +1,6 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { ForbiddenException } from '@nestjs/common';
@@ -9,14 +9,14 @@ import { MikroSubscriptionRepository } from './mikro-subscription.repository';
 
 /**
  * 切片 3c-ii-A 双轨**镜像断言**：与 `原订阅仓储镜像测试` 同一套隔离律（S7 · FR-5），
- * 谓词对象换为 Mikro `FilterQuery`。关键不变量：`requireTenantId()` fail-closed **先于** `fork()`。
+ * 谓词对象换为 Mikro `FilterQuery`。关键不变量：`requireActiveOrganizationId()` fail-closed **先于** `fork()`。
  */
 function makeRepo(organizationId: string | null) {
-  const requireTenantId = vi.fn(() => {
-    if (!organizationId) throw new ForbiddenException('Missing active tenant context');
+  const requireActiveOrganizationId = vi.fn(() => {
+    if (!organizationId) throw new ForbiddenException('Missing active organization context');
     return organizationId;
   });
-  const tenant = { requireTenantId } as unknown as TenantContextService;
+  const tenant = { requireActiveOrganizationId } as unknown as TenantIsolationService;
 
   const find = vi.fn().mockResolvedValue([]);
   const create = vi.fn((_entity: unknown, data: Record<string, unknown>) => data);
@@ -28,7 +28,7 @@ function makeRepo(organizationId: string | null) {
 
   return {
     repo: new MikroSubscriptionRepository(mikro, tenant),
-    spies: { requireTenantId, fork, find, create, persist, flush },
+    spies: { requireActiveOrganizationId, fork, find, create, persist, flush },
   };
 }
 

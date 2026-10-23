@@ -1,6 +1,6 @@
 import { QuotaGuard } from '@core/saas-kit/modules/subscriptions/quota/quota.guard';
 import type { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { type ExecutionContext, ForbiddenException, HttpStatus } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,7 @@ function quotaService(over = false) {
 }
 
 function tenantContext(organizationId?: string) {
-  return { tenantId: organizationId } as unknown as TenantContextService;
+  return { organizationId: organizationId } as unknown as TenantIsolationService;
 }
 
 describe('QuotaGuard (S7 · FR-7 opt-in 逐路由·S2 后 402 翻译归本守卫)', () => {

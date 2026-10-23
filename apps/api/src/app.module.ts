@@ -21,7 +21,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module';
-import { TenancyModule } from './tenancy/tenancy.module';
+import { TenantIsolationModule } from './tenant-isolation/tenant-isolation.module';
 
 @Module({
   imports: [
@@ -35,11 +35,11 @@ import { TenancyModule } from './tenancy/tenancy.module';
     HealthModule,
     AuthModule.forRoot(),
     // 领域细化重构 A3：授权上下文（@Global·guard/裁决端口/published port 的全局供给源），
-    // 注册于 TenancyModule 前——两者互不依赖（guard 的 TenantContextService 经全局解析）。
+    // 注册于 TenantIsolationModule 前——两者互不依赖（guard 的 TenantIsolationService 经全局解析）。
     AuthorizationModule,
     // 领域细化重构 D：平台治理上下文（@Global·operator 闸门/审计单点/平台端口适配）。
     PlatformModule,
-    TenancyModule,
+    TenantIsolationModule,
     UsersModule,
     PostsModule,
     WorkspacesModule,

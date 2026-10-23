@@ -10,7 +10,7 @@ import type {
   RequestSessionReader,
   SessionRequestLike,
   SessionView,
-} from '@core/saas-kit/tenancy/session/request-session.port';
+} from '@core/saas-kit/tenant-isolation/session/request-session.port';
 import { Inject, Injectable } from '@nestjs/common';
 
 /**

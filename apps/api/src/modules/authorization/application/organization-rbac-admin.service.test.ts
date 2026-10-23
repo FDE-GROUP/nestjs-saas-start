@@ -1,5 +1,5 @@
 import type { TenantPermissionInvalidator } from '@core/saas-kit/authorization/tenant-permission.port';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OrganizationRbacRepository } from '../domain/repositories/organization-rbac.repository';
@@ -27,9 +27,9 @@ function makeHarness() {
   };
   const invalidateTenant = vi.fn();
   const ctx = {
-    requireTenantId: vi.fn().mockReturnValue('orgA'),
-    get: vi.fn().mockReturnValue({ tenantId: 'orgA', userId: 'u1' }),
-  } as unknown as TenantContextService;
+    requireActiveOrganizationId: vi.fn().mockReturnValue('orgA'),
+    get: vi.fn().mockReturnValue({ organizationId: 'orgA', userId: 'u1' }),
+  } as unknown as TenantIsolationService;
   const svc = new OrganizationRbacAdminService(
     rbac as unknown as OrganizationRbacRepository,
     { invalidateTenant } as unknown as TenantPermissionInvalidator,

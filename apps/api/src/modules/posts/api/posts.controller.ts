@@ -1,5 +1,5 @@
 import type { CursorPage } from '@core/saas-kit/shared-kernel/domain/pagination';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   Body,
   Controller,
@@ -35,7 +35,7 @@ import { PostCursorPageResponse, PostResponse } from './response/post.response';
 
 /**
  * Reference tenant-scoped resource (global-tenancy S2 · FR-5). Both routes are gated by
- * `TenantScopeGuard` (fail-closed: no active tenant → 403) and read/write exclusively
+ * `TenantIsolationGuard` (fail-closed: no active tenant → 403) and read/write exclusively
  * through the tenant-scoped repository — the handler never names a tenant id. This is the
  * template future business features copy, so the isolation boundary is idiomatic, not bolted on.
  */
@@ -43,7 +43,7 @@ import { PostCursorPageResponse, PostResponse } from './response/post.response';
 // F1 契约面（甲①）：响应 schema 经 @ApiResponse 真挂 DTO；envelope/error 公共形入 components。
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, PostResponse, PostCursorPageResponse)
 @Controller('posts')
-@UseGuards(TenantScopeGuard)
+@UseGuards(TenantIsolationGuard)
 export class PostsController {
   constructor(
     @Inject(CommandBus) private readonly commandBus: CommandBus,

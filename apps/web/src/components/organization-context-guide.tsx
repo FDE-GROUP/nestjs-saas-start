@@ -3,7 +3,7 @@ import { SectionHeading } from './panels';
 
 /**
  * 缺活跃租户引导面板（module-frontend-organization-admin-guide）：租户边界管理页 403
- * `TENANCY:NO_ACTIVE_CONTEXT` 时替死胡同错误原文给可操作出路——两态统一指回
+ * `ISOLATION:NO_ACTIVE_CONTEXT` 时替死胡同错误原文给可操作出路——两态统一指回
  * dashboard 唯一引导 SSOT（零组织→申请/等邀请；有组织未激活→「我的租户」切换），
  * 不在本页内联申请表单（防双引导面漂移）。纯展示·可脱离 router loader 镜测。
  */

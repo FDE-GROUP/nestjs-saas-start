@@ -7,7 +7,7 @@ import {
 import { Can } from '@core/saas-kit/authorization/can.decorator';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   BadRequestException,
   Body,
@@ -67,7 +67,7 @@ interface OrganizationOrgApi {
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('organizations')
 @Controller('organizations')
-@UseGuards(TenantScopeGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
 export class OrganizationsOrgAdminController {
   constructor(
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,

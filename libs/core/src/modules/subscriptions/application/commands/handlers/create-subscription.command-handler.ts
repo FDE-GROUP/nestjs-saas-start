@@ -11,7 +11,7 @@ import {
   UNIT_OF_WORK,
   type UnitOfWork,
 } from '../../../../../shared-kernel/domain/unit-of-work.port';
-import { TenantContextService } from '../../../../../tenancy/tenant-context.service';
+import { TenantIsolationService } from '../../../../../tenant-isolation/tenant-isolation.service';
 import { SubscriptionCreatedEvent } from '../../../domain/events/subscription-created.event';
 import {
   CUSTOMER_PROVISIONER,
@@ -41,7 +41,7 @@ export class CreateSubscriptionCommandHandler
     @Inject(SUBSCRIPTION_REPOSITORY) private readonly subscriptions: SubscriptionRepository,
     @Inject(CUSTOMER_PROVISIONER) private readonly customers: CustomerProvisioner,
     @Inject(QuotaService) private readonly quota: QuotaService,
-    @Inject(TenantContextService) private readonly tenant: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
     // ES R4c 真相源写切换（module-es-r4-second-context-subscriptions §3-R4c·高危#1 逐次亲签）：
     // 四参均 @Optional + 缺省——旋钮关（缺省）时既有四参 `new(...)` 调用点逐字节不变（新建仅 CRUD 插行·零事件）；
     // 开时 EVENT_STORE/发布器/UoW 由 @Global DatabaseModule 供·truthSource 由 SubscriptionsModule useFactory 注入。
@@ -52,7 +52,7 @@ export class CreateSubscriptionCommandHandler
   ) {}
 
   async execute(command: CreateSubscriptionCommand): Promise<OrganizationSubscriptionView> {
-    const organizationId = this.tenant.requireTenantId();
+    const organizationId = this.tenant.requireActiveOrganizationId();
     const planDef = resolvePlanDef(command.plan);
     // FR-8: materialize the provider-side customer (via the port) and map it onto the subscription row.
     const customer = await this.customers.provisionCustomer(command.customerEmail);

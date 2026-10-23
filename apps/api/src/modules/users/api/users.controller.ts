@@ -1,4 +1,4 @@
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Controller,
   Delete,
@@ -35,7 +35,7 @@ import type { UserDataExportReadModel } from '../application/read-models/user-da
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('users')
 // S11 复合全局：users 全路由属用户级（不经租户仓储）·需登录但合法无租户 → 类级豁免全局租户墙。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('users')
 export class UsersController {
   private readonly logger = new Logger(UsersController.name);

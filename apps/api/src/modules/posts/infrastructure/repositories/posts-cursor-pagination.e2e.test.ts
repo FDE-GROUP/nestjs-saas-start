@@ -5,7 +5,7 @@ import { Organization } from '@app/modules/organizations/infrastructure/entities
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { decodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
-import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { BadRequestException } from '@nestjs/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MikroPostRepository } from './mikro-post.repository';
@@ -76,9 +76,9 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
 
   function repo() {
     const fakeTenant = {
-      requireTenantId: () => orgId,
+      requireActiveOrganizationId: () => orgId,
       workspaceId: undefined,
-    } as unknown as TenantContextService;
+    } as unknown as TenantIsolationService;
     return new MikroPostRepository(mikro, fakeTenant);
   }
 

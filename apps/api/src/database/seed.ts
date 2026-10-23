@@ -119,7 +119,7 @@ export function enforceSeedPasswordPolicy(env: NodeJS.ProcessEnv = process.env):
  * seed 直调 Better Auth 所需的最小 API 面（`signUpEmail` + `createOrganization`）·结构型而非导入 BA 具体类型——
  * 便于镜测桩注入且不耦合 BA 版本泛型。`createOrganization` 走**服务端系统动作**（无 session + `body.userId` →
  * `isSystemAction`·不受 `allowUserToCreateOrganization:false` 限·BA 原生把创建者置首名 `owner` member），
- * 供 `module-db-seed-tenant-context` 为 demo 号预建活跃组织（见 `tenant-isolation.e2e.test.ts:131-147` 同款范式）。
+ * 供 `module-db-seed-tenant-isolation-scope` 为 demo 号预建活跃组织（见 `tenant-isolation.e2e.test.ts:131-147` 同款范式）。
  */
 interface LoginableAuth {
   api: {
@@ -238,12 +238,12 @@ export async function createUsers(
 }
 
 /**
- * 为某个 persona 幂等预建一个**活跃组织** + 把其置为首名 `owner` 成员（module-db-seed-tenant-context C-2）。
+ * 为某个 persona 幂等预建一个**活跃组织** + 把其置为首名 `owner` 成员（module-db-seed-tenant-isolation-scope C-2）。
  * - 走 BA `createOrganization` 系统动作（无 session + `body.userId` → `isSystemAction`·不受
  *   `allowUserToCreateOrganization:false` 限·BA 原生把创建者置首名 `owner` member·FR-12），
  *   **不经**我方 `submit` 那段「建 `tenant` 户籍行打 `pending_approval`」的门面（global-tenant-
  *   entity-reclamation 切片 B：态存自有表·旧 `metadata.status` 寄居已退场）→ 无户籍行，
- *   `TenantMiddleware` deny-list 视同 legacy/seeded 放行（活跃·非 pending）。
+ *   `TenantIsolationMiddleware` deny-list 视同 legacy/seeded 放行（活跃·非 pending）。
  * - 幂等：按 `slug` find；命中则确保该 user 为 owner member（按 (org,userId) find·缺则直插），返 `'exists'`；
  *   未命中则 `createOrganization`（BA 自带 owner member），返 `'created'`。
  * - **不**在此 `setActiveOrganization`（逐会话事实、对浏览器新会话无效·见 plan 证据链）。

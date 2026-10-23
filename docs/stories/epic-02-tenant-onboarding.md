@@ -10,10 +10,10 @@
 - **作为** 已登录用户（申请人），**我想** 提交建租申请，**以便** 拥有一个待审批的新租户，我自动成为首名 owner。
 - **验收**：
   - Given 有效会话，When `POST /organizations/applications`（name+slug），Then 经服务端系统动作建 `organization` + 户籍行 `tenant.status=pending_approval`，返回申请视图（201）。
-  - Given 此刻无 active 租户，When 访问该端点，Then 可达（类级 `@TenantExempt`·鸡生蛋合法无租户）。
+  - Given 此刻无 active 租户，When 访问该端点，Then 可达（类级 `@TenantIsolationExempt`·鸡生蛋合法无租户）。
   - Given 申请人，When 建租成功，Then 经 BA 原生成首名 `owner`（FR-12 保底）。
   - **重提/幂等边界（as-built）**：幂等仅按 `organizationId`（`em.upsert`），而每次成功 `createOrganization` 生成**新** orgId ⇒ **无「每用户仅一 pending 申请」去重**，换 slug 即可再开一个 pending 租户。**相同 slug** 则被拦——BA `createOrganization` 应用层 `findOrganizationBySlug` 查重→抛 `ORGANIZATION_ALREADY_EXISTS`（400）；但**本仓 DDL 未给 `organization.slug` 建唯一约束**（migration 仅 `slug text not null`，对比 `workspace` 有 `(orgId,slug)` 复合唯一），去重纯赖运行时 find-then-insert、**非原子**（并发同 slug 双申请理论上可竞态重复·此面属推断/未穷证）。
-- **溯源**：`POST /api/v1/organizations/applications` · `OrganizationsController.apply`（`organizations.controller.ts`·类级 `@TenantExempt`+`SessionGuard`+`@HttpCode(201)`）· `SubmitOrganizationApplicationCommand` → `MikroOrganizationProvisioningRepository.submit`（`auth.api.createOrganization` 服务端动作 + `em.upsert(Tenant,{status:PENDING})`）· BA 查重 `findOrganizationBySlug`（`better-auth/plugins/organization` `crud-org`）· 契约 `createTenantApplicationSchema`/`tenantApplicationViewSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S4 / [`global-tenant-entity-reclamation`](../plans/global-tenant-entity-reclamation.md)。
+- **溯源**：`POST /api/v1/organizations/applications` · `OrganizationsController.apply`（`organizations.controller.ts`·类级 `@TenantIsolationExempt`+`SessionGuard`+`@HttpCode(201)`）· `SubmitOrganizationApplicationCommand` → `MikroOrganizationProvisioningRepository.submit`（`auth.api.createOrganization` 服务端动作 + `em.upsert(Tenant,{status:PENDING})`）· BA 查重 `findOrganizationBySlug`（`better-auth/plugins/organization` `crud-org`）· 契约 `createTenantApplicationSchema`/`tenantApplicationViewSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S4 / [`global-tenant-entity-reclamation`](../plans/global-tenant-entity-reclamation.md)。
 
 ### 2.2 审批通过（激活）
 - **作为** 平台经营者，**我想** 批准一个待审租户，**以便** 它转 `active` 并真正可用。
@@ -39,11 +39,11 @@
 ### 2.4 待审/失能租户的业务路由 fail-closed
 - **作为** 平台，**我想** 未通过审批（或被暂停/删除）的租户其业务路由一律不可用，**以便** 审批制与失能语义闭环（deny-list）。
 - **验收**：
-  - Given 租户处于 `pending_approval/suspended/deleted`（`isOrganizationBlocked` deny-list），When 其成员访问需 active 租户的业务路由，Then `TenantMiddleware` **不绑定**该租户上下文 → 全局 `TenantScopeGuard` 无 tenantId → 403（`TENANCY_NO_ACTIVE_CONTEXT`·wire 值 `TENANCY:NO_ACTIVE_CONTEXT`·401 先于 403）。
+  - Given 租户处于 `pending_approval/suspended/deleted`（`isOrganizationBlocked` deny-list），When 其成员访问需 active 租户的业务路由，Then `TenantIsolationMiddleware` **不绑定**该租户上下文 → 全局 `TenantIsolationGuard` 无 tenantId → 403（`ISOLATION_NO_ACTIVE_CONTEXT`·wire 值 `ISOLATION:NO_ACTIVE_CONTEXT`·401 先于 403）。
   - **双层失能汇于同码 403**：中间件先查**用户层** `userStatus.isBlocked`（暂停用户 → 不绑任何身份/租户）再查**租户层** `tenantStatus.isBlocked`（deny-list 态）；任一层命中都塌成「无 tenantId → 403」。（落点区别于 [Epic 01 §1.7](./epic-01-authentication.md)：会话墙出 401/403，此处是租户墙 403。）
-  - **态读取异常亦 fail-closed**：`TenantMiddleware` 对读态 `.catch(() => bind(undefined))`——租户状态不可解析（如 DB 抖动）时按失能处理（宁误拦不漏放）。
+  - **态读取异常亦 fail-closed**：`TenantIsolationMiddleware` 对读态 `.catch(() => bind(undefined))`——租户状态不可解析（如 DB 抖动）时按失能处理（宁误拦不漏放）。
   - Given 无户籍行（存量/seeded），When 解析，Then 视同 `active` 不拦（deny-list 缺省）。**fail-open 依据**：`organization` 本体无行则下游租户解析早已 fail，故「无状态记录 → 不拦」仅在「有 org 无 status 行」的窄边界生效（收权案 `tenant.status` 回填后基本抹平），与 fail-closed 隔离不矛盾。
-- **溯源**：`TenantMiddleware`（`libs/core/src/tenancy`·双层 isBlocked + catch fail-closed）· `TenantScopeGuard`（`!tenantId → 403`）· `isOrganizationBlocked`（deny-list {pending,suspended,deleted}）/ `isActive`（allow-list·仅 active）双谓词并存（`organization-lifecycle.ts`）· `UserStatusService.isBlocked` / `OrganizationStatusService.isBlocked` 单源 · 关联 [`global-tenant-entity-reclamation`](../plans/global-tenant-entity-reclamation.md)（`tenant.status` 真列）/ [`module-rbac-casl`](../plans/module-rbac-casl.md)。
+- **溯源**：`TenantIsolationMiddleware`（`libs/core/src/tenant-isolation`·双层 isBlocked + catch fail-closed）· `TenantIsolationGuard`（`!tenantId → 403`）· `isOrganizationBlocked`（deny-list {pending,suspended,deleted}）/ `isActive`（allow-list·仅 active）双谓词并存（`organization-lifecycle.ts`）· `UserStatusService.isBlocked` / `OrganizationStatusService.isBlocked` 单源 · 关联 [`global-tenant-entity-reclamation`](../plans/global-tenant-entity-reclamation.md)（`tenant.status` 真列）/ [`module-rbac-casl`](../plans/module-rbac-casl.md)。
 
 ---
 

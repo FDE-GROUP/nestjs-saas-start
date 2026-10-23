@@ -5,7 +5,7 @@ import {
 import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
 import { SYSTEM_ROLE_KEYS } from '@core/saas-kit/authorization/tenant-rules';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import {
   BadRequestException,
   ConflictException,
@@ -25,7 +25,7 @@ import {
  * 角色/授权**管理门面应用服务**（module-rbac-dynamic-roles §2.5/§2.6·S3）。
  *
  * 职责边界（授权在我·事实入 DB）：
- *  - 从 ALS 取活动租户（`requireTenantId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
+ *  - 从 ALS 取活动租户（`requireActiveOrganizationId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
  *  - 委派 `OrganizationRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
  *  - 将端口返回的**领域结果码**转译为 HTTP 语义（领域不借异常表达事实，转译归应用层）；
  *  - **写成功后失效本租户投影缓存**（`TenantPermissionInvalidator`·热改即生效·读写分治端口）。
@@ -39,7 +39,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
     @Inject(TENANT_PERMISSION_INVALIDATOR)
     private readonly invalidator: TenantPermissionInvalidator,
-    @Inject(TenantContextService) private readonly ctx: TenantContextService,
+    @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
   ) {}
 
   /** 本租户全部角色（读面·不触发失效）。 */
@@ -156,7 +156,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
   }
 
   private org(): string {
-    return this.ctx.requireTenantId();
+    return this.ctx.requireActiveOrganizationId();
   }
 
   private actor(): string | null {

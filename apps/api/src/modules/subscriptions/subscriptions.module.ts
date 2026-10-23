@@ -26,12 +26,12 @@ const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
  * Tenant subscription slice (global-tenancy S7 · FR-7/FR-8/D5).
  *
  * Dependencies resolve without extra imports: `原数据库服务` (DatabaseModule @Global),
- * `TenantContextService` (TenancyModule @Global) and `PaymentService`
+ * `TenantIsolationService` (TenantIsolationModule @Global) and `PaymentService`
  * (PaymentModule now @Global). Dependency inversion: the domain owns the subscription
  * repository port; the ORM adapter stamps/scope the ALS tenant (FR-5 choke-point).
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：席位配额
- * （`QuotaService`/`QuotaGuard` + `QUOTA_STORE` Mikro 适配）由 TenancyModule 归位本上下文
+ * （`QuotaService`/`QuotaGuard` + `QUOTA_STORE` Mikro 适配）由 TenantIsolationModule 归位本上下文
  * （配额是订阅域策略·FR-7）；沿 Authorization/Platform 先例升 `@Global` 保持原可见性语义
  * （auth `seats-quota.hook` 与路由 opt-in 消费面零行为变更）。
  */
@@ -56,7 +56,7 @@ const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
     },
     // §9.5.4①B/④ · P1c：订阅 domain/application 经端口消费客户开通，PaymentService 适配留应用侧。
     { provide: CUSTOMER_PROVISIONER, useClass: PaymentCustomerProvisioner },
-    // 机制层提纯（未决项 4）：quota 服务/守卫与 store 适配自 TenancyModule 归位本上下文。
+    // 机制层提纯（未决项 4）：quota 服务/守卫与 store 适配自 TenantIsolationModule 归位本上下文。
     // §9.5.4①B 端口倒置：core 服务经端口消费持久化，适配由本（参考）应用装配。
     QuotaService,
     QuotaGuard,

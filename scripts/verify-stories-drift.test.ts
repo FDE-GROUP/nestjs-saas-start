@@ -7,7 +7,7 @@ describe('extractStoryRefs — 溯源引用提取', () => {
   it('正态：plan 链接 / .ts 文件名（裸名 + 带路径取 basename）/ wire 码 / 符号 皆入集', () => {
     const md =
       '关联 [`x`](../plans/global-tenancy.md) · `OrganizationsController.apply`（`organizations.controller.ts`）· ' +
-      '源 `libs/core/src/tenancy/organization-lifecycle.ts` · wire 值 `TENANCY:NO_ACTIVE_CONTEXT` · 码 `USER:NOT_FOUND` · ' +
+      '源 `libs/core/src/tenant-isolation/organization-lifecycle.ts` · wire 值 `TENANCY:NO_ACTIVE_CONTEXT` · 码 `USER:NOT_FOUND` · ' +
       '命令 `SubmitOrganizationApplicationCommand` → `MikroOrganizationProvisioningRepository.submit`。';
     const r = extractStoryRefs(md);
     expect(r.planLinks).toEqual(['global-tenancy.md']);
@@ -38,10 +38,10 @@ describe('extractStoryRefs — 溯源引用提取', () => {
 
   it('符号正态：仅以角色后缀收尾者入集·且剔重', () => {
     const r = extractStoryRefs(
-      '`TenantScopeGuard` · `ApproveOrganizationCommand` · `tenant.rejected` 事件 `OrganizationRejectedEvent` · `TenantScopeGuard`',
+      '`TenantIsolationGuard` · `ApproveOrganizationCommand` · `tenant.rejected` 事件 `OrganizationRejectedEvent` · `TenantIsolationGuard`',
     );
     expect(r.symbols).toEqual([
-      'TenantScopeGuard',
+      'TenantIsolationGuard',
       'ApproveOrganizationCommand',
       'OrganizationRejectedEvent',
     ]);

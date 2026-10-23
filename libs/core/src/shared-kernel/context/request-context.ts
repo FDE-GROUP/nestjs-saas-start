@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 
 /**
  * Per-request correlation context (module-common-request-correlation)。
- * 与 tenantStorage 分store 独立（乙裁）：request id 与租户无关，且必须覆盖
+ * 与 tenantIsolationStorage 分store 独立（乙裁）：request id 与租户无关，且必须覆盖
  * /health 等旁路面——不随租户墙的生命周期走。
  * 落 shared-kernel 是依赖方向硬约束：libs/core 内的事件构造点
  * （tenant-status / user-status service）也要读源，holder 放 apps/api 即违反

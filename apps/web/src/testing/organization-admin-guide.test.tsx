@@ -8,7 +8,7 @@ import { routeTree } from '../routeTree.gen';
 
 /**
  * 缺活跃租户引导分派回归锁（module-frontend-organization-admin-guide·四路 loader 共用 probe 机制，
- * 此处以 roles 列表路全链打穿为锁形代表）：403 `TENANCY:NO_ACTIVE_CONTEXT` + /organizations 空 →
+ * 此处以 roles 列表路全链打穿为锁形代表）：403 `ISOLATION:NO_ACTIVE_CONTEXT` + /organizations 空 →
  * 零组织引导文案；+ /organizations 有行 → 未激活切换文案；非该码错误 → 维持 ErrorPanel 原文。
  * 手法承 nesting 测：`vi.mock(lib/api·lib/session)` 注入拟真 envelope·全 mock 不触网。
  * 安置注：本文件放 `src/testing/` 而非 routes 同址——运行中的 dev watcher 会把 routes/ 下
@@ -29,8 +29,8 @@ vi.mock('../lib/api', () => ({
 
 const noCtxError = {
   statusCode: 403,
-  message: 'No active tenant context',
-  errorCode: ERROR_CODES.TENANCY_NO_ACTIVE_CONTEXT,
+  message: 'No active organization context',
+  errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
 };
 
 function mountAt(path: string) {

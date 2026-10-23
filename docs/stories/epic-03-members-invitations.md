@@ -6,7 +6,7 @@
 > 例外（我方前置逻辑）：管理面的角色存在性闸 `assertRoleAssignable`（3.8/3.11）在**直调 BA 之前**由我方执行，属「我方逻辑」而非 BA 透传。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 
-## 个人通道（`OrganizationsSelfController`·类级 `@TenantExempt`·逐路由 `SessionGuard`）
+## 个人通道（`OrganizationsSelfController`·类级 `@TenantIsolationExempt`·逐路由 `SessionGuard`）
 
 > 这些操作合法可无 active 租户（入组前即发生），故旁路租户墙；CASL 不介入（非「租户内管理职权」），授权由 BA 数据面自裁（membership 归属、被邀请人=本人、last-owner 不可退）。
 
@@ -41,7 +41,7 @@
 - **验收**：Given 有效会话，When `GET /tenants/invitations/mine`，Then 以会话用户 email 收敛可见面（server-side-only query）。
 - **溯源**：`GET /api/v1/organizations/invitations/mine` · `OrganizationsSelfController.listMyInvitations`（`query.email = user.email`）· `CurrentUser`。
 
-## 管理通道（`OrganizationsOrgAdminController`·`@UseGuards(TenantScopeGuard, TenantPermissionGuard)`·逐路由 `@Can`）
+## 管理通道（`OrganizationsOrgAdminController`·`@UseGuards(TenantIsolationGuard, TenantPermissionGuard)`·逐路由 `@Can`）
 
 > 需 active 租户（不豁免全局墙）；每端点 CASL 裁决，通过后服务端直调 BA；角色挂载前过 `assertRoleAssignable` 存在性闸。
 

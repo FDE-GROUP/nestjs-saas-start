@@ -3,7 +3,7 @@ import type { PlatformSettings } from '@core/saas-kit/platform/platform-config.p
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 
-import type { RequestSessionReader } from '@core/saas-kit/tenancy/session/request-session.port';
+import type { RequestSessionReader } from '@core/saas-kit/tenant-isolation/session/request-session.port';
 import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';

@@ -22,7 +22,7 @@ import { Workspace } from '@app/modules/workspaces/infrastructure/entities/works
 import { ListWorkspacesQueryHandler } from '@core/saas-kit/modules/workspaces/application/queries/handlers/list-workspaces.query-handler';
 import { ListWorkspacesQuery } from '@core/saas-kit/modules/workspaces/application/queries/list-workspaces.query';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -152,12 +152,12 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     });
 
   const listWorkspacesViaHandler = (ctx: {
-    tenantId: string;
+    organizationId: string;
     userId?: string;
     role?: string;
   }): Promise<{ slug: string; ownerId?: string | null }[]> => {
     const handler = app.get(ListWorkspacesQueryHandler);
-    const tenant = app.get(TenantContextService);
+    const tenant = app.get(TenantIsolationService);
     return tenant
       .run(ctx, () => handler.execute(new ListWorkspacesQuery({ limit: 50, offset: 0 })))
       .then((page) => [...page.items]);
@@ -286,13 +286,13 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     expect(slugsBHttp).toEqual([`beta-${stamp}`]);
 
     const slugsB = (
-      await listWorkspacesViaHandler({ tenantId: orgId, userId: b.userId, role: 'limited' })
+      await listWorkspacesViaHandler({ organizationId: orgId, userId: b.userId, role: 'limited' })
     ).map((w) => w.slug);
     expect(slugsB).toEqual([`beta-${stamp}`]);
 
     // — 5. A（owner seed 无条件 read → kind all）：三行全见。
     const listA = await listWorkspacesViaHandler({
-      tenantId: orgId,
+      organizationId: orgId,
       userId: a.userId,
       role: 'owner',
     });

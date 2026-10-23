@@ -30,7 +30,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
  * id，表内 id 序暂不可依赖，故排序仍走时间列），存在才置 `to` 态并显式盖 `updatedAt`；无 `from` 行
  * 零写返回 `false`——重投/滞后事件天然 no-op，at-least-once 的幂等硬要求在此闭环。
  *
- * 不走 `requireTenantId()`：本面属平台治理消费者（无目标租户请求 ALS），隔离语义由「organizationId 只
+ * 不走 `requireActiveOrganizationId()`：本面属平台治理消费者（无目标租户请求 ALS），隔离语义由「organizationId 只
  * 源自治理卡点事件行」保证；用户面 port 的 ALS 卡点纪律（FR-5）不受本类影响。
  *
  * ES R4c 真相源写切换（module-es-r4-second-context-subscriptions §3-R4c·高危#1 逐次亲签）：

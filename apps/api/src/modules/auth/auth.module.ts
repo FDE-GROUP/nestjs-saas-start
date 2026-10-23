@@ -44,7 +44,7 @@ export class AuthModule {
         // 与 AuthController stub 死面已清算删除。
         AuthBootstrapService,
         // S11 · 高危#4 收口：全局会话墙（deny-by-default）。SessionGuard 已在本模块 provide，
-        // 其依赖（AuthInstanceInjectKey 本地 · UserStatusService 经 @Global TenancyModule）均可解析；
+        // 其依赖（AuthInstanceInjectKey 本地 · UserStatusService 经 @Global TenantIsolationModule）均可解析；
         // useExisting 复用同一实例。@Public() 路由经 Reflector 旁路。
         { provide: APP_GUARD, useExisting: SessionGuard },
         // module-auth-csrf-defense 甲：CSRF Origin/Referer 校验墙（全局·排 SessionGuard 之后，401 先 403）。

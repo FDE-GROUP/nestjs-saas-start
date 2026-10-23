@@ -6,7 +6,7 @@ import {
 } from '../../../../../authorization/tenant-permission.port';
 import type { Page } from '../../../../../shared-kernel/domain/pagination';
 import { createPage } from '../../../../../shared-kernel/domain/pagination';
-import { TenantContextService } from '../../../../../tenancy/tenant-context.service';
+import { TenantIsolationService } from '../../../../../tenant-isolation/tenant-isolation.service';
 import {
   WORKSPACE_REPOSITORY,
   type WorkspaceRepository,
@@ -28,13 +28,13 @@ export class ListWorkspacesQueryHandler implements IQueryHandler<ListWorkspacesQ
   constructor(
     @Inject(WORKSPACE_REPOSITORY) private readonly workspaces: WorkspaceRepository,
     @Inject(TENANT_PERMISSION_CHECKER) private readonly checker: TenantPermissionChecker,
-    @Inject(TenantContextService) private readonly tenant: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ListWorkspacesQuery): Promise<Page<WorkspaceReadModel>> {
     const predicate = await this.checker.listPredicate({
-      organizationId: this.tenant.tenantId,
+      organizationId: this.tenant.organizationId,
       role: this.tenant.role,
       userId: this.tenant.userId,
       action: 'read',

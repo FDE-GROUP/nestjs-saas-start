@@ -7,7 +7,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../app.module';
 import { AuthModule } from '../modules/auth/auth.module';
-import { TenancyModule } from '../tenancy/tenancy.module';
+import { TenantIsolationModule } from '../tenant-isolation/tenant-isolation.module';
 import { buildFastifyHttpOptions } from './fastify-http-options';
 import { HealthController } from './health/health.controller';
 import { RATE_LIMIT_DEFAULT, RateLimitModule } from './rate-limit.module';
@@ -54,7 +54,7 @@ describe('RateLimitModule 形状锁（甲/丙裁）', () => {
       );
     expect(idx(RateLimitModule)).toBeGreaterThanOrEqual(0);
     expect(idx(RateLimitModule)).toBeLessThan(idx(AuthModule));
-    expect(idx(AuthModule)).toBeLessThan(idx(TenancyModule));
+    expect(idx(AuthModule)).toBeLessThan(idx(TenantIsolationModule));
   });
 
   it('health 探针类级 @SkipThrottle 元数据在场（探活/verify-prod-boot 不被锁）', () => {

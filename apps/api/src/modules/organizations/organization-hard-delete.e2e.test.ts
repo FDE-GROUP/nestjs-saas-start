@@ -248,6 +248,6 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
  * 本地跑法（专用 nestjs_e2e 库·不污染 dev 数据·库须已建含上述各表的 schema）：
  *   E2E_DATABASE_URL=postgres://postgres:postgres@localhost:5432/nestjs_e2e \
  *     DATABASE_URL=postgres://postgres:postgres@localhost:5432/nestjs_e2e \
- *     pnpm exec vitest run apps/api/src/tenancy/organization-hard-delete.e2e.test.ts
+ *     pnpm exec vitest run apps/api/src/tenant-isolation/organization-hard-delete.e2e.test.ts
  *   docker exec postgres-dev psql -U postgres -c "DROP DATABASE nestjs_e2e;"              # 用完清理（可选）
  */

@@ -6,7 +6,15 @@ import { ERROR_CODE_PATTERN, ERROR_CODES, isErrorCode } from './error-codes';
  * 文法、key↔value 一一对应、唯一性、命名空间白名单。新增码若不守纪律即红。
  */
 const entries = Object.entries(ERROR_CODES);
-const ALLOWED_NAMESPACES = new Set(['AUTH', 'TENANCY', 'USER', 'WORKSPACE', 'BILLING', 'STORAGE']);
+const ALLOWED_NAMESPACES = new Set([
+  'AUTH',
+  'ISOLATION',
+  'TENANCY',
+  'USER',
+  'WORKSPACE',
+  'BILLING',
+  'STORAGE',
+]);
 
 describe('ERROR_CODES 契约（shared-kernel·单源码表）', () => {
   it('每个值皆属 NAMESPACE:NAME 文法', () => {

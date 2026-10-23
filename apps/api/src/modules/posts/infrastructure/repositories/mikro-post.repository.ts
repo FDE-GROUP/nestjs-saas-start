@@ -9,7 +9,7 @@ import {
   encodeCursor,
 } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
-import { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { QueryOrder } from '@mikro-orm/core';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Post } from '../../domain/entities/post';
@@ -20,7 +20,7 @@ import { toPostDomain } from './post-mapping';
  * ORM 修宪案 B · 切片 2 —— posts 上下文的 **MikroORM 仓储适配**（MikroORM 为唯一实现）。
  *
  * **隔离唯一 SSOT 不变**（global-tenancy §9.3 / FR-5·D2 复合作用域）：port 不暴露 tenant/workspace 参数·
- * 租户从可信 ALS 经 `requireTenantId()` fail-closed 解析（无租户→403·且在取 em **之前**抛出→绝不查库）；
+ * 租户从可信 ALS 经 `requireActiveOrganizationId()` fail-closed 解析（无租户→403·且在取 em **之前**抛出→绝不查库）；
  * 可选 `workspaceId` 选择器仅**收窄**读/写、非独立安全边界。故本类是 posts 隔离的**唯一卡点**·移除任一
  * `organizationId` 谓词或改写归属即令回归红（与旧实现 版同律）。
  *
@@ -33,12 +33,15 @@ import { toPostDomain } from './post-mapping';
 export class MikroPostRepository implements PostRepository {
   constructor(
     @Inject(MikroOrmService) private readonly mikro: MikroOrmService,
-    @Inject(TenantContextService) private readonly tenant: TenantContextService,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
   /** Trusted tenant (fail-closed) + optional active workspace selector，resolved once·先于任何 DB 访问调用。 */
   private scope(): { organizationId: string; workspaceId?: string } {
-    return { organizationId: this.tenant.requireTenantId(), workspaceId: this.tenant.workspaceId };
+    return {
+      organizationId: this.tenant.requireActiveOrganizationId(),
+      workspaceId: this.tenant.workspaceId,
+    };
   }
 
   async list(request: CursorPageRequest): Promise<CursorPage<Post>> {

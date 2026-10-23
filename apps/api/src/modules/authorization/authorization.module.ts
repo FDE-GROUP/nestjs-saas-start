@@ -23,8 +23,8 @@ import { MikroOrganizationRbacRepository } from './infrastructure/repositories/m
  *  - published port：`ROLE_ASSIGNABILITY_READER` 供 tenants 成员/邀请门面消费（A5 接缝）。
  *
  * `@Global`：`TenantPermissionGuard` 与裁决/失效端口是各业务上下文逐路由 `@Can` 的解析源
- * （此前由 TenancyModule 全局供给，现迁至本上下文——横切隔离层只消费本模块投影，不再自住 checker）。
- * guard 依赖的 `TenantContextService` 由 @Global TenancyModule 供给；模块图无环（本模块零 import）。
+ * （此前由 TenantIsolationModule 全局供给，现迁至本上下文——横切隔离层只消费本模块投影，不再自住 checker）。
+ * guard 依赖的 `TenantIsolationService` 由 @Global TenantIsolationModule 供给；模块图无环（本模块零 import）。
  */
 @Global()
 @Module({

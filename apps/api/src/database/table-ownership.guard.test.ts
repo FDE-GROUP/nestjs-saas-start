@@ -8,7 +8,7 @@ import { TABLE_OWNERSHIP, WRITE_EXCEPTIONS } from './table-ownership';
  * 表所有权纪律守卫测（microservice-readiness 首切片 #1 · 高危防线）。
  *
  * 规则（成文于 `docs/specs/architecture.md` 附录，清单单源在 `table-ownership.ts`）：
- * **写侧严格**——`apps/api/src/{modules,tenancy}/**` 内任何
+ * **写侧严格**——`apps/api/src/{modules,tenant-isolation}/**` 内任何
  * `insert/update/delete` 的目标表（以 schema 导出名标识）必须属该文件的
  * 本上下文 owned 集，或命中 `WRITE_EXCEPTIONS` 显式例外。
  * 读侧（select/join）不受约束（CQRS read-model 固有跨上下文聚合）。
@@ -21,13 +21,13 @@ import { TABLE_OWNERSHIP, WRITE_EXCEPTIONS } from './table-ownership';
  */
 
 const SRC_ROOT = join(__dirname, '..');
-const SCAN_DIRS = ['modules', 'tenancy'];
+const SCAN_DIRS = ['modules', 'tenant-isolation'];
 
-/** 文件路径 → 限界上下文：`modules/<ctx>/**` 取 <ctx>；`tenancy/**` 归 `organizations`。 */
+/** 文件路径 → 限界上下文：`modules/<ctx>/**` 取 <ctx>；`tenant-isolation/**` 归 `organizations`。 */
 function contextOf(relPath: string): string | null {
   const parts = relPath.split(sep);
   if (parts[0] === 'modules' && parts.length > 2) return parts[1];
-  if (parts[0] === 'tenancy') return 'organizations';
+  if (parts[0] === 'tenant-isolation') return 'organizations';
   return null;
 }
 

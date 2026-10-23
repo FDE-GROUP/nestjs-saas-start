@@ -7,7 +7,7 @@ import { ListWorkspacesQuery } from '@core/saas-kit/modules/workspaces/applicati
 import type { WorkspaceReadModel } from '@core/saas-kit/modules/workspaces/application/read-models/workspace.read-model';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantScopeGuard } from '@core/saas-kit/tenancy/tenant-scope.guard';
+import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   Body,
   Controller,
@@ -48,7 +48,7 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
  * Workspace CRUD reference slice (global-tenancy S3 · D2/§9.1 / FR-4/FR-5).
  *
  * Both guards run per-route (NOT global — APP_GUARD stays a signed decision, 高危#4):
- * - `TenantScopeGuard`: fail-closed — no active tenant → 403.
+ * - `TenantIsolationGuard`: fail-closed — no active tenant → 403.
  * - `TenantPermissionGuard`: delegates the capability check to Better Auth `ac` (single
  *   source of truth), so role→permission mapping is never scattered here.
  *
@@ -59,7 +59,7 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, WorkspaceResponse, WorkspacePageResponse)
 @ApiTags('workspaces')
 @Controller('workspaces')
-@UseGuards(TenantScopeGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
 export class WorkspacesController {
   constructor(
     @Inject(CommandBus) private readonly commandBus: CommandBus,

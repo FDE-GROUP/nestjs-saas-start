@@ -3,7 +3,7 @@ import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
-import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';
+import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Body,
   Controller,
@@ -52,7 +52,7 @@ import { OrganizationApplicationResponse } from './response/organization-applica
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, OrganizationApplicationResponse)
 @ApiTags('organizations')
 // S11 复合全局：建租申请（此刻无 active 租·鸡生蛋）+ approve/reject（跨租平台治理）皆合法无租户 → 类级豁免租户墙。
-@TenantExempt()
+@TenantIsolationExempt()
 @Controller('organizations')
 export class OrganizationsController {
   constructor(@Inject(CommandBus) private readonly commandBus: CommandBus) {}
