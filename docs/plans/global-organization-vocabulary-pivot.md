@@ -1,6 +1,6 @@
 # global-organization-vocabulary-pivot · 推翻双词汇命名纪律，业务实体全栈统一 organization
 
-- 状态: 单源见 [README](./README.md) 索引（本案**已审计·签发**·人令 GO 2026-10-23·切片 A–E 实施中）
+- 状态: 单源见 [README](./README.md) 索引（本案**已审计·签发**·人令 GO 2026-10-23·执行状态（切片 A–E）以 README 索引为准）
 - 签核基础: 人类指令「（global-userfacing-tenant-naming 的双词汇纪律）这条纪律应该推翻，过时了」（2026-10-23），随后经 AskUserQuestion 三裁决：
   1. **统一词面 = organization 全词**（表名/符号/路由皆 organization，不用 org 缩写，不采 Lightdash 去前缀式）；
   2. **范围 = 全栈一次到位**（含 wire 面：路由 slug、OpenAPI 产物、前端联动）；
