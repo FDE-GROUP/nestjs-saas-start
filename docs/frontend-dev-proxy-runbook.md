@@ -125,3 +125,4 @@ docker compose -f docker-compose.dev.yml down      # 保数据卷；欲净库：
 
 - §5（管道）+ §6（UI）两关皆绿 → 勾 `module-frontend-tenant-console` §5「dev 反代真跑端到端」框。
 - 若 §6 任一页渲染/字段与 §5 curl 实际响应**不符** → 真缺陷（非 openapi-fetch 在 jsdom 相对 URL 抛错那类**环境限制**），据实回退到对应 F2 片修复并登 plan §6。
+- **自动化回归锁（互补·非替代本手册首轮人肉 exploratory）**：本手册 §5/§6 的手动端到端链（登录→落租→一条核心写）已由部署态黄金流 E2E 机械锁定——`pnpm run test:e2e:web`（编排器 `scripts/e2e-web.ts` 起 Testcontainers 一次性 PG+迁移+seed+API+vite dev 真栈·`@playwright/test` 驱动·用完即焚·opt-in 不入默认 `ci`）。手动签核过后，后续回归优先跑此闸；新增黄金流页签请在 `e2e/*.spec.ts` 补测。

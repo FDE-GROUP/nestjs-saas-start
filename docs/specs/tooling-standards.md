@@ -29,9 +29,10 @@
 | 校验 | **zod（经 Nest 官方 standard-schema 集成）** | ^4.6.7 | `@Body/@Param/@Query({ schema })` + 官方 `StandardSchemaValidationPipe`（请求）/ `StandardSchemaSerializerInterceptor` + `@SerializeOptions({ schema })`（响应白名单序列化）；契约单源居 `@saas/contracts` | 强制 |
 | 配置校验 | **zod + @nestjs/config** | ^4.6.7 / ^12.0.1 | env schema 校验（zod v4 原生 `StandardSchemaV1`·一等消费 `validationSchema`） | 强制 |
 | 编译/构建 | **@nestjs/cli + SWC** | cli ^12.0.8 / @swc/core ^1.16.18 | `nest build --builder swc` | 强制 |
-| 测试运行器 | **Vitest** | ^5.0.4 | 单元/集成测试 | 强制（唯一） |
+| 测试运行器 | **Vitest** | ^5.0.4 | 单元/集成测试 runner（本行「唯一」仅约束单测/集成 runner；部署态浏览器 E2E 属不同工具类别、不受本行唯一性约束——见「浏览器/E2E 测试面」行） | 强制（唯一·单测 runner） |
 | 测试元数据 | **unplugin-swc** | ^1.5.5 | Vitest 下保留装饰器元数据 | 强制 |
 | 覆盖率 | **@vitest/coverage-v8** | ^5.0.4 | v8 provider | 强制 |
+| 浏览器/E2E 测试面 | **Vitest Browser Mode**（`@vitest/browser`+`@vitest/browser-playwright`）· 部署态 **`@playwright/test`** | browser ^5.0.4 / playwright ^1.64.1 | 两档分层、均 **opt-in 不入默认 `ci`/`pre-push`**：Vitest Browser Mode 管真浏览器**组件/逻辑级**测（`vitest.browser.config.ts`·`pnpm run ci:e2e:web`·provider 置 `test.browser.provider`·仅 chromium）；`@playwright/test` 管**部署态跨路由黄金流** E2E（`page.goto` 真 SPA+真 API+真库·`playwright.config.ts`+编排器 `scripts/e2e-web.ts`·`pnpm run test:e2e:web`·复用 Testcontainers 一次性 PG）。Vitest Browser Mode 的 `page` 无 `goto`→不能驱动部署态 SPA，故部署态导航必由 Playwright 承担（见 [global-playwright-browser-e2e](../plans/global-playwright-browser-e2e.md) ⓐ 反悔修订） | 推荐（浏览器验收面·人签 2026-10-24 回灌） |
 | HTTP 断言 | **supertest** | ^7.3.1 | 端到端断言（按需） | 推荐 |
 | Lint + 格式化 | **Biome** | ^2.5.15 | 单工具替代 ESLint+Prettier（文件级） | 强制（唯一） |
 | 代码库智能/静态分析 | **fallow** | 3.33.0 | 前置分析器（非判决）：跨文件仓库图给出未用代码/重复/循环/复杂度/架构边界的**候选线索**；结论须二次人工核验 | 推荐（devDependency · `pnpm exec`） |
@@ -48,7 +49,7 @@
 | AI 编码入口（L4） | **AGENTS.md** | — | 面向 agent 的统一项目指令 / 约束入口，与 `.claude/settings.local.json` 并存（定位见 workflow §4 / §9.5） | 推荐 |
 | 前端框架/构建 | **React + Vite** | react ~19.3 / vite ^8 | `apps/web` 壳应用：@vitejs/plugin-react + tsc --noEmit 门禁 + vite build（参考栈 OdooThink okee·global-frontend-adoption F0） | 强制（前端面） |
 | 前端路由/样式/基元 | **TanStack Router + Tailwind CSS 4 + shadcn 式按需基元** | router ^1.130 / tailwind ^4.3 | 文件式路由；@tailwindcss/vite；组件按需复制（cva/clsx/tailwind-merge/lucide/sonner），**不引整库** | 强制（前端面） |
-| 前端测试 | **Vitest + jsdom + @testing-library/react** | 同主仓 Vitest ^5 | web 单测入根 vitest projects 统一跑；Playwright e2e **缓采**（F2 重呈，人裁 2026-10-17） | 强制（前端面） |
+| 前端测试 | **Vitest + jsdom + @testing-library/react** | 同主仓 Vitest ^5 | web 单测入根 vitest projects 统一跑；浏览器/E2E 测试面（Vitest Browser Mode + Playwright）已于 2026-10-24 采纳落地（撤旧「缓采」口径·详见本表「浏览器/E2E 测试面」行 + [global-playwright-browser-e2e](../plans/global-playwright-browser-e2e.md)） | 强制（前端面） |
 
 ### 2.1 地域适配选型（中国大陆）· 状态标注
 
@@ -68,7 +69,7 @@
 
 - **禁止** 使用 bun / npm / yarn 安装依赖 —— 统一 `pnpm` / `pnpm dlx`（corepack 按 `packageManager` 锁定版本）。
 - **禁止** 引入 ESLint / Prettier 及任一 `eslint-*`/`prettier` 插件 —— 已由 Biome 全量承担。
-- **禁止** 使用 `jest` / `mocha` / `bun test`（`bun:test`）—— 测试统一 Vitest。
+- **禁止** 使用 `jest` / `mocha` / `bun test`（`bun:test`）—— 单测/集成测试统一 Vitest。（本红线约束**单元/集成测试 runner**；**部署态浏览器 E2E** 采 `@playwright/test`、真浏览器组件级测采 Vitest Browser Mode，均属不同工具类别、非「第二单测 runner」，不违本条与 §2「Vitest 唯一」——见 §2 浏览器/E2E 测试面行）
 - **禁止** Prisma / TypeORM / MongoDB 等第二套 ORM/DB，亦**禁止回迁已退役 ORM** —— 统一 MikroORM + PostgreSQL。
 - **禁止** 引入 class-validator / class-transformer / Joi（及任何 `whitelist`/`forbidNonWhitelisted` DTO 装饰器路径）—— 请求/响应校验与配置/env 校验一律 **zod 单源**（global-validation-zod-constitution-amendment 修宪定稿）；Nest 集成只走**官方 standard-schema 件**（`@Body/@Param/@Query({ schema })` / `@SerializeOptions({ schema })`·禁 nestjs-zod/自研 pipe）；跨端共享契约居 `@saas/contracts`。
 - **禁止** schema 自动同步（`schema:sync` / push 类隐式对齐）进入 CI/生产做 schema 同步 —— 生产只走显式 `migration:generate`（生成工件）+ `migration:run`（应用迁移）。
@@ -109,6 +110,7 @@
 - 用例放被测模块同级 `*.test.ts`；`include` = `['apps/**/*.test.ts', 'libs/**/*.test.ts']`（双包布局，以 `vitest.config.ts` 为准）。
 - 遵循既有规范：动态 `import` 必须 `await`；`env` 段提供最小必需环境变量；`testTimeout/hookTimeout` = 20s（全量 DI 图冷启动慢）。
 - DI/元数据相关改动须保留 `Reflect.getMetadata('design:paramtypes')` 回归测试与全图 `app.module.test.ts`。
+- 浏览器/E2E 测试面（两档均 **opt-in**、不入默认 `ci`/`pre-push`）：真浏览器组件/逻辑级测走 Vitest Browser Mode（`pnpm run ci:e2e:web`）；部署态跨路由黄金流 E2E 走 `@playwright/test`（`pnpm run test:e2e:web`·编排器起 Testcontainers 一次性 PG+迁移+seed+API+vite dev 真栈·用完即焚）。二者不得混作单测 runner（单测唯一仍 Vitest）；详见 [global-playwright-browser-e2e](../plans/global-playwright-browser-e2e.md)。
 
 ### 4.6 API 文档
 - 运行 `pnpm run openapi:export`（DB-free codegen，无需起服务）导出 `openapi/openapi.yaml`。
@@ -190,6 +192,8 @@
 | 构建 | `pnpm run build`（= `build:libs` → `build:nest`） |
 | 校验/修复 | `pnpm run check` / `check:fix` |
 | 测试/监听/覆盖 | `pnpm run test` / `test:watch` / `test:cov` |
+| 浏览器组件级测（Vitest Browser Mode·chromium·opt-in） | `pnpm run ci:e2e:web` |
+| 部署态黄金流 E2E（Playwright·Testcontainers 真栈·opt-in） | `pnpm run test:e2e:web` |
 | 迁移生成/执行 | `pnpm run migration:generate` / `migration:run` |
 | 数据 seed/reset/setup | `db:seed` / `db:reset` / `db:setup` |
 | OpenAPI 导出 | `pnpm run openapi:export` |
