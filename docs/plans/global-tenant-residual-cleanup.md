@@ -73,12 +73,12 @@
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] 全仓指向失效符号（`TenantScopeGuard`/`TenantPermissionGuard`/`requireTenantId`/`TenantMiddleware`/`TenantContext`/`` `tenancy/` ``/`modules/tenants`）的**活引用**归零（历史注释除外·逐条取证）。
-- [ ] `ensureTenantContext`、`tenant-events.ts`、`DOMAIN_EVENTS.tenant*` key、`tenant-event-contract.test.ts` 更名落地·`git mv` 保历史。
-- [ ] 事件面字符串值 `'tenant.*'`、`aggregateType:'tenant'` 改名前后**逐字恒等**（守恒 grep + 契约对拍）。
-- [ ] 复合机制名 `TenantIsolation*`、`tenant-isolation/`、multi-tenancy 概念词、append-only 史实注**未被波及**。
-- [ ] `pnpm run ci` 全绿 + `pnpm run ci:db` 真容器重放全链 + gated e2e + BA 一致绿 + `pnpm run verify:prod-boot` /health 200。
-- [ ] 前案 plans/README 索引新增本案行（状态单源）。
+- [x] 全仓指向失效符号（`TenantScopeGuard`/`TenantPermissionGuard`/`requireTenantId`/`TenantMiddleware`/`TenantContext`/`` `tenancy/` ``/`modules/tenants`）的**活引用**归零（历史注释除外·逐条取证）。【切片 A·domain-concepts/vision/README】
+- [x] `ensureTenantContext`、`tenant-events.ts`、`DOMAIN_EVENTS.tenant*` key、`tenant-event-contract.test.ts` 更名落地·`git mv` 保历史。【切片 B `17cd959` + C `fbb398e`·rename 检测 66%/74%】
+- [x] 事件面字符串值 `'tenant.*'`、`aggregateType:'tenant'` 改名前后**逐字恒等**（守恒 grep + 契约对拍）。【domain-event-names.ts 键 organization*而值仍 'tenant.*'·ORGANIZATION_EVENT_TYPES_WIRE 内联值未变·对拍测绿】
+- [x] 复合机制名 `TenantIsolation*`、`tenant-isolation/`、multi-tenancy 概念词、append-only 史实注**未被波及**。
+- [x] `pnpm run ci` 全绿 + `pnpm run ci:db` 真容器重放全链 + gated e2e + BA 一致绿 + `pnpm run verify:prod-boot` /health 200。【ci PASSED·863 测·ci:db 真容器一阶段绿】
+- [x] 前案 plans/README 索引新增本案行（状态单源）。
 
 ## 6. 演变记录
 
@@ -86,8 +86,9 @@
 |------|------|----------|----------|
 | 2026-10-23 | 0.1.0 | 起草 | 首版（五层取证 + 三切片 + 冻结值边界 + 高危#5/#契约标注） |
 | 2026-10-23 | 0.2.0 | 人签发 | 「同意」整案 GO·三未决项按推荐裁定（叙述保留/key 纳入/T5 排除） |
+| 2026-10-23 | 0.3.0 | 实施落地 | 切片 A `6d4ee7e`（文档漂移订正）·B `17cd959`（seed 活符号）·C `fbb398e`（事件契约内部命名·wire 值冻结）全绿·§5 判据逐项打勾 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-23 / v0.2.0 变更，以当前正文内容为准。
+正文已于 2026-10-23 / v0.3.0 变更（切片 A–C 全部落地·ci+ci:db 绿），以当前正文内容为准。
