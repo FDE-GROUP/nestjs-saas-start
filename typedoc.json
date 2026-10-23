@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["libs/contracts/src/index.ts"],
+  "tsconfig": "libs/contracts/tsconfig.json",
+  "out": "docs/api-ref",
+  "name": "@saas/contracts 公共契约参考",
+  "readme": "none",
+  "commentStyle": "jsdoc",
+  "exclude": ["**/*.test.ts", "**/*.spec.ts"],
+  "excludeNotDocumented": true,
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "cleanOutputDir": true,
+  "validation": {
+    "notExported": true,
+    "invalidLink": true
+  }
+}

@@ -55,3 +55,5 @@ openapi/*.json
 
 # personal incubation workspace (oh-my-env) — 个人孵化层，不入库；其结论经提炼后落入 docs/specs（见 workflow.md）
 oh-my-env/
+# TypeDoc API reference output (generated locally/CI; not committed)
+docs/api-ref/
