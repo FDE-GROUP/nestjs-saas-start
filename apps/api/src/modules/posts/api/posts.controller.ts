@@ -52,14 +52,14 @@ export class PostsController {
 
   @Get()
   @SerializeOptions({ schema: postCursorPageSchema })
-  @ApiOperation({ summary: 'List posts in the active tenant (cursor-paginated)' })
+  @ApiOperation({ summary: 'List posts in the active organization (cursor-paginated)' })
   @ApiResponse(
     apiEnvelopeShape(PostCursorPageResponse, {
-      description: 'Cursor page of posts owned by the active tenant.',
+      description: 'Cursor page of posts owned by the active organization.',
     }),
   )
   @ApiResponse(apiError(400, 'Malformed cursor.'))
-  @ApiResponse(apiError(403, 'No active tenant context.'))
+  @ApiResponse(apiError(403, 'No active organization context.'))
   list(
     @Query({ schema: listCursorQuerySchema }) request: ListCursorQuery,
   ): Promise<CursorPage<PostReadModel>> {
@@ -71,14 +71,14 @@ export class PostsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @SerializeOptions({ schema: postViewSchema })
-  @ApiOperation({ summary: 'Create a post in the active tenant' })
+  @ApiOperation({ summary: 'Create a post in the active organization' })
   @ApiResponse(
     apiEnvelopeShape(PostResponse, {
       status: 201,
-      description: 'Created post stamped with the active tenant.',
+      description: 'Created post stamped with the active organization.',
     }),
   )
-  @ApiResponse(apiError(403, 'No active tenant context.'))
+  @ApiResponse(apiError(403, 'No active organization context.'))
   create(@Body({ schema: createPostSchema }) dto: CreatePost): Promise<PostReadModel> {
     return this.commandBus.execute<CreatePostCommand, PostReadModel>(
       new CreatePostCommand(dto.title, dto.content ?? null, dto.published),

@@ -74,7 +74,7 @@ export class AuthorizationAdminController {
   @Get()
   @Can('read', 'Role')
   @SerializeOptions({ schema: organizationRoleViewSchema })
-  @ApiOperation({ summary: 'List roles of the active tenant (system + custom)' })
+  @ApiOperation({ summary: 'List roles of the active organization (system + custom)' })
   @ApiResponse(apiOkArray(OrganizationRoleViewResponse, 'Role views.'))
   @ApiResponse(apiError(403, 'CASL deny (no Role read).'))
   listRoles(): Promise<OrganizationRoleView[]> {

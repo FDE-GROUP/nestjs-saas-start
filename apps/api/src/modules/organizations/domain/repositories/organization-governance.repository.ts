@@ -30,7 +30,7 @@ export type PlatformOrganizationPage = Page<PlatformOrganizationRow>;
 
 /** 按租户诊断（FR-6）：租户行 + 关联数据量，供经营者一眼判断租户实况。 */
 export interface OrganizationDiagnostics {
-  tenant: PlatformOrganizationRow;
+  organization: PlatformOrganizationRow;
   memberCount: number;
   invitationCount: number;
   workspaceCount: number;
@@ -63,7 +63,7 @@ export interface ExportedOrganizationMember {
  *（S5 软删「保留行供按租户导出/硬删」的取证用途·查询面刻意不按 status 过滤）。
  */
 export interface OrganizationDataExport {
-  tenant: {
+  organization: {
     id: string;
     name: string;
     slug: string;

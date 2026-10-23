@@ -16,7 +16,7 @@ export const ORGANIZATION_STATUS_ENUM = [
  * 复用于 tenants apply/approve + platform suspend/resume/delete（同一读模型）。
  */
 export class OrganizationApplicationResponse {
-  @ApiProperty({ description: 'organization 主键（= 租户 id）。' })
+  @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
   @ApiProperty({ enum: ORGANIZATION_STATUS_ENUM, description: '生命周期状态。' })

@@ -95,10 +95,10 @@ export class PlatformOrganizationsController {
 
   @Get()
   @SerializeOptions({ schema: platformOrganizationPageSchema })
-  @ApiOperation({ summary: 'List all tenants across the platform (operator only)' })
+  @ApiOperation({ summary: 'List all organizations across the platform (operator only)' })
   @ApiResponse(
     apiEnvelopeShape(PlatformOrganizationPageResponse, {
-      description: 'A page of tenants with lifecycle status.',
+      description: 'A page of organizations with lifecycle status.',
     }),
   )
   @ApiResponse(apiError(403, 'Not the platform operator.'))
@@ -112,7 +112,7 @@ export class PlatformOrganizationsController {
 
   @Get(':id')
   @SerializeOptions({ schema: platformOrganizationRowSchema })
-  @ApiOperation({ summary: 'Get one tenant (operator only)' })
+  @ApiOperation({ summary: 'Get one organization (operator only)' })
   @ApiResponse(
     apiEnvelopeShape(PlatformOrganizationRowResponse, { description: 'Organization row.' }),
   )
@@ -131,7 +131,9 @@ export class PlatformOrganizationsController {
 
   @Get(':id/diagnostics')
   @SerializeOptions({ schema: organizationDiagnosticsSchema })
-  @ApiOperation({ summary: 'Per-tenant diagnostics: member/invitation/workspace/post counts' })
+  @ApiOperation({
+    summary: 'Per-organization diagnostics: member/invitation/workspace/post counts',
+  })
   @ApiResponse(
     apiEnvelopeShape(OrganizationDiagnosticsResponse, { description: 'Diagnostics bundle.' }),
   )
@@ -149,10 +151,10 @@ export class PlatformOrganizationsController {
   }
 
   @Get(':id/export')
-  @ApiOperation({ summary: 'Export all tenant-owned data as a single JSON payload (NFR-6)' })
+  @ApiOperation({ summary: 'Export all organization-owned data as a single JSON payload (NFR-6)' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Six-section tenant data export (credentials excluded)',
+      description: 'Six-section organization data export (credentials excluded)',
       ssotHint: 'OrganizationDataExport（bulk-export·六段聚合）',
     }),
   )
@@ -171,7 +173,9 @@ export class PlatformOrganizationsController {
 
   @Patch(':id/suspend')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
-  @ApiOperation({ summary: 'Suspend an active tenant (active → suspended · fail-closed失能)' })
+  @ApiOperation({
+    summary: 'Suspend an active organization (active → suspended · fail-closed失能)',
+  })
   @ApiResponse(
     apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization suspended.' }),
   )
@@ -194,7 +198,7 @@ export class PlatformOrganizationsController {
 
   @Patch(':id/resume')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
-  @ApiOperation({ summary: 'Resume a suspended tenant (suspended → active)' })
+  @ApiOperation({ summary: 'Resume a suspended organization (suspended → active)' })
   @ApiResponse(
     apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization resumed.' }),
   )
@@ -218,7 +222,9 @@ export class PlatformOrganizationsController {
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: organizationApplicationViewSchema })
-  @ApiOperation({ summary: 'Soft-delete a tenant (→ deleted terminal · row kept for export)' })
+  @ApiOperation({
+    summary: 'Soft-delete an organization (→ deleted terminal · row kept for export)',
+  })
   @ApiResponse(
     apiEnvelopeShape(OrganizationApplicationResponse, {
       description: 'Organization marked deleted.',
@@ -246,7 +252,7 @@ export class PlatformOrganizationsController {
   @SerializeOptions({ schema: organizationHardDeleteResultSchema })
   @ApiOperation({
     summary:
-      'Hard-delete a deleted-terminal tenant (irreversible · FK cascade + event purge · NFR-6)',
+      'Hard-delete a deleted-terminal organization (irreversible · FK cascade + event purge · NFR-6)',
   })
   @ApiResponse(
     apiEnvelopeShape(OrganizationHardDeleteResultResponse, {

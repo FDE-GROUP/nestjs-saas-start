@@ -21,7 +21,7 @@ export type PlatformOrganizationRowView = z.infer<typeof platformOrganizationRow
 export const platformOrganizationPageSchema = offsetPageSchema(platformOrganizationRowSchema);
 
 export const organizationDiagnosticsSchema = z.object({
-  tenant: platformOrganizationRowSchema,
+  organization: platformOrganizationRowSchema,
   memberCount: z.number(),
   invitationCount: z.number(),
   workspaceCount: z.number(),

@@ -30,7 +30,7 @@ import type { PlatformUserRow } from '../../../organizations/domain/repositories
 const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
 
 export class PlatformOrganizationRowResponse {
-  @ApiProperty({ description: 'organization 主键（= 租户 id）。' })
+  @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
   @ApiProperty()
@@ -73,8 +73,8 @@ void _ptpf;
 void _ptpb;
 
 export class OrganizationDiagnosticsResponse {
-  @ApiProperty({ type: () => PlatformOrganizationRowResponse, description: '租户行。' })
-  tenant!: PlatformOrganizationRowResponse;
+  @ApiProperty({ type: () => PlatformOrganizationRowResponse, description: '组织行。' })
+  organization!: PlatformOrganizationRowResponse;
 
   @ApiProperty({ description: '成员数。' })
   memberCount!: number;

@@ -18,7 +18,7 @@ export class WorkspaceResponse {
   @ApiProperty()
   slug!: string;
 
-  @ApiProperty({ description: '所属租户（仓储盖章）。' })
+  @ApiProperty({ description: '所属组织（仓储盖章）。' })
   organizationId!: string;
 
   @ApiProperty({

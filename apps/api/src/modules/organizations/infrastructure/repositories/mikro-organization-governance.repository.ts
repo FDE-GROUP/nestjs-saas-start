@@ -97,8 +97,8 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
   }
 
   async diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null> {
-    const tenant = await this.findById(organizationId);
-    if (!tenant) return null;
+    const organization = await this.findById(organizationId);
+    if (!organization) return null;
     const em = await this.mikro.fork();
     const [memberCount, invitationCount, workspaceCount, postCount] = await Promise.all([
       em.count(Member, { organizationId } as never),
@@ -106,7 +106,7 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
       em.count(Workspace, { organizationId } as never),
       em.count(PostEntity, { organizationId } as never),
     ]);
-    return { tenant, memberCount, invitationCount, workspaceCount, postCount };
+    return { organization, memberCount, invitationCount, workspaceCount, postCount };
   }
 
   async exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null> {
@@ -115,7 +115,7 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
     // deleted 终态可导（S5 软删取证用途·NFR-6）。归列后生命周期态在 organization.status 真列。
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return null;
-    const tenant: OrganizationDataExport['tenant'] = {
+    const organization: OrganizationDataExport['organization'] = {
       id: org.id,
       name: org.name,
       slug: org.slug,
@@ -205,7 +205,7 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
       updatedAt: p.updatedAt,
     }));
 
-    return { tenant, members, invitations, workspaces, subscriptions, posts };
+    return { organization, members, invitations, workspaces, subscriptions, posts };
   }
 
   async destroy(organizationId: string): Promise<boolean> {

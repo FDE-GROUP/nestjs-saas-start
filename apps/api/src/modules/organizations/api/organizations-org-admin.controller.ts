@@ -90,7 +90,7 @@ export class OrganizationsOrgAdminController {
    */
   private async assertRoleAssignable(role: string): Promise<void> {
     if (!(await this.roleAssignability.isRoleAssignable(role))) {
-      throw new BadRequestException(`Role not assignable in this tenant: ${role}`, {
+      throw new BadRequestException(`Role not assignable in this organization: ${role}`, {
         errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
       });
     }
@@ -98,14 +98,14 @@ export class OrganizationsOrgAdminController {
 
   @Get('members')
   @Can('read', 'Member')
-  @ApiOperation({ summary: 'List members of the active tenant (all roles · CASL read)' })
+  @ApiOperation({ summary: 'List members of the active organization (all roles · CASL read)' })
   @ApiResponse(
     apiOkPassthrough({
       description: 'Member list (membership data from Better Auth)',
       ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
     }),
   )
-  @ApiResponse(apiError(403, 'No active tenant / CASL deny / not a member.'))
+  @ApiResponse(apiError(403, 'No active organization / CASL deny / not a member.'))
   async listMembers(@Headers() headers: Record<string, unknown>): Promise<unknown> {
     try {
       return await this.ba().listMembers({ headers });
@@ -161,14 +161,14 @@ export class OrganizationsOrgAdminController {
 
   @Get('invitations')
   @Can('read', 'Invitation')
-  @ApiOperation({ summary: 'List pending invitations of the active tenant (all roles)' })
+  @ApiOperation({ summary: 'List pending invitations of the active organization (all roles)' })
   @ApiResponse(
     apiOkPassthrough({
       description: 'Invitation list (data from Better Auth)',
       ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
     }),
   )
-  @ApiResponse(apiError(403, 'No active tenant / CASL deny / not a member.'))
+  @ApiResponse(apiError(403, 'No active organization / CASL deny / not a member.'))
   async listInvitations(@Headers() headers: Record<string, unknown>): Promise<unknown> {
     try {
       return await this.ba().listInvitations({ headers });
@@ -180,7 +180,9 @@ export class OrganizationsOrgAdminController {
   @Post('invitations')
   @Can('create', 'Invitation')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Invite a member to the active tenant (owner/admin · CASL create)' })
+  @ApiOperation({
+    summary: 'Invite a member to the active organization (owner/admin · CASL create)',
+  })
   @ApiResponse(
     apiOkPassthrough({
       description: 'Created invitation',

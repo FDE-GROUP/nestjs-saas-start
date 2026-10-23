@@ -121,7 +121,7 @@ export class OrganizationsSelfController {
   @Post('members/leave')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Leave a tenant (self-service · last-owner cannot leave)' })
+  @ApiOperation({ summary: 'Leave an organization (self-service · last-owner cannot leave)' })
   @ApiResponse(
     apiOkPassthrough({
       description: 'Membership removed',
@@ -129,7 +129,7 @@ export class OrganizationsSelfController {
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(400, 'Not a member / sole owner leaving the tenant (BA data guard).'))
+  @ApiResponse(apiError(400, 'Not a member / sole owner leaving the organization (BA data guard).'))
   async leave(
     @Headers() headers: Record<string, unknown>,
     @Body({ schema: leaveOrganizationSchema }) dto: LeaveOrganization,

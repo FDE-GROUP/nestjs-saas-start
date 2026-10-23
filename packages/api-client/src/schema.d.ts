@@ -28,7 +28,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List roles of the active tenant (system + custom) */
+        /** List roles of the active organization (system + custom) */
         get: operations["AuthorizationAdminController_listRoles_v1"];
         put?: never;
         /** Create a custom role (owner/admin) */
@@ -115,7 +115,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all tenants across the platform (operator only) */
+        /** List all organizations across the platform (operator only) */
         get: operations["PlatformOrganizationsController_list_v1"];
         put?: never;
         post?: never;
@@ -132,11 +132,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get one tenant (operator only) */
+        /** Get one organization (operator only) */
         get: operations["PlatformOrganizationsController_detail_v1"];
         put?: never;
         post?: never;
-        /** Soft-delete a tenant (→ deleted terminal · row kept for export) */
+        /** Soft-delete an organization (→ deleted terminal · row kept for export) */
         delete: operations["PlatformOrganizationsController_remove_v1"];
         options?: never;
         head?: never;
@@ -150,7 +150,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Per-tenant diagnostics: member/invitation/workspace/post counts */
+        /** Per-organization diagnostics: member/invitation/workspace/post counts */
         get: operations["PlatformOrganizationsController_diagnostics_v1"];
         put?: never;
         post?: never;
@@ -167,7 +167,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Export all tenant-owned data as a single JSON payload (NFR-6) */
+        /** Export all organization-owned data as a single JSON payload (NFR-6) */
         get: operations["PlatformOrganizationsController_exportData_v1"];
         put?: never;
         post?: never;
@@ -190,7 +190,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Suspend an active tenant (active → suspended · fail-closed失能) */
+        /** Suspend an active organization (active → suspended · fail-closed失能) */
         patch: operations["PlatformOrganizationsController_suspend_v1"];
         trace?: never;
     };
@@ -207,7 +207,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Resume a suspended tenant (suspended → active) */
+        /** Resume a suspended organization (suspended → active) */
         patch: operations["PlatformOrganizationsController_resume_v1"];
         trace?: never;
     };
@@ -221,7 +221,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Hard-delete a deleted-terminal tenant (irreversible · FK cascade + event purge · NFR-6) */
+        /** Hard-delete a deleted-terminal organization (irreversible · FK cascade + event purge · NFR-6) */
         delete: operations["PlatformOrganizationsController_permanentRemove_v1"];
         options?: never;
         head?: never;
@@ -320,10 +320,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List posts in the active tenant (cursor-paginated) */
+        /** List posts in the active organization (cursor-paginated) */
         get: operations["PostsController_list_v1"];
         put?: never;
-        /** Create a post in the active tenant */
+        /** Create a post in the active organization */
         post: operations["PostsController_create_v1"];
         delete?: never;
         options?: never;
@@ -338,7 +338,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List workspaces in the active tenant */
+        /** List workspaces in the active organization */
         get: operations["WorkspacesController_list_v1"];
         put?: never;
         /** Create a workspace (owner/admin) */
@@ -376,7 +376,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Apply to create a tenant (user-level · lands pending_approval) */
+        /** Apply to create an organization (user-level · lands pending_approval) */
         post: operations["OrganizationsController_apply_v1"];
         delete?: never;
         options?: never;
@@ -393,7 +393,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Approve a pending tenant (platform operator · pending → active) */
+        /** Approve a pending organization (platform operator · pending → active) */
         post: operations["OrganizationsController_approve_v1"];
         delete?: never;
         options?: never;
@@ -410,7 +410,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Reject a pending tenant (platform operator · hard-delete) */
+        /** Reject a pending organization (platform operator · hard-delete) */
         post: operations["OrganizationsController_reject_v1"];
         delete?: never;
         options?: never;
@@ -425,7 +425,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List members of the active tenant (all roles · CASL read) */
+        /** List members of the active organization (all roles · CASL read) */
         get: operations["OrganizationsOrgAdminController_listMembers_v1"];
         put?: never;
         post?: never;
@@ -476,10 +476,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List pending invitations of the active tenant (all roles) */
+        /** List pending invitations of the active organization (all roles) */
         get: operations["OrganizationsOrgAdminController_listInvitations_v1"];
         put?: never;
-        /** Invite a member to the active tenant (owner/admin · CASL create) */
+        /** Invite a member to the active organization (owner/admin · CASL create) */
         post: operations["OrganizationsOrgAdminController_createInvitation_v1"];
         delete?: never;
         options?: never;
@@ -547,7 +547,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Leave a tenant (self-service · last-owner cannot leave) */
+        /** Leave an organization (self-service · last-owner cannot leave) */
         post: operations["OrganizationsSelfController_leave_v1"];
         delete?: never;
         options?: never;
@@ -613,7 +613,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Current tenant subscription: plan, seat quota, usage, customer mapping */
+        /** Current organization subscription: plan, seat quota, usage, customer mapping */
         get: operations["SubscriptionsController_getCurrent_v1"];
         put?: never;
         post?: never;
@@ -632,7 +632,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Provision/upgrade the tenant subscription (creates the provider customer) */
+        /** Provision/upgrade the organization subscription (creates the provider customer) */
         post: operations["SubscriptionsController_create_v1"];
         delete?: never;
         options?: never;
@@ -863,7 +863,7 @@ export interface components {
             } | null;
         };
         PlatformOrganizationRowResponse: {
-            /** @description organization 主键（= 租户 id）。 */
+            /** @description organization 主键。 */
             organizationId: string;
             name: string;
             slug: string;
@@ -885,8 +885,8 @@ export interface components {
             offset: number;
         };
         OrganizationDiagnosticsResponse: {
-            /** @description 租户行。 */
-            tenant: components["schemas"]["PlatformOrganizationRowResponse"];
+            /** @description 组织行。 */
+            organization: components["schemas"]["PlatformOrganizationRowResponse"];
             /** @description 成员数。 */
             memberCount: number;
             /** @description 待处理邀请数。 */
@@ -903,7 +903,7 @@ export interface components {
             purgedEvents: number;
         };
         OrganizationApplicationResponse: {
-            /** @description organization 主键（= 租户 id）。 */
+            /** @description organization 主键。 */
             organizationId: string;
             /**
              * @description 生命周期状态。
@@ -948,7 +948,7 @@ export interface components {
             title: string;
             content: string | null;
             published: boolean;
-            /** @description 所属租户（ALS 盖章，body 不接受）。 */
+            /** @description 所属组织（ALS 盖章，body 不接受）。 */
             organizationId: string;
             /** @description 所属工作区；NULL = 未分区。 */
             workspaceId: string | null;
@@ -969,7 +969,7 @@ export interface components {
             id: string;
             name: string;
             slug: string;
-            /** @description 所属租户（仓储盖章）。 */
+            /** @description 所属组织（仓储盖章）。 */
             organizationId: string;
             /** @description 实例属主；NULL/缺省 = 不属任何人（owner-column 片语义）。 */
             ownerId?: string | null;
@@ -1557,7 +1557,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of tenants with lifecycle status. */
+            /** @description A page of organizations with lifecycle status. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1698,7 +1698,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Six-section tenant data export (credentials excluded)（透传面·形参真相源 = OrganizationDataExport（bulk-export·六段聚合）） */
+            /** @description Six-section organization data export (credentials excluded)（透传面·形参真相源 = OrganizationDataExport（bulk-export·六段聚合）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2045,7 +2045,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Cursor page of posts owned by the active tenant. */
+            /** @description Cursor page of posts owned by the active organization. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2065,7 +2065,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description No active tenant context. */
+            /** @description No active organization context. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2093,7 +2093,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created post stamped with the active tenant. */
+            /** @description Created post stamped with the active organization. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2104,7 +2104,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active tenant context. */
+            /** @description No active organization context. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2127,7 +2127,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Workspaces owned by the active tenant (offset page). */
+            /** @description Workspaces owned by the active organization (offset page). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2138,7 +2138,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active tenant, or missing workspace:read. */
+            /** @description No active organization, or missing workspace:read. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2165,7 +2165,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created workspace stamped with the active tenant. */
+            /** @description Created workspace stamped with the active organization. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2205,7 +2205,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace not found in the active tenant. */
+            /** @description Workspace not found in the active organization. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2245,7 +2245,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Workspace not found in the active tenant. */
+            /** @description Workspace not found in the active organization. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2272,7 +2272,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Pending tenant created; inactive until approved. */
+            /** @description Pending organization created; inactive until approved. */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -2356,7 +2356,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Pending tenant discarded. */
+            /** @description Pending organization discarded. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2405,7 +2405,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active tenant / CASL deny / not a member. */
+            /** @description No active organization / CASL deny / not a member. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2517,7 +2517,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active tenant / CASL deny / not a member. */
+            /** @description No active organization / CASL deny / not a member. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2716,7 +2716,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Not a member / sole owner leaving the tenant (BA data guard). */
+            /** @description Not a member / sole owner leaving the organization (BA data guard). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2874,7 +2874,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Effective subscription snapshot for the active tenant. */
+            /** @description Effective subscription snapshot for the active organization. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2885,7 +2885,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active tenant context. */
+            /** @description No active organization context. */
             403: {
                 headers: {
                     [name: string]: unknown;

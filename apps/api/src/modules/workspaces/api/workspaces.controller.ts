@@ -69,13 +69,13 @@ export class WorkspacesController {
   @Get()
   @Can('read', 'Workspace')
   @SerializeOptions({ schema: workspacePageSchema })
-  @ApiOperation({ summary: 'List workspaces in the active tenant' })
+  @ApiOperation({ summary: 'List workspaces in the active organization' })
   @ApiResponse(
     apiEnvelopeShape(WorkspacePageResponse, {
-      description: 'Workspaces owned by the active tenant (offset page).',
+      description: 'Workspaces owned by the active organization (offset page).',
     }),
   )
-  @ApiResponse(apiError(403, 'No active tenant, or missing workspace:read.'))
+  @ApiResponse(apiError(403, 'No active organization, or missing workspace:read.'))
   list(
     @Query({ schema: listPageQuerySchema }) request: ListPageQuery,
   ): Promise<Page<WorkspaceReadModel>> {
@@ -92,7 +92,7 @@ export class WorkspacesController {
   @ApiResponse(
     apiEnvelopeShape(WorkspaceResponse, {
       status: 201,
-      description: 'Created workspace stamped with the active tenant.',
+      description: 'Created workspace stamped with the active organization.',
     }),
   )
   @ApiResponse(apiError(403, 'Missing workspace:create (members are rejected).'))
@@ -109,7 +109,7 @@ export class WorkspacesController {
   @SerializeOptions({ schema: workspaceViewSchema })
   @ApiOperation({ summary: 'Update a workspace (owner/admin)' })
   @ApiResponse(apiEnvelopeShape(WorkspaceResponse, { description: 'Updated workspace.' }))
-  @ApiResponse(apiError(404, 'Workspace not found in the active tenant.'))
+  @ApiResponse(apiError(404, 'Workspace not found in the active organization.'))
   async update(
     @Param('id') id: string,
     @Body({ schema: updateWorkspaceSchema }) dto: UpdateWorkspace,
@@ -129,7 +129,7 @@ export class WorkspacesController {
   @Can('delete', 'Workspace')
   @ApiOperation({ summary: 'Delete a workspace (owner/admin)' })
   @ApiResponse({ status: 204, description: 'Workspace deleted.' })
-  @ApiResponse(apiError(404, 'Workspace not found in the active tenant.'))
+  @ApiResponse(apiError(404, 'Workspace not found in the active organization.'))
   async remove(@Param('id') id: string): Promise<void> {
     const deleted = await this.commandBus.execute<DeleteWorkspaceCommand, boolean>(
       new DeleteWorkspaceCommand(id),

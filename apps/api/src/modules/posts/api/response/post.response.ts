@@ -20,7 +20,7 @@ export class PostResponse {
   @ApiProperty()
   published!: boolean;
 
-  @ApiProperty({ description: '所属租户（ALS 盖章，body 不接受）。' })
+  @ApiProperty({ description: '所属组织（ALS 盖章，body 不接受）。' })
   organizationId!: string;
 
   @ApiProperty({ nullable: true, type: 'string', description: '所属工作区；NULL = 未分区。' })

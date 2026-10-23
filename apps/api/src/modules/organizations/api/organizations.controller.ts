@@ -61,11 +61,13 @@ export class OrganizationsController {
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.CREATED)
   @SerializeOptions({ schema: organizationApplicationViewSchema })
-  @ApiOperation({ summary: 'Apply to create a tenant (user-level · lands pending_approval)' })
+  @ApiOperation({
+    summary: 'Apply to create an organization (user-level · lands pending_approval)',
+  })
   @ApiResponse(
     apiEnvelopeShape(OrganizationApplicationResponse, {
       status: 201,
-      description: 'Pending tenant created; inactive until approved.',
+      description: 'Pending organization created; inactive until approved.',
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
@@ -91,7 +93,9 @@ export class OrganizationsController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(PlatformOperatorGuard)
   @SerializeOptions({ schema: organizationApplicationViewSchema })
-  @ApiOperation({ summary: 'Approve a pending tenant (platform operator · pending → active)' })
+  @ApiOperation({
+    summary: 'Approve a pending organization (platform operator · pending → active)',
+  })
   @ApiResponse(
     apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization activated.' }),
   )
@@ -115,8 +119,8 @@ export class OrganizationsController {
   @Post('applications/:id/reject')
   @UseGuards(PlatformOperatorGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Reject a pending tenant (platform operator · hard-delete)' })
-  @ApiResponse({ status: 204, description: 'Pending tenant discarded.' })
+  @ApiOperation({ summary: 'Reject a pending organization (platform operator · hard-delete)' })
+  @ApiResponse({ status: 204, description: 'Pending organization discarded.' })
   @ApiResponse(apiError(403, 'Not a platform operator.'))
   @ApiResponse(apiError(404, 'Organization not found.'))
   async reject(@Param('id') id: string, @CurrentUser() user: SessionUser): Promise<void> {

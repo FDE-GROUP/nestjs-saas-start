@@ -147,7 +147,7 @@ describe('MikroOrganizationGovernanceRepository (S5 · FR-6 跨租户视图)', (
       workspaceCount: 2,
       postCount: 9,
     });
-    expect(diag?.tenant.organizationId).toBe('orgA');
+    expect(diag?.organization.organizationId).toBe('orgA');
     // 计数走 em.count（纯 COUNT(*)·不选列），依次四表。
     const countedEntities = spies.count.mock.calls.map((c) => c[0]);
     expect(countedEntities).toEqual([Member, Invitation, Workspace, PostEntity]);
@@ -225,7 +225,7 @@ describe('MikroOrganizationGovernanceRepository.exportOrganizationData (NFR-6)',
     expect(spies.findOne).toHaveBeenCalledTimes(1); // 归列·本体单查即携 status 真列
     expect(spies.find).toHaveBeenCalledTimes(6); // member/user/invitation/workspace/subscription/post
     expect(payload).not.toBeNull();
-    expect(payload?.tenant).toMatchObject({
+    expect(payload?.organization).toMatchObject({
       id: 'orgA',
       name: 'Acme',
       slug: 'acme',
@@ -286,8 +286,8 @@ describe('MikroOrganizationGovernanceRepository.exportOrganizationData (NFR-6)',
     spies.find.mockResolvedValue([]);
     const payload = await repo.exportOrganizationData('orgA');
     // 终态直读 organization.status 真列（非 metadata）；metadata 全列透传（零我方键）
-    expect(payload?.tenant.status).toBe(ORGANIZATION_STATUS.DELETED);
-    expect(payload?.tenant.metadata).toEqual({});
+    expect(payload?.organization.status).toBe(ORGANIZATION_STATUS.DELETED);
+    expect(payload?.organization.metadata).toEqual({});
   });
 
   it('returns null for an unknown tenant without touching the other tables', async () => {

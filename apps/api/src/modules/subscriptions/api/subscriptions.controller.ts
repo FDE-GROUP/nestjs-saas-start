@@ -35,7 +35,7 @@ import { SubscriptionResponse } from './response/subscription.response';
  *
  * Per-route guards only — the global APP_GUARD stays a signed decision (高危#4):
  * - `GET /subscriptions/current`: `TenantScopeGuard` (fail-closed · any authenticated
- *   member of the active tenant reads their own plan/usage/mapping).
+ *   member of the active organization reads their own plan/usage/mapping).
  * - `POST /subscriptions`: additionally `TenantPermissionGuard` + `organization:update`
  *   (owner/admin change the plan). The route never names a tenant id — the repository
  *   stamps the ALS tenant (FR-5 single choke-point).
@@ -57,14 +57,14 @@ export class SubscriptionsController {
   @UseGuards(TenantScopeGuard)
   @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({
-    summary: 'Current tenant subscription: plan, seat quota, usage, customer mapping',
+    summary: 'Current organization subscription: plan, seat quota, usage, customer mapping',
   })
   @ApiResponse(
     apiEnvelopeShape(SubscriptionResponse, {
-      description: 'Effective subscription snapshot for the active tenant.',
+      description: 'Effective subscription snapshot for the active organization.',
     }),
   )
-  @ApiResponse(apiError(403, 'No active tenant context.'))
+  @ApiResponse(apiError(403, 'No active organization context.'))
   getCurrent(): Promise<OrganizationSubscriptionView> {
     return this.queryBus.execute<GetSubscriptionQuery, OrganizationSubscriptionView>(
       new GetSubscriptionQuery(),
@@ -77,7 +77,7 @@ export class SubscriptionsController {
   @Can('update', 'Organization')
   @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({
-    summary: 'Provision/upgrade the tenant subscription (creates the provider customer)',
+    summary: 'Provision/upgrade the organization subscription (creates the provider customer)',
   })
   @ApiResponse(
     apiEnvelopeShape(SubscriptionResponse, {
