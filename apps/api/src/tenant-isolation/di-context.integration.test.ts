@@ -6,11 +6,11 @@ import {
   ORGANIZATION_RBAC_REPOSITORY,
   type OrganizationRbacRepository,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
-import { CaslTenantPermissionChecker } from '@app/modules/authorization/infrastructure/casl-tenant-permission.checker';
+import { CaslPermissionChecker } from '@app/modules/authorization/infrastructure/casl-permission.checker';
 import { ConfigPlatformSettings } from '@app/modules/platform/infrastructure/config-platform.settings';
 import { MikroPlatformIdentityLookup } from '@app/modules/platform/infrastructure/mikro-platform-identity.lookup';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
-import { TENANT_PERMISSION_CHECKER } from '@core/saas-kit/authorization/tenant-permission.port';
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
+import { PERMISSION_CHECKER } from '@core/saas-kit/authorization/permission.port';
 import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
@@ -36,7 +36,7 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
  * `Test.createTestingModule`，锁死两件事：
  *
  * 1. **元数据擦除防线**（`import type` 陷阱）：`TenantIsolationGuard`（裸 `TenantIsolationService`）与
- *    `TenantPermissionGuard`（裸 `Reflector`+`TenantIsolationService`）的构造参数**无 `@Inject` token**，
+ *    `AuthorizationGuard`（裸 `Reflector`+`TenantIsolationService`）的构造参数**无 `@Inject` token**，
  *    完全依赖 unplugin-swc 的 `emitDecoratorMetadata` 在 Vitest 下发出真实类。一旦被误改成纯类型导入
  *    擦除（metadata 变 `Object`），DI 当场崩、`design:paramtypes` 断言先红。
  * 2. **ALS 端到端传播**：真实 `TenantIsolationMiddleware` 把 `activeOrganizationId`/`x-workspace-id` 绑进
@@ -89,11 +89,11 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
       expect(types[0]).toBe(TenantIsolationService);
     });
 
-    it('TenantPermissionGuard 前两参携带真实 Reflector / TenantIsolationService（无 token，纯元数据解析）', () => {
-      const types = Reflect.getMetadata('design:paramtypes', TenantPermissionGuard) as unknown[];
+    it('AuthorizationGuard 前两参携带真实 Reflector / TenantIsolationService（无 token，纯元数据解析）', () => {
+      const types = Reflect.getMetadata('design:paramtypes', AuthorizationGuard) as unknown[];
       expect(types[0]).toBe(Reflector);
       expect(types[1]).toBe(TenantIsolationService);
-      // 第三参 checker 经 @Inject(TENANT_PERMISSION_CHECKER) token 注入，元数据可为 Object（属预期）。
+      // 第三参 checker 经 @Inject(PERMISSION_CHECKER) token 注入，元数据可为 Object（属预期）。
     });
   });
 
@@ -103,7 +103,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
         providers: [
           TenantIsolationService,
           TenantIsolationGuard,
-          TenantPermissionGuard,
+          AuthorizationGuard,
           PlatformOperatorGuard,
           SessionGuard,
           TenantIsolationMiddleware,
@@ -113,7 +113,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           { provide: PLATFORM_IDENTITY_LOOKUP, useValue: { emailOf: async () => undefined } },
           // §9.5.4①B · P1b：守卫/中间件经会话/裁决端口消费·此处用真实适配类坐实 DI 解析（依赖全局 AuthInstanceInjectKey）。
           { provide: SESSION_READER, useClass: AuthSessionReader },
-          { provide: TENANT_PERMISSION_CHECKER, useClass: CaslTenantPermissionChecker },
+          { provide: PERMISSION_CHECKER, useClass: CaslPermissionChecker },
           // S2：checker 现依赖 ORGANIZATION_RBAC_REPOSITORY 投影源——此处桩住（不触库），坐实注入可解析。
           {
             provide: ORGANIZATION_RBAC_REPOSITORY,
@@ -130,7 +130,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
       // 解析（非 merely 注册）会执行构造，依赖不满足则 Nest 抛 "can't resolve"。
       expect(moduleRef.get(TenantIsolationService)).toBeInstanceOf(TenantIsolationService);
       expect(moduleRef.get(TenantIsolationGuard)).toBeInstanceOf(TenantIsolationGuard);
-      expect(moduleRef.get(TenantPermissionGuard)).toBeInstanceOf(TenantPermissionGuard);
+      expect(moduleRef.get(AuthorizationGuard)).toBeInstanceOf(AuthorizationGuard);
       expect(moduleRef.get(PlatformOperatorGuard)).toBeInstanceOf(PlatformOperatorGuard);
       expect(moduleRef.get(SessionGuard)).toBeInstanceOf(SessionGuard);
       expect(moduleRef.get(TenantIsolationMiddleware)).toBeInstanceOf(TenantIsolationMiddleware);

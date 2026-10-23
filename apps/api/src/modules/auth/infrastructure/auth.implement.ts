@@ -225,8 +225,8 @@ export async function CreateAuth(
       ...(genericConfigs.length > 0 ? [genericOAuth({ config: genericConfigs })] : []),
       // 多租户（混合复用 · S0/S1/S3）：org 插件**仅作认证·数据源**（tenant/member/invitation
       // 表 + activeOrganizationId 落 session·D4）——module-rbac-casl 甲裁（人裁新宪）：授权裁决
-      // 归 CASL（tenant-rules 单源），BA ac 插件/自定义 roles 退场；本仓业务端点由门面
-      // （@Can + TenantPermissionGuard）承接，BA 内置 org HTTP 端点面在 handler 入口封堵（见下）。
+      // 归 CASL（authorization-rules 单源），BA ac 插件/自定义 roles 退场；本仓业务端点由门面
+      // （@Can + AuthorizationGuard）承接，BA 内置 org HTTP 端点面在 handler 入口封堵（见下）。
       // S4（FR-1 审批制）：`allowUserToCreateOrganization: false` 封死 HTTP 自助即时开通（现叠加
       // 封堵双保险）；建租户唯一通道 = 服务端系统动作（无 session + body.userId → isSystemAction·
       // 源码坐实不受此开关限），由 tenants 申请端点独享（强制户籍行 tenant.status=pending_approval·

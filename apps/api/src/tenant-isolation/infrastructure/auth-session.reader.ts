@@ -5,7 +5,7 @@ import {
 } from '@app/modules/auth/auth.constant';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { resolveRequestSession } from '@app/modules/auth/infrastructure/session-resolver';
-import type { OrganizationRole } from '@core/saas-kit/authorization/tenant-rules';
+import type { OrganizationRole } from '@core/saas-kit/authorization/authorization-rules';
 import type {
   RequestSessionReader,
   SessionRequestLike,

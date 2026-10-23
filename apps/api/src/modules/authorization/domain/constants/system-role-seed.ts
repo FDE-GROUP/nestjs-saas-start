@@ -1,8 +1,8 @@
 import type {
+  AuthorizationAction,
+  AuthorizationSubject,
   SystemRoleKey,
-  TenantAction,
-  TenantSubject,
-} from '@core/saas-kit/authorization/tenant-rules';
+} from '@core/saas-kit/authorization/authorization-rules';
 
 /**
  * 系统角色静态 seed 死数据（module-rbac-dynamic-roles §2.1/§2.3·丙裁「全 DB 化删代码表」）。
@@ -21,8 +21,8 @@ import type {
  */
 
 export interface SystemRoleGrantSeed {
-  readonly subject: TenantSubject;
-  readonly actions: readonly TenantAction[];
+  readonly subject: AuthorizationSubject;
+  readonly actions: readonly AuthorizationAction[];
 }
 
 export interface SystemRoleSeed {

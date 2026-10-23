@@ -1,5 +1,5 @@
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
   BadRequestException,
@@ -49,7 +49,7 @@ import {
 /**
  * 角色/授权**管理门面**（module-rbac-dynamic-roles §2.5·S3·甲裁自建角色 + 丁裁随片授权面）。
  *
- * 授权在我·数据在 DB：每端点声明 `@Can(<动作>, 'Role'|'RoleGrant')`，由 `TenantPermissionGuard`
+ * 授权在我·数据在 DB：每端点声明 `@Can(<动作>, 'Role'|'RoleGrant')`，由 `AuthorizationGuard`
  * 携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 `OrganizationRbacAdminService`
  * 落库（写侧过 domain 策略闸 + 同通道审计行 + 写后失效投影缓存）。BA 内置 create-role/roles 端点
  * 维持封堵（甲裁不代建→本片自建），本门面是租户差异化授权策略的唯一入口。
@@ -65,7 +65,7 @@ import {
 )
 @ApiTags('organizations')
 @Controller('organizations/roles')
-@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class AuthorizationAdminController {
   constructor(
     @Inject(OrganizationRbacAdminService) private readonly rbac: OrganizationRbacAdminService,

@@ -22,11 +22,11 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
  *
  * S11 · 高危#4 复合全局：`TenantIsolationGuard` 已升为全局 `APP_GUARD`（deny-by-default 租户墙），
  * 经 `AppModule` 中 `AuthModule`（会话墙）先于本模块解析 → 会话 401 先于租户 403。`@Public`/`@TenantIsolationExempt`
- * 显式旁路（见 `tenant-isolation.guard`）。`TenantPermissionGuard`/`PlatformOperatorGuard`/`QuotaGuard`
+ * 显式旁路（见 `tenant-isolation.guard`）。`AuthorizationGuard`/`PlatformOperatorGuard`/`QuotaGuard`
  * 仍逐路由 opt-in（语义异质·不宜全局）。
  *
- * 领域细化重构 A3：租户 RBAC 裁决（`TenantPermissionGuard` + CASL checker 与
- * `TENANT_PERMISSION_CHECKER`/`TENANT_PERMISSION_INVALIDATOR` 端口绑定）已迁出本横切
+ * 领域细化重构 A3：租户 RBAC 裁决（`AuthorizationGuard` + CASL checker 与
+ * `PERMISSION_CHECKER`/`PERMISSION_INVALIDATOR` 端口绑定）已迁出本横切
  * 隔离层，归 `AuthorizationModule`（@Global 供给）；领域细化重构 D：平台治理
  * （`PlatformOperatorGuard`/`PlatformAuditService` + `PLATFORM_IDENTITY_LOOKUP`/`PLATFORM_SETTINGS`
  * 适配）亦迁出，归 `PlatformModule`（@Global 供给）——本模块只留隔离机制与会话适配，

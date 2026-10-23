@@ -1,7 +1,7 @@
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
-import type { TenantPermissionChecker } from '@core/saas-kit/authorization/tenant-permission.port';
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
+import type { PermissionChecker } from '@core/saas-kit/authorization/permission.port';
 import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { PlatformSettings } from '@core/saas-kit/platform/platform-config.port';
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
@@ -62,8 +62,8 @@ function sessionReader(session: SessionResult | null): RequestSessionReader {
 }
 
 /** module-rbac-casl 换形 + dynamic-roles S2：端口消费异步 can({organizationId,role,action,subject})·裁决引擎在 CASL 适配侧（规则源 DB）。 */
-function permissionChecker(allowed: boolean): TenantPermissionChecker {
-  return { can: async () => allowed } as unknown as TenantPermissionChecker;
+function permissionChecker(allowed: boolean): PermissionChecker {
+  return { can: async () => allowed } as unknown as PermissionChecker;
 }
 
 function userStatus(blocked = false): UserStatusService {
@@ -154,12 +154,12 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
       );
     });
 
-    it('租户权限缺失时 CASL 裁决 deny → TenantPermissionGuard 403（租户权不外溢）', async () => {
+    it('租户权限缺失时 CASL 裁决 deny → AuthorizationGuard 403（租户权不外溢）', async () => {
       const tcs = new TenantIsolationService();
       const reflector = {
         getAllAndOverride: () => ({ action: 'delete', subject: 'Organization' }),
       };
-      const guard = new TenantPermissionGuard(reflector as never, tcs, permissionChecker(false));
+      const guard = new AuthorizationGuard(reflector as never, tcs, permissionChecker(false));
       const { ctx } = ctxWith({ cookie: 's' });
       await expect(
         tcs.run({ organizationId: 'org_1', userId: 'm' }, () => guard.canActivate(ctx)),

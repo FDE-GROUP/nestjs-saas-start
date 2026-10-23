@@ -1,11 +1,11 @@
 import { ConfigModule } from '@app/config/config.module';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { PostsController } from '@app/modules/posts/api/posts.controller';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import {
-  TENANT_PERMISSION_CHECKER,
-  TENANT_PERMISSION_INVALIDATOR,
-} from '@core/saas-kit/authorization/tenant-permission.port';
+  PERMISSION_CHECKER,
+  PERMISSION_INVALIDATOR,
+} from '@core/saas-kit/authorization/permission.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import { Test } from '@nestjs/testing';
@@ -32,7 +32,7 @@ describe('全 AppModule boot 冒烟（DI 图整树可解析 · DB-free · 进 CI
 
     // 关键接线节点均可被容器解析出实例（这些是历片只手工 new、从未走真实 DI 的类）。
     expect(moduleRef.get(TenantIsolationGuard)).toBeInstanceOf(TenantIsolationGuard);
-    expect(moduleRef.get(TenantPermissionGuard)).toBeInstanceOf(TenantPermissionGuard);
+    expect(moduleRef.get(AuthorizationGuard)).toBeInstanceOf(AuthorizationGuard);
     expect(moduleRef.get(PlatformOperatorGuard)).toBeInstanceOf(PlatformOperatorGuard);
     expect(moduleRef.get(SessionGuard)).toBeInstanceOf(SessionGuard);
     expect(moduleRef.get(PostsController)).toBeInstanceOf(PostsController);
@@ -40,8 +40,6 @@ describe('全 AppModule boot 冒烟（DI 图整树可解析 · DB-free · 进 CI
     expect(moduleRef.get(ConfigModule)).toBeInstanceOf(ConfigModule);
     // module-rbac-dynamic-roles S3 热改正确性不变量：读侧 checker 与写侧 invalidator 必须解析到
     // **同一单例**（useExisting 归一）——否则门面失效作用不到守卫裁决命中的缓存，热改不生效。
-    expect(moduleRef.get(TENANT_PERMISSION_INVALIDATOR)).toBe(
-      moduleRef.get(TENANT_PERMISSION_CHECKER),
-    );
+    expect(moduleRef.get(PERMISSION_INVALIDATOR)).toBe(moduleRef.get(PERMISSION_CHECKER));
   });
 });

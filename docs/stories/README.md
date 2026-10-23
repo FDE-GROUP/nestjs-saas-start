@@ -21,7 +21,7 @@
 ```
 限流墙(Throttler) → 会话墙(SessionGuard·deny-by-default·@Public 旁路)
   → CSRF 墙(CsrfOriginGuard·401 先于 403) → 租户墙(TenantIsolationGuard·deny-by-default·@TenantIsolationExempt/@Public 旁路)
-  →〔逐路由叠加〕PlatformOperatorGuard（平台层）｜ TenantPermissionGuard + @Can（租户/实例层）
+  →〔逐路由叠加〕PlatformOperatorGuard（平台层）｜ AuthorizationGuard + @Can（租户/实例层）
 ```
 
 `TenantIsolationMiddleware` 依 `session.activeOrganizationId` 绑定 ALS 租户上下文；deny-list 态（`pending_approval/suspended/deleted`）租户**不绑定** → 其租户业务路由 fail-closed 403。

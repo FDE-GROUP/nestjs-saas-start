@@ -1,9 +1,9 @@
 import {
-  TENANT_ACTION_VALUES,
-  TENANT_SUBJECT_VALUES,
-  type TenantAction,
-  type TenantSubject,
-} from '@core/saas-kit/authorization/tenant-rules';
+  AUTHORIZATION_ACTION_VALUES,
+  AUTHORIZATION_SUBJECT_VALUES,
+  type AuthorizationAction,
+  type AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 import { ApiProperty } from '@nestjs/swagger';
 import type {
   organizationRoleGrantViewSchema,
@@ -40,11 +40,11 @@ void _trvf;
 void _trvb;
 
 export class OrganizationRoleGrantViewResponse {
-  @ApiProperty({ enum: [...TENANT_SUBJECT_VALUES], description: '授权主体词汇。' })
-  subject!: TenantSubject;
+  @ApiProperty({ enum: [...AUTHORIZATION_SUBJECT_VALUES], description: '授权主体词汇。' })
+  subject!: AuthorizationSubject;
 
-  @ApiProperty({ enum: [...TENANT_ACTION_VALUES], description: '动作词汇。' })
-  action!: TenantAction;
+  @ApiProperty({ enum: [...AUTHORIZATION_ACTION_VALUES], description: '动作词汇。' })
+  action!: AuthorizationAction;
 
   @ApiProperty({
     type: 'object',

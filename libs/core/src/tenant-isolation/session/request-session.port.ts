@@ -1,4 +1,4 @@
-import type { OrganizationRole } from '../../authorization/tenant-rules';
+import type { OrganizationRole } from '../../authorization/authorization-rules';
 
 /**
  * 请求会话读取端口（global-tenancy §9.5.4①B · P1b 会话端口倒置）。
@@ -27,7 +27,7 @@ export interface SessionView {
   /**
    * 当前用户在 `activeOrganizationId` 租户内的成员角色（module-rbac-casl 丙裁：会话解析点
    * 预注入）。来自 BA membership **数据面**（认证域事实）；词汇外/无活动租户 → undefined，
-   * 消费侧（TenantPermissionGuard）据此 fail-closed。裁决不在本层。
+   * 消费侧（AuthorizationGuard）据此 fail-closed。裁决不在本层。
    */
   readonly role?: OrganizationRole;
 }

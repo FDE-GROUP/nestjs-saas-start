@@ -38,7 +38,7 @@ export interface SessionRequest {
  *
  * S11 · 高危#4 收口：本守卫经 `AuthModule` 注册为全局 `APP_GUARD`（deny-by-default 会话墙），
  * 所有路由默认要求已登录会话。仅显式标注 `@Public()` 的路由（存活探针、签名校验的入站回调）
- * 经 `Reflector` 读回旁路元数据后放行。其余守卫（TenantIsolation/TenantPermission/PlatformOperator/Quota）
+ * 经 `Reflector` 读回旁路元数据后放行。其余守卫（TenantIsolation/Authorization/PlatformOperator/Quota）
  * 仍逐路由叠加，运行于本全局守卫**之后**。`UserStatusService` 暂停联动保持纵深防御（403）。
  */
 @Injectable()

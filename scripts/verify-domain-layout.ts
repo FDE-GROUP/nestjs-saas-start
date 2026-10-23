@@ -5,7 +5,7 @@
 // 子目录之一；躺在 `domain/` 根、或落在非规范子目录 → fail-loud（exit 1）。防「domain 根散件」再漂移。
 //
 // 边界（防误红）：**只扫 `apps/api/*/domain`**。`subscriptions`/`workspaces` 的 domain 居 `libs/core`
-// （另一规则·包根词表如 `tenant-rules.ts` 合法）→ 不纳入；`auth`/`platform` 无 domain → 自然跳过。
+// （另一规则·包根词表如 `authorization-rules.ts` 合法）→ 不纳入；`auth`/`platform` 无 domain → 自然跳过。
 // 纯目录扫描、便宜，故 `pnpm run ci` 的 full/quick 均跑、尽早失败（与 type-escape 同置）。
 //
 // 用法：node scripts/verify-domain-layout.ts            检查（违规→exit 1）

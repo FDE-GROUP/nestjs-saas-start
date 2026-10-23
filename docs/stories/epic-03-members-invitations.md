@@ -41,7 +41,7 @@
 - **验收**：Given 有效会话，When `GET /tenants/invitations/mine`，Then 以会话用户 email 收敛可见面（server-side-only query）。
 - **溯源**：`GET /api/v1/organizations/invitations/mine` · `OrganizationsSelfController.listMyInvitations`（`query.email = user.email`）· `CurrentUser`。
 
-## 管理通道（`OrganizationsOrgAdminController`·`@UseGuards(TenantIsolationGuard, TenantPermissionGuard)`·逐路由 `@Can`）
+## 管理通道（`OrganizationsOrgAdminController`·`@UseGuards(TenantIsolationGuard, AuthorizationGuard)`·逐路由 `@Can`）
 
 > 需 active 租户（不豁免全局墙）；每端点 CASL 裁决，通过后服务端直调 BA；角色挂载前过 `assertRoleAssignable` 存在性闸。
 

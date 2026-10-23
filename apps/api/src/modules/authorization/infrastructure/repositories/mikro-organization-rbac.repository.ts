@@ -7,14 +7,17 @@ import {
   type OrganizationRoleGrantRow,
   type OrganizationRoleRow,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 import { Inject, Injectable } from '@nestjs/common';
 import { SYSTEM_ROLE_SEED } from '../../domain/constants/system-role-seed';
 import {
   canonicalConditions,
   isValidGrantConditions,
   isValidRoleKey,
-} from '../../domain/policies/tenant-rbac.policy';
+} from '../../domain/policies/rbac.policy';
 import type {
   OrganizationRbacRepository,
   OrganizationRoleAuditAction,
@@ -210,8 +213,8 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
   async revoke(
     organizationId: string,
     roleKey: string,
-    subject: TenantSubject,
-    action: TenantAction,
+    subject: AuthorizationSubject,
+    action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
   ): Promise<OrganizationRoleRevokeResult> {

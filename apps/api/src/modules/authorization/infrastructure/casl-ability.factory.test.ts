@@ -1,16 +1,19 @@
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 import { describe, expect, it } from 'vitest';
-import { buildTenantAbility, type TenantAbilityGrant } from './casl-ability.factory';
+import { buildScopedAbility, type ScopedAbilityGrant } from './casl-ability.factory';
 
 /**
  * grant 行 → CASL ability 纯投影锁测（module-rbac-casl §2.5 换形 · module-rbac-dynamic-roles §2.3）。
  *
- * 旧「buildTenantAbility ↔ TENANT_RULES 逐格等价」随丙裁（矩阵删净）迁至
+ * 旧「buildScopedAbility ↔ TENANT_RULES 逐格等价」随丙裁（矩阵删净）迁至
  * `constants/system-role-seed.test.ts`（seed ↔ 旧矩阵对拍）；本测只锁**投影机制**：
  * 行内 can、行外 cannot、conditions 匹配、空输入 fail-closed——投影不含任何权限知识。
  */
 
-const SUBJECT_VALUES: TenantSubject[] = [
+const SUBJECT_VALUES: AuthorizationSubject[] = [
   'Organization',
   'Member',
   'Invitation',
@@ -18,15 +21,18 @@ const SUBJECT_VALUES: TenantSubject[] = [
   'Role',
   'RoleGrant',
 ];
-const ACTION_VALUES: TenantAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
+const ACTION_VALUES: AuthorizationAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
 
-function grantsOf(subject: TenantSubject, actions: readonly TenantAction[]): TenantAbilityGrant[] {
+function grantsOf(
+  subject: AuthorizationSubject,
+  actions: readonly AuthorizationAction[],
+): ScopedAbilityGrant[] {
   return actions.map((action) => ({ subject, action }));
 }
 
-describe('buildTenantAbility grant 行投影', () => {
+describe('buildScopedAbility grant 行投影', () => {
   it('行内 can、行外 cannot（多 subject 行并集·未声明组合零规则）', () => {
-    const ability = buildTenantAbility([
+    const ability = buildScopedAbility([
       ...grantsOf('Workspace', ['create', 'read']),
       ...grantsOf('Member', ['read']),
     ]);
@@ -43,7 +49,7 @@ describe('buildTenantAbility grant 行投影', () => {
   });
 
   it('空输入投影为空规则 → 全部拒绝（fail-closed·与「查无角色」同语义）', () => {
-    const ability = buildTenantAbility([]);
+    const ability = buildScopedAbility([]);
     for (const subject of SUBJECT_VALUES) {
       for (const action of ACTION_VALUES) {
         expect(ability.cannot(action, subject), `${action} ${subject}`).toBe(true);
@@ -52,7 +58,7 @@ describe('buildTenantAbility grant 行投影', () => {
   });
 
   it('conditions 行实例匹配（__caslSubjectType__ 形·CASL v7 源码对拍）：属性命中 allow、不命中 deny', () => {
-    const ability = buildTenantAbility([
+    const ability = buildScopedAbility([
       { subject: 'Workspace', action: 'update', conditions: { ownerId: 'u1' } },
     ]);
     // CASL v7 实例判定口径：can(action, {__caslSubjectType__, ...attrs})（第三参对象不是合法
@@ -67,7 +73,7 @@ describe('buildTenantAbility grant 行投影', () => {
   });
 
   it('同格多行 = OR 并集（行式 grant 的合并语义·甲裁表形配套）', () => {
-    const ability = buildTenantAbility([
+    const ability = buildScopedAbility([
       { subject: 'Workspace', action: 'update', conditions: { ownerId: 'u1' } },
       { subject: 'Workspace', action: 'update', conditions: { ownerId: 'u2' } },
     ]);
@@ -77,7 +83,7 @@ describe('buildTenantAbility grant 行投影', () => {
   });
 
   it('词汇扩项锁：Role/RoleGrant subject 可投影可判（S3 管理职权词汇就位）', () => {
-    const ability = buildTenantAbility([
+    const ability = buildScopedAbility([
       ...grantsOf('Role', ['create', 'read', 'update', 'delete']),
       ...grantsOf('RoleGrant', ['create', 'read', 'delete']),
     ]);

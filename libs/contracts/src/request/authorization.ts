@@ -4,11 +4,11 @@ import { strictObject } from '../strict';
 
 /**
  * 授权资源/动作词汇（**传输层 wire enum 单源**）。
- * ⚠ 领域/运行时值域 SSOT 在 `@core/saas-kit/authorization/tenant-rules`；contracts 保持零依赖
+ * ⚠ 领域/运行时值域 SSOT 在 `@core/saas-kit/authorization/authorization-rules`；contracts 保持零依赖
  * （前端可安全消费·不含领域内核），故此处内联同一字面量，并由 apps/api 的
  * `contracts-vocab-parity.test.ts` 对拍锁定「contracts wire 值域 === core 值域」——core 改值即时红，防漂移。
  */
-export const TENANT_SUBJECT_VALUES = [
+export const AUTHORIZATION_SUBJECT_VALUES = [
   'Organization',
   'Member',
   'Invitation',
@@ -16,7 +16,13 @@ export const TENANT_SUBJECT_VALUES = [
   'Role',
   'RoleGrant',
 ] as const;
-export const TENANT_ACTION_VALUES = ['create', 'read', 'update', 'delete', 'cancel'] as const;
+export const AUTHORIZATION_ACTION_VALUES = [
+  'create',
+  'read',
+  'update',
+  'delete',
+  'cancel',
+] as const;
 
 /** 创建角色入参（旧 `CreateRoleDto`）。 */
 export const createRoleSchema = strictObject({
@@ -44,8 +50,8 @@ export type DeleteRole = z.infer<typeof deleteRoleSchema>;
  */
 export const grantRolePermissionSchema = strictObject({
   roleKey: reqStringMax('validate.roleKey.required', 128),
-  subject: z.enum(TENANT_SUBJECT_VALUES),
-  action: z.enum(TENANT_ACTION_VALUES),
+  subject: z.enum(AUTHORIZATION_SUBJECT_VALUES),
+  action: z.enum(AUTHORIZATION_ACTION_VALUES),
   conditions: z
     .record(z.string(), z.unknown(), { error: 'validate.grantConditions.object' })
     .optional(),

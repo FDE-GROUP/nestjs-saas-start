@@ -19,7 +19,7 @@ import { QuotaService } from './quota.service';
  * `QuotaService` 不再抛 HTTP（P1·裁决返 result-union），**402 翻译归本守卫**（适配器
  * 角色文件·合法抛点）。未标注 `@Quota` 直接放行（opt-in）。
  *
- * 与 `TenantPermissionGuard` 一致：经 `@UseGuards` 逐路由挂载，**不升级为全局
+ * 与 `AuthorizationGuard` 一致：经 `@UseGuards` 逐路由挂载，**不升级为全局
  * APP_GUARD**（blast radius=每路由·高危#4 挂账）。生产挂点（BA member-add 路由）
  * 为接线点留后续切片，本片以单测/守卫测坐实超限拒绝。
  */

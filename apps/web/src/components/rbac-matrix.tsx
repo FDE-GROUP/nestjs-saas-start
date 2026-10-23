@@ -5,7 +5,7 @@
  * （conditions 省略·待裁点③甲），取消 = 撤整 subject 级行。toggle 即调 mutation（待裁点⑤甲）。
  *
  * 枚举词汇单一 SSOT（待裁点④甲）：subject/action 联合类型直取 @saas/api-client schema，
- * 运行时数组以 `readonly TenantSubject[]` 注解约束元素合法——后端枚举新增值会在此拓红（编译期）。
+ * 运行时数组以 `readonly AuthorizationSubject[]` 注解约束元素合法——后端枚举新增值会在此拓红（编译期）。
  */
 import type { components, paths } from '@saas/api-client';
 
@@ -15,11 +15,11 @@ import type { components, paths } from '@saas/api-client';
  */
 type GrantRequestBody =
   paths['/api/v1/organizations/roles/grants']['post']['requestBody']['content']['application/json'];
-export type TenantSubject = GrantRequestBody['subject'];
-export type TenantAction = GrantRequestBody['action'];
+export type AuthorizationSubject = GrantRequestBody['subject'];
+export type AuthorizationAction = GrantRequestBody['action'];
 export type OrganizationRoleGrantView = components['schemas']['OrganizationRoleGrantViewResponse'];
 
-export const SUBJECTS: readonly TenantSubject[] = [
+export const SUBJECTS: readonly AuthorizationSubject[] = [
   'Organization',
   'Member',
   'Invitation',
@@ -28,9 +28,15 @@ export const SUBJECTS: readonly TenantSubject[] = [
   'RoleGrant',
 ];
 
-export const ACTIONS: readonly TenantAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
+export const ACTIONS: readonly AuthorizationAction[] = [
+  'create',
+  'read',
+  'update',
+  'delete',
+  'cancel',
+];
 
-const SUBJECT_LABELS: Record<TenantSubject, string> = {
+const SUBJECT_LABELS: Record<AuthorizationSubject, string> = {
   Organization: '组织',
   Member: '成员',
   Invitation: '邀请',
@@ -39,7 +45,7 @@ const SUBJECT_LABELS: Record<TenantSubject, string> = {
   RoleGrant: '授权',
 };
 
-const ACTION_LABELS: Record<TenantAction, string> = {
+const ACTION_LABELS: Record<AuthorizationAction, string> = {
   create: '新建',
   read: '查看',
   update: '修改',
@@ -48,7 +54,7 @@ const ACTION_LABELS: Record<TenantAction, string> = {
 };
 
 /** cell 唯一键（subject:action）。 */
-export function cellKey(subject: TenantSubject, action: TenantAction): string {
+export function cellKey(subject: AuthorizationSubject, action: AuthorizationAction): string {
   return `${subject}:${action}`;
 }
 
@@ -70,7 +76,11 @@ export interface RbacMatrixProps {
   pendingCell: string | null;
   /** 整表禁用（如加载/无权操作）。 */
   disabled?: boolean;
-  onToggle: (subject: TenantSubject, action: TenantAction, currentlyGranted: boolean) => void;
+  onToggle: (
+    subject: AuthorizationSubject,
+    action: AuthorizationAction,
+    currentlyGranted: boolean,
+  ) => void;
 }
 
 export function RbacMatrix({ grants, pendingCell, disabled, onToggle }: RbacMatrixProps) {

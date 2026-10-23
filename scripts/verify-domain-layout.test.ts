@@ -11,8 +11,8 @@ describe('findViolationsFromRelPaths — domain 子目录法恒等闸', () => {
       'events/subscription-activated.event.ts',
       'repositories/tenant.repository.ts',
       'ports/storage.port.ts',
-      'policies/tenant-rbac.policy.ts',
-      'policies/tenant-rbac.policy.test.ts',
+      'policies/rbac.policy.ts',
+      'policies/rbac.policy.test.ts',
       'constants/system-role-seed.ts',
       'value-objects/nested/deeper.ts',
     ];

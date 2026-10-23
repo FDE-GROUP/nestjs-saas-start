@@ -1,4 +1,7 @@
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 
 /**
  * 租户 RBAC 仓储端口（domain-owned · module-rbac-dynamic-roles §2.2/§2.3）。
@@ -7,7 +10,7 @@ import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/t
  *  - 读侧供 checker 投影（`findGrants` · S2）与存在性校验（`listRoles` · S3 DTO 改形）；
  *  - 写侧供管理门面（create/rename/delete/grant/revoke · S3），每次变更同通道落审计行（甲裁）。
  * 返回码用字面量 union（不借 HTTP 异常表达领域事实·应用层负责转译）；conditions 形状
- * 校验在 domain 策略纯函数（`policies/tenant-rbac.policy.ts`），适配器写前必过闸。
+ * 校验在 domain 策略纯函数（`policies/rbac.policy.ts`），适配器写前必过闸。
  */
 export const ORGANIZATION_RBAC_REPOSITORY = Symbol('ORGANIZATION_RBAC_REPOSITORY');
 
@@ -19,10 +22,10 @@ export interface OrganizationRoleView {
   readonly isSystem: boolean;
 }
 
-/** 授权行读模型：与 app 侧 CASL 投影输入（`TenantAbilityGrant`）同构。 */
+/** 授权行读模型：与 app 侧 CASL 投影输入（`ScopedAbilityGrant`）同构。 */
 export interface OrganizationRoleGrantView {
-  readonly subject: TenantSubject;
-  readonly action: TenantAction;
+  readonly subject: AuthorizationSubject;
+  readonly action: AuthorizationAction;
   readonly conditions: Record<string, unknown> | null;
 }
 
@@ -85,8 +88,8 @@ export interface OrganizationRbacRepository {
   revoke(
     organizationId: string,
     roleKey: string,
-    subject: TenantSubject,
-    action: TenantAction,
+    subject: AuthorizationSubject,
+    action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
   ): Promise<OrganizationRoleRevokeResult>;

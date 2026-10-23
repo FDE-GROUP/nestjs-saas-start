@@ -1,6 +1,6 @@
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import type { CanRequirement } from '@core/saas-kit/authorization/can.decorator';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
-import type { TenantPermissionChecker } from '@core/saas-kit/authorization/tenant-permission.port';
+import type { PermissionChecker } from '@core/saas-kit/authorization/permission.port';
 import { type ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,7 +14,7 @@ function makeContext(): ExecutionContext {
 
 /**
  * module-rbac-casl §2.2 换形 + module-rbac-dynamic-roles S2 后的守卫契约：守卫经
- * `TenantPermissionChecker` 端口消费**异步**布尔裁决（规则源 DB），输入 = `@Can` 声明
+ * `PermissionChecker` 端口消费**异步**布尔裁决（规则源 DB），输入 = `@Can` 声明
  * (action, subject) + ALS 预注入角色 + 活动租户 organizationId（规则分区键·丙裁）。
  * 「规则 → CASL ability 判定」由工厂/适配测覆盖，守卫测试只锁声明→端口的形状。
  */
@@ -32,12 +32,12 @@ function makeGuard({
   const reflector = { getAllAndOverride: vi.fn().mockReturnValue(requirement) };
   const tenantContext = { organizationId, role } as never;
   const can = vi.fn().mockResolvedValue(allowed ?? false);
-  const checker = { can } as unknown as TenantPermissionChecker;
-  const guard = new TenantPermissionGuard(reflector as never, tenantContext, checker);
+  const checker = { can } as unknown as PermissionChecker;
+  const guard = new AuthorizationGuard(reflector as never, tenantContext, checker);
   return { guard, can, reflector };
 }
 
-describe('TenantPermissionGuard（CASL 换形）', () => {
+describe('AuthorizationGuard（CASL 换形）', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('fail-closed: rejects when there is no active tenant', async () => {

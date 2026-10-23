@@ -9,7 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
 import { TenantIsolationService } from '../tenant-isolation/tenant-isolation.service';
 import { CAN_KEY, type CanRequirement } from './can.decorator';
-import { TENANT_PERMISSION_CHECKER, type TenantPermissionChecker } from './tenant-permission.port';
+import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
 
 /**
  * Enforces tenant-level RBAC for routes annotated with `@Can` (module-rbac-casl §2.2/§2.3 ·
@@ -18,16 +18,16 @@ import { TENANT_PERMISSION_CHECKER, type TenantPermissionChecker } from './tenan
  * Fail-closed: without an active tenant context the request is rejected outright; a guarded
  * route additionally requires the ALS-preset member role (丙裁·会话解析点预注入) — missing
  * role denies. The allow/deny decision itself is delegated to the core-owned
- * `TenantPermissionChecker` port, whose reference-app adapter projects the tenant's DB grant
+ * `PermissionChecker` port, whose reference-app adapter projects the tenant's DB grant
  * rows (organization_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
  * auth / CASL impl (§9.5.4①B).
  */
 @Injectable()
-export class TenantPermissionGuard implements CanActivate {
+export class AuthorizationGuard implements CanActivate {
   constructor(
     @Inject(Reflector) private readonly reflector: Reflector,
     @Inject(TenantIsolationService) private readonly tenantContext: TenantIsolationService,
-    @Inject(TENANT_PERMISSION_CHECKER) private readonly checker: TenantPermissionChecker,
+    @Inject(PERMISSION_CHECKER) private readonly checker: PermissionChecker,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -52,7 +52,7 @@ export class TenantPermissionGuard implements CanActivate {
     const allowed = await this.checker.can({ organizationId, role, ...requirement });
     if (!allowed) {
       throw new ForbiddenException(
-        `Missing tenant permission: ${requirement.action} ${requirement.subject}`,
+        `Missing permission: ${requirement.action} ${requirement.subject}`,
         { errorCode: ERROR_CODES.TENANCY_PERMISSION_DENIED },
       );
     }

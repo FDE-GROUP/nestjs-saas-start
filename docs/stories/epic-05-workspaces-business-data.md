@@ -2,7 +2,7 @@
 
 > 旅程: 租户内如何以 Workspace 做二级数据分区、业务资源如何按租户隔离读写 | 上下文: `workspaces`（分区 CRUD）+ `posts`（示例租户业务资源）
 > Workspace = 租户内二级数据分区、授权的 *subject*（非第三道墙、无独立角色层）。业务资源的行隔离最终卡点在**仓储层**：port 不暴露 tenantId，adapter 从 ALS `requireActiveOrganizationId()` 强制注入谓词——handler/controller 永不点名租户 id（FR-5 单点）。`posts` 是模板给未来业务功能复制的参考切片。
-> **两切片的守卫非对称（有意取舍）**：`workspaces` = `TenantIsolationGuard` + `TenantPermissionGuard` 双守卫 + 逐路由 `@Can`（RBAC 门·read 全成员/写 owner-admin）；`posts` = **仅** `TenantIsolationGuard`、**无 `@Can`**（任何 active 租户成员皆可读写·行隔离为唯一边界）——即「最小参考切片」有意不叠 RBAC，复制成真业务时若要职权门需自行加 `@Can` + `TenantPermissionGuard`（走 workspaces 形状）。
+> **两切片的守卫非对称（有意取舍）**：`workspaces` = `TenantIsolationGuard` + `AuthorizationGuard` 双守卫 + 逐路由 `@Can`（RBAC 门·read 全成员/写 owner-admin）；`posts` = **仅** `TenantIsolationGuard`、**无 `@Can`**（任何 active 租户成员皆可读写·行隔离为唯一边界）——即「最小参考切片」有意不叠 RBAC，复制成真业务时若要职权门需自行加 `@Can` + `AuthorizationGuard`（走 workspaces 形状）。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 
 ---
@@ -10,7 +10,7 @@
 ### 5.1 分页列出租户工作区
 - **作为** 租户成员，**我想** 分页查看本租户的 workspace，**以便** 选用工作分区。
 - **验收**：Given active 租户 + `read Workspace`（S3 人裁：全成员可读），When `GET /workspaces`（offset 分页），Then 返回本租户 workspace 页；Given 无租户/deny，Then 403。
-- **溯源**：`GET /api/v1/workspaces` · `WorkspacesController.list` · `@Can('read','Workspace')` · 双守卫（`TenantIsolationGuard`+`TenantPermissionGuard`）为**类级/逐路由显式挂、非 `APP_GUARD` 全局**（高危#4 签核） · `ListWorkspacesQuery` → `Page<WorkspaceReadModel>` · 契约 `listPageQuerySchema`/`workspacePageSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S3 / [`module-common-pagination-contract`](../plans/module-common-pagination-contract.md)。
+- **溯源**：`GET /api/v1/workspaces` · `WorkspacesController.list` · `@Can('read','Workspace')` · 双守卫（`TenantIsolationGuard`+`AuthorizationGuard`）为**类级/逐路由显式挂、非 `APP_GUARD` 全局**（高危#4 签核） · `ListWorkspacesQuery` → `Page<WorkspaceReadModel>` · 契约 `listPageQuerySchema`/`workspacePageSchema` · 关联 [`global-tenancy`](../plans/global-tenancy.md) S3 / [`module-common-pagination-contract`](../plans/module-common-pagination-contract.md)。
 
 ### 5.2 创建工作区
 - **作为** owner/admin，**我想** 新建一个 workspace，**以便** 开辟新的数据分区。

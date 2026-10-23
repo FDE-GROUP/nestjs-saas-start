@@ -1,5 +1,5 @@
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { CreateSubscriptionCommand } from '@core/saas-kit/modules/subscriptions/application/commands/create-subscription.command';
 import { GetSubscriptionQuery } from '@core/saas-kit/modules/subscriptions/application/queries/get-current-subscription.query';
 import type { OrganizationSubscriptionView } from '@core/saas-kit/modules/subscriptions/application/read-models/subscription.read-model';
@@ -36,7 +36,7 @@ import { SubscriptionResponse } from './response/subscription.response';
  * Per-route guards only — the global APP_GUARD stays a signed decision (高危#4):
  * - `GET /subscriptions/current`: `TenantIsolationGuard` (fail-closed · any authenticated
  *   member of the active organization reads their own plan/usage/mapping).
- * - `POST /subscriptions`: additionally `TenantPermissionGuard` + `organization:update`
+ * - `POST /subscriptions`: additionally `AuthorizationGuard` + `organization:update`
  *   (owner/admin change the plan). The route never names a tenant id — the repository
  *   stamps the ALS tenant (FR-5 single choke-point).
  *
@@ -73,7 +73,7 @@ export class SubscriptionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(TenantIsolationGuard, TenantPermissionGuard)
+  @UseGuards(TenantIsolationGuard, AuthorizationGuard)
   @Can('update', 'Organization')
   @SerializeOptions({ schema: subscriptionViewSchema })
   @ApiOperation({

@@ -22,7 +22,7 @@ import { IS_TENANT_ISOLATION_EXEMPT_KEY } from './tenant-isolation-exempt.decora
  * 运行于全局会话墙之后（`AppModule` 中 `AuthModule` 先于 `TenantIsolationModule` → 401 先于 403）。所有
  * 路由默认要求已绑定 active 租户；唯显式旁路可豁免：`@Public()`（无会话=无租户·认证面/webhook）
  * 或 `@TenantIsolationExempt()`（需会话但合法无租户·建租申请/跨租治理/个人 PIPL/用户级 storage·payment）。
- * 元数据经 `Reflector.getAllAndOverride` 读回（handler 优先 class·同 `TenantPermissionGuard` 口径）。
+ * 元数据经 `Reflector.getAllAndOverride` 读回（handler 优先 class·同 `AuthorizationGuard` 口径）。
  * 逐路由 `@UseGuards(TenantIsolationGuard)` 仍可与全局并存（幂等·无短路冲突）。
  */
 @Injectable()

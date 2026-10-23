@@ -1,5 +1,5 @@
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { CreateWorkspaceCommand } from '@core/saas-kit/modules/workspaces/application/commands/create-workspace.command';
 import { DeleteWorkspaceCommand } from '@core/saas-kit/modules/workspaces/application/commands/delete-workspace.command';
 import { UpdateWorkspaceCommand } from '@core/saas-kit/modules/workspaces/application/commands/update-workspace.command';
@@ -49,7 +49,7 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
  *
  * Both guards run per-route (NOT global — APP_GUARD stays a signed decision, 高危#4):
  * - `TenantIsolationGuard`: fail-closed — no active tenant → 403.
- * - `TenantPermissionGuard`: delegates the capability check to Better Auth `ac` (single
+ * - `AuthorizationGuard`: delegates the capability check to Better Auth `ac` (single
  *   source of truth), so role→permission mapping is never scattered here.
  *
  * Permission tiers (S3 human call): `workspace:read` for all members;
@@ -59,7 +59,7 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, WorkspaceResponse, WorkspacePageResponse)
 @ApiTags('workspaces')
 @Controller('workspaces')
-@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class WorkspacesController {
   constructor(
     @Inject(CommandBus) private readonly commandBus: CommandBus,

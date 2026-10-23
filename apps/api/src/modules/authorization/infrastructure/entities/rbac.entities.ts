@@ -1,4 +1,7 @@
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
 
@@ -92,8 +95,8 @@ export const OrganizationRole: EntitySchema<OrganizationRoleRow> = buildRuntimeE
 export interface OrganizationRoleGrantRow {
   id: number;
   roleId: string;
-  subject: TenantSubject;
-  action: TenantAction;
+  subject: AuthorizationSubject;
+  action: AuthorizationAction;
   conditions?: Record<string, unknown> | null;
   createdAt: Date;
 }

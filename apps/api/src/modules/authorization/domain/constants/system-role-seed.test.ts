@@ -1,5 +1,8 @@
-import { buildTenantAbility } from '@app/modules/authorization/infrastructure/casl-ability.factory';
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import { buildScopedAbility } from '@app/modules/authorization/infrastructure/casl-ability.factory';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 import { describe, expect, it } from 'vitest';
 import { SYSTEM_ROLE_SEED, type SystemRoleSeed } from './system-role-seed';
 
@@ -13,7 +16,7 @@ import { SYSTEM_ROLE_SEED, type SystemRoleSeed } from './system-role-seed';
 
 /** 旧 `TENANT_RULES` 矩阵原样（删除前快照·对拍基准·非运行时消费物）。 */
 const OLD_MATRIX: Readonly<
-  Record<string, Readonly<Partial<Record<TenantSubject, readonly TenantAction[]>>>>
+  Record<string, Readonly<Partial<Record<AuthorizationSubject, readonly AuthorizationAction[]>>>>
 > = {
   owner: {
     Organization: ['update', 'delete'],
@@ -35,8 +38,13 @@ const OLD_MATRIX: Readonly<
   },
 };
 
-const LEGACY_SUBJECTS: TenantSubject[] = ['Organization', 'Member', 'Invitation', 'Workspace'];
-const ACTION_VALUES: TenantAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
+const LEGACY_SUBJECTS: AuthorizationSubject[] = [
+  'Organization',
+  'Member',
+  'Invitation',
+  'Workspace',
+];
+const ACTION_VALUES: AuthorizationAction[] = ['create', 'read', 'update', 'delete', 'cancel'];
 
 function seedFor(key: string): SystemRoleSeed {
   const seed = SYSTEM_ROLE_SEED.find((s) => s.key === key);
@@ -47,7 +55,7 @@ function seedFor(key: string): SystemRoleSeed {
 describe('SYSTEM_ROLE_SEED ↔ 旧 TENANT_RULES 逐格对拍（一次性验收锚）', () => {
   for (const role of Object.keys(OLD_MATRIX)) {
     it(`${role}：seed 投影与旧矩阵在四 legacy subject 上逐格一致（表内 can·表外 cannot）`, () => {
-      const ability = buildTenantAbility(
+      const ability = buildScopedAbility(
         seedFor(role).grants.flatMap((g) =>
           g.actions.map((action) => ({ subject: g.subject, action })),
         ),

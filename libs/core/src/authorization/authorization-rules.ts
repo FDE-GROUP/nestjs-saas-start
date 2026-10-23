@@ -30,7 +30,7 @@ export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
  * 可授权资源词汇表（本表即资源语言 SSOT 唯一源；新增资源先入这里，授权事实入 DB grant 行）。
  * 运行时数组 + 类型同源（S3 门面 DTO `@IsIn` 需运行时值域·防类型/值双源漂移）。
  */
-export const TENANT_SUBJECT_VALUES = [
+export const AUTHORIZATION_SUBJECT_VALUES = [
   'Organization',
   'Member',
   'Invitation',
@@ -38,8 +38,14 @@ export const TENANT_SUBJECT_VALUES = [
   'Role',
   'RoleGrant',
 ] as const;
-export type TenantSubject = (typeof TENANT_SUBJECT_VALUES)[number];
+export type AuthorizationSubject = (typeof AUTHORIZATION_SUBJECT_VALUES)[number];
 
 /** 动作词汇表（与 CASL can(action, subject) 第一元组参一致·运行时数组供 DTO 值域校验）。 */
-export const TENANT_ACTION_VALUES = ['create', 'read', 'update', 'delete', 'cancel'] as const;
-export type TenantAction = (typeof TENANT_ACTION_VALUES)[number];
+export const AUTHORIZATION_ACTION_VALUES = [
+  'create',
+  'read',
+  'update',
+  'delete',
+  'cancel',
+] as const;
+export type AuthorizationAction = (typeof AUTHORIZATION_ACTION_VALUES)[number];

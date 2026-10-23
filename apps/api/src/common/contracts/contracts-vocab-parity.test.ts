@@ -1,13 +1,13 @@
 import type { PaymentProviderId } from '@app/modules/payment/domain/ports/payment-provider.port';
 import {
-  TENANT_ACTION_VALUES,
-  TENANT_SUBJECT_VALUES,
-} from '@core/saas-kit/authorization/tenant-rules';
+  AUTHORIZATION_ACTION_VALUES,
+  AUTHORIZATION_SUBJECT_VALUES,
+} from '@core/saas-kit/authorization/authorization-rules';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_PLANS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import {
-  TENANT_ACTION_VALUES as CONTRACT_ACTION_VALUES,
-  TENANT_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
+  AUTHORIZATION_ACTION_VALUES as CONTRACT_ACTION_VALUES,
+  AUTHORIZATION_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
   ORGANIZATION_STATUS_VALUES,
   PAYMENT_PROVIDER_VALUES,
   TENANT_PLAN_IDS,
@@ -24,11 +24,11 @@ const asSet = (vals: readonly string[]) => [...vals].sort();
 
 describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
   it('授权 subject 词汇逐字一致', () => {
-    expect(asSet(CONTRACT_SUBJECT_VALUES)).toEqual(asSet(TENANT_SUBJECT_VALUES));
+    expect(asSet(CONTRACT_SUBJECT_VALUES)).toEqual(asSet(AUTHORIZATION_SUBJECT_VALUES));
   });
 
   it('授权 action 词汇逐字一致', () => {
-    expect(asSet(CONTRACT_ACTION_VALUES)).toEqual(asSet(TENANT_ACTION_VALUES));
+    expect(asSet(CONTRACT_ACTION_VALUES)).toEqual(asSet(AUTHORIZATION_ACTION_VALUES));
   });
 
   it('订阅档位 id 与 ORGANIZATION_PLANS 键集一致', () => {

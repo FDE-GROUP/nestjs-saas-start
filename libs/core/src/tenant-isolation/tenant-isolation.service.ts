@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import type { OrganizationRole } from '../authorization/tenant-rules';
+import type { OrganizationRole } from '../authorization/authorization-rules';
 import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
 import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
 
@@ -33,7 +33,7 @@ export class TenantIsolationService {
 
   /**
    * Active tenant 内的成员角色（module-rbac-casl 丙裁·ALS 预注入）。undefined =
-   * 无活动租户/封禁/词汇外角色——TenantPermissionGuard 据此 fail-closed。
+   * 无活动租户/封禁/词汇外角色——AuthorizationGuard 据此 fail-closed。
    */
   get role(): OrganizationRole | undefined {
     return tenantIsolationStorage.getStore()?.role;

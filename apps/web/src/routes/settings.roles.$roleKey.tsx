@@ -4,10 +4,10 @@ import { Feedback } from '../components/forms';
 import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { ErrorPanel, SectionHeading } from '../components/panels';
 import {
+  type AuthorizationAction,
+  type AuthorizationSubject,
   cellKey,
   RbacMatrix,
-  type TenantAction,
-  type TenantSubject,
 } from '../components/rbac-matrix';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
@@ -68,8 +68,8 @@ function RoleMatrixPage() {
   const { role, grants } = result;
 
   async function handleToggle(
-    subject: TenantSubject,
-    actionName: TenantAction,
+    subject: AuthorizationSubject,
+    actionName: AuthorizationAction,
     currentlyGranted: boolean,
   ) {
     const key = cellKey(subject, actionName);

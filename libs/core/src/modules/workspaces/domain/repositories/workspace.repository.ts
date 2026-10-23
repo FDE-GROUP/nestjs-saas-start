@@ -43,7 +43,7 @@ export interface WorkspaceRepository {
    * Workspaces within the active tenant only（分页信封·Page<T> 契约与治理面同形）。
    *
    * `authorizationWhere`（module-rbac-query-level-filtering 切片 C·additive 可选参）：handler 侧经
-   * `TenantPermissionChecker.listPredicate` 取到的**实例授权谓词**（已解析 `{{userId}}`/`$or` 合并），
+   * `PermissionChecker.listPredicate` 取到的**实例授权谓词**（已解析 `{{userId}}`/`$or` 合并），
    * 由适配层以固定展开序 `{ ...authorizationWhere, organizationId }` 并入——租户盖章恒为最后键，
    * 授权谓词不可覆盖隔离卡点（FR-5 唯一卡点不变）；undefined = 无实例限制（类型级全量·现状）。
    */

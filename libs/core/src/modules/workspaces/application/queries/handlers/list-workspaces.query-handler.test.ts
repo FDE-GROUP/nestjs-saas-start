@@ -1,4 +1,4 @@
-import type { TenantListPredicate } from '@core/saas-kit/authorization/tenant-permission.port';
+import type { PermissionListPredicate } from '@core/saas-kit/authorization/permission.port';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
@@ -16,7 +16,7 @@ import { ListWorkspacesQueryHandler } from './list-workspaces.query-handler';
 
 const ctx = { organizationId: 'orgA', userId: 'u1', role: 'editor' };
 
-function makeHandler(predicate: TenantListPredicate) {
+function makeHandler(predicate: PermissionListPredicate) {
   const page: Page<WorkspaceRecord> = { items: [], total: 0, limit: 7, offset: 3 };
   const list = vi.fn().mockResolvedValue(page);
   const listPredicate = vi.fn().mockResolvedValue(predicate);

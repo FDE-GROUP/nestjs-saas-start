@@ -1,5 +1,8 @@
 import { AbilityBuilder, createMongoAbility, type MongoAbility } from '@casl/ability';
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
 
 /**
  * grant 行（DB `organization_role_grant` / seed 死数据同形）→ CASL ability 的**纯投影**
@@ -11,17 +14,19 @@ import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/t
  * check 级实例 conditions（S4·乙裁）在此承接口径：`conditions` 非空行走 CASL mongo
  * conditions 匹配（`{{userId}}` 模板由 checker 侧在建 ability 前解析，本投影保持无感）。
  */
-export type TenantCaslAbility = MongoAbility<[TenantAction, TenantSubject]>;
+export type CaslScopedAbility = MongoAbility<[AuthorizationAction, AuthorizationSubject]>;
 
 /** 投影输入行：与 `organization_role_grant` 行、seed grant 皆同构（subject×action×conditions）。 */
-export interface TenantAbilityGrant {
-  readonly subject: TenantSubject;
-  readonly action: TenantAction;
+export interface ScopedAbilityGrant {
+  readonly subject: AuthorizationSubject;
+  readonly action: AuthorizationAction;
   readonly conditions?: Record<string, unknown> | null;
 }
 
-export function buildTenantAbility(grants: readonly TenantAbilityGrant[]): TenantCaslAbility {
-  const { can, build } = new AbilityBuilder<[TenantAction, TenantSubject]>(createMongoAbility);
+export function buildScopedAbility(grants: readonly ScopedAbilityGrant[]): CaslScopedAbility {
+  const { can, build } = new AbilityBuilder<[AuthorizationAction, AuthorizationSubject]>(
+    createMongoAbility,
+  );
   for (const grant of grants) {
     if (grant.conditions) can(grant.action, grant.subject, grant.conditions as object);
     else can(grant.action, grant.subject);

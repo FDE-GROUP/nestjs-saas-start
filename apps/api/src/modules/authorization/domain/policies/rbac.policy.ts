@@ -1,4 +1,4 @@
-import { SYSTEM_ROLE_KEYS } from '@core/saas-kit/authorization/tenant-rules';
+import { SYSTEM_ROLE_KEYS } from '@core/saas-kit/authorization/authorization-rules';
 
 /**
  * 租户 RBAC 写侧策略纯函数（domain · module-rbac-dynamic-roles §2.2 conditions 白名单 / S1 判据）。

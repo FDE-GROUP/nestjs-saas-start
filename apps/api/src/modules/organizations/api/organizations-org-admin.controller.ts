@@ -4,8 +4,8 @@ import {
   ROLE_ASSIGNABILITY_READER,
   type RoleAssignabilityReader,
 } from '@app/modules/authorization/domain/ports/role-assignability.port';
+import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
-import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import {
@@ -43,7 +43,7 @@ import { mapBaError } from './ba-error.mapping';
 /**
  * 租户成员/邀请**管理门面**（module-rbac-casl §2.3.1·甲裁严格拆）。
  *
- * 新宪落点：授权裁决 = `@Can` + CASL（tenant-rules 单源·经 TenantPermissionGuard 判定），
+ * 新宪落点：授权裁决 = `@Can` + CASL（authorization-rules 单源·经 AuthorizationGuard 判定），
  * 数据操作 = BA `auth.api.*` **服务端直调**（认证·membership 数据域，不经被封堵的
  * BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验与 seats 配额 hook——
  * 门面是「授权在我、数据在 BA」的收口点，不是重实现。
@@ -67,7 +67,7 @@ interface OrganizationOrgApi {
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('organizations')
 @Controller('organizations')
-@UseGuards(TenantIsolationGuard, TenantPermissionGuard)
+@UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class OrganizationsOrgAdminController {
   constructor(
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,

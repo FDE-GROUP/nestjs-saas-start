@@ -3,7 +3,7 @@ import type {
   OrganizationRoleGrantView,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import { describe, expect, it, vi } from 'vitest';
-import { CaslTenantPermissionChecker } from './casl-tenant-permission.checker';
+import { CaslPermissionChecker } from './casl-permission.checker';
 
 /**
  * CASL 裁决适配（module-rbac-dynamic-roles S2·DB 规则源落形）的行为测。
@@ -12,7 +12,7 @@ import { CaslTenantPermissionChecker } from './casl-tenant-permission.checker';
  *  ② lazy-ensure + 进程内缓存：miss 触发 ensure→findGrants，同 (org,key) 复用只查一次；
  *  ③ over-grant 防线：带 conditions 的 grant 行不参与类型级判定；
  *  ④ 跨租隔离：同 key 不同租户投影独立；
- *  ⑤ invalidateTenant 失效后重查（热改生效面）；
+ *  ⑤ invalidate 失效后重查（热改生效面）；
  *  ⑥ 加载失败 deny 且淘汰缓存（下次重试，绝不视同放行）。
  */
 
@@ -28,10 +28,10 @@ function makeChecker(grantsFor: (org: string, key: string) => OrganizationRoleGr
     grantsFor(org, key),
   ) as unknown as ReturnType<typeof vi.fn>;
   const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
-  return { checker: new CaslTenantPermissionChecker(rbac), ensureSystemRoles, findGrants };
+  return { checker: new CaslPermissionChecker(rbac), ensureSystemRoles, findGrants };
 }
 
-describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
+describe('CaslPermissionChecker（DB 规则源·S2）', () => {
   it('fail-closed：无租户 / 无角色直拒，不触规则源', async () => {
     const { checker, findGrants, ensureSystemRoles } = makeChecker(() => [
       grant('Workspace', 'read'),
@@ -143,12 +143,12 @@ describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
     expect(findGrants).toHaveBeenCalledTimes(2); // 不同 org → 各自独立缓存条目
   });
 
-  it('invalidateTenant 失效后重查（热改生效）', async () => {
+  it('invalidate 失效后重查（热改生效）', async () => {
     let phase = 1;
     const { checker, findGrants } = makeChecker(() =>
       phase === 1 ? [grant('Member', 'read')] : [],
     );
-    const c = checker as CaslTenantPermissionChecker;
+    const c = checker as CaslPermissionChecker;
     await expect(
       c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
@@ -157,7 +157,7 @@ describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
     await expect(
       c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
-    c.invalidateTenant('orgA');
+    c.invalidate('orgA');
     await expect(
       c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
@@ -170,7 +170,7 @@ describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
       .fn()
       .mockResolvedValue([grant('Member', 'read')]) as unknown as ReturnType<typeof vi.fn>;
     const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
-    const checker = new CaslTenantPermissionChecker(rbac);
+    const checker = new CaslPermissionChecker(rbac);
     await expect(
       checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
@@ -182,7 +182,7 @@ describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
   });
 });
 
-describe('CaslTenantPermissionChecker（S4·check 级实例判定）', () => {
+describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
   const ownerScoped = () => [grant('Workspace', 'update', { ownerId: '{{userId}}' })];
 
   it('ownerId 模板命中当前操作者 → 实例级 allow', async () => {
@@ -270,7 +270,7 @@ describe('CaslTenantPermissionChecker（S4·check 级实例判定）', () => {
   });
 });
 
-describe('CaslTenantPermissionChecker（query 级列表过滤·listPredicate 切片 B）', () => {
+describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B）', () => {
   // fixture subject 取词汇表内合法值（'Workspace'）——checker 测的是裁决机制本身，与切片 C 生产接入端点选型解耦。
   const base = {
     organizationId: 'orgA',
@@ -353,7 +353,7 @@ describe('CaslTenantPermissionChecker（query 级列表过滤·listPredicate 切
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants: vi.fn().mockRejectedValue(new Error('db down')),
     } as unknown as OrganizationRbacRepository;
-    await expect(new CaslTenantPermissionChecker(rbac).listPredicate(base)).resolves.toEqual({
+    await expect(new CaslPermissionChecker(rbac).listPredicate(base)).resolves.toEqual({
       kind: 'none',
     });
   });

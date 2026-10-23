@@ -1,9 +1,12 @@
+import type {
+  AuthorizationAction,
+  AuthorizationSubject,
+} from '@core/saas-kit/authorization/authorization-rules';
+import { SYSTEM_ROLE_KEYS } from '@core/saas-kit/authorization/authorization-rules';
 import {
-  TENANT_PERMISSION_INVALIDATOR,
-  type TenantPermissionInvalidator,
-} from '@core/saas-kit/authorization/tenant-permission.port';
-import type { TenantAction, TenantSubject } from '@core/saas-kit/authorization/tenant-rules';
-import { SYSTEM_ROLE_KEYS } from '@core/saas-kit/authorization/tenant-rules';
+  PERMISSION_INVALIDATOR,
+  type PermissionInvalidator,
+} from '@core/saas-kit/authorization/permission.port';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import {
@@ -28,7 +31,7 @@ import {
  *  - 从 ALS 取活动租户（`requireActiveOrganizationId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
  *  - 委派 `OrganizationRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
  *  - 将端口返回的**领域结果码**转译为 HTTP 语义（领域不借异常表达事实，转译归应用层）；
- *  - **写成功后失效本租户投影缓存**（`TenantPermissionInvalidator`·热改即生效·读写分治端口）。
+ *  - **写成功后失效本租户投影缓存**（`PermissionInvalidator`·热改即生效·读写分治端口）。
  *
  * 管理职权本身由 controller `@Can(<动作>, 'Role' | 'RoleGrant')` + CASL 守卫裁决（授权面），
  * 本服务不复权限判定（禁散点特判）；自定义角色对成员的挂载存在性校验见 `isRoleAssignable`。
@@ -37,8 +40,8 @@ import {
 export class OrganizationRbacAdminService implements RoleAssignabilityReader {
   constructor(
     @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
-    @Inject(TENANT_PERMISSION_INVALIDATOR)
-    private readonly invalidator: TenantPermissionInvalidator,
+    @Inject(PERMISSION_INVALIDATOR)
+    private readonly invalidator: PermissionInvalidator,
     @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
   ) {}
 
@@ -71,7 +74,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.TENANCY_ROLE_DUPLICATE,
       });
     }
-    this.invalidator.invalidateTenant(org);
+    this.invalidator.invalidate(org);
     const role = await this.rbac.findRole(org, key);
     /* c8 ignore next 3 -- created 后必可查回（同事务已提交），防御性兜底非可达分支 */
     if (!role) {
@@ -86,21 +89,21 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     const org = this.org();
     const result = await this.rbac.renameRole(org, key, name, this.actor());
     this.mapMutation(result, key);
-    this.invalidator.invalidateTenant(org);
+    this.invalidator.invalidate(org);
   }
 
   async deleteRole(key: string): Promise<void> {
     const org = this.org();
     const result = await this.rbac.deleteRole(org, key, this.actor());
     this.mapMutation(result, key);
-    this.invalidator.invalidateTenant(org);
+    this.invalidator.invalidate(org);
   }
 
   async grant(
     roleKey: string,
     entry: {
-      subject: TenantSubject;
-      action: TenantAction;
+      subject: AuthorizationSubject;
+      action: AuthorizationAction;
       conditions: Record<string, unknown> | null;
     },
   ): Promise<void> {
@@ -121,13 +124,13 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.TENANCY_GRANT_DUPLICATE,
       });
     }
-    this.invalidator.invalidateTenant(org);
+    this.invalidator.invalidate(org);
   }
 
   async revoke(
     roleKey: string,
-    subject: TenantSubject,
-    action: TenantAction,
+    subject: AuthorizationSubject,
+    action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
   ): Promise<void> {
     const org = this.org();
@@ -142,7 +145,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.TENANCY_GRANT_NOT_FOUND,
       });
     }
-    this.invalidator.invalidateTenant(org);
+    this.invalidator.invalidate(org);
   }
 
   /**
