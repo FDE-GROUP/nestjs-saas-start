@@ -165,7 +165,7 @@ paths:
       summary: Liveness probe (ping-only, no dependency checks)
       tags:
         - Health
-  /api/v1/tenants/roles:
+  /api/v1/organizations/roles:
     get:
       operationId: AuthorizationAdminController_listRoles_v1
       parameters: []
@@ -191,7 +191,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List roles of the active tenant (system + custom)
       tags: &ref_3
-        - tenants
+        - organizations
     post:
       operationId: AuthorizationAdminController_createRole_v1
       parameters: []
@@ -240,7 +240,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a custom role (owner/admin)
       tags: *ref_3
-  /api/v1/tenants/roles/rename:
+  /api/v1/organizations/roles/rename:
     post:
       operationId: AuthorizationAdminController_renameRole_v1
       parameters: []
@@ -280,7 +280,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Rename a custom role (system roles protected)
       tags: *ref_3
-  /api/v1/tenants/roles/delete:
+  /api/v1/organizations/roles/delete:
     post:
       operationId: AuthorizationAdminController_deleteRole_v1
       parameters: []
@@ -315,7 +315,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Delete a custom role (grants cascade; system roles protected)
       tags: *ref_3
-  /api/v1/tenants/roles/grants:
+  /api/v1/organizations/roles/grants:
     get:
       operationId: AuthorizationAdminController_listGrants_v1
       parameters:
@@ -408,7 +408,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Grant a permission cell to a role (multi-condition rows = OR union)
       tags: *ref_3
-  /api/v1/tenants/roles/grants/revoke:
+  /api/v1/organizations/roles/grants/revoke:
     post:
       operationId: AuthorizationAdminController_revoke_v1
       parameters: []
@@ -459,9 +459,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Revoke a grant (conditions null = whole-subject row; object = exact row)
       tags: *ref_3
-  /api/v1/platform/tenants:
+  /api/v1/platform/organizations:
     get:
-      operationId: PlatformTenantsController_list_v1
+      operationId: PlatformOrganizationsController_list_v1
       parameters:
         - name: limit
           required: false
@@ -496,7 +496,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/PlatformTenantPageResponse'
+                        $ref: '#/components/schemas/PlatformOrganizationPageResponse'
         '403':
           description: Not the platform operator.
           content:
@@ -506,9 +506,9 @@ paths:
       summary: List all tenants across the platform (operator only)
       tags: &ref_4
         - platform
-  /api/v1/platform/tenants/{id}:
+  /api/v1/platform/organizations/{id}:
     get:
-      operationId: PlatformTenantsController_detail_v1
+      operationId: PlatformOrganizationsController_detail_v1
       parameters:
         - name: id
           required: true
@@ -526,7 +526,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/PlatformTenantRowResponse'
+                        $ref: '#/components/schemas/PlatformOrganizationRowResponse'
         '404':
           description: Tenant not found.
           content:
@@ -536,7 +536,7 @@ paths:
       summary: Get one tenant (operator only)
       tags: *ref_4
     delete:
-      operationId: PlatformTenantsController_remove_v1
+      operationId: PlatformOrganizationsController_remove_v1
       parameters:
         - name: id
           required: true
@@ -554,7 +554,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantApplicationResponse'
+                        $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
           description: Tenant not found.
           content:
@@ -569,9 +569,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Soft-delete a tenant (→ deleted terminal · row kept for export)
       tags: *ref_4
-  /api/v1/platform/tenants/{id}/diagnostics:
+  /api/v1/platform/organizations/{id}/diagnostics:
     get:
-      operationId: PlatformTenantsController_diagnostics_v1
+      operationId: PlatformOrganizationsController_diagnostics_v1
       parameters:
         - name: id
           required: true
@@ -589,7 +589,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantDiagnosticsResponse'
+                        $ref: '#/components/schemas/OrganizationDiagnosticsResponse'
         '404':
           description: Tenant not found.
           content:
@@ -598,9 +598,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: 'Per-tenant diagnostics: member/invitation/workspace/post counts'
       tags: *ref_4
-  /api/v1/platform/tenants/{id}/export:
+  /api/v1/platform/organizations/{id}/export:
     get:
-      operationId: PlatformTenantsController_exportData_v1
+      operationId: PlatformOrganizationsController_exportData_v1
       parameters:
         - name: id
           required: true
@@ -611,7 +611,7 @@ paths:
         '200':
           description: >-
             Six-section tenant data export (credentials excluded)（透传面·形参真相源 =
-            TenantDataExport（bulk-export·六段聚合））
+            OrganizationDataExport（bulk-export·六段聚合））
           content:
             application/json:
               schema:
@@ -630,9 +630,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Export all tenant-owned data as a single JSON payload (NFR-6)
       tags: *ref_4
-  /api/v1/platform/tenants/{id}/suspend:
+  /api/v1/platform/organizations/{id}/suspend:
     patch:
-      operationId: PlatformTenantsController_suspend_v1
+      operationId: PlatformOrganizationsController_suspend_v1
       parameters:
         - name: id
           required: true
@@ -650,7 +650,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantApplicationResponse'
+                        $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
           description: Tenant not found.
           content:
@@ -665,9 +665,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Suspend an active tenant (active → suspended · fail-closed失能)
       tags: *ref_4
-  /api/v1/platform/tenants/{id}/resume:
+  /api/v1/platform/organizations/{id}/resume:
     patch:
-      operationId: PlatformTenantsController_resume_v1
+      operationId: PlatformOrganizationsController_resume_v1
       parameters:
         - name: id
           required: true
@@ -685,7 +685,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantApplicationResponse'
+                        $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
           description: Tenant not found.
           content:
@@ -700,9 +700,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Resume a suspended tenant (suspended → active)
       tags: *ref_4
-  /api/v1/platform/tenants/{id}/permanent:
+  /api/v1/platform/organizations/{id}/permanent:
     delete:
-      operationId: PlatformTenantsController_permanentRemove_v1
+      operationId: PlatformOrganizationsController_permanentRemove_v1
       parameters:
         - name: id
           required: true
@@ -720,7 +720,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantHardDeleteResultResponse'
+                        $ref: '#/components/schemas/OrganizationHardDeleteResultResponse'
         '404':
           description: Tenant not found (or already hard-deleted · idempotent).
           content:
@@ -1146,9 +1146,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Delete a workspace (owner/admin)
       tags: *ref_8
-  /api/v1/tenants/applications:
+  /api/v1/organizations/applications:
     post:
-      operationId: TenantsController_apply_v1
+      operationId: OrganizationsController_apply_v1
       parameters: []
       requestBody:
         required: true
@@ -1181,7 +1181,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantApplicationResponse'
+                        $ref: '#/components/schemas/OrganizationApplicationResponse'
         '400':
           description: Organization slug already exists (BA duplicate).
           content:
@@ -1196,10 +1196,10 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Apply to create a tenant (user-level · lands pending_approval)
       tags: &ref_9
-        - tenants
-  /api/v1/tenants/applications/{id}/approve:
+        - organizations
+  /api/v1/organizations/applications/{id}/approve:
     post:
-      operationId: TenantsController_approve_v1
+      operationId: OrganizationsController_approve_v1
       parameters:
         - name: id
           required: true
@@ -1217,7 +1217,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantApplicationResponse'
+                        $ref: '#/components/schemas/OrganizationApplicationResponse'
         '403':
           description: Not a platform operator.
           content:
@@ -1232,9 +1232,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Approve a pending tenant (platform operator · pending → active)
       tags: *ref_9
-  /api/v1/tenants/applications/{id}/reject:
+  /api/v1/organizations/applications/{id}/reject:
     post:
-      operationId: TenantsController_reject_v1
+      operationId: OrganizationsController_reject_v1
       parameters:
         - name: id
           required: true
@@ -1258,9 +1258,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Reject a pending tenant (platform operator · hard-delete)
       tags: *ref_9
-  /api/v1/tenants/members:
+  /api/v1/organizations/members:
     get:
-      operationId: TenantsOrgAdminController_listMembers_v1
+      operationId: OrganizationsOrgAdminController_listMembers_v1
       parameters: []
       responses:
         '200':
@@ -1285,10 +1285,10 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List members of the active tenant (all roles · CASL read)
       tags: &ref_10
-        - tenants
-  /api/v1/tenants/members/role:
+        - organizations
+  /api/v1/organizations/members/role:
     post:
-      operationId: TenantsOrgAdminController_updateMemberRole_v1
+      operationId: OrganizationsOrgAdminController_updateMemberRole_v1
       parameters: []
       requestBody:
         required: true
@@ -1330,9 +1330,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Update a member role (owner/admin · CASL update)
       tags: *ref_10
-  /api/v1/tenants/members/remove:
+  /api/v1/organizations/members/remove:
     post:
-      operationId: TenantsOrgAdminController_removeMember_v1
+      operationId: OrganizationsOrgAdminController_removeMember_v1
       parameters: []
       requestBody:
         required: true
@@ -1369,9 +1369,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Remove a member (owner/admin · CASL delete)
       tags: *ref_10
-  /api/v1/tenants/invitations:
+  /api/v1/organizations/invitations:
     get:
-      operationId: TenantsOrgAdminController_listInvitations_v1
+      operationId: OrganizationsOrgAdminController_listInvitations_v1
       parameters: []
       responses:
         '200':
@@ -1397,7 +1397,7 @@ paths:
       summary: List pending invitations of the active tenant (all roles)
       tags: *ref_10
     post:
-      operationId: TenantsOrgAdminController_createInvitation_v1
+      operationId: OrganizationsOrgAdminController_createInvitation_v1
       parameters: []
       requestBody:
         required: true
@@ -1439,9 +1439,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Invite a member to the active tenant (owner/admin · CASL create)
       tags: *ref_10
-  /api/v1/tenants/invitations/cancel:
+  /api/v1/organizations/invitations/cancel:
     post:
-      operationId: TenantsOrgAdminController_cancelInvitation_v1
+      operationId: OrganizationsOrgAdminController_cancelInvitation_v1
       parameters: []
       requestBody:
         required: true
@@ -1478,9 +1478,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Cancel an invitation (owner/admin · CASL cancel)
       tags: *ref_10
-  /api/v1/tenants:
+  /api/v1/organizations:
     get:
-      operationId: TenantsSelfController_listMyOrganizations_v1
+      operationId: OrganizationsSelfController_listMyOrganizations_v1
       parameters: []
       responses:
         '200':
@@ -1505,10 +1505,10 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List organizations the current user belongs to (personal channel)
       tags: &ref_11
-        - tenants
-  /api/v1/tenants/active:
+        - organizations
+  /api/v1/organizations/active:
     post:
-      operationId: TenantsSelfController_setActive_v1
+      operationId: OrganizationsSelfController_setActive_v1
       parameters: []
       requestBody:
         required: true
@@ -1553,9 +1553,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Switch the session's active organization (must be a member)
       tags: *ref_11
-  /api/v1/tenants/members/leave:
+  /api/v1/organizations/members/leave:
     post:
-      operationId: TenantsSelfController_leave_v1
+      operationId: OrganizationsSelfController_leave_v1
       parameters: []
       requestBody:
         required: true
@@ -1598,9 +1598,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Leave a tenant (self-service · last-owner cannot leave)
       tags: *ref_11
-  /api/v1/tenants/invitations/accept:
+  /api/v1/organizations/invitations/accept:
     post:
-      operationId: TenantsSelfController_acceptInvitation_v1
+      operationId: OrganizationsSelfController_acceptInvitation_v1
       parameters: []
       requestBody:
         required: true
@@ -1647,9 +1647,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Accept an invitation addressed to the current user
       tags: *ref_11
-  /api/v1/tenants/invitations/reject:
+  /api/v1/organizations/invitations/reject:
     post:
-      operationId: TenantsSelfController_rejectInvitation_v1
+      operationId: OrganizationsSelfController_rejectInvitation_v1
       parameters: []
       requestBody:
         required: true
@@ -1692,9 +1692,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Reject an invitation addressed to the current user
       tags: *ref_11
-  /api/v1/tenants/invitations/mine:
+  /api/v1/organizations/invitations/mine:
     get:
-      operationId: TenantsSelfController_listMyInvitations_v1
+      operationId: OrganizationsSelfController_listMyInvitations_v1
       parameters: []
       responses:
         '200':
@@ -2246,7 +2246,7 @@ components:
         - subject
         - action
         - conditions
-    PlatformTenantRowResponse:
+    PlatformOrganizationRowResponse:
       type: object
       properties:
         organizationId:
@@ -2273,13 +2273,13 @@ components:
         - slug
         - status
         - createdAt
-    PlatformTenantPageResponse:
+    PlatformOrganizationPageResponse:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/PlatformTenantRowResponse'
+            $ref: '#/components/schemas/PlatformOrganizationRowResponse'
         total:
           type: number
           description: 全量行数。
@@ -2294,13 +2294,13 @@ components:
         - total
         - limit
         - offset
-    TenantDiagnosticsResponse:
+    OrganizationDiagnosticsResponse:
       type: object
       properties:
         tenant:
           description: 租户行。
           allOf:
-            - $ref: '#/components/schemas/PlatformTenantRowResponse'
+            - $ref: '#/components/schemas/PlatformOrganizationRowResponse'
         memberCount:
           type: number
           description: 成员数。
@@ -2319,7 +2319,7 @@ components:
         - invitationCount
         - workspaceCount
         - postCount
-    TenantHardDeleteResultResponse:
+    OrganizationHardDeleteResultResponse:
       type: object
       properties:
         organizationId:
@@ -2331,7 +2331,7 @@ components:
       required:
         - organizationId
         - purgedEvents
-    TenantApplicationResponse:
+    OrganizationApplicationResponse:
       type: object
       properties:
         organizationId:
