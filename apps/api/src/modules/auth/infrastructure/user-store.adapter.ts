@@ -16,8 +16,13 @@ export class MikroUserStoreAdapter implements AuthUserStore {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   async hardDelete(userId: string): Promise<void> {
+    // user 表主键 = `id`（自然人 PK·无 userId 列，userId 仅系 account/session/consent 的外键列名）。
+    // 谓词必须落 `{ id: userId }`（与 updateStatus 同柱），否则 Mikro 报「Trying to query by not
+    // existing property User.userId」——PIPL 硬删静默 500、右侧被遗忘权失效（曾长期潜伏：handler 测
+    // 把本端口整 stub·无 gated e2e 跑真库，故未捕）。FK 级联（account/session cascade·consent set-null）
+    // 由 schema 层约束实效·见 user-hard-delete.e2e.test.ts 真库锁。
     const em = await this.mikro.fork();
-    await em.nativeDelete(User, { userId } as never).then(() => undefined);
+    await em.nativeDelete(User, { id: userId });
   }
 
   async updateStatus(userId: string, status: string, reason: string | null): Promise<void> {
