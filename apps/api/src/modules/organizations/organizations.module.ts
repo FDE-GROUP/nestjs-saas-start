@@ -53,7 +53,7 @@ const QueryHandlers = [
 ];
 
 /**
- * Tenant lifecycle slice (global-tenancy S4 · FR-1/FR-11/FR-12). `AuthInstanceInjectKey`
+ * Organization lifecycle slice (global-tenancy S4 · FR-1/FR-11/FR-12). `AuthInstanceInjectKey`
  * (global via AuthModule.forRoot) and `原数据库服务` (DatabaseModule @Global) are
  * resolved without extra imports.
  *

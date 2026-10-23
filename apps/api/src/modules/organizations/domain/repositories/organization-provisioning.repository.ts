@@ -1,7 +1,7 @@
 import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /**
- * Tenant provisioning gateway port (domain-owned · global-tenancy S4 · FR-1).
+ * Organization provisioning gateway port (domain-owned · global-tenancy S4 · FR-1).
  *
  * 「建租户唯一通道」= 服务端系统动作：申请经 Better Auth `createOrganization`（无 session +
  * `body.userId` → `isSystemAction`，源码坐实不受 `allowUserToCreateOrganization:false` 限）落

@@ -113,15 +113,19 @@ export class PlatformOrganizationsController {
   @Get(':id')
   @SerializeOptions({ schema: platformOrganizationRowSchema })
   @ApiOperation({ summary: 'Get one tenant (operator only)' })
-  @ApiResponse(apiEnvelopeShape(PlatformOrganizationRowResponse, { description: 'Tenant row.' }))
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(
+    apiEnvelopeShape(PlatformOrganizationRowResponse, { description: 'Organization row.' }),
+  )
+  @ApiResponse(apiError(404, 'Organization not found.'))
   async detail(@Param('id') id: string): Promise<PlatformOrganizationRow> {
     const row = await this.queryBus.execute<
       GetPlatformOrganizationQuery,
       PlatformOrganizationRow | null
     >(new GetPlatformOrganizationQuery(id));
     if (!row)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return row;
   }
 
@@ -131,14 +135,16 @@ export class PlatformOrganizationsController {
   @ApiResponse(
     apiEnvelopeShape(OrganizationDiagnosticsResponse, { description: 'Diagnostics bundle.' }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   async diagnostics(@Param('id') id: string): Promise<OrganizationDiagnostics> {
     const diag = await this.queryBus.execute<
       GetOrganizationDiagnosticsQuery,
       OrganizationDiagnostics | null
     >(new GetOrganizationDiagnosticsQuery(id));
     if (!diag)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return diag;
   }
 
@@ -150,14 +156,16 @@ export class PlatformOrganizationsController {
       ssotHint: 'OrganizationDataExport（bulk-export·六段聚合）',
     }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   async exportData(@Param('id') id: string): Promise<OrganizationDataExport> {
     const payload = await this.queryBus.execute<
       ExportOrganizationDataQuery,
       OrganizationDataExport | null
     >(new ExportOrganizationDataQuery(id));
     if (!payload)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return payload;
   }
 
@@ -165,9 +173,9 @@ export class PlatformOrganizationsController {
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({ summary: 'Suspend an active tenant (active → suspended · fail-closed失能)' })
   @ApiResponse(
-    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Tenant suspended.' }),
+    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization suspended.' }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
   async suspend(
     @Param('id') id: string,
@@ -178,7 +186,9 @@ export class PlatformOrganizationsController {
       OrganizationApplicationReadModel | null
     >(new SuspendOrganizationCommand(id, user.id));
     if (!result)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return result;
   }
 
@@ -186,9 +196,9 @@ export class PlatformOrganizationsController {
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({ summary: 'Resume a suspended tenant (suspended → active)' })
   @ApiResponse(
-    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Tenant resumed.' }),
+    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization resumed.' }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
   async resume(
     @Param('id') id: string,
@@ -199,7 +209,9 @@ export class PlatformOrganizationsController {
       OrganizationApplicationReadModel | null
     >(new ResumeOrganizationCommand(id, user.id));
     if (!result)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return result;
   }
 
@@ -208,9 +220,11 @@ export class PlatformOrganizationsController {
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({ summary: 'Soft-delete a tenant (→ deleted terminal · row kept for export)' })
   @ApiResponse(
-    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Tenant marked deleted.' }),
+    apiEnvelopeShape(OrganizationApplicationResponse, {
+      description: 'Organization marked deleted.',
+    }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   @ApiResponse(apiError(409, 'Already deleted (illegal transition).'))
   async remove(
     @Param('id') id: string,
@@ -221,7 +235,9 @@ export class PlatformOrganizationsController {
       OrganizationApplicationReadModel | null
     >(new DeleteOrganizationCommand(id, user.id));
     if (!result)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return result;
   }
 
@@ -234,10 +250,10 @@ export class PlatformOrganizationsController {
   })
   @ApiResponse(
     apiEnvelopeShape(OrganizationHardDeleteResultResponse, {
-      description: 'Tenant rows purged; payload carries purgedEvents for audit核对.',
+      description: 'Organization rows purged; payload carries purgedEvents for audit核对.',
     }),
   )
-  @ApiResponse(apiError(404, 'Tenant not found (or already hard-deleted · idempotent).'))
+  @ApiResponse(apiError(404, 'Organization not found (or already hard-deleted · idempotent).'))
   @ApiResponse(apiError(409, 'Not in deleted terminal state — soft-delete first.'))
   async permanentRemove(
     @Param('id') id: string,
@@ -248,7 +264,9 @@ export class PlatformOrganizationsController {
       OrganizationHardDeleteResult | null
     >(new DeleteOrganizationPermanentlyCommand(id, user.id));
     if (!result)
-      throw new NotFoundException('Tenant not found', { errorCode: ERROR_CODES.TENANCY_NOT_FOUND });
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+      });
     return result;
   }
 }

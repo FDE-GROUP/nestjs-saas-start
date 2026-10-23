@@ -37,7 +37,7 @@ import { mapBaError } from './ba-error.mapping';
 import { OrganizationApplicationResponse } from './response/organization-application.response';
 
 /**
- * Tenant application / approval reference slice (global-tenancy S4 · FR-1/FR-11/FR-12).
+ * Organization application / approval reference slice (global-tenancy S4 · FR-1/FR-11/FR-12).
  *
  * FR-11 three-layer separation is expressed by the guard chosen PER ROUTE — none of these
  * is tenant-scoped (you have no active tenant while applying; approval is cross-tenant):
@@ -93,10 +93,10 @@ export class OrganizationsController {
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({ summary: 'Approve a pending tenant (platform operator · pending → active)' })
   @ApiResponse(
-    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Tenant activated.' }),
+    apiEnvelopeShape(OrganizationApplicationResponse, { description: 'Organization activated.' }),
   )
   @ApiResponse(apiError(403, 'Not a platform operator.'))
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   async approve(
     @Param('id') id: string,
     @CurrentUser() user: SessionUser,
@@ -106,7 +106,7 @@ export class OrganizationsController {
       OrganizationApplicationReadModel | null
     >(new ApproveOrganizationCommand(id, user.id));
     if (!result)
-      throw new NotFoundException('Tenant application not found', {
+      throw new NotFoundException('Organization application not found', {
         errorCode: ERROR_CODES.TENANCY_APPLICATION_NOT_FOUND,
       });
     return result;
@@ -118,13 +118,13 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Reject a pending tenant (platform operator · hard-delete)' })
   @ApiResponse({ status: 204, description: 'Pending tenant discarded.' })
   @ApiResponse(apiError(403, 'Not a platform operator.'))
-  @ApiResponse(apiError(404, 'Tenant not found.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
   async reject(@Param('id') id: string, @CurrentUser() user: SessionUser): Promise<void> {
     const removed = await this.commandBus.execute<RejectOrganizationCommand, boolean>(
       new RejectOrganizationCommand(id, user.id),
     );
     if (!removed)
-      throw new NotFoundException('Tenant application not found', {
+      throw new NotFoundException('Organization application not found', {
         errorCode: ERROR_CODES.TENANCY_APPLICATION_NOT_FOUND,
       });
   }

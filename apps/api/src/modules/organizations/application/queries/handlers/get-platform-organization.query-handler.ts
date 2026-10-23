@@ -7,7 +7,7 @@ import {
 import type { PlatformOrganizationRow } from '../../read-models/platform-organization.read-model';
 import { GetPlatformOrganizationQuery } from '../get-platform-organization.query';
 
-/** Tenant detail (FR-6 · platform-level read side). */
+/** Organization detail (FR-6 · platform-level read side). */
 @QueryHandler(GetPlatformOrganizationQuery)
 export class GetPlatformOrganizationQueryHandler
   implements IQueryHandler<GetPlatformOrganizationQuery>

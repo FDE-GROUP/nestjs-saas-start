@@ -56,7 +56,7 @@ export class DeleteOrganizationPermanentlyCommandHandler
         },
       );
       throw new ConflictException(
-        `Tenant ${command.organizationId} is not in deleted terminal state (current: ${existing.status}); soft-delete first`,
+        `Organization ${command.organizationId} is not in deleted terminal state (current: ${existing.status}); soft-delete first`,
         { errorCode: ERROR_CODES.TENANCY_NOT_DELETED_TERMINAL },
       );
     }

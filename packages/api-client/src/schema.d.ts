@@ -1590,7 +1590,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant row. */
+            /** @description Organization row. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1601,7 +1601,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1623,7 +1623,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant marked deleted. */
+            /** @description Organization marked deleted. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1634,7 +1634,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1676,7 +1676,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1711,7 +1711,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1733,7 +1733,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant suspended. */
+            /** @description Organization suspended. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1744,7 +1744,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1775,7 +1775,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant resumed. */
+            /** @description Organization resumed. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1786,7 +1786,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1817,7 +1817,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant rows purged; payload carries purgedEvents for audit核对. */
+            /** @description Organization rows purged; payload carries purgedEvents for audit核对. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1828,7 +1828,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Tenant not found (or already hard-deleted · idempotent). */
+            /** @description Organization not found (or already hard-deleted · idempotent). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2314,7 +2314,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tenant activated. */
+            /** @description Organization activated. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2334,7 +2334,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -2372,7 +2372,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Tenant not found. */
+            /** @description Organization not found. */
             404: {
                 headers: {
                     [name: string]: unknown;

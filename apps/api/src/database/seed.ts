@@ -304,7 +304,7 @@ export async function ensureSeedOrganizations(
       personas.push({
         email: `user${i}@example.com`,
         slug: `seed-tenant-${i}`,
-        name: `Tenant ${i} (Seed)`,
+        name: `Organization ${i} (Seed)`,
       });
     }
   }
