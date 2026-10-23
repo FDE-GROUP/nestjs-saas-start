@@ -1,5 +1,7 @@
 # 配置面两待裁点落地：seed 弱口令兜底「生产 fail-loud + 非生产 warn」+ 四角对拍独立 verify 脚本
 
+> ⚠️ **本案一处裁已被反悔修订（2026-10-23 · [global-config-contract-gate-in-chain](./global-config-contract-gate-in-chain.md)）**：本案「② 四角对拍裁『独立 verify 脚本』·`scripts/verify-config-contract.ts`·不进 `ci` 链·`ci.ts` 零改动」经人令「GO」撤销——`verify:config-contract` 已织入 `scripts/ci.ts` 静态便宜闸家族（full+quick）。「不进链/零改动」为结项时史实、不改，现状以翻案案为准（seed 弱口令 fail-loud 裁不受影响）。
+
 > 适用范围: `模块(config + database/seed + scripts 独立门禁)` ← = blast radius：seed 行为变更（只影响 `NODE_ENV=production` 路径·零 DB schema）+ 新增独立静态脚本（不进 `ci` 链）+ `.env.example` Seed 段文案
 > 关联: [module-config-env-surface-contract](./module-config-env-surface-contract.md)（本片执行其「缓行 / 另案」两条的**人裁结果**：弱口令兜底 + 切片 C）· `specs/tooling-standards.md` §4.7（静态分析须人工核验）· §4.10（对拍口径）· `AGENTS.md` §2（高危归人）
 > 性质: 缺陷收口（配置供给面遗留的两处「声明有防线、实现无持有」闭合）·机制单点修、不逐键特判

@@ -42,17 +42,18 @@
 
 ## 4. 审计结论
 
-**（待人类签核）** 本阶段仅立案、零实现。`ci.ts` 未被触碰，`verify:config-contract` 维持独立脚本现状。上述 §3 三问得裁并签核后方进实施。
+**已审计·签发**（用户令「GO」2026-10-23＝§3 三问全采推荐：① 撤销 config-env-surface-contract「切片 C 不做」+ config-seed「ci.ts 零改动」两处人裁、把 `verify:config-contract` 升为硬闸；② 模式 full+quick；③ 范围仅 config-contract（compose-contract 另案）。高危#3 改门禁 + 反悔已签裁定·问责归令者）。本窗已实施（见 §5/§6）。
 
 ## 5. 验收判据（签核实施后回写·带取证）
 
-- [ ] `scripts/ci.ts` 新增 `Config contract guard` 步、位置于静态便宜闸家族末尾。
-- [ ] **双向验收**：① 当前树 `pnpm run ci`（full）**PASSED**（现四判据已绿，无回归）；② 人造违规探针（往 `.env.example` 塞一个无任何消费者的 `PROBE_DEAD_KEY=1`）→ `pnpm run ci:quick` 与 `pnpm run ci` 均 **EXIT=1**（证闸在链且真拦）。
-- [ ] `package.json` 无需新增命令（`verify:config-contract` 已存在）。
-- [ ] README 索引 + 两被撤 plan doc 的修订注到位（状态单源一致）。
+- [x] `scripts/ci.ts` 新增 `Config contract guard` 步（✅ 静态便宜闸家族末尾·overturned-rulings 之后、`if (!quick)` 之前·结构上该步在 `if (!quick)` 外→full/quick 同跑）
+- [x] **双向验收**（✅ ① 当前树 `pnpm run ci`（full）**PASSED EXIT=0**·无回归；② 人造违规探针（往 `.env.example` 塞无消费者 `PROBE_DEAD_KEY=1`）→ `pnpm run ci:quick` 报「✗ 判据① 死配置 PROBE_DEAD_KEY」→「✗ Config contract guard failed (exit 1)」→ Local CI **FAILED EXIT=1**（步在 `if(!quick)` 外·quick 红即结构上保证 full 亦红）；清探针后 `verify:config-contract` 复跑 **PASSED EXIT=0**）
+- [x] `package.json` 无需新增命令（✅ 复用既有 `verify:config-contract`）
+- [x] README 索引 + 两被撤 plan doc 修订注到位（✅ 本窗随实施一并落·config-env-surface-contract/config-seed 两 doc 顶部加⚠️反悔修订注）
 
 ## 6. 变更记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-23 | 0.1.0 | `b3d3e5d` 清 `ES_TRUTH_SOURCE_TENANTS` 死键暴露「四角闸不在链 → 债静默腐烂」根因；用户令「乙开」→ 起草翻案供签 | 首版·候选稿·待审计门：§1 三分取证（含本轮 FP/TP 实证）·§2 唯一改动面（ci.ts 一步）·§3 逃生阀 + 三归人裁点·§4 零实现·§5 双向验收判据。未触碰 `ci.ts` |
+| 2026-10-23 | 0.2.0 | 用户令「GO」·§3 三问全采推荐（撤两裁·升硬闸·full+quick·仅 config-contract）·过审计门（高危#3） | **本窗实施**：`scripts/ci.ts` 静态便宜闸家族末尾新增 `step('Config contract guard', run('run', 'verify:config-contract'))` + 5 行说明注；脚本本体/判据/WHITELIST 未改；README 本行翻「已落地·待人类验收」；config-env-surface-contract + config-seed 两 plan doc 顶部加⚠️已被反悔修订注（只标不改史）。双向验收取证见 §5 |

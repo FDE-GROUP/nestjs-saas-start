@@ -1,5 +1,7 @@
 # 配置供给面的**四角契约漂移**与 Google 登录渠道「文档承诺有、实现无」
 
+> ⚠️ **本案一处裁已被反悔修订（2026-10-23 · [global-config-contract-gate-in-chain](./global-config-contract-gate-in-chain.md)）**：本案「切片 C 人裁不做 ⇒ 四角对拍仍无门禁持有·已显式列为遗留」经人令「GO」撤销——`verify:config-contract` 已升为 `scripts/ci.ts` 硬闸（full+quick）。正文「切片 C 不做/不进链」为当时结项史实、不改，现状以翻案案为准。
+
 > 适用范围: `配置面(.env.example + apps/api/src/config/** + modules/auth 渠道注册面) + 文档/宪法路径口径(docs/specs + docs/*.md)` ← blast radius（v0.2.0 已执行）：**代码** `envs/{default,development}.ts` + `modules/auth/{auth.bootstrap.ts, social-provider-registration.ts(+test)}`、**供给面** `.env.example`、**文档** 5 份（`architecture.md(±zh)` / `tooling-standards.md` / `oauth-guide-en.md` / `drizzle-migration-guide.md` / `install&run.md`）；**v0.2.2 追加落点**：`.env.example` 的 Seed 段（三行均注释态）+ `docs/drizzle-migration-guide.md` 的 Seeding 警示（**零代码变更**）；**不触** DB schema / 业务模块语义 / 部署编排（`docker-compose.yml`）/ CI 门禁面（切片 C 人裁不做）/ 开发机 `.env`
 > 关联: `specs/tooling-standards.md` §4.10（部署声明对拍）· 已落地前片 [module-deploy-env-mount-boundary](./module-deploy-env-mount-boundary.md)（D4·**F4/F6 与其 `.env.example` 的 `# DATA_RESIDENCY_ENFORCE=` 注释行 逃生阀直接续接**）· [module-deploy-host-residency](./module-deploy-host-residency.md) §5 缓行清单（本片领取其「`envs/` 文档漂移」一项）· global-tenancy §10 挂账（本片结清 dead-code 两项）
 > 性质: 缺陷收口（配置契约的供给面完整性 + 宪法承诺兑现）·机制单点修、不逐键特判

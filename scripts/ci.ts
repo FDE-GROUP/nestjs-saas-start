@@ -65,6 +65,12 @@ step('i18n key parity guard', run('run', 'verify:i18n-key-parity'));
 // 散文」的覆盖缺口）。纯文本扫描、便宜，与 domain-layout/stories-drift/i18n-parity 同置 full/quick 均跑、早
 // 失败。诚实边界：只拦登记表点名 token（须随案补登·非通用语义检查）·框定豁免为启发式（防误红优先·零假阳性）。
 step('Overturned rulings guard', run('run', 'verify:overturned-rulings'));
+// 配置供给面「四角契约」恒等闸（global-config-contract-gate-in-chain 翻案 · 高危#3 经人签核 2026-10-23）：
+// 撤销 config-env-surface-contract「切片 C 不做」/ config-seed「ci.ts 零改动」两裁，把已加固的
+// verify:config-contract 升为硬门禁——判据①无死配置/②代码读键⊆（样例∪白名单）/③必填键⊆compose。防「撤旋钮
+// 忘删样例键」静默腐烂（b3d3e5d 清 ES_TRUTH_SOURCE_TENANTS 即此类）。纯静态文本扫、亚秒级、无构建/DB 依赖，
+// 与上列便宜闸同置 full/quick 均跑、早失败。逃生阀：合法「声明先于消费者」键走 WHITELIST 或取注释态上图（web-dev-proxy-key 前例）。
+step('Config contract guard', run('run', 'verify:config-contract'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 前端类型面纳入门禁（外部评审暴露第二盲区：ci 曾不 typecheck apps/web——
