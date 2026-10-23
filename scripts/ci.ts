@@ -59,6 +59,12 @@ step('Stories drift guard', run('run', 'verify:stories-drift'));
 // i18n 键致生产校验/邮件静默回退成 key 串（切片 B 首跑即抓修 8 处 lost-ref）。纯源树 + JSON 扫描、无构建依赖，
 // 与 type-escape/domain-layout/stories-drift 同置 full/quick 均跑、早失败。诚实边界：动态拼键 out-of-scope·不做反向死键硬闸。
 step('i18n key parity guard', run('run', 'verify:i18n-key-parity'));
+// 「已推翻裁定」注释同步恒等闸（global-overturned-ruling-comment-gate · 新增门禁 · 高危经人签核 2026-10-23）：
+// 内置登记表 OVERTURNED_RULINGS，扫代码注释（跳字符串）——命中被反悔裁定点名的失实 token 且同注释块无历史
+// 框定词即 fail-loud（固化 global-organization-status-comment-sync 人肉清零·补 residual-cleanup 排除「注释
+// 散文」的覆盖缺口）。纯文本扫描、便宜，与 domain-layout/stories-drift/i18n-parity 同置 full/quick 均跑、早
+// 失败。诚实边界：只拦登记表点名 token（须随案补登·非通用语义检查）·框定豁免为启发式（防误红优先·零假阳性）。
+step('Overturned rulings guard', run('run', 'verify:overturned-rulings'));
 if (!quick) {
   step('Build & typecheck (libs + nest)', run('run', 'build'));
   // 前端类型面纳入门禁（外部评审暴露第二盲区：ci 曾不 typecheck apps/web——

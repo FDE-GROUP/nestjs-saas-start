@@ -39,6 +39,7 @@
     "verify:type-escape:update": "node scripts/verify-type-escape-ratchet.ts --update",
     "verify:domain-layout": "node scripts/verify-domain-layout.ts",
     "verify:stories-drift": "node scripts/verify-stories-drift.ts",
+    "verify:overturned-rulings": "node scripts/verify-overturned-rulings.ts",
     "verify:test-types": "tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p libs/core/tsconfig.json && tsc --noEmit -p libs/contracts/tsconfig.json && tsc --noEmit -p libs/ba-mikro-adapter/tsconfig.json && tsc --noEmit -p packages/api-client/tsconfig.test.json && tsc --noEmit -p scripts/tsconfig.json",
     "prepare": "husky",
     "test": "vitest run",
