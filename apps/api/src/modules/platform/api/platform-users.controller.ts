@@ -1,5 +1,5 @@
-import { CurrentUser } from '@app/modules/auth/decorators/current-user.decorator';
-import type { SessionUser } from '@app/modules/auth/guards/session.guard';
+import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
+import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { ResumeUserCommand } from '@app/modules/tenants/application/commands/resume-user.command';
 import { SuspendUserCommand } from '@app/modules/tenants/application/commands/suspend-user.command';
 import { ListPlatformUsersQuery } from '@app/modules/tenants/application/queries/list-platform-users.query';

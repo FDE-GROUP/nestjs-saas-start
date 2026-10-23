@@ -8,9 +8,9 @@ import { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.s
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import type { BetterAuthOptions } from 'better-auth';
-import { AuthInstanceInjectKey } from './auth.constant';
+import { AuthInstanceInjectKey } from '../auth.constant';
+import type { InjectAuthInstance } from '../auth.interface';
 import { CreateAuth } from './auth.implement';
-import type { InjectAuthInstance } from './auth.interface';
 import { formatGenericChannelDiagnostics, resolveGenericChannels } from './generic-oauth-channels';
 import { planProviderDiagnostics, resolveSocialProviders } from './social-provider-registration';
 

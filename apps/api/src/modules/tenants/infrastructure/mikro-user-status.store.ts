@@ -1,6 +1,9 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import {
+  AUTH_USER_STORE,
+  type AuthUserStore,
+} from '@app/modules/auth/domain/ports/user-store.port';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { AUTH_USER_STORE, type AuthUserStore } from '@app/modules/auth/user-store.port';
 import type { UserStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
 import { Inject, Injectable } from '@nestjs/common';
 

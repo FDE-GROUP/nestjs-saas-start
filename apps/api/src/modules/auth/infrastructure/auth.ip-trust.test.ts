@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 // 解析单源已出至 common/trusted-proxies（module-common-rate-limit 乙裁双链同源）。
-import { parseTrustedProxies } from '../../common/trusted-proxies';
+import { parseTrustedProxies } from '../../../common/trusted-proxies';
 import { CreateAuth } from './auth.implement';
 
 // 生产限流信任链（module-auth-ip-trust）：

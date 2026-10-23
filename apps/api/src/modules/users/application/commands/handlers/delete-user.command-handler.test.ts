@@ -1,4 +1,4 @@
-import type { AuthUserStore } from '@app/modules/auth/user-store.port';
+import type { AuthUserStore } from '@app/modules/auth/domain/ports/user-store.port';
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

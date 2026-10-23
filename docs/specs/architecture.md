@@ -99,7 +99,8 @@ libs/core   (@core/saas-kit)                 # the kit — framework-light, port
 apps/api                                     # the reference application — all concretions live here
 ├── modules/<ctx>/{api,infrastructure}       # HTTP controllers + MikroORM adapters that BIND core ports (ports→adapters)
 ├── database/  config/  main.ts  app.module.ts   # global infra + DI composition root
-└── modules/{users,auth,posts,payment,storage}   # full local vertical slices (domain→application→infrastructure→api)
+├── modules/{users,posts,payment,storage}    # full local vertical slices (domain→application→infrastructure→api)
+└── modules/auth                             # system-mechanism context — layer-shape per §Layer-shape: `domain/ports/` (published AUTH_*_STORE ports) + `infrastructure/` (BA adapters) + `api/` (guards/decorators); NO application spine (BA owns auth invariants)
 
 apps/web            # deployable frontend shell (React + Vite) — F0
 packages/api-client # exchangeable typed client generated from openapi.yaml (F1)
@@ -191,7 +192,7 @@ are **pending** this doctrine and adopt it via their own audited plans — not i
 
 The four-directory vertical slice (`domain/application/infrastructure/api`) is mandatory **as a shape**, but a given layer is present only when the context actually has content for it. Two recorded, non-violating exceptions (codifying the residual cases the four-layer rule leaves open):
 
-- **`auth`** owns BA-facing write surfaces (session/bootstrap adapters) and the identity ledger, but delegates authentication semantics to Better Auth — it legitimately has **no local `domain/`** of its own (no self-owned invariant to encode yet). The moment an auth-local invariant appears, it MUST be materialized under `domain/`, never left inline.
+- **`auth`** owns BA-facing write surfaces (session/bootstrap adapters) and the identity ledger, but delegates authentication semantics to Better Auth. It therefore has **no self-owned aggregates/policies and no `application/` spine**; its `domain/` holds **only the published ports** (`domain/ports/` — the `AUTH_*_STORE` contracts), consistent with where every other context places ports (the P4/CQRS bullet: `domain/` carries policies / value objects / **ports**). All its remaining content MUST be placed **by layer**, never left flat at the module root — BA-facing adapters/mounts (`auth.implement`, `auth.bootstrap`, oauth-channels, social-provider-registration, seats-quota-hook, session-resolver) under `infrastructure/`, presentation guards/decorators under `api/`. This is *layer-shape placement*, not a fabricated domain: the moment a genuine auth-local invariant appears, it MUST be materialized as a policy/rule under `domain/` — not merely parked as a port, and not left inline.
 - **`platform`** is a governance facade (a cross-context read/command surface) with **no physical table of its own**; its `infrastructure/` holds only foreign-store adapters, and its rules live in the owning contexts (tenants/users) reached via CQRS/events. A facade with no owned persistence has no `domain/` entities to place.
 
 This is the concrete reading of "a layer exists only if it has content" in the P4/CQRS bullet: it licenses omitting an *empty* layer, never omitting the layering discipline itself, and never suppressing a layer that has (or gains) content.

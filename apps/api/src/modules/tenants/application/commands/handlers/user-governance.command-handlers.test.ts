@@ -1,4 +1,4 @@
-import type { AuthSessionStore } from '@app/modules/auth/session-store.port';
+import type { AuthSessionStore } from '@app/modules/auth/domain/ports/session-store.port';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import {
   USER_STATUS,

@@ -17,8 +17,8 @@ import {
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
-import { CurrentUser } from '../../auth/decorators/current-user.decorator';
-import { SessionGuard, type SessionUser } from '../../auth/guards/session.guard';
+import { CurrentUser } from '../../auth/api/decorators/current-user.decorator';
+import { SessionGuard, type SessionUser } from '../../auth/api/guards/session.guard';
 import { DeleteUserCommand } from '../application/commands/delete-user.command';
 import { ExportUserDataQuery } from '../application/queries/export-user-data.query';
 import type { UserDataExportReadModel } from '../application/read-models/user-data-export.read-model';

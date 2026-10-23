@@ -96,7 +96,8 @@ libs/core   (@core/saas-kit)                 # kit——轻框架、可移植，
 apps/api                                     # 参考应用——所有具体实现物均在此
 ├── modules/<ctx>/{api,infrastructure}       # HTTP controller + MikroORM 适配器，**绑定** core 端口（端口→适配器）
 ├── database/  config/  main.ts  app.module.ts   # 全局基础设施 + DI 装配根
-└── modules/{users,auth,posts,payment,storage}   # 完整本地垂直切片（domain→application→infrastructure→api）
+├── modules/{users,posts,payment,storage}    # 完整本地垂直切片（domain→application→infrastructure→api）
+└── modules/auth                             # 系统机制上下文——层形见 §层形：`domain/ports/`（已发布 AUTH_*_STORE 端口）+ `infrastructure/`（BA 适配）+ `api/`（守卫/装饰器）；无 application spine（认证不变量归 BA）
 
 apps/web            # 可部署前端壳（React + Vite）· F0
 packages/api-client # 由 openapi.yaml 生成的可交换类型化客户端· F1
@@ -179,7 +180,7 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 
 四目录垂直切片（`domain/application/infrastructure/api`）作为**形制**强制，但某一层仅在上下文确有该内容时才在场。两个已登记、非违宪的残余例外（把四目录规则留白的残余情形成文化）：
 
-- **`auth`** 持有 BA 面向的写面（session/bootstrap 适配）与身份台账，但认证语义下沉 Better Auth——它依法**无自有 `domain/`**（暂无自持不变量可编码）。一旦出现 auth 本地不变量，须即刻物化进 `domain/`，不得内联散落。
+- **`auth`** 持有 BA 面向的写面（session/bootstrap 适配）与身份台账，但认证语义下沉 Better Auth。故它**无自持聚合/policies、也无 `application/` spine**；其 `domain/` **仅承载已发布端口**（`domain/ports/`——即 `AUTH_*_STORE` 契约），与各上下文放端口的位置一致（P4/CQRS 条：`domain/` 承载 policies/值对象/**端口**）。其余内容**必须按层归位**、绝不得平铺在模块根——BA 面向的适配/挂载（`auth.implement`、`auth.bootstrap`、oauth-channels、social-provider-registration、seats-quota-hook、session-resolver）归 `infrastructure/`，呈现层守卫/装饰器归 `api/`。此为*层形归位*、非臆造领域：一旦出现真正的 auth 本地不变量，须即刻物化为 `domain/` 下的 policy/rule——而非仅当作一个端口存放、更不得内联散落。
 - **`platform`** 是治理门面（跨上下文读/命令面），**无自有物理表**；其 `infrastructure/` 只放外部存储适配，规则活在属主上下文（tenants/users）经 CQRS/事件触达。无自持持久化的门面，无 `domain/` 实体可放。
 
 此即 P4/CQRS 条中「层有内容才存在」的具体读法：只放行省略*空*层，绝不放行跳过分层纪律本身，也绝不压制一个已有（或将得）内容的层。

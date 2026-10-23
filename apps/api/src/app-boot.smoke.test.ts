@@ -1,5 +1,5 @@
 import { ConfigModule } from '@app/config/config.module';
-import { SessionGuard } from '@app/modules/auth/guards/session.guard';
+import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { PostsController } from '@app/modules/posts/api/posts.controller';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import {

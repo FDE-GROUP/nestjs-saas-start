@@ -1,4 +1,7 @@
-import { AUTH_USER_STORE, type AuthUserStore } from '@app/modules/auth/user-store.port';
+import {
+  AUTH_USER_STORE,
+  type AuthUserStore,
+} from '@app/modules/auth/domain/ports/user-store.port';
 import { EVENT_STORE, type EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { Inject, Logger, NotFoundException } from '@nestjs/common';

@@ -1,4 +1,4 @@
-import type { AuthInstance } from './auth.interface';
+import type { AuthInstance } from '../auth.interface';
 
 /** Resolved Better Auth session (`{ user, session }`) or null when there is none. */
 export type ResolvedSession = Awaited<ReturnType<AuthInstance['api']['getSession']>> | null;

@@ -10,9 +10,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthInstanceInjectKey } from '../auth.constant';
-import type { InjectAuthInstance } from '../auth.interface';
-import { resolveRequestSession } from '../session-resolver';
+import { AuthInstanceInjectKey } from '../../auth.constant';
+import type { InjectAuthInstance } from '../../auth.interface';
+import { resolveRequestSession } from '../../infrastructure/session-resolver';
 
 /**
  * Shape of an authenticated principal attached to the request by SessionGuard.

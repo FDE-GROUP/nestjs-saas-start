@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { AppModule } from '@app/app.module';
+import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
-import { SessionGuard } from '@app/modules/auth/guards/session.guard';
 import {
   TENANT_RBAC_REPOSITORY,
   type TenantRbacRepository,

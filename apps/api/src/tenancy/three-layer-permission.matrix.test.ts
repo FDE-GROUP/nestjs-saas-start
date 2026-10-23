@@ -1,5 +1,5 @@
+import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
-import { SessionGuard } from '@app/modules/auth/guards/session.guard';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import type { TenantPermissionChecker } from '@core/saas-kit/authorization/tenant-permission.port';
 import type { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';

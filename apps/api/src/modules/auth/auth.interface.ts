@@ -1,4 +1,4 @@
-import type { CreateAuth } from './auth.implement';
+import type { CreateAuth } from './infrastructure/auth.implement';
 
 export type AuthInstance = Awaited<ReturnType<typeof CreateAuth>>['auth'];
 export type InjectAuthInstance = {

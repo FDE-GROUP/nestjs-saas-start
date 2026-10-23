@@ -1,4 +1,7 @@
-import { AUTH_SESSION_STORE, type AuthSessionStore } from '@app/modules/auth/session-store.port';
+import {
+  AUTH_SESSION_STORE,
+  type AuthSessionStore,
+} from '@app/modules/auth/domain/ports/session-store.port';
 import {
   USER_STATUS,
   UserStatusService,

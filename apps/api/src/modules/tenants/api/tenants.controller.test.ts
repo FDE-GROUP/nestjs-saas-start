@@ -1,4 +1,4 @@
-import type { SessionUser } from '@app/modules/auth/guards/session.guard';
+import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { HttpException } from '@nestjs/common';
 import type { CommandBus } from '@nestjs/cqrs';

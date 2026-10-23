@@ -1,6 +1,6 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Inject, Injectable } from '@nestjs/common';
-import type { AuthUserStore } from '../user-store.port';
+import type { AuthUserStore } from '../domain/ports/user-store.port';
 import { User } from './entities/ba-identity.entities';
 
 /**

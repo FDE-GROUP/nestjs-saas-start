@@ -3,17 +3,16 @@ import { DatabaseModule } from '@app/database/database.module';
 import { MailerModule } from '@app/mailer/mailer.module';
 import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthBootstrapService } from './auth.bootstrap';
+import { CsrfOriginGuard } from './api/guards/csrf-origin.guard';
+import { SessionGuard } from './api/guards/session.guard';
 import { AuthInstanceInjectKey } from './auth.constant';
 import type { AuthInstance } from './auth.interface';
-import { AuthService } from './auth.service';
-import { CsrfOriginGuard } from './guards/csrf-origin.guard';
-import { SessionGuard } from './guards/session.guard';
+import { AUTH_SESSION_STORE } from './domain/ports/session-store.port';
+import { AUTH_USER_STORE } from './domain/ports/user-store.port';
+import { AuthBootstrapService } from './infrastructure/auth.bootstrap';
 import { SessionReclaimService } from './infrastructure/session-reclaim.service';
 import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
 import { MikroUserStoreAdapter } from './infrastructure/user-store.adapter';
-import { AUTH_SESSION_STORE } from './session-store.port';
-import { AUTH_USER_STORE } from './user-store.port';
 
 @Module({})
 export class AuthModule {
@@ -37,7 +36,6 @@ export class AuthModule {
       module: AuthModule,
       imports: [ConfigModule, DatabaseModule, MailerModule],
       providers: [
-        AuthService,
         SessionGuard,
         CsrfOriginGuard,
         authProvider,
@@ -60,7 +58,7 @@ export class AuthModule {
         // 缺省 SESSION_RECLAIM_ENABLED=false ⇒ 不启 timer·不触库（DB-free 不变量不动）。
         SessionReclaimService,
       ],
-      exports: [AuthService, SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
+      exports: [SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
       global: true,
     };
   }

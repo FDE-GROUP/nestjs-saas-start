@@ -17,10 +17,10 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // 限流信任链解析单源已出至 common/trusted-proxies（module-common-rate-limit 乙裁：
 // 同一 env 喂 BA 限流 + Nest 限流墙双链，防双链漂移）。
-import { parseTrustedProxies } from '../../common/trusted-proxies';
-import type { ConfigService } from '../../config/config.service';
-import type { MikroOrmService } from '../../database/mikro/mikro-orm.service';
-import type { MailerService } from '../../mailer/mailer.service';
+import { parseTrustedProxies } from '../../../common/trusted-proxies';
+import type { ConfigService } from '../../../config/config.service';
+import type { MikroOrmService } from '../../../database/mikro/mikro-orm.service';
+import type { MailerService } from '../../../mailer/mailer.service';
 import { createSeatsQuotaPlugin } from './seats-quota.hook';
 
 export type AuthRequest = FastifyRequest & { originalUrl?: string; url?: string };

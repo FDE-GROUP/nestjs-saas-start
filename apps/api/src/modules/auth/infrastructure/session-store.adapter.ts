@@ -1,7 +1,7 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Session } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import { Inject, Injectable } from '@nestjs/common';
-import type { AuthSessionStore } from '../session-store.port';
+import type { AuthSessionStore } from '../domain/ports/session-store.port';
 
 /**
  * `AUTH_SESSION_STORE` 的 MikroORM 适配（架构精度修宪 S3）。

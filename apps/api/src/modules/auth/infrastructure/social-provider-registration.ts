@@ -1,4 +1,4 @@
-import { OAuthProviderType } from './auth.constant';
+import { OAuthProviderType } from '../auth.constant';
 
 /**
  * 社交渠道注册裁决（module-config-env-surface-contract 切片 A · 共同底线）：
