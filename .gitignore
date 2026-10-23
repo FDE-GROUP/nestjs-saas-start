@@ -26,6 +26,10 @@ yarn-error.log
 coverage
 .eslintcache
 
+# playwright 部署态 e2e 产物（global-playwright-browser-e2e 切片 B·失败时截图/trace/报告·本地噪声不入库）
+test-results/
+playwright-report/
+
 # build
 build/
 dist/

@@ -30,13 +30,22 @@ const CODE_DIRS = ['apps', 'libs', 'scripts'];
 /** 显式白名单（刻意不上图的进程 env 键·config 片 §4.6 「scripts/ 面三键等」甄别在案）：
  * 四个 verify/ci 脚本与 ci-fullstack 均不装载 dotenv，写进样例即制造 F3 同型「声明有、实现无持有」。
  * 同口径亦涵盖**前端 dev-only 覆盖键**（如 `WEB_PROXY_TARGET`·vite dev 反代目标·带硬编码兜底
- * `http://localhost:7009`·从不需为启动而设·非部署契约）——纳管见 module-config-web-dev-proxy-key。 */
+ * `http://localhost:7009`·从不需为启动而设·非部署契约）——纳管见 module-config-web-dev-proxy-key。
+ * `E2E_*` 六键 = 部署态黄金流编排器（`scripts/e2e-web.ts`·global-playwright-browser-e2e 切片 B）的
+ * 端口/种子凭据/跳构建覆盖旋钮：同样从不装载 dotenv、app 从不读、非部署契约——与 VERIFY_PORT 同类
+ * （用户令「同意」高危#3 门禁面签核登记）。 */
 const WHITELIST = new Set([
   'NO_COLOR',
   'VERIFY_PORT',
   'VERIFY_TIMEOUT_MS',
   'TESTCONTAINERS_RYUK_DISABLED',
   'WEB_PROXY_TARGET',
+  'E2E_API_PORT',
+  'E2E_WEB_PORT',
+  'E2E_ADMIN_EMAIL',
+  'E2E_ADMIN_PASSWORD',
+  'E2E_USER_PASSWORD',
+  'E2E_SKIP_BUILD',
 ]);
 
 const color = process.stdout.isTTY && !process.env.NO_COLOR;
