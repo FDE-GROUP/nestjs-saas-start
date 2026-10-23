@@ -24,7 +24,7 @@
 - **Use Cases 层 = `application/`**（术语坐标·2026-10-21 成文）：Clean Architecture 锥体第二环 "Use Cases" 在本仓**不是**一个独立的 `usecases/` 目录，也**不是** `XxxUseCase`/`XxxInteractor` 后缀——它**就是**每个垂直切片的 `application/` 层，经两种业界主流惯例物化、且**都是 P4 所述的合法终态**：（a）**一用例一 CQRS handler**（`Command/Query → Handler`·`@nestjs/cqrs`·用于 `posts`/`tenants`/`users`·与 NestJS 生态对齐的主流形态）；（b）**命令式应用服务**（`application/<context>.service.ts` 的每个公开方法即一个用例·用于出站网关型上下文 `payment`/`storage`·DDD/Vernon 应用服务形态）。有意**不**新增第三种 `usecases/` 目录或 `XxxUseCase` 命名：会与 handler/service 语义重复、偏离 `@nestjs/cqrs` 惯例。分层（存在 Use Cases 层）强制、把每个用例物化为独立 handler 类逐上下文可选。
 - **Handler vs service——选择判据**（P4 细化·每上下文保持**单一 spine**、不按调用混用——8 个上下文已全部核实）：当用例需跨聚合编排、显式事务/UoW 边界、领域事件发布、或逐消息管道/钩子点（守卫、幂等、回放），或命令/查询契约值得分别派发时，走 **CQRS handler spine**——当前：`users`/`posts`/`tenants`/`workspaces`/`subscriptions`。当上下文是薄编排或**出站网关**——单一副作用路径、无聚合图、逐用例 command+handler+registrar 的仪式徒增无值时，走**命令式应用服务 spine**——当前：`payment`/`storage`（+ 命令稀少的支撑上下文 `authorization`）。两者皆合法终态；service spine 在 handler 型需求出现时可**升为 handler**（能力基线强制、实施逐模块裁）。
 - **垂直切片（Vertical Slice）**：按功能而非技术分层组织（`apps/api/src/modules/<context>`；共享契约侧居 `libs/core/src/modules/<context>`）。上下文之间只能通过领域事件耦合，禁止 import 另一个上下文的 `domain/` 或 `infrastructure/`。
-- **Event Sourcing（能力基线·逐模块按需·分期递进）**：确定的架构目标（人澄清 2026-10-14；2026-10-20 人再定向「回放即真相」+ 能力/实施分离，**supersede** 同日精度修宪的「Phase C 可选·终态缺省=审计日志」口径——见 [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)）。架构必须**完备提供** CQRS/ES/EDA 能力（端口、机制、参考示范）；**实施按业务模块实际需求逐模块裁**——被事件化的聚合以 event store 为唯一真相源（「回放即真相」·读表降为可重建投影）；简单 CRUD / 无状态数据（sessions、verification、成员关系等）**可依法永远不事件化**。已落地：shadow-append + 同事务 outbox + relay（`EVENT_PUBLISH_MODE: inproc|shadow|outbox`·缺省 inproc）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于精度修宪 S1 删除）。回放即真相以试点先行实证（tenants 治理状态机·R1）。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
+- **Event Sourcing（能力基线·逐模块按需·分期递进）**：确定的架构目标（人澄清 2026-10-14；2026-10-20 人再定向「回放即真相」+ 能力/实施分离，**supersede** 同日精度修宪的「Phase C 可选·终态缺省=审计日志」口径——见 [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)）。架构必须**完备提供** CQRS/ES/EDA 能力（端口、机制、参考示范）；**实施按业务模块实际需求逐模块裁**——被事件化的聚合以 event store 为唯一真相源（「回放即真相」·读表降为可重建投影）；简单 CRUD / 无状态数据（sessions、verification、成员关系等）**可依法永远不事件化**。已落地：shadow-append + 同事务 outbox + relay（`EVENT_PUBLISH_MODE: inproc|shadow|outbox`·缺省 inproc）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于精度修宪 S1 删除）。回放即真相**逐模块**实证：订阅生命周期为当前唯一真相源翻面示范，而租户/用户治理面已**降为仅审计/集成事件**——`ES_TRUTH_SOURCE_TENANTS` 旋钮随治理面 ES 覆盖层于 2026-10-23 治理生命周期收束案中退役（见 [global-governance-lifecycle-consolidation.md](../plans/global-governance-lifecycle-consolidation.md)）。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
 
 ### 函数式内核件清单（P1 的物理地图·架构精度修宪补笔）
@@ -112,7 +112,7 @@ packages/api-client # 由 openapi.yaml 生成的可交换类型化客户端· F1
 
 ## `users` 上下文（写路径只有 Command → CommandHandler）
 
-Controller 从不直接改状态。以真实落地流示范——tenants 治理（`POST /tenants/:id/approve`·即 R1 回放即真相首试点）：
+Controller 从不直接改状态。以真实落地流示范——tenants 治理（`POST /tenants/:id/approve`·CQRS handler spine + 审计/集成事件发布·非回放真相源）：
 
 ```
 POST /tenants/:id/approve

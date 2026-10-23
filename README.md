@@ -54,7 +54,7 @@
 
 - **运行时**：Node LTS ≥ 22（ESM，`"type": "module"`；开发经 `nest start --watch`，生产运行 SWC 编译产物）+ pnpm（workspace 包管理）
 - **框架**：NestJS 12 + Fastify 5
-- **架构范式**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + 函数式领域内核；CQRS 按需（简单上下文直接调用服务即为合法形态），领域事件用于跨上下文集成与审计
+- **架构范式**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + 函数式领域内核；CQRS/ES/EDA **皆按需引入、能力基线完备备能**（简单上下文直接调用服务即为合法终态；被事件化聚合可选「回放即真相」为真相源，简单 CRUD 依法可永不事件化），领域事件用于跨上下文集成与审计
 - **数据库 / ORM**：PostgreSQL + MikroORM（迁移与种子）
 - **认证**：Better Auth（邮箱 + OAuth、会话 / CSRF）
 - **校验 / 契约**：zod（经 Nest 官方 standard-schema 集成 `@Body/@Param/@Query({ schema })`、`@SerializeOptions({ schema })`），跨端共享契约单源居 `libs/contracts`
