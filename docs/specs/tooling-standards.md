@@ -42,6 +42,7 @@
 | 提交校验 | **commitlint** | ^21.2.3 | Conventional Commits | 强制 |
 | 日志 | **pino**（+ pino-pretty） | ^10.4.0 | 结构化日志；dev pino-pretty、prod pino/file 落文件（Datadog 已移除） | 强制 |
 | API 文档 | **@nestjs/swagger** | ^12.0.2 | `/apidoc` + OpenAPI 导出 | 强制 |
+| API 文档生成（TS 码面） | **TypeDoc**（+ TSDoc 注释规范） | ^0.28 | 从源码 TSDoc 注释生成公共 API 参考文档（`pnpm run docs:api`·产物 `docs/api-ref/` **不入库**·**opt-in 不入默认 `ci`/pre-push**）；面向 TS 码面 API 参考，与上「API 文档=@nestjs/swagger」的 OpenAPI REST 契约面**不同受众·并存不混**（对外 GitHub Pages 发布属 plan 切片 F·**尚未落地**·见 [global-tsdoc-typedoc-docgen](../plans/global-tsdoc-typedoc-docgen.md)） | 推荐（文档生成面·人签 2026-10-24 高危#5 回灌） |
 | 清理 | **rimraf** | ^6.1.3 | `prebuild` 清 dist | 强制 |
 | 容器/DB 环境 | **Docker Compose** | Docker 29.x | 本地 Postgres 供给 | 强制（dev） |
 | 密码哈希 | **bcryptjs** | ^3.0.3 | 纯 JS、免原生编译 | 强制 |
@@ -197,6 +198,7 @@
 | 迁移生成/执行 | `pnpm run migration:generate` / `migration:run` |
 | 数据 seed/reset/setup | `db:seed` / `db:reset` / `db:setup` |
 | OpenAPI 导出 | `pnpm run openapi:export` |
+| 生成 TS API 参考（TypeDoc·opt-in·产物 `docs/api-ref/` 不入库） | `pnpm run docs:api` |
 | 代码库健康/审计（fallow） | `pnpm exec fallow` / `pnpm exec fallow audit` / `pnpm exec fallow dead-code` |
 | 本地 CI（全量门禁，pre-push 自动触发） | `pnpm run ci` |
 | 本地 CI（快速：仅 check+test） | `pnpm run ci:quick` |
