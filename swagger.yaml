@@ -189,7 +189,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List roles of the active tenant (system + custom)
+      summary: List roles of the active organization (system + custom)
       tags: &ref_3
         - organizations
     post:
@@ -487,7 +487,7 @@ paths:
             maxLength: 200
       responses:
         '200':
-          description: A page of tenants with lifecycle status.
+          description: A page of organizations with lifecycle status.
           content:
             application/json:
               schema:
@@ -503,7 +503,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List all tenants across the platform (operator only)
+      summary: List all organizations across the platform (operator only)
       tags: &ref_4
         - platform
   /api/v1/platform/organizations/{id}:
@@ -533,7 +533,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Get one tenant (operator only)
+      summary: Get one organization (operator only)
       tags: *ref_4
     delete:
       operationId: PlatformOrganizationsController_remove_v1
@@ -567,7 +567,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Soft-delete a tenant (→ deleted terminal · row kept for export)
+      summary: Soft-delete an organization (→ deleted terminal · row kept for export)
       tags: *ref_4
   /api/v1/platform/organizations/{id}/diagnostics:
     get:
@@ -596,7 +596,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: 'Per-tenant diagnostics: member/invitation/workspace/post counts'
+      summary: 'Per-organization diagnostics: member/invitation/workspace/post counts'
       tags: *ref_4
   /api/v1/platform/organizations/{id}/export:
     get:
@@ -610,8 +610,8 @@ paths:
       responses:
         '200':
           description: >-
-            Six-section tenant data export (credentials excluded)（透传面·形参真相源 =
-            OrganizationDataExport（bulk-export·六段聚合））
+            Six-section organization data export (credentials
+            excluded)（透传面·形参真相源 = OrganizationDataExport（bulk-export·六段聚合））
           content:
             application/json:
               schema:
@@ -628,7 +628,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Export all tenant-owned data as a single JSON payload (NFR-6)
+      summary: Export all organization-owned data as a single JSON payload (NFR-6)
       tags: *ref_4
   /api/v1/platform/organizations/{id}/suspend:
     patch:
@@ -663,7 +663,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Suspend an active tenant (active → suspended · fail-closed失能)
+      summary: Suspend an active organization (active → suspended · fail-closed失能)
       tags: *ref_4
   /api/v1/platform/organizations/{id}/resume:
     patch:
@@ -698,7 +698,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Resume a suspended tenant (suspended → active)
+      summary: Resume a suspended organization (suspended → active)
       tags: *ref_4
   /api/v1/platform/organizations/{id}/permanent:
     delete:
@@ -734,8 +734,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: >-
-        Hard-delete a deleted-terminal tenant (irreversible · FK cascade + event
-        purge · NFR-6)
+        Hard-delete a deleted-terminal organization (irreversible · FK cascade +
+        event purge · NFR-6)
       tags: *ref_4
   /api/v1/platform/users:
     get:
@@ -931,7 +931,7 @@ paths:
             pattern: ^[A-Za-z0-9_-]+$
       responses:
         '200':
-          description: Cursor page of posts owned by the active tenant.
+          description: Cursor page of posts owned by the active organization.
           content:
             application/json:
               schema:
@@ -948,12 +948,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
         '403':
-          description: No active tenant context.
+          description: No active organization context.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List posts in the active tenant (cursor-paginated)
+      summary: List posts in the active organization (cursor-paginated)
       tags: &ref_7
         - posts
     post:
@@ -980,7 +980,7 @@ paths:
               additionalProperties: false
       responses:
         '201':
-          description: Created post stamped with the active tenant.
+          description: Created post stamped with the active organization.
           content:
             application/json:
               schema:
@@ -991,12 +991,12 @@ paths:
                       data:
                         $ref: '#/components/schemas/PostResponse'
         '403':
-          description: No active tenant context.
+          description: No active organization context.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Create a post in the active tenant
+      summary: Create a post in the active organization
       tags: *ref_7
   /api/v1/workspaces:
     get:
@@ -1020,7 +1020,7 @@ paths:
             maximum: 9007199254740991
       responses:
         '200':
-          description: Workspaces owned by the active tenant (offset page).
+          description: Workspaces owned by the active organization (offset page).
           content:
             application/json:
               schema:
@@ -1031,12 +1031,12 @@ paths:
                       data:
                         $ref: '#/components/schemas/WorkspacePageResponse'
         '403':
-          description: No active tenant, or missing workspace:read.
+          description: No active organization, or missing workspace:read.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List workspaces in the active tenant
+      summary: List workspaces in the active organization
       tags: &ref_8
         - workspaces
     post:
@@ -1064,7 +1064,7 @@ paths:
               additionalProperties: false
       responses:
         '201':
-          description: Created workspace stamped with the active tenant.
+          description: Created workspace stamped with the active organization.
           content:
             application/json:
               schema:
@@ -1120,7 +1120,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/WorkspaceResponse'
         '404':
-          description: Workspace not found in the active tenant.
+          description: Workspace not found in the active organization.
           content:
             application/json:
               schema:
@@ -1139,7 +1139,7 @@ paths:
         '204':
           description: Workspace deleted.
         '404':
-          description: Workspace not found in the active tenant.
+          description: Workspace not found in the active organization.
           content:
             application/json:
               schema:
@@ -1172,7 +1172,7 @@ paths:
               additionalProperties: false
       responses:
         '201':
-          description: Pending tenant created; inactive until approved.
+          description: Pending organization created; inactive until approved.
           content:
             application/json:
               schema:
@@ -1194,7 +1194,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Apply to create a tenant (user-level · lands pending_approval)
+      summary: Apply to create an organization (user-level · lands pending_approval)
       tags: &ref_9
         - organizations
   /api/v1/organizations/applications/{id}/approve:
@@ -1230,7 +1230,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Approve a pending tenant (platform operator · pending → active)
+      summary: Approve a pending organization (platform operator · pending → active)
       tags: *ref_9
   /api/v1/organizations/applications/{id}/reject:
     post:
@@ -1243,7 +1243,7 @@ paths:
             type: string
       responses:
         '204':
-          description: Pending tenant discarded.
+          description: Pending organization discarded.
         '403':
           description: Not a platform operator.
           content:
@@ -1256,7 +1256,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Reject a pending tenant (platform operator · hard-delete)
+      summary: Reject a pending organization (platform operator · hard-delete)
       tags: *ref_9
   /api/v1/organizations/members:
     get:
@@ -1278,12 +1278,12 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: No active tenant / CASL deny / not a member.
+          description: No active organization / CASL deny / not a member.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List members of the active tenant (all roles · CASL read)
+      summary: List members of the active organization (all roles · CASL read)
       tags: &ref_10
         - organizations
   /api/v1/organizations/members/role:
@@ -1389,12 +1389,12 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: No active tenant / CASL deny / not a member.
+          description: No active organization / CASL deny / not a member.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List pending invitations of the active tenant (all roles)
+      summary: List pending invitations of the active organization (all roles)
       tags: *ref_10
     post:
       operationId: OrganizationsOrgAdminController_createInvitation_v1
@@ -1437,7 +1437,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Invite a member to the active tenant (owner/admin · CASL create)
+      summary: Invite a member to the active organization (owner/admin · CASL create)
       tags: *ref_10
   /api/v1/organizations/invitations/cancel:
     post:
@@ -1585,7 +1585,7 @@ paths:
                         type: object
                         additionalProperties: true
         '400':
-          description: Not a member / sole owner leaving the tenant (BA data guard).
+          description: Not a member / sole owner leaving the organization (BA data guard).
           content:
             application/json:
               schema:
@@ -1596,7 +1596,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Leave a tenant (self-service · last-owner cannot leave)
+      summary: Leave an organization (self-service · last-owner cannot leave)
       tags: *ref_11
   /api/v1/organizations/invitations/accept:
     post:
@@ -1725,7 +1725,7 @@ paths:
       parameters: []
       responses:
         '200':
-          description: Effective subscription snapshot for the active tenant.
+          description: Effective subscription snapshot for the active organization.
           content:
             application/json:
               schema:
@@ -1736,12 +1736,14 @@ paths:
                       data:
                         $ref: '#/components/schemas/SubscriptionResponse'
         '403':
-          description: No active tenant context.
+          description: No active organization context.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: 'Current tenant subscription: plan, seat quota, usage, customer mapping'
+      summary: >-
+        Current organization subscription: plan, seat quota, usage, customer
+        mapping
       tags: &ref_12
         - subscriptions
   /api/v1/subscriptions:
@@ -1807,7 +1809,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: >-
-        Provision/upgrade the tenant subscription (creates the provider
+        Provision/upgrade the organization subscription (creates the provider
         customer)
       tags: *ref_12
   /api/v1/storage/upload:
@@ -2251,7 +2253,7 @@ components:
       properties:
         organizationId:
           type: string
-          description: organization 主键（= 租户 id）。
+          description: organization 主键。
         name:
           type: string
         slug:
@@ -2297,8 +2299,8 @@ components:
     OrganizationDiagnosticsResponse:
       type: object
       properties:
-        tenant:
-          description: 租户行。
+        organization:
+          description: 组织行。
           allOf:
             - $ref: '#/components/schemas/PlatformOrganizationRowResponse'
         memberCount:
@@ -2314,7 +2316,7 @@ components:
           type: number
           description: 帖子数。
       required:
-        - tenant
+        - organization
         - memberCount
         - invitationCount
         - workspaceCount
@@ -2336,7 +2338,7 @@ components:
       properties:
         organizationId:
           type: string
-          description: organization 主键（= 租户 id）。
+          description: organization 主键。
         status:
           type: string
           enum:
@@ -2421,7 +2423,7 @@ components:
           type: boolean
         organizationId:
           type: string
-          description: 所属租户（ALS 盖章，body 不接受）。
+          description: 所属组织（ALS 盖章，body 不接受）。
         workspaceId:
           type:
             - string
@@ -2470,7 +2472,7 @@ components:
           type: string
         organizationId:
           type: string
-          description: 所属租户（仓储盖章）。
+          description: 所属组织（仓储盖章）。
         ownerId:
           type:
             - string
