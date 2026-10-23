@@ -88,7 +88,7 @@ describe('表所有权纪律守卫（写侧严格 · microservice-readiness #1�
 
   it('owned 集覆盖迁移实体全部业务表（防新表漏登记）', () => {
     // ORM 修宪案 B · Phase 2（彻底去旧 ORM）：业务表清单的 SSOT 从旧 `schema.ts`（pgTable 导出）
-    // 迁至 `MIKRO_MIGRATION_ENTITIES`（忠实全模型 13 表）；实体 PascalCase 名首字母小写 ⇄ owned 集键
+    // 迁至 `MIKRO_MIGRATION_ENTITIES`（忠实全模型 15 表·切片 C DROP user_status 旁表后）；实体 PascalCase 名首字母小写 ⇄ owned 集键
     // （与写面 `nativeX(Entity)` 探测归一口径一致）。relations/enum 不成表、不参与。
     for (const schema of MIKRO_MIGRATION_ENTITIES) {
       const name = schema.name as string;

@@ -5,7 +5,6 @@ import {
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { USER_STATUS_META } from '@app/modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
 import {
@@ -32,7 +31,7 @@ import { MIKRO_ENTITIES } from './mikro/sys-entities';
  * 列形不在覆盖面（外部契约）。
  */
 
-/** 自撰表事实（数据级派生：META 七表 + Post）。 */
+/** 自撰表事实（数据级派生：META 六表 + Post）。 */
 interface SelfTableFacts {
   table: string;
   hasCreatedAt: boolean;
@@ -62,7 +61,6 @@ const POST_FACTS: SelfTableFacts = {
 
 const SELF_TABLES: SelfTableFacts[] = [
   metaFacts(WORKSPACE_META),
-  metaFacts(USER_STATUS_META),
   metaFacts(TENANT_SUBSCRIPTION_META),
   metaFacts(EVENT_META),
   metaFacts(TENANT_ROLE_META),
@@ -102,8 +100,8 @@ describe('实体列定律 L2：updatedAt 可空口径（人裁 (a)·nullable 为
     }
   });
 
-  it('棘轮只减不增：豁免清单长度不得超过当前挂账数 4', () => {
-    expect(UPDATED_AT_NULLABLE_EXEMPT.length).toBeLessThanOrEqual(4);
+  it('棘轮只减不增：豁免清单长度不得超过当前挂账数 3', () => {
+    expect(UPDATED_AT_NULLABLE_EXEMPT.length).toBeLessThanOrEqual(3);
   });
 
   it('豁免防腐烂：挂账表须实为「有 updatedAt 且非 nullable」的自撰表', () => {
@@ -118,16 +116,16 @@ describe('实体列定律 L2：updatedAt 可空口径（人裁 (a)·nullable 为
   });
 });
 
-describe('全表登记恒等（16 表·新增/移除未登记即红）', () => {
+describe('全表登记恒等（15 表·新增/移除未登记即红）', () => {
   it('BA 契约面表名与清单恒等', () => {
     expect([...baTableNames].sort()).toEqual([...BA_CONTRACT_TABLES].sort());
   });
 
-  it('自撰 ∪ BA = 16 表无漏重；自撰按 L1/L2 三分（不可变/豁免/合规 nullable）全覆盖', () => {
+  it('自撰 ∪ BA = 15 表无漏重；自撰按 L1/L2 三分（不可变/豁免/合规 nullable）全覆盖', () => {
     const all = [...SELF_TABLES.map((f) => f.table), ...baTableNames];
-    expect(all).toHaveLength(16);
-    expect(new Set(all).size, '表名出现重复归属').toBe(16);
-    // 自撰 8 表逐一有归宿：immutable 登记 ∪ 豁免登记 ∪（有 updatedAt 且非豁免=合规）
+    expect(all).toHaveLength(15);
+    expect(new Set(all).size, '表名出现重复归属').toBe(15);
+    // 自撰 7 表逐一有归宿：immutable 登记 ∪ 豁免登记 ∪（有 updatedAt 且非豁免=合规）
     for (const f of SELF_TABLES) {
       const classified =
         IMMUTABLE_TABLES.includes(f.table) ||
@@ -135,8 +133,8 @@ describe('全表登记恒等（16 表·新增/移除未登记即红）', () => {
         (f.hasUpdatedAt && f.updatedAtNullable === true);
       expect(classified, `自撰表 ${f.table} 未落入定律任何清单`).toBe(true);
     }
-    // 8 BA + 3 不可变 + 4 豁免 + 1 合规 nullable = 16 实数对拍（global-governance-lifecycle-consolidation 切片 B
-    // DROP `tenant` 旁表后·态归 organization 真列不入自撰面）：合规 nullable 面 = 8−3−4 = 1（tenant_role）
-    expect(SELF_TABLES.length).toBe(8);
+    // 8 BA + 3 不可变 + 3 豁免 + 1 合规 nullable = 15 实数对拍（global-governance-lifecycle-consolidation
+    // 切片 C DROP `user_status` 旁表后·态归 user 真列不入自撰面）：合规 nullable 面 = 7−3−3 = 1（tenant_role）
+    expect(SELF_TABLES.length).toBe(7);
   });
 });

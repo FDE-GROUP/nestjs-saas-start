@@ -2577,6 +2577,40 @@
           "mappedType": "enum",
           "nativeEnumName": "role"
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'active'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "statusReason": {
+          "name": "statusReason",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
@@ -2613,123 +2647,15 @@
           "unique": true
         }
       ],
-      "checks": [],
-      "triggers": [],
-      "foreignKeys": {},
-      "comment": null
-    },
-    {
-      "name": "user_status",
-      "schema": "public",
-      "columns": {
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": "now()",
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        },
-        "userId": {
-          "name": "userId",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": true,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        }
-      },
-      "indexes": [
+      "checks": [
         {
-          "columnNames": ["userId"],
-          "composite": false,
-          "constraint": true,
-          "keyName": "user_status_pkey",
-          "primary": true,
-          "unique": true
+          "name": "user_status_check",
+          "expression": "status IN ('active', 'suspended', 'deleted')",
+          "definition": "check (status IN ('active', 'suspended', 'deleted'))"
         }
       ],
-      "checks": [],
       "triggers": [],
-      "foreignKeys": {
-        "user_status_userId_foreign": {
-          "columnNames": ["userId"],
-          "constraintName": "user_status_userId_foreign",
-          "localTableName": "public.user_status",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.user",
-          "deleteRule": "cascade"
-        }
-      },
+      "foreignKeys": {},
       "comment": null
     },
     {

@@ -19,4 +19,19 @@ export class MikroUserStoreAdapter implements AuthUserStore {
     const em = await this.mikro.fork();
     await em.nativeDelete(User, { userId } as never).then(() => undefined);
   }
+
+  async updateStatus(userId: string, status: string, reason: string | null): Promise<void> {
+    // 治理迁移即变更：直写 user.status/statusReason 真列并盖 updatedAt（nativeUpdate 不经 Identity Map/UnitOfWork）。
+    // 本适配器居 `modules/auth/**` 写自身 owned `user` 表 → 写侧纪律天然合规（tenants 侧经 AUTH_USER_STORE 端口委托至此）。
+    const em = await this.mikro.fork();
+    await em.nativeUpdate(
+      User,
+      { id: userId },
+      {
+        status,
+        statusReason: reason,
+        updatedAt: new Date(),
+      },
+    );
+  }
 }

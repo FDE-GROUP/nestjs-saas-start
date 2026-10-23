@@ -28,9 +28,10 @@ export type UserTransitionResult =
   | { kind: 'illegal'; from: UserStatus | undefined; to: UserStatus };
 
 /**
- * 用户状态读写唯一卡点（S6 · FR-10）：落独立表 `user_status`（不动 Better Auth 的
- * `user` 表·FK 级联删除）。deny-list 语义——无记录行视同 active（fail-open 仅限
- * “未被动过暂停”的常见态，与租户状态机同口径），仅显式 suspended/deleted 才失能。
+ * 用户状态读写唯一卡点（S6 · FR-10）：经 `USER_STATUS_STORE` 端口落 `user.status` 真列
+ * （global-governance-lifecycle-consolidation 切片 C：原 `user_status` 旁表归位 BA `user` 共享表的
+ * additive 自撰域列·写经 AUTH_USER_STORE 落 auth 属主）。deny-list 语义——列默认 'active'，
+ * 仅显式 suspended/deleted 才失能（本体不存在 → 视同 active）。
  */
 @Injectable()
 export class UserStatusService {

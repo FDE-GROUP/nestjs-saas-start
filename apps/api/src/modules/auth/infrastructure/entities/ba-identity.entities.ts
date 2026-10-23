@@ -1,15 +1,32 @@
+import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { defineEntity, p } from '@mikro-orm/core';
 
 /**
  * Better Auth 身份机器族实体（global-ba-entity-domain-placement 切片 A · 人裁 2026-10-20：
  * 「库约束接口·域拥有事实」——BA 为 auth 域工具，本族表归 **auth 域**）。
  *
- * 形状受 **BA 接口契约约束**（列律 `BA_CONTRACT_TABLES` 登账·改列=违契约；上游变更沿认证机器族演进，
- * 落点即本文件）。形态沿 ORM 修宪案 B 切片 1 裁决：零装饰器 `defineEntity`/`p`；字段一律扁平标量列
+ * 形状受 **BA 接口契约约束**（列律 `BA_CONTRACT_TABLES` 登账·BA 必需列存在性/类型受契约保护）。
+ * 按 global-governance-lifecycle-consolidation 修宪（人裁 2026-10-23）：BA 表**非专用·系共享表**——
+ * 本域可按需 additive 增自撰域列（红线仅「不删/改 BA 约定字段及其数据类型」）。`User.status`/
+ * `User.statusReason` 即此类自撰域列（用户治理生命周期态归真列·原 `user_status` 旁表随本案 DROP），
+ * 对 `mikro-auth-adapter` raw SQL 寻址的 BA 必需列为纯 additive·零冲突。形态沿 ORM 修宪案 B 切片 1 裁决：零装饰器 `defineEntity`/`p`；字段一律扁平标量列
  * （跨模型外键当普通 string 列·不建 Mikro 关系对象——BA adapter 以 raw SQL 模型名寻址，不依赖
  * relation 装配）；列名走 `EntityCaseNamingStrategy`（属性名原样作列名·camelCase 与 BA 字段直接对齐）。
  * 历史自 `database/ba/entities.ts` 迁入（该文件经 global-ba-contract-surface 成区·本案再裁决归域）。
  */
+
+/**
+ * 用户治理态值域 = `USER_STATUS`（active/suspended/deleted 三态·`TENANT_STATUS` 之子集·pending 属租户
+ * 准入不入用户）。声明序单源·与迁移工件 `user_status_check` 同表达式（漂移由下次 generate 非空 diff 捕获）。
+ * 采纯 `TENANT_STATUS` 构造，勿引 `user-status.service`（Nest 件）——以免把装饰器类拉进迁移/tsx 加载路径。
+ */
+const USER_STATUS_CHECK_EXPRESSION = `status IN (${[
+  TENANT_STATUS.ACTIVE,
+  TENANT_STATUS.SUSPENDED,
+  TENANT_STATUS.DELETED,
+]
+  .map((v) => `'${v}'`)
+  .join(', ')})`;
 
 export const User = defineEntity({
   name: 'User',
@@ -36,9 +53,15 @@ export const User = defineEntity({
     role: p.string().default('USER'),
     // test-utils additional-fields 一致性用例（type:'date'）
     dateField: p.datetime().nullable(),
+    // 用户治理生命周期态（global-governance-lifecycle-consolidation 切片 C·原 user_status 旁列归位）：
+    // NOT NULL DEFAULT 'active'——缺席态消失（deny-list 兑底转真列），BA core signUp 未写此列落 DB 默认 'active'，
+    // 暂停/恢复/软删经 AUTH_USER_STORE.updateStatus 显式覆写；statusReason 携治理理由（沿旧 user_status.reason·nullable）。
+    status: p.string().default(TENANT_STATUS.ACTIVE),
+    statusReason: p.string().nullable(),
     createdAt: p.datetime(),
     updatedAt: p.datetime().nullable(),
   },
+  checks: [{ name: 'user_status_check', expression: USER_STATUS_CHECK_EXPRESSION }],
 });
 
 export const Account = defineEntity({

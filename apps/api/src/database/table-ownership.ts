@@ -27,7 +27,9 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   organization: 'tenants',
   member: 'tenants',
   invitation: 'tenants',
-  userStatus: 'tenants',
+  // 用户治理态已归 `user.status/statusReason` 真列（切片 C·原 `user_status` 旁表 DROP）：
+  // user 表属主 = auth，治理写经 AUTH_USER_STORE 端口落 auth 属主（写侧不越界·沿 PIPL 硬删同型），
+  // 故 tenants 上下文不再持有 user_status 自有表（本清单不再登账 userStatus）。
   // 各业务上下文
   workspace: 'workspaces',
   post: 'posts',

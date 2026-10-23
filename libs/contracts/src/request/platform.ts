@@ -17,7 +17,7 @@ export const listPlatformUsersQuerySchema = strictObject({
 });
 export type ListPlatformUsersQuery = z.infer<typeof listPlatformUsersQuerySchema>;
 
-/** 暂停用户可选理由（旧 `SuspendUserDto`·写入 user_status.reason + 审计上下文）。 */
+/** 暂停用户可选理由（旧 `SuspendUserDto`·写入 `user.statusReason` 真列 + 审计上下文）。 */
 export const suspendUserSchema = strictObject({
   reason: z.string().max(500).optional(),
 });

@@ -6,7 +6,6 @@ import {
   TENANT_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { USER_STATUS_META } from '../../../modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
 import { buildMigrationEntity } from '../column-meta';
@@ -60,10 +59,27 @@ export const User = defineEntity({
       .enum(['USER', 'ADMIN'] as const)
       .nativeEnumName('role')
       .default('USER'),
+    // global-governance-lifecycle-consolidation 切片 C：用户治理生命周期态归 user 真列
+    //（原 `user_status` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·deny-list 兑底转真列）。
+    status: p.text().default(TENANT_STATUS.ACTIVE),
+    statusReason: p.text().nullable(),
     createdAt: tsNow(),
     updatedAt: ts(),
   },
   uniques: [{ name: 'user_email_idx', properties: ['email'] }],
+  // 值域 = USER_STATUS 三态子集（active/suspended/deleted）·与运行时 ba-identity.entities 同表达式。
+  checks: [
+    {
+      name: 'user_status_check',
+      expression: `status IN (${[
+        TENANT_STATUS.ACTIVE,
+        TENANT_STATUS.SUSPENDED,
+        TENANT_STATUS.DELETED,
+      ]
+        .map((v) => `'${v}'`)
+        .join(', ')})`,
+    },
+  ],
 });
 
 export const Account = defineEntity({
@@ -216,8 +232,6 @@ export const Post = defineEntity({
   ],
 });
 
-export const UserStatus = buildMigrationEntity(USER_STATUS_META, { User, Organization });
-
 export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META, {
   User,
   Organization,
@@ -233,7 +247,7 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   User,
 });
 
-/** 迁移基线用的全表忠实实体集（16 表·与 schema 逐列对齐）。 */
+/** 迁移基线用的全表忠实实体集（15 表·与 schema 逐列对齐·global-governance-lifecycle-consolidation 切片 C DROP user_status 旁表后）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -245,7 +259,6 @@ export const MIKRO_MIGRATION_ENTITIES = [
   Workspace,
   Consent,
   Post,
-  UserStatus,
   TenantSubscription,
   Event,
   TenantRole,
