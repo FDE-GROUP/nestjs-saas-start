@@ -53,7 +53,7 @@ export class AuthorizationGuard implements CanActivate {
     if (!allowed) {
       throw new ForbiddenException(
         `Missing permission: ${requirement.action} ${requirement.subject}`,
-        { errorCode: ERROR_CODES.TENANCY_PERMISSION_DENIED },
+        { errorCode: ERROR_CODES.AUTHZ_PERMISSION_DENIED },
       );
     }
     return true;

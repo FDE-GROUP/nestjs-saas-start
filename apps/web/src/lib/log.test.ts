@@ -13,7 +13,7 @@ describe('logApiError（前端客户端日志单源·dev 结构化对映后端�
       { path: '/api/v1/workspaces', scope: 'workspaces' },
       {
         message: '禁止访问',
-        errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+        errorCode: 'ISOLATION:NO_ACTIVE_CONTEXT',
         requestId: 'req-7',
         statusCode: 403,
       },
@@ -26,7 +26,7 @@ describe('logApiError（前端客户端日志单源·dev 结构化对映后端�
     expect(fields).toMatchObject({
       requestId: 'req-7',
       statusCode: 403,
-      errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+      errorCode: 'ISOLATION:NO_ACTIVE_CONTEXT',
       detail: '禁止访问',
     });
   });

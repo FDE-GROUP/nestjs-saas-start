@@ -9,7 +9,10 @@ const entries = Object.entries(ERROR_CODES);
 const ALLOWED_NAMESPACES = new Set([
   'AUTH',
   'ISOLATION',
-  'TENANCY',
+  'ORG',
+  'ROLE',
+  'GRANT',
+  'AUTHZ',
   'USER',
   'WORKSPACE',
   'BILLING',

@@ -60,13 +60,13 @@ export class PlatformOperatorGuard implements CanActivate {
     const operatorEmail = this.settings.operatorEmail()?.trim().toLowerCase();
     if (!operatorEmail)
       throw new ForbiddenException('Platform operator not configured', {
-        errorCode: ERROR_CODES.TENANCY_OPERATOR_NOT_CONFIGURED,
+        errorCode: ERROR_CODES.ORG_OPERATOR_NOT_CONFIGURED,
       });
 
     const email = (await this.identity.emailOf(userId))?.toLowerCase();
     if (!email || email !== operatorEmail)
       throw new ForbiddenException('Platform operator only', {
-        errorCode: ERROR_CODES.TENANCY_OPERATOR_ONLY,
+        errorCode: ERROR_CODES.ORG_OPERATOR_ONLY,
       });
     return true;
   }

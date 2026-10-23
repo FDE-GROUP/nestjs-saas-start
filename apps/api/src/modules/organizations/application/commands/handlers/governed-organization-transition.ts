@@ -27,7 +27,7 @@ export interface GovernedTransitionInput {
  *
  * 语义与原逐 handler 实现逐字一致：
  * - `not-found` → `null`（控制层转 404）；
- * - `illegal` → 结构化审计（error: 'illegal_transition'）+ 409 `TENANCY_ILLEGAL_TRANSITION`
+ * - `illegal` → 结构化审计（error: 'illegal_transition'）+ 409 `ORG_ILLEGAL_TRANSITION`
  *   （HTTP 翻译留在 application 层——P1 允许面）；
  * - `ok` → 结构化审计（from/to）+ 返回读模型。
  *
@@ -54,7 +54,7 @@ export async function governedOrganizationTransition(
     );
     throw new ConflictException(
       `Illegal tenant transition: ${result.from ?? 'active'} -> ${result.to}`,
-      { errorCode: ERROR_CODES.TENANCY_ILLEGAL_TRANSITION },
+      { errorCode: ERROR_CODES.ORG_ILLEGAL_TRANSITION },
     );
   }
   await deps.audit.logOrganizationGovernance(input.action, input.organizationId, input.operatorId, {

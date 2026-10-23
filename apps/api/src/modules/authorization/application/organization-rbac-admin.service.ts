@@ -55,7 +55,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     const grants = await this.rbac.findGrants(this.org(), roleKey);
     if (grants === null) {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
     return grants;
@@ -66,12 +66,12 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     const result = await this.rbac.createRole(org, key, name, this.actor());
     if (result === 'invalidKey') {
       throw new BadRequestException(`Invalid role key: ${key}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_INVALID_KEY,
+        errorCode: ERROR_CODES.ROLE_INVALID_KEY,
       });
     }
     if (result === 'duplicate') {
       throw new ConflictException(`Role key already exists: ${key}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_DUPLICATE,
+        errorCode: ERROR_CODES.ROLE_DUPLICATE,
       });
     }
     this.invalidator.invalidate(org);
@@ -79,7 +79,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     /* c8 ignore next 3 -- created 后必可查回（同事务已提交），防御性兜底非可达分支 */
     if (!role) {
       throw new NotFoundException(`Role not found after create: ${key}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
     return role;
@@ -111,17 +111,17 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     const result = await this.rbac.grant(org, roleKey, entry, this.actor());
     if (result === 'invalidConditions') {
       throw new BadRequestException('Invalid grant conditions shape (whitelist-only)', {
-        errorCode: ERROR_CODES.TENANCY_GRANT_INVALID_CONDITIONS,
+        errorCode: ERROR_CODES.GRANT_INVALID_CONDITIONS,
       });
     }
     if (result === 'roleNotFound') {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
     if (result === 'duplicate') {
       throw new ConflictException('Grant already exists', {
-        errorCode: ERROR_CODES.TENANCY_GRANT_DUPLICATE,
+        errorCode: ERROR_CODES.GRANT_DUPLICATE,
       });
     }
     this.invalidator.invalidate(org);
@@ -137,12 +137,12 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     const result = await this.rbac.revoke(org, roleKey, subject, action, conditions, this.actor());
     if (result === 'roleNotFound') {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
     if (result === 'notFound') {
       throw new NotFoundException('Matching grant not found', {
-        errorCode: ERROR_CODES.TENANCY_GRANT_NOT_FOUND,
+        errorCode: ERROR_CODES.GRANT_NOT_FOUND,
       });
     }
     this.invalidator.invalidate(org);
@@ -169,12 +169,12 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
   private mapMutation(result: 'ok' | 'notFound' | 'systemRoleProtected', key: string): void {
     if (result === 'notFound') {
       throw new NotFoundException(`Role not found: ${key}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
     if (result === 'systemRoleProtected') {
       throw new ConflictException(`System role is protected: ${key}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_SYSTEM_PROTECTED,
+        errorCode: ERROR_CODES.ROLE_SYSTEM_PROTECTED,
       });
     }
   }

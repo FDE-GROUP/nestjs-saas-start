@@ -13,8 +13,8 @@ describe('formatDate', () => {
 describe('describeApiError（据 @core 单源窄化错误码）', () => {
   it('带 errorCode → 「message（CODE）」', () => {
     expect(
-      describeApiError({ message: '禁止访问', errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED' }),
-    ).toBe('禁止访问（TENANCY:ACTIVE_TENANT_REQUIRED）');
+      describeApiError({ message: '禁止访问', errorCode: 'ISOLATION:NO_ACTIVE_CONTEXT' }),
+    ).toBe('禁止访问（ISOLATION:NO_ACTIVE_CONTEXT）');
   });
   it('无 errorCode → 仅 message', () => {
     expect(describeApiError({ message: '服务器开小差' })).toBe('服务器开小差');
@@ -34,14 +34,14 @@ describe('apiErrorDetail（结构化提取·供前端日志对映后端）', () 
     expect(
       apiErrorDetail({
         message: '禁止访问',
-        errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+        errorCode: 'ISOLATION:NO_ACTIVE_CONTEXT',
         requestId: 'req-42',
         statusCode: 403,
         path: '/api/v1/workspaces',
       }),
     ).toEqual({
       message: '禁止访问',
-      errorCode: 'TENANCY:ACTIVE_TENANT_REQUIRED',
+      errorCode: 'ISOLATION:NO_ACTIVE_CONTEXT',
       requestId: 'req-42',
       statusCode: 403,
       path: '/api/v1/workspaces',

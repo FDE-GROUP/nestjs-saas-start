@@ -7,12 +7,12 @@ describe('extractStoryRefs — 溯源引用提取', () => {
   it('正态：plan 链接 / .ts 文件名（裸名 + 带路径取 basename）/ wire 码 / 符号 皆入集', () => {
     const md =
       '关联 [`x`](../plans/global-tenancy.md) · `OrganizationsController.apply`（`organizations.controller.ts`）· ' +
-      '源 `libs/core/src/tenant-isolation/organization-lifecycle.ts` · wire 值 `TENANCY:NO_ACTIVE_CONTEXT` · 码 `USER:NOT_FOUND` · ' +
+      '源 `libs/core/src/tenant-isolation/organization-lifecycle.ts` · wire 值 `ISOLATION:NO_ACTIVE_CONTEXT` · 码 `USER:NOT_FOUND` · ' +
       '命令 `SubmitOrganizationApplicationCommand` → `MikroOrganizationProvisioningRepository.submit`。';
     const r = extractStoryRefs(md);
     expect(r.planLinks).toEqual(['global-tenancy.md']);
     expect(r.tsFiles).toEqual(['organizations.controller.ts', 'organization-lifecycle.ts']);
-    expect(r.wireCodes).toEqual(['TENANCY:NO_ACTIVE_CONTEXT', 'USER:NOT_FOUND']);
+    expect(r.wireCodes).toEqual(['ISOLATION:NO_ACTIVE_CONTEXT', 'USER:NOT_FOUND']);
     expect(r.symbols).toEqual([
       'OrganizationsController',
       'SubmitOrganizationApplicationCommand',
@@ -31,7 +31,7 @@ describe('extractStoryRefs — 溯源引用提取', () => {
 
   it('符号负态：全大写常量 / 缩写 / UPPER_SNAKE 码键 / 非后缀驼峰 皆不纳入符号档', () => {
     const md =
-      '`TRANSITIONS`（全大写 const）· `PIPL` / `FK` / `S4`（缩写）· `TENANCY_APPLICATION_NOT_FOUND`（下划线码键）· ' +
+      '`TRANSITIONS`（全大写 const）· `PIPL` / `FK` / `S4`（缩写）· `ORG_PROVISIONING_NOT_FOUND`（下划线码键）· ' +
       '`Tenant`（无角色后缀）· `pending_approval`（小写）';
     expect(extractStoryRefs(md).symbols).toEqual([]);
   });

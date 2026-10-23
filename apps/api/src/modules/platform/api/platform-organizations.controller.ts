@@ -124,7 +124,7 @@ export class PlatformOrganizationsController {
     >(new GetPlatformOrganizationQuery(id));
     if (!row)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return row;
   }
@@ -145,7 +145,7 @@ export class PlatformOrganizationsController {
     >(new GetOrganizationDiagnosticsQuery(id));
     if (!diag)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return diag;
   }
@@ -166,7 +166,7 @@ export class PlatformOrganizationsController {
     >(new ExportOrganizationDataQuery(id));
     if (!payload)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return payload;
   }
@@ -191,7 +191,7 @@ export class PlatformOrganizationsController {
     >(new SuspendOrganizationCommand(id, user.id));
     if (!result)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return result;
   }
@@ -214,7 +214,7 @@ export class PlatformOrganizationsController {
     >(new ResumeOrganizationCommand(id, user.id));
     if (!result)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return result;
   }
@@ -242,7 +242,7 @@ export class PlatformOrganizationsController {
     >(new DeleteOrganizationCommand(id, user.id));
     if (!result)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return result;
   }
@@ -271,7 +271,7 @@ export class PlatformOrganizationsController {
     >(new DeleteOrganizationPermanentlyCommand(id, user.id));
     if (!result)
       throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.TENANCY_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
       });
     return result;
   }

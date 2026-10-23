@@ -37,7 +37,7 @@ describe('OrganizationsController.apply（建租申请·BA 错误归一出口）
     const err = (await ctrl.apply(USER, DTO).catch((e: unknown) => e)) as HttpException;
     expect(err.getResponse()).toMatchObject({
       message: 'Organization already exists',
-      errorCode: ERROR_CODES.TENANCY_PROVIDER_REJECTED,
+      errorCode: ERROR_CODES.ORG_PROVISIONING_REJECTED,
     });
   });
 

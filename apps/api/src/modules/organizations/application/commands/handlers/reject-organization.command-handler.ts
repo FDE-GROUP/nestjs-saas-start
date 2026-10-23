@@ -66,7 +66,7 @@ export class RejectOrganizationCommandHandler
       throw new ConflictException(
         `Only pending applications can be rejected (status: ${current})`,
         {
-          errorCode: ERROR_CODES.TENANCY_NOT_PENDING,
+          errorCode: ERROR_CODES.ORG_NOT_PENDING,
         },
       );
     }

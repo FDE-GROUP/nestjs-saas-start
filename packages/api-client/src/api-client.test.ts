@@ -30,7 +30,7 @@ describe('@saas/api-client · errors 单源（不复制）', () => {
     expect(ERROR_CODES).toBe(CORE_ERROR_CODES);
   });
   it('isErrorCode 判别 NAMESPACE:NAME 冒号文法', () => {
-    expect(isErrorCode('TENANCY:ROLE_NOT_FOUND')).toBe(true);
+    expect(isErrorCode('ROLE:NOT_FOUND')).toBe(true);
     expect(isErrorCode('not-a-code')).toBe(false);
   });
   it('errorCodeOf / hasErrorCode 从响应体窄化', () => {
@@ -41,10 +41,10 @@ describe('@saas/api-client · errors 单源（不复制）', () => {
       timestamp: 't',
       path: '/y',
       requestId: 'r',
-      errorCode: CORE_ERROR_CODES.TENANCY_NOT_FOUND,
+      errorCode: CORE_ERROR_CODES.ORG_NOT_FOUND,
     };
-    expect(errorCodeOf(body)).toBe(CORE_ERROR_CODES.TENANCY_NOT_FOUND);
-    expect(hasErrorCode(body, CORE_ERROR_CODES.TENANCY_NOT_FOUND)).toBe(true);
+    expect(errorCodeOf(body)).toBe(CORE_ERROR_CODES.ORG_NOT_FOUND);
+    expect(hasErrorCode(body, CORE_ERROR_CODES.ORG_NOT_FOUND)).toBe(true);
     expect(errorCodeOf({})).toBeUndefined();
   });
   it('ApiError 组装 message（数组折叠）+ errorCode getter', () => {

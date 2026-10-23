@@ -91,7 +91,7 @@ export class OrganizationsOrgAdminController {
   private async assertRoleAssignable(role: string): Promise<void> {
     if (!(await this.roleAssignability.isRoleAssignable(role))) {
       throw new BadRequestException(`Role not assignable in this organization: ${role}`, {
-        errorCode: ERROR_CODES.TENANCY_ROLE_NOT_FOUND,
+        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
       });
     }
   }

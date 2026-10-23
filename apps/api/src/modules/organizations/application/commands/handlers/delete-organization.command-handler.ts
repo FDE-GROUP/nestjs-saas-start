@@ -45,7 +45,7 @@ export class DeleteOrganizationCommandHandler
       );
       throw new ConflictException(
         `Illegal tenant transition: ${result.from ?? 'active'} -> ${result.to}`,
-        { errorCode: ERROR_CODES.TENANCY_ILLEGAL_TRANSITION },
+        { errorCode: ERROR_CODES.ORG_ILLEGAL_TRANSITION },
       );
     }
     await this.audit.logOrganizationGovernance(

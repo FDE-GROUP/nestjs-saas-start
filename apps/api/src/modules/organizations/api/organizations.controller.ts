@@ -111,7 +111,7 @@ export class OrganizationsController {
     >(new ApproveOrganizationCommand(id, user.id));
     if (!result)
       throw new NotFoundException('Organization application not found', {
-        errorCode: ERROR_CODES.TENANCY_APPLICATION_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_PROVISIONING_NOT_FOUND,
       });
     return result;
   }
@@ -129,7 +129,7 @@ export class OrganizationsController {
     );
     if (!removed)
       throw new NotFoundException('Organization application not found', {
-        errorCode: ERROR_CODES.TENANCY_APPLICATION_NOT_FOUND,
+        errorCode: ERROR_CODES.ORG_PROVISIONING_NOT_FOUND,
       });
   }
 }

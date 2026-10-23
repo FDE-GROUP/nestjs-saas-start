@@ -8,7 +8,7 @@ import { HttpException, type HttpStatus } from '@nestjs/common';
  * 不二次包装（保类型与 errorCode 不降级）。
  * BA `APIError` 携**数值** `.statusCode`（如 400）+ **字符串码** `.status`（如 "BAD_REQUEST"，
  * 非数值不可直接映射）；两者均取首个可解析为有限数者——4xx（400=建租重复 slug、402=seats、
- * 403=membership 等数据事实拒绝）透传状态与消息，并附泛用业务码 `TENANCY:PROVIDER_REJECTED`
+ * 403=membership 等数据事实拒绝）透传状态与消息，并附泛用业务码 `ORG:PROVISIONING_REJECTED`
  * 于 object response（filter 透传入 envelope.errorCode·前端据 code 辨类、据 status 细分；BA 仅回
  * 不透明 message+status，门面不逐态猜具体语义码）；5xx/未知错误原样上抛交全局异常过滤器（500 面不伪装）。
  * 亦兼容仅附数值/数字串 `.status` 的来源（如测试桩）。
@@ -27,7 +27,7 @@ export function mapBaError(err: unknown): never {
     throw new HttpException(
       {
         message: String(e?.message ?? 'Bad Request'),
-        errorCode: ERROR_CODES.TENANCY_PROVIDER_REJECTED,
+        errorCode: ERROR_CODES.ORG_PROVISIONING_REJECTED,
       },
       status as HttpStatus,
     );
