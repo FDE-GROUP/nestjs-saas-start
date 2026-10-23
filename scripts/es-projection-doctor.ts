@@ -1,18 +1,18 @@
 /**
  * ES R3c —— 投影滞后检测 + catch-up 恢复「投影医生」（module-es-r3-async-projection-ack §2.2-R3c）。
  *
- * 定位（诚实划界·防与 bootstrap `--verify` 双写）：既有 `es-bootstrap-{tenants,subscriptions}.ts --verify`
- * 已实现「单上下文·fold⇄投影只读对拍」，但**只检不修**、且各管一边。本片真增量 = ① 跨上下文（tenants +
- * subscriptions）一次巡检统一面 + ② **恢复/catch-up 面**：检出漂移后可 `--rebuild` 走 `load→fold→upsert`
- * 把投影回写为真相源态（镜像 `rebuildTenantProjection` / `rebuildProjection` 语义·仅复用同一 fold 单源）。
- * 判据与 replay-truth gated e2e 同源（fold==投影逐字段·每流恰 1 条 bootstrapped）。
+ * 定位（诚实划界·防与 bootstrap `--verify` 双写）：既有 `es-bootstrap-subscriptions.ts --verify`
+ * 已实现「单上下文·fold⇄投影只读对拍」，但**只检不修**。本片真增量 = ① fold⇄投影巡检统一面 +
+ * ② **恢复/catch-up 面**：检出漂移后可 `--rebuild` 走 `load→fold→upsert` 把投影回写为真相源态
+ * （镜像 `rebuildProjection` 语义·仅复用同一 fold 单源）。判据与 replay-truth gated e2e 同源
+ * （fold==投影逐字段·每流恰 1 条 bootstrapped）。**注**：租户治理面 ES 覆盖层已随 global-governance-
+ * lifecycle-consolidation 切片 D 退役（租户态归 `organization.status` 真列）——本工具自此仅巡检 subscriptions 投影。
  *
  * **非高危**：零 DDL、不动 event 流（append-only 真相源永不被本工具改写）、只回写可重建投影表 status；
  * 缺省**只读**（不带 `--rebuild` 绝不改数据），`--rebuild` 为 opt-in 且幂等（写值恒等于 fold 结果=真相）。
  *
  * 用法（前置 `pnpm run build:libs`——`@core/saas-kit` dist 值导入可解析·沿 es-bootstrap 先例）：
- *   pnpm exec tsx scripts/es-projection-doctor.ts                     # 只读巡检两上下文·有漂移 exit 1
- *   pnpm exec tsx scripts/es-projection-doctor.ts --only=tenants      # 只巡检 tenants（或 =subscriptions）
+ *   pnpm exec tsx scripts/es-projection-doctor.ts                     # 只读巡检订阅投影 + lost-link·有漂移 exit 1
  *   pnpm exec tsx scripts/es-projection-doctor.ts --rebuild           # 检出漂移→对可修者回写投影→复验
  *
  * 恢复 runbook 保序（案 §2.2-R3c）：① 先只读巡检定位漂移面 →② 判因（多系未 bootstrap/异步投影滞后·
@@ -29,7 +29,6 @@ import '../apps/api/src/load-env.ts';
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import { replayTenantLifecycle } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle-fold';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { Event } from '../apps/api/src/database/eventing/entities/event.entity.ts';
@@ -37,7 +36,7 @@ import { hydrateEventRows } from '../apps/api/src/database/eventing/event-hydrat
 import { initMikroOrm } from '../apps/api/src/database/mikro/mikro-orm.factory.ts';
 import { MIKRO_SYS_ENTITIES } from '../apps/api/src/database/mikro/sys-entities.ts';
 import { TenantSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/tenant-subscription.entity.ts';
-import { Tenant } from '../apps/api/src/modules/tenants/infrastructure/entities/tenant.entity.ts';
+import { Organization } from '../apps/api/src/modules/tenants/infrastructure/entities/ba-org.entities.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -118,14 +117,13 @@ async function scan(
   return { name: opts.name, total: rows.length, drift };
 }
 
-/** catch-up 恢复：对可修漂移走 nativeUpdate 回写投影 = fold 结果（镜像 rebuild* 语义·不动流）。 */
+/** catch-up 恢复：对可修漂移走 nativeUpdate 回写投影 = fold 结果（仅订阅治理面·镜像 rebuild* 语义·不动流）。 */
 async function heal(em: EntityManager, report: CtxReport): Promise<number> {
   let healed = 0;
   for (const d of report.drift) {
     if (!d.repairable || !d.foldStatus) continue;
-    const entity = d.kind === 'tenant' ? Tenant : TenantSubscription;
     await em.nativeUpdate(
-      entity as never,
+      TenantSubscription as never,
       { id: d.id } as never,
       { status: d.foldStatus } as never,
     );
@@ -147,7 +145,8 @@ interface LinkViolation {
  * fold⇄投影医生检不出（盲区）。本对拍专补该盲区：只读·不 raw 改投影，违例点名归后续 relink 片。
  */
 async function scanLinkInvariant(em: EntityManager): Promise<LinkViolation[]> {
-  const suspended = (await em.find(Tenant, { status: TENANT_STATUS.SUSPENDED } as never, {
+  // 租户态已归 `organization.status` 真列（global-governance-lifecycle-consolidation 切片 B·原 tenant 旁表 DROP）。
+  const suspended = (await em.find(Organization, { status: TENANT_STATUS.SUSPENDED } as never, {
     orderBy: { id: QueryOrder.ASC },
   })) as Array<{ id: string }>;
   const violations: LinkViolation[] = [];
@@ -168,17 +167,8 @@ const em = orm.em.fork();
 
 async function runScan(): Promise<CtxReport[]> {
   const reports: CtxReport[] = [];
-  if (want('tenants')) {
-    reports.push(
-      await scan(em, {
-        name: 'tenant',
-        entity: Tenant,
-        aggregateType: 'tenant',
-        bootstrappedType: 'tenant.bootstrapped',
-        replay: (e) => replayTenantLifecycle(e) ?? undefined,
-      }),
-    );
-  }
+  // 注（global-governance-lifecycle-consolidation 切片 D）：租户治理面撤回放即真相·tenant.status 归真列，
+  // 不再作 ES 投影宿主——本工具自此仅巡检 subscriptions（fold⇄投影对拍）+ 跨上下文 lost-link 不变量。
   if (want('subscriptions')) {
     reports.push(
       await scan(em, {
@@ -221,8 +211,8 @@ try {
   const residual = reports.reduce((n, r) => n + r.drift.length, 0);
 
   // R3b·丙：跨上下文 lost-link 不变量只读对拍（tenant suspended ⇒ 其订阅无 active 残留）。
-  // 注：--rebuild 只修 fold 漂移·link 违例非 raw 可修（会破 fold==投影），故单列，须经 convergeStatus 端口重放。
-  const checkLink = want('tenants') && want('subscriptions');
+  // 租户态改从 organization.status 读（tenant 旁表已 DROP）；link 不变量与订阅投影巡检同侧生效。
+  const checkLink = want('subscriptions');
   let linkViolations: LinkViolation[] = [];
   if (checkLink) {
     linkViolations = await scanLinkInvariant(em);
@@ -238,7 +228,7 @@ try {
       }
     }
   } else {
-    console.log('[link-invariant] 跳过（需同时巡检 tenants+subscriptions·--only 限定了单侧）');
+    console.log('[link-invariant] 跳过（--only 限定了非 subscriptions 侧）');
   }
 
   if (residual > 0 || linkViolations.length > 0) {

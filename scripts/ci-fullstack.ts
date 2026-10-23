@@ -40,7 +40,6 @@ const GATED_E2E_FILES = [
   'apps/api/src/database/eventing/outbox-relay.e2e.test.ts',
   'apps/api/src/database/mikro/tenant-status-subscription-link.e2e.test.ts',
   'apps/api/src/modules/tenants/tenant-hard-delete.e2e.test.ts',
-  'apps/api/src/modules/tenants/tenant-replay-truth.e2e.test.ts',
   'apps/api/src/modules/tenants/tenant-table.e2e.test.ts',
   'apps/api/src/tenancy/tenant-isolation.e2e.test.ts',
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',

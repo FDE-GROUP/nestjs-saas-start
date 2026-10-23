@@ -382,9 +382,15 @@ side and reach the port as `PageRequest` / `CursorPageRequest`.
 
 - **L1 Existence**: every table carries `createdAt`; every mutable table also carries
   `updatedAt`. Absence must be a **declared fact**: append-only tables register as
-  immutable; Better Auth contract tables are outside column-shape scope (their shape is
-  pinned by the adapter's raw-SQL addressing contract) and are tracked by table-name
-  identity only.
+  immutable; Better Auth contract tables are tracked by table-name identity — see the
+  **BA Table Sharing** clause below for the additive-column rule.
+- **BA Table Sharing (global-governance-lifecycle-consolidation · human ruling 2026-10-23)**:
+  Better Auth-related tables are **not exclusive** — they are **shared** tables. Other
+  business domains / bounded contexts may **additively add their own domain columns**,
+  prioritizing **data-modeling paradigm rationality**. The BA constraint holds: **never
+  delete/modify the fields and their data types that BA has agreed to use** (the adapter's
+  raw-SQL addressing pins them — mutating = contract violation). Self-authored columns added
+  onto BA tables fall under L1/L2 (e.g. a new mutable domain column follows `updatedAt nullable`).
 - **L2 Convention (human ruling (a))**: a new table's `updatedAt` is `nullable()` —
   NULL means「never modified since creation」; do not fabricate timestamps. Legacy NOT NULL
   update-stamped tables sit on the grandfather registry, **ratchet-style: may shrink, never

@@ -1149,6 +1149,23 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'active'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
@@ -1177,7 +1194,13 @@
           "unique": true
         }
       ],
-      "checks": [],
+      "checks": [
+        {
+          "name": "organization_status_check",
+          "expression": "status IN ('pending_approval', 'active', 'suspended', 'deleted')",
+          "definition": "check (status IN ('pending_approval', 'active', 'suspended', 'deleted'))"
+        }
+      ],
       "triggers": [],
       "foreignKeys": {},
       "comment": null
@@ -1581,109 +1604,6 @@
           "localTableName": "public.session",
           "referencedColumnNames": ["id"],
           "referencedTableName": "public.user",
-          "deleteRule": "cascade"
-        }
-      },
-      "comment": null
-    },
-    {
-      "name": "tenant",
-      "schema": "public",
-      "columns": {
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": "now()",
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": true,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        }
-      },
-      "indexes": [
-        {
-          "columnNames": ["id"],
-          "composite": false,
-          "constraint": true,
-          "keyName": "tenant_pkey",
-          "primary": true,
-          "unique": true
-        }
-      ],
-      "checks": [
-        {
-          "name": "tenant_status_check",
-          "expression": "status IN ('pending_approval', 'active', 'suspended', 'deleted')",
-          "definition": "check (status IN ('pending_approval', 'active', 'suspended', 'deleted'))"
-        }
-      ],
-      "triggers": [],
-      "foreignKeys": {
-        "tenant_id_foreign": {
-          "columnNames": ["id"],
-          "constraintName": "tenant_id_foreign",
-          "localTableName": "public.tenant",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.organization",
           "deleteRule": "cascade"
         }
       },

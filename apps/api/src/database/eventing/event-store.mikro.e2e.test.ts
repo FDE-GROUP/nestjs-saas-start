@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
 import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
 import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
-import { replayTenantLifecycle } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle-fold';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
@@ -161,7 +160,7 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
 
   // ── ES R1a（module-es-r1-replay-core §3-R1a）：load 回放读取 + expectedVersion 乐观锁 ──
 
-  it('load 重建实例升序回放；tenant fold 重放 == 写入终态（回放即真相读侧雏形）', async () => {
+  it('load 重建实例升序回放·信封透传保真（治理面 ES 覆盖层退役后仅验泛化读侧 · 切片 D）', async () => {
     const orgId = `es-r1a-load-${Date.now()}`;
     aggregateIds.push(orgId);
     const bootstrap = new TenantBootstrappedEvent({
@@ -183,9 +182,9 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
     expect(events[0].eventId).toBe(bootstrap.eventId);
     expect(events[0].occurredAt.getTime()).toBe(bootstrap.occurredAt.getTime());
     expect(events[0]).toBeInstanceOf(TenantBootstrappedEvent);
-
-    const state = replayTenantLifecycle(events);
-    expect(state).toMatchObject({ organizationId: orgId, status: 'active', purged: false });
+    expect(events[1]).toBeInstanceOf(TenantStatusTransitionedEvent);
+    // 注：原 `replayTenantLifecycle` fold 断言随治理面 ES 覆盖层（tenant-lifecycle-fold）退役而删除——
+    // 租户态现归 organization.status 真列（不再「回放即真相」）；本测仅坐实事件流泛化重建读侧。
   });
 
   it('append(expectedVersion) 乐观锁：不符 fail-loud 整批不写，符合则续位', async () => {

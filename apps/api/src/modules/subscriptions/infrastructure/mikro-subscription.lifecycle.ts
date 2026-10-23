@@ -132,7 +132,7 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
 
   /**
    * 单流重建投影（ES R4c·诊断面）：`load → fold → 回写投影行 status`。空流=「无状态记录」→
-   * 不写、返回 undefined（沿 `rebuildTenantProjection` 口径·避免凭空造态）。
+   * 不写、返回 undefined（避免凭空造态）。
    */
   async rebuildProjection(subscriptionId: string): Promise<SubscriptionStatus | undefined> {
     if (!this.eventStore) {

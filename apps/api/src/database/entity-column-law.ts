@@ -16,8 +16,11 @@
  * 共享实现会把限界上下文焊死（与垂直切片方向相反）。触发器：若未来出现多态消费点
  * （泛型审计读写器之类），另立项重议，勿在本文件预支。
  *
- * ⚠ 覆盖面 = 本仓自撰表（META 系 + `Post`）；BA 契约面列形由 `mikro-auth-adapter`
- * 寻址契约钉死，本律只对其**表名恒等**登账、不裁其列形（改 BA 列=违契约）。
+ * ⚠ 覆盖面 = 本仓自撰表（META 系 + `Post`）；BA 契约面（`BA_CONTRACT_TABLES`）**非专用·系共享表**
+ * （global-governance-lifecycle-consolidation 人裁 2026-10-23）——业务/域可按需 **additive 增自撰域列**、
+ * 优先数据建模范式合理性；本律对 BA 面只裁 **BA 约定列的表名恒等 + 其存在性/类型不变**（不裁 BA 自带列形细节）。
+ * **红线**：不得删减/修改 BA 约定使用的字段及其数据类型（`mikro-auth-adapter` raw SQL 寻址钉死·改=违契约）。
+ * 加于 BA 表的**自撰域列**（如 `organization.status`）受本律 L1/L2 约束（新增可变域列遵 updatedAt nullable）。
  */
 
 /** 不可变表（append-only 语义：只插不改不删·无 `updatedAt` 是设计而非缺失）。 */
@@ -29,8 +32,10 @@ export const IMMUTABLE_TABLES: readonly string[] = [
 
 /**
  * Better Auth 契约面八表（归域两文件：auth `ba-identity.entities.ts` + tenants `ba-org.entities.ts`·
- * global-ba-entity-domain-placement）：列形**不在本律覆盖面**
- * （理由=外部契约·adapter raw SQL 寻址钉死）；守卫只做表名恒等——BA 面增删表须先来此登记。
+ * global-ba-entity-domain-placement）：清单语义=「BA 约定使用的表与列」——
+ *  - **表非专用·可共享**：业务/域可 additive 增自撰域列（建模合理性优先·见上 ⚠ 注）；
+ *  - **BA 必需列的存在性 + 数据类型受契约保护**（禁改/删/减·adapter raw SQL 寻址钉死）；
+ *  - 守卫只做 BA 面**表名恒等**——BA 面增删**表**须先来此登记（加列不入本清单·由属主实体文件承载）。
  */
 export const BA_CONTRACT_TABLES: readonly string[] = [
   'user',

@@ -53,14 +53,10 @@ const createSchemaForEnv = (_isProd: boolean) => {
       .string()
       .regex(/^[1-9]\d*$/)
       .optional(),
-    // ES 真相源写切换（module-es-r1-replay-core §3-R1c·高危#1 逐次亲签）：租户生命周期
-    // 写路径是否翻转为「回放即真相」（load→fold 裁决→append(expectedVersion)→投影 upsert）。
-    // 缺省 false=原路径逐字节不变（回退窗）；z.enum 而非 coerce.boolean（env 恒字符串·
-    // 规避 `"false"`→truthy 陷阱·沿 SESSION_RECLAIM_ENABLED 同律）。optional⇒非必填不上 compose。
-    ES_TRUTH_SOURCE_TENANTS: z.enum(['true', 'false']).optional(),
     // ES R4 第二上下文推广写切换（module-es-r4-second-context-subscriptions §3-R4c·高危#1 逐次亲签）：
-    // 订阅治理 convergeStatus/create 是否翻为「回放即真相」。与 TENANTS 旋钮正交·同律（缺省 false
-    // =原 CRUD 写逐字节不变·optional⇒非必填不上 compose）。
+    // 订阅治理 convergeStatus/create 是否翻为「回放即真相」（缺省 false=原 CRUD 写逐字节不变·
+    // optional⇒非必填不上 compose）。注（global-governance-lifecycle-consolidation 切片 D）：
+    // 租户治理面 ES_TRUTH_SOURCE_TENANTS 旋钮已随治理面 ES 覆盖层退役。
     ES_TRUTH_SOURCE_SUBSCRIPTIONS: z.enum(['true', 'false']).optional(),
     // 生产限流信任链（module-auth-ip-trust）：反代网段 CIDR 逗号列表；未配=BA 安全默认（只信单值 XFF）。
     AUTH_TRUSTED_PROXIES: z.string().optional(),

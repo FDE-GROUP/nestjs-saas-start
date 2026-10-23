@@ -11,14 +11,13 @@ import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-l
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Tenant } from '../entities/tenant.entity';
 import { MikroTenantGovernanceRepository } from './mikro-tenant-governance.repository';
 
 /**
- * 切片 3c-ii-B 镜像断言（global-tenant-entity-reclamation 切片 B 换轨后）：状态源从
- * `organization.metadata` 迁至 `tenant.status` 真列——列表批量取（find Tenant）/单查户籍
- * （findOne Tenant），无户籍兑底 active 语义逐字不变。fake `em` 经 `MikroOrmService.fork()`
- * 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
+ * 切片 3c-ii-B 镜像断言（global-governance-lifecycle-consolidation 切片 B 归列后）：状态源从
+ * `tenant` 旁表迁至 `organization.status` 真列——列表/单查均**单次 findAndCount/findOne(Organization)**
+ * 即携 status，无旁表二查；`effectiveStatus` 仅在极端读不到列值时兑底 active。fake `em` 经
+ * `MikroOrmService.fork()` 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
  */
 function makeRepo() {
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
@@ -40,20 +39,23 @@ const orgRow = {
   name: 'Acme',
   slug: 'acme',
   logo: null,
-  // 收权后 metadata 仅透传 BA 面内容（我方寄居键 status/appliedAt 全退场）
+  // 归列后 organization 自带 status 真列（默认 active）；metadata 仅透传 BA 面内容
+  status: TENANT_STATUS.ACTIVE,
   metadata: {},
   createdAt: new Date('2026-01-01'),
   updatedAt: null,
 };
-const tenantRow = { id: 'orgA', status: TENANT_STATUS.SUSPENDED };
 
 describe('MikroTenantGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('list() maps rows, coerces unregistered (无户籍) status → active, and reports total', async () => {
+  it('list() maps rows, coerces missing status column → active, and reports total', async () => {
     const { repo, spies } = makeRepo();
-    spies.findAndCount.mockResolvedValueOnce([[{ ...orgRow, metadata: null }], 7]);
-    // find(Tenant) 缺省回 []：无户籍 → 兑底 active
+    spies.findAndCount.mockResolvedValueOnce([
+      [{ ...orgRow, metadata: null, status: undefined }],
+      7,
+    ]);
+    // 归列后无旁表二查（find 不应被触）；status 缺失→effectiveStatus 兑底 active
     const page = await repo.list({ limit: 20, offset: 0 });
     expect(page.total).toBe(7);
     expect(page.items[0]).toMatchObject({
@@ -63,18 +65,16 @@ describe('MikroTenantGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
       status: TENANT_STATUS.ACTIVE,
     });
     expect(page).toMatchObject({ limit: 20, offset: 0 });
+    expect(spies.find).not.toHaveBeenCalled();
   });
 
-  it('list() preserves an explicit lifecycle status from the tenant registry (一页一查批量取)', async () => {
+  it('list() preserves an explicit lifecycle status carried on the organization row', async () => {
     const { repo, spies } = makeRepo();
-    spies.findAndCount.mockResolvedValueOnce([[orgRow], 1]);
-    spies.find.mockImplementationOnce(async (entity: unknown) =>
-      entity === Tenant ? [{ id: 'orgA', status: TENANT_STATUS.SUSPENDED }] : [],
-    );
+    spies.findAndCount.mockResolvedValueOnce([[{ ...orgRow, status: TENANT_STATUS.SUSPENDED }], 1]);
     const page = await repo.list({ limit: 10, offset: 5 });
     expect(page.items[0].status).toBe(TENANT_STATUS.SUSPENDED);
-    const tenantCall = spies.find.mock.calls.find((c) => c[0] === Tenant);
-    expect(tenantCall?.[1]).toEqual({ id: { $in: ['orgA'] } });
+    // 归列：状态直读 organization 行，无旁表 find
+    expect(spies.find).not.toHaveBeenCalled();
   });
 
   it('list() builds the $ilike search predicate over name/slug', async () => {
@@ -103,23 +103,20 @@ describe('MikroTenantGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
     await expect(repo.findById('ghost')).resolves.toBeNull();
   });
 
-  it('findById() issues one org lookup + one registry lookup and maps the row', async () => {
+  it('findById() issues a single organization lookup and maps the row (归列·无旁表二查)', async () => {
     const { repo, spies } = makeRepo();
-    spies.findOne
-      .mockResolvedValueOnce(orgRow) // 本体
-      .mockResolvedValueOnce(tenantRow); // 户籍
+    spies.findOne.mockResolvedValueOnce({ ...orgRow, status: TENANT_STATUS.SUSPENDED });
     const row = await repo.findById('orgA');
-    expect(spies.findOne).toHaveBeenCalledTimes(2);
+    expect(spies.findOne).toHaveBeenCalledTimes(1);
     const [orgEntity, orgWhere] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
     expect(orgEntity).toBe(Organization);
     expect(orgWhere).toEqual({ id: 'orgA' });
-    expect(spies.findOne.mock.calls[1][0]).toBe(Tenant);
     expect(row).toMatchObject({ organizationId: 'orgA', status: TENANT_STATUS.SUSPENDED });
   });
 
-  it('findById() coerces a missing registry row to active（存量无户籍兑底）', async () => {
+  it('findById() coerces a missing status column to active（defense-in-depth 兑底）', async () => {
     const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce(orgRow).mockResolvedValueOnce(null);
+    spies.findOne.mockResolvedValueOnce({ ...orgRow, status: undefined });
     const row = await repo.findById('orgA');
     expect(row?.status).toBe(TENANT_STATUS.ACTIVE);
   });
@@ -221,16 +218,15 @@ describe('MikroTenantGovernanceRepository.exportTenantData (NFR-6)', () => {
   it('assembles the six-section payload with nested minimal user face', async () => {
     const { repo, spies } = makeRepo();
     queueSixSections(spies);
-    spies.findOne.mockResolvedValueOnce(tenantRow); // 户籍态二查（队列首查为 org 本体）
     const payload = await repo.exportTenantData('orgA');
-    expect(spies.findOne).toHaveBeenCalledTimes(2); // 本体存在性 + 户籍态分取
+    expect(spies.findOne).toHaveBeenCalledTimes(1); // 归列·本体单查即携 status 真列
     expect(spies.find).toHaveBeenCalledTimes(6); // member/user/invitation/workspace/subscription/post
     expect(payload).not.toBeNull();
     expect(payload?.tenant).toMatchObject({
       id: 'orgA',
       name: 'Acme',
       slug: 'acme',
-      status: TENANT_STATUS.SUSPENDED,
+      status: TENANT_STATUS.ACTIVE,
     });
     expect(payload?.members).toEqual([
       {
@@ -283,12 +279,10 @@ describe('MikroTenantGovernanceRepository.exportTenantData (NFR-6)', () => {
 
   it('exports a deleted-terminal tenant (S5 取证用途·no status filter)', async () => {
     const { repo, spies } = makeRepo();
-    spies.findOne
-      .mockResolvedValueOnce(orgRow)
-      .mockResolvedValueOnce({ id: 'orgA', status: TENANT_STATUS.DELETED });
+    spies.findOne.mockResolvedValueOnce({ ...orgRow, status: TENANT_STATUS.DELETED });
     spies.find.mockResolvedValue([]);
     const payload = await repo.exportTenantData('orgA');
-    // 终态取户籍行（非 metadata）；metadata 全列透传（零我方键）
+    // 终态直读 organization.status 真列（非 metadata）；metadata 全列透传（零我方键）
     expect(payload?.tenant.status).toBe(TENANT_STATUS.DELETED);
     expect(payload?.tenant.metadata).toEqual({});
   });

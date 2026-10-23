@@ -23,12 +23,11 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   verification: 'auth',
   consent: 'auth',
   // tenants：审批制生命周期与成员域（BA organization/member/invitation 由本侧服务端 SDK 写）
+  // organization 携自撰域列 status（租户治理生命周期态·global-governance-lifecycle-consolidation 切片 B 归列·原 tenant 旁表 DROP）
   organization: 'tenants',
   member: 'tenants',
   invitation: 'tenants',
   userStatus: 'tenants',
-  // global-tenant-entity-reclamation 切片 A：租户户籍自有表（旁表 id=organization.id 同值）
-  tenant: 'tenants',
   // 各业务上下文
   workspace: 'workspaces',
   post: 'posts',

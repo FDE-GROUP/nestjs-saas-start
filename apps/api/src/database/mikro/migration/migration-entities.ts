@@ -1,3 +1,4 @@
+import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
   TENANT_ROLE_AUDIT_META,
@@ -5,7 +6,6 @@ import {
   TENANT_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { TENANT_META } from '../../../modules/tenants/infrastructure/entities/tenant.entity';
 import { USER_STATUS_META } from '../../../modules/tenants/infrastructure/entities/user-status.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
@@ -134,7 +134,19 @@ export const Organization = defineEntity({
     // schema.ts：organization.updatedAt 无 .notNull() ⇒ 可空（与其它表不同·忠实复刻）
     updatedAt: ts().nullable(),
     metadata: p.json<Record<string, any>>().nullable(),
+    // global-governance-lifecycle-consolidation 切片 B：租户治理生命周期态归 organization 真列
+    //（原 `tenant` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·堵 O1）。
+    status: p.text().default(TENANT_STATUS.ACTIVE),
   },
+  // 值域自 `TENANT_STATUS` 单源生成·与运行时 ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
+  checks: [
+    {
+      name: 'organization_status_check',
+      expression: `status IN (${Object.values(TENANT_STATUS)
+        .map((v) => `'${v}'`)
+        .join(', ')})`,
+    },
+  ],
 });
 
 export const Member = defineEntity({
@@ -221,10 +233,7 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   User,
 });
 
-// global-tenant-entity-reclamation 切片 A：租户户籍自有表（旁表同值 PK·status 真列+CHECK）。
-export const Tenant = buildMigrationEntity(TENANT_META, { Organization });
-
-/** 迁移基线用的全表忠实实体集（17 表·与 schema 逐列对齐）。 */
+/** 迁移基线用的全表忠实实体集（16 表·与 schema 逐列对齐）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -242,5 +251,4 @@ export const MIKRO_MIGRATION_ENTITIES = [
   TenantRole,
   TenantRoleGrant,
   TenantRoleAudit,
-  Tenant,
 ];

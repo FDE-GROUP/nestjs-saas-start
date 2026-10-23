@@ -8,34 +8,28 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app.module';
-import { Tenant } from './infrastructure/entities/tenant.entity';
 
 /**
- * `tenant` 户籍表 · env-gated 真库 e2e（global-tenant-entity-reclamation 切片 B · 人签 2026-10-20）：
- * 本测是换轨后 **DB 级语义**的唯一实据面——单测全 mock，证不了 CHECK 约束/FK cascade/
- * 「无户籍兑底」三件事（方案 §5 验收判据「列约束负向测」在此落账）。
+ * `organization.status` 治理真列 · env-gated 真库 e2e（global-governance-lifecycle-consolidation 切片 B·
+ * 原 `tenant` 旁表已 DROP）：本测是归列后 **DB 级语义**的唯一实据面——单测全 mock，证不了列默认值/
+ * CHECK 约束/迁移写入三件事（方案 §5 验收判据「列约束负向测」在此落账）。
  *
- * 坐实四件：
- *  1. 迁移即入册：`transition` 对无户籍存量 org 生效——`tenant` 行 upsert 生成、
- *     `updatedAt` 必盖戳、**BA `organization` 面零触碰**（metadata 不携 status·收权实证）；
- *  2. DB CHECK 负向：直写非法 status → `tenant_status_check` 违例红（值域防线在 DB 层）；
- *  3. deny-list 无户籍语义：`isBlocked` 对无租户行 org 不拦（存量/seeded 兼容·逐字等价旧链）；
- *  4. FK cascade：主行 `organization` 硬删 → `tenant` 户籍行随灭（六子表入账）。
+ * 坠实三件：
+ *  1. 默认入册：BA/本测直插 `organization` 行（不携 status）→ DB 默认 'active' 落地（缺席态消失·O1 已堵）；
+ *     `transition` 对存量 org 生效——前置态取 'active'（非 undefined）、直写 `organization.status`；
+ *  2. DB CHECK 负向：直写非法 status → `organization_status_check` 违例红（值域防线在 DB 层）；
+ *  3. deny-list 读语义：`read` 对新建 org 返 'active'（非 undefined）·不拦；本体硬删 → not-found。
  *
  * **默认跳过**：仅当 `E2E_DATABASE_URL` 存在时运行（开关），不破默认 CI 的 DB-free 不变量。
  * 夹具时间戳后缀唯一键，afterAll 显式清净，运行幂等。B1 隔离：节掉 outbox 后台 轮询
  * （沿 `tenant-hard-delete.e2e.test.ts` 同文件先例）。
  *
- * ES R1c 地位注记（module-es-r1-replay-core §3-R1c·不改断言本体）：本测跑于旋钮缺省关（原路径）。
- * 旋钮 `ES_TRUTH_SOURCE_TENANTS=true` 时，`tenant.status` 列由「唯一真相源」降为**投影**——仍经
- * `TenantStatusService` 单点读写（读己之写不变），但其值由事件流 fold 结果同步刷写；「列约束/FK cascade/
- * 无户籍兑底」四件 DB 语义与写路径来源无关，断言恒成立（故本守卫片无需随翻转放宽）。写切换的 DB 级实据
- * 另见 `tenant-replay-truth.e2e.test.ts` 段②③④。
+ * 治理面 ES 覆盖层已随切片 D 退役（租户态不再「回放即真相」），本测无旋钮分支口径。
  */
 const E2E_DB = process.env.E2E_DATABASE_URL;
 const gated = E2E_DB ? describe : describe.skip;
 
-gated('tenant 户籍表真库语义（收权案切片 B · env-gated）', () => {
+gated('organization.status 治理真列库语义（归列切片 B · env-gated）', () => {
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
   let statusService: TenantStatusService;
@@ -61,6 +55,7 @@ gated('tenant 户籍表真库语义（收权案切片 B · env-gated）', () => 
     mikro = app.get(MikroOrmService);
     statusService = app.get(TenantStatusService);
 
+    // 直插 organization（不携 status）——验证列 DB 默认 'active' 落地（缺席态消失·O1 已堵）。
     const em = await mikro.fork();
     await em.insert(Organization, {
       id: orgId,
@@ -78,44 +73,43 @@ gated('tenant 户籍表真库语义（收权案切片 B · env-gated）', () => 
 
   afterAll(async () => {
     const em = await mikro.fork();
-    // 主行硬删即全清（FK cascade 自证之外亦作清净通道）
-    await em.nativeDelete(Tenant, { id: { $in: [orgId, bareOrgId] } } as never);
     await em.nativeDelete(Organization, { id: { $in: [orgId, bareOrgId] } } as never);
     await app.close();
   });
 
-  it('①transition 对无户籍存量 org 入册：tenant 行生成·updatedAt 盖戳·BA 面零触碰', async () => {
+  it('①默认入册：新 org status 默认 active；transition 前置态取 active（非 undefined）·直写 organization.status', async () => {
     const result = await statusService.transition(orgId, TENANT_STATUS.SUSPENDED);
-    expect(result).toEqual({ kind: 'ok', previous: undefined, status: TENANT_STATUS.SUSPENDED });
+    expect(result).toEqual({
+      kind: 'ok',
+      previous: TENANT_STATUS.ACTIVE,
+      status: TENANT_STATUS.SUSPENDED,
+    });
     const em = await mikro.fork();
-    const row = await em.findOne(Tenant, { id: orgId } as never);
-    expect(row?.status).toBe(TENANT_STATUS.SUSPENDED);
-    expect(row?.createdAt).toBeInstanceOf(Date);
-    expect(row?.updatedAt).toBeInstanceOf(Date);
-    // 收权实证：organization.metadata 不携 status（BA 缩回纯认证/成员数据源）
-    const org = await em.findOne(Organization, orgId);
+    const org = await em.findOne(Organization, { id: orgId } as never);
+    expect(org?.status).toBe(TENANT_STATUS.SUSPENDED);
+    // 归列实证：生命周期态在 organization.status 真列·metadata 不携 status（BA 面零我方寄居键）
     expect((org?.metadata ?? {}) as Record<string, unknown>).not.toHaveProperty('status');
     expect(await statusService.isBlocked(orgId)).toBe(true);
   });
 
-  it('②DB CHECK 负向：直写非法 status 即红（值域防线在 DB 层·tenant_status_check）', async () => {
+  it('②DB CHECK 负向：直写非法 status 即红（值域防线在 DB 层·organization_status_check）', async () => {
     const em = await mikro.fork();
     await expect(
-      em.nativeUpdate(Tenant, { id: orgId } as never, { status: 'bogus' } as never),
-    ).rejects.toThrow(/tenant_status_check/);
+      em.nativeUpdate(Organization, { id: orgId } as never, { status: 'bogus' } as never),
+    ).rejects.toThrow(/organization_status_check/);
   });
 
-  it('③deny-list 无户籍语义：read undefined·不拦（存量/seeded 兼容·等价旧「无状态记录」）', async () => {
-    expect(await statusService.read(bareOrgId)).toBeUndefined();
+  it('③deny-list 读语义：新建 org read 返 active（非 undefined）·不拦', async () => {
+    expect(await statusService.read(bareOrgId)).toBe(TENANT_STATUS.ACTIVE);
     expect(await statusService.isBlocked(bareOrgId)).toBe(false);
   });
 
-  it('④FK cascade：主行硬删 → 户籍行随灭', async () => {
+  it('④本体硬删 → not-found（归列后判据即本体行存在性·旁表已消）', async () => {
     const em = await mikro.fork();
     const affected = await em.nativeDelete(Organization, { id: orgId } as never);
     expect(affected).toBe(1);
-    expect(await em.findOne(Tenant, { id: orgId } as never)).toBeNull();
-    // not-found 判据随本体消灭（户籍行本已无存）
+    expect(await em.findOne(Organization, { id: orgId } as never)).toBeNull();
+    // not-found 判据随本体消灭
     expect(await statusService.transition(orgId, TENANT_STATUS.ACTIVE)).toEqual({
       kind: 'not-found',
     });

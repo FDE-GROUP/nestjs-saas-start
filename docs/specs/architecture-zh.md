@@ -315,8 +315,13 @@ Controller 经**官方 standard-schema 路径**校验（`@Body/@Param/@Query({ s
 > 豁免腐烂或新增违例即闸红）。
 
 - **L1 存在性**：每张表必须有 `createdAt`；可变表必须另有 `updatedAt`。缺失必须是
-  **显式声明的事实**：append-only 表登记为不可变；Better Auth 契约表不在列形覆盖面
-  （其列形由适配器 raw SQL 寻址契约钉死），仅做表名恒等登账。
+  **显式声明的事实**：append-only 表登记为不可变；Better Auth 契约表仅做表名恒等登账——
+  其加列规则见下方「BA 表共享」条。
+- **BA 表共享（global-governance-lifecycle-consolidation · 人裁 2026-10-23）**：
+  Better Auth 相关表**非专用**——系**共享表**。其他业务/限界上下文可按需 **additive 增
+  自撰域列**，**优先数据建模范式合理性**。BA 约束仍在：**不得删减/修改 BA 约定使用的
+  字段及其数据类型**（适配器 raw SQL 寻址钉死·改=违契约）。加于 BA 表的自撰域列受 L1/L2
+  管辖（新增可变域列遵 `updatedAt nullable`）。
 - **L2 口径（人裁 (a)）**：新表 `updatedAt` 一律 `nullable()`——NULL 即「建后未改」，
   不伪造时间。存量 NOT NULL 盖章表入棘轮豁免账，**只减不增**；不为它们做任何 schema 迁移。
 - **统一立场**：公共列统一落在**语义 + 规则**层，**不落结构继承层**（拒绝

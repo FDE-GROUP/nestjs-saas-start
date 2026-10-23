@@ -9,7 +9,7 @@
  *   pnpm exec tsx scripts/es-bootstrap-subscriptions.ts            # bootstrap（幂等·可安全重跑）
  *   pnpm exec tsx scripts/es-bootstrap-subscriptions.ts --verify   # 只读对拍：全量 replay fold ⇄ 订阅行
  *
- * 运行器＝`tsx`（沿 `es-bootstrap-tenants.ts` 先例·R-η：值导入 `.ts` 后缀）。`--verify` 即案 §6 验收「存量对拍」
+ * 运行器＝`tsx`（沿 `mikro-migrate.ts`/seed 先例·R-η：值导入 `.ts` 后缀）。`--verify` 即案 §6 验收「存量对拍」
  * 的一次性实跑面（常驻化在 gated e2e）：每行流经 `event-hydration` 单源重建 → `replaySubscriptionLifecycle`
  * （最后快照重启语义）→ fold 态必须 === 订阅行 `status`，且每流恰含 1 条 bootstrapped——不符逐行点名并 exit 1
  * （fail-loud，不带病过门）。

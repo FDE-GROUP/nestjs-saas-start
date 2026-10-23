@@ -1,4 +1,3 @@
-import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
 import {
   TENANT_STATUS,
   type TenantStatus,
@@ -7,7 +6,6 @@ import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/te
 import type { TenantStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
-import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -133,125 +131,5 @@ describe('TenantStatusService.transition 事件产出（ES 第二切片 §3.1）
     await expect(svc.transition('orgA', TENANT_STATUS.SUSPENDED)).rejects.toThrow('append blew up');
     // 写先行、发布在后：upsert 已发生（非事务窗口如实呈记·§3.1）
     expect(upsert).toHaveBeenCalledTimes(1);
-  });
-});
-
-/**
- * ES R1c 真相源写切换镜测（module-es-r1-replay-core §3-R1c）：旋钮开时
- * `transition` 以 fold 重放态为裁决输入、走 `publishDurable`（带 expectedVersion 乐观锁）
- * + 投影 upsert(fold 结果)，**不触表行 readStatus、不调 publishAll**。
- */
-function makeTruthService(stream: DomainEvent[]) {
-  const upsert = vi.fn(async (_id: string, _status: TenantStatus) => {});
-  const organizationExists = vi.fn(async () => true);
-  const readStatus = vi.fn(async () => {
-    throw new Error('truth-source 路径不得回退到表行 readStatus');
-  });
-  const store = { readStatus, organizationExists, upsert } as unknown as TenantStatusStore;
-  const durable: Array<{ events: readonly DomainEvent[]; version: number }> = [];
-  const publisher = {
-    publishAll: vi.fn(async () => {
-      throw new Error('truth-source 路径不得调 publishAll（会二次 append）');
-    }),
-    publishDurable: vi.fn(async (events: readonly DomainEvent[], version: number) => {
-      durable.push({ events, version });
-    }),
-  } as unknown as DomainEventPublisher;
-  const eventStore = { load: vi.fn(async () => stream) } as unknown as EventStore;
-  const svc = new TenantStatusService(
-    store,
-    publisher,
-    { run: <T>(fn: () => Promise<T>) => fn() },
-    eventStore,
-    true,
-  );
-  return { svc, upsert, readStatus, durable, publisher, eventStore };
-}
-
-const bootstrapped = (status: TenantStatus) =>
-  new TenantBootstrappedEvent({ aggregateId: 'orgA', payload: { status, actorId: 'bootstrap' } });
-
-describe('TenantStatusService.transition 真相源写切换（ES R1c · 旋钮开）', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('以 fold 前置态裁决 + publishDurable(expectedVersion=流长+1) + 投影 upsert(fold 结果)', async () => {
-    const { svc, upsert, durable } = makeTruthService([bootstrapped(TENANT_STATUS.PENDING)]);
-    const result = await svc.transition('orgA', TENANT_STATUS.ACTIVE, { actorId: 'op-1' });
-    expect(result).toEqual({
-      kind: 'ok',
-      previous: TENANT_STATUS.PENDING,
-      status: TENANT_STATUS.ACTIVE,
-    });
-    // 流长 1 ⇒ expectedVersion 2（与 store.append 内部 max+1 同律）
-    expect(durable).toHaveLength(1);
-    expect(durable[0].version).toBe(2);
-    expect(durable[0].events[0]).toMatchObject({
-      eventType: 'tenant.status.transitioned',
-      aggregateId: 'orgA',
-      payload: { from: 'pending_approval', to: 'active', actorId: 'op-1' },
-    });
-    // 投影 = fold 结果（非手推）
-    expect(upsert).toHaveBeenCalledWith('orgA', TENANT_STATUS.ACTIVE);
-  });
-
-  it('非法迁移（fold 终态 deleted → active）→ illegal，零 append/零投影', async () => {
-    const { svc, upsert, durable } = makeTruthService([bootstrapped(TENANT_STATUS.DELETED)]);
-    const result = await svc.transition('orgA', TENANT_STATUS.ACTIVE);
-    expect(result).toEqual({
-      kind: 'illegal',
-      from: TENANT_STATUS.DELETED,
-      to: TENANT_STATUS.ACTIVE,
-    });
-    expect(durable).toHaveLength(0);
-    expect(upsert).not.toHaveBeenCalled();
-  });
-
-  it('空流（无快照）→ previous undefined·视同 active·expectedVersion=1', async () => {
-    const { svc, durable, upsert } = makeTruthService([]);
-    const result = await svc.transition('orgA', TENANT_STATUS.SUSPENDED);
-    expect(result).toEqual({
-      kind: 'ok',
-      previous: undefined,
-      status: TENANT_STATUS.SUSPENDED,
-    });
-    expect(durable[0].version).toBe(1);
-    expect((durable[0].events[0].payload as { from: unknown }).from).toBeNull();
-    expect(upsert).toHaveBeenCalledWith('orgA', TENANT_STATUS.SUSPENDED);
-  });
-
-  it('publishDurable 未实现时 fail-loud（拒静默降级）', async () => {
-    const store = {
-      organizationExists: vi.fn(async () => true),
-      readStatus: vi.fn(async () => undefined),
-      upsert: vi.fn(async () => {}),
-    } as unknown as TenantStatusStore;
-    const publisher = { publishAll: vi.fn() } as unknown as DomainEventPublisher;
-    const eventStore = { load: vi.fn(async () => []) } as unknown as EventStore;
-    const svc = new TenantStatusService(
-      store,
-      publisher,
-      { run: <T>(fn: () => Promise<T>) => fn() },
-      eventStore,
-      true,
-    );
-    await expect(svc.transition('orgA', TENANT_STATUS.ACTIVE)).rejects.toThrow(/publishDurable/);
-  });
-});
-
-describe('TenantStatusService.rebuildTenantProjection（ES R1c · 单流重建）', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('fold 结果回写投影并返回状态', async () => {
-    const { svc, upsert } = makeTruthService([bootstrapped(TENANT_STATUS.SUSPENDED)]);
-    const status = await svc.rebuildTenantProjection('orgA');
-    expect(status).toBe(TENANT_STATUS.SUSPENDED);
-    expect(upsert).toHaveBeenCalledWith('orgA', TENANT_STATUS.SUSPENDED);
-  });
-
-  it('空流 → 无状态记录 → 不写投影、返回 undefined', async () => {
-    const { svc, upsert } = makeTruthService([]);
-    const status = await svc.rebuildTenantProjection('orgA');
-    expect(status).toBeUndefined();
-    expect(upsert).not.toHaveBeenCalled();
   });
 });
