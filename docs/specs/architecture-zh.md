@@ -200,6 +200,15 @@ Domain 纯净性由 `pnpm run ci` 里的 **fallow 架构边界佐证**守住（`
 
 ## 限界上下文地图与多租户机制层
 
+### 租户 ≡ 组织 · 多租户是数据隔离机制（人宣示，2026-10-23）
+
+四条正典命题（人再次明确·约束性——从根源上终结反复出现的 tenant/organization 用词之争；各条只作指针、指向既有权威段，不复述）：
+
+1. **租户 ≡ 组织**：本框架内租户**就是**组织——同一业务对象、两套词汇：`tenant` 为内部域/机制术语（守卫、ALS、错误码、路由 slug、`tenant_role*` 等表前缀），`organization` 为用户面术语与 BA 物理表名。二者一一对应，不得引入第三种「单元」概念（见 §呈现层命名纪律·glossary）。
+2. **多租户（multi-tenancy）是一种数据隔离的技术与机制**：`tenancy/` 层是机制——请求识别 → ALS 传播 → 隔离守卫——它不关心租户「是什么」，只关心数据如何围隔（见下方 §机制层 vs 业务域）。
+3. **BA 相关表非 BA 专用表，与业务共享**：`organization`/`member`/`invitation` 等 BA 约定表与业务域共享——域可读、可 **additive** 扩列（见附录「BA 表共享」条）。
+4. **修改这些表时 BA 契约优先**：BA 约定的**字段、其数据类型及其表关系皆不可修改**（本宣示将成文红线由「字段+类型」扩展至「关系」）；扩展只允许 additive 增自撰列（建模合理性优先）。
+
 ### 机制层 vs 业务域：归属判据（2026-10-21 人裁成文·总纲）
 
 上方术语纪律（租户≠多租户）是本判据的特例；总纲判据**不是"话题"**（是否关于认证/租户），
@@ -284,7 +293,7 @@ OAuth 渠道——Better Auth 适配面，`session-resolver.ts` 为每请求会�
 - **框架**：NestJS 12 + Fastify
 - **架构**：Clean Architecture + DDD + CQRS（`@nestjs/cqrs`）
 - **数据库**：PostgreSQL + MikroORM（显式迁移）
-- **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **tenants 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·按下方「BA 表共享」条此系**非专用·共享表**——域可 **additive 增自撰域列**（建模合理性优先），红线仅「不得删减/修改 BA 约定字段及其数据类型」），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存治理列 `organization.status`（真列 + DB CHECK·系加于 BA 共享表 `organization` 上的自撰域列·global-governance-lifecycle-consolidation 2026-10-23 取代旧自有 `tenant` 旁表），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
+- **认证**：Better Auth（**auth 域工具库**——global-ba-entity-domain-placement 2026-10-20 人裁再裁决旧「纯认证与成员数据源·契约面存储视图集中」框架，采 CASL 同构原则「库约束接口·域拥有事实」）：身份机器表（user/session/account/verification/consent）归 **auth 域**、组织容器表（organization/member/invitation）归 **tenants 域**——形状受 BA 接口契约约束（列律 `BA_CONTRACT_TABLES` 登账·按下方「BA 表共享」条此系**非专用·共享表**——域可 **additive 增自撰域列**（建模合理性优先），红线仅「不得删减/修改 BA 约定字段、其数据类型及其表关系」），操作经 `auth.api.*` 工具面（**拥有表 ≠ 接管操作**）；其 org 内置授权 HTTP 面已封堵（module-rbac-casl 甲裁），成员/邀请对外端点由我方门面经服务端直调；租户生命周期态存治理列 `organization.status`（真列 + DB CHECK·系加于 BA 共享表 `organization` 上的自撰域列·global-governance-lifecycle-consolidation 2026-10-23 取代旧自有 `tenant` 旁表），BA `organization.metadata` 不携任何我方寄居键——两条承诺逐字成立）
 - **授权**：CASL（`@casl/ability` v7）——租户级 RBAC 唯一裁决引擎。**授权事实 SSOT 在 DB grant 行**（`tenant_role`/`tenant_role_grant`·per-tenant 动态角色·module-rbac-dynamic-roles 丙裁取代旧「`tenant-rules` TS 表是 SSOT」裁），**代码词汇表 `tenant-rules` 是语言 SSOT**（仅编译期 `TenantSubject/TenantAction` 类型域），**CASL rules 是运行时投影**（checker 经仓储端口 per-tenant 懒投影 + 进程内版本缓存·`invalidateTenant` 热改生效）。端点以 `@Can(action, subject)` 声明、`TenantPermissionGuard` 经 ALS 预注入角色判定（无散点特判）；实例级授权走 check 级（`TenantPermissionCheck.resource` + conditions 行按 `{{userId}}` 模板交 CASL mongo 匹配）；query 级列表过滤为其同源延伸（`TenantPermissionChecker.listPredicate` 把受限 grant 下推为列表面实例谓词·与 tenantFilter 固定展开序合并·module-rbac-query-level-filtering）
 - **测试**：Vitest（+ `unplugin-swc` 输出装饰器元数据）
 - **Lint/格式化**：Biome
@@ -334,7 +343,8 @@ Controller 经**官方 standard-schema 路径**校验（`@Body/@Param/@Query({ s
 - **BA 表共享（global-governance-lifecycle-consolidation · 人裁 2026-10-23）**：
   Better Auth 相关表**非专用**——系**共享表**。其他业务/限界上下文可按需 **additive 增
   自撰域列**，**优先数据建模范式合理性**。BA 约束仍在：**不得删减/修改 BA 约定使用的
-  字段及其数据类型**（适配器 raw SQL 寻址钉死·改=违契约）。加于 BA 表的自撰域列受 L1/L2
+  字段、其数据类型及其表关系**（适配器 raw SQL 寻址钉死·改=违契约·字段·类型·关系
+  三者皆不可动·per 上方「租户 ≡ 组织」宣示）。加于 BA 表的自撰域列受 L1/L2
   管辖（新增可变域列遵 `updatedAt nullable`）。
 - **L2 口径（人裁 (a)）**：新表 `updatedAt` 一律 `nullable()`——NULL 即「建后未改」，
   不伪造时间。存量 NOT NULL 盖章表入棘轮豁免账，**只减不增**；不为它们做任何 schema 迁移。
