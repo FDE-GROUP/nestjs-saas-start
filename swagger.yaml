@@ -517,7 +517,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant row.
+          description: Organization row.
           content:
             application/json:
               schema:
@@ -528,7 +528,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/PlatformOrganizationRowResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -545,7 +545,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant marked deleted.
+          description: Organization marked deleted.
           content:
             application/json:
               schema:
@@ -556,7 +556,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -591,7 +591,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/OrganizationDiagnosticsResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -623,7 +623,7 @@ paths:
                         type: object
                         additionalProperties: true
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -641,7 +641,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant suspended.
+          description: Organization suspended.
           content:
             application/json:
               schema:
@@ -652,7 +652,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -676,7 +676,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant resumed.
+          description: Organization resumed.
           content:
             application/json:
               schema:
@@ -687,7 +687,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/OrganizationApplicationResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -711,7 +711,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant rows purged; payload carries purgedEvents for audit核对.
+          description: Organization rows purged; payload carries purgedEvents for audit核对.
           content:
             application/json:
               schema:
@@ -722,7 +722,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/OrganizationHardDeleteResultResponse'
         '404':
-          description: Tenant not found (or already hard-deleted · idempotent).
+          description: Organization not found (or already hard-deleted · idempotent).
           content:
             application/json:
               schema:
@@ -1208,7 +1208,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Tenant activated.
+          description: Organization activated.
           content:
             application/json:
               schema:
@@ -1225,7 +1225,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
@@ -1251,7 +1251,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
         '404':
-          description: Tenant not found.
+          description: Organization not found.
           content:
             application/json:
               schema:
