@@ -10,6 +10,7 @@ import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { AuditLog } from '../../modules/tenants/infrastructure/entities/audit-log.entity';
 import { MIKRO_ORG_ENTITIES } from '../../modules/tenants/infrastructure/entities/ba-org.entities';
 import {
   WORKSPACE_META,
@@ -49,4 +50,6 @@ export const MIKRO_SYS_ENTITIES = [
   ...MIKRO_ENTITIES,
   ...MIKRO_THREE_TABLE_ENTITIES,
   ...MIKRO_RBAC_TABLE_ENTITIES,
+  // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·属主 tenants）。
+  AuditLog,
 ];

@@ -72,6 +72,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'u1', 'op-1', {
       from: TENANT_STATUS.ACTIVE,
       to: USER_STATUS.SUSPENDED,
+      reason: 'fraud',
     });
   });
 

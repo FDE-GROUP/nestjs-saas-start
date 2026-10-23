@@ -44,10 +44,15 @@ export class DeleteTenantPermanentlyCommandHandler
     const existing = await this.governance.findById(command.organizationId);
     if (!existing) return null; // 不存在/已被硬删 → 404（幂等）
     if (existing.status !== TENANT_STATUS.DELETED) {
-      this.audit.logTenantGovernance('hard_delete', command.organizationId, command.operatorId, {
-        from: existing.status,
-        error: 'not_deleted_terminal',
-      });
+      await this.audit.logTenantGovernance(
+        'hard_delete',
+        command.organizationId,
+        command.operatorId,
+        {
+          from: existing.status,
+          error: 'not_deleted_terminal',
+        },
+      );
       throw new ConflictException(
         `Tenant ${command.organizationId} is not in deleted terminal state (current: ${existing.status}); soft-delete first`,
         { errorCode: ERROR_CODES.TENANCY_NOT_DELETED_TERMINAL },
@@ -65,16 +70,26 @@ export class DeleteTenantPermanentlyCommandHandler
     if (!destroyed) {
       // 并发窗口：状态检查后被他人硬删——他方事务原子删 org 行同时已清事件，本次①删 0 行、② no-op、
       // 事务提交（org 已没、事件已没·无孤儿）；幂等回 404 留审计。
-      this.audit.logTenantGovernance('hard_delete', command.organizationId, command.operatorId, {
-        from: TENANT_STATUS.DELETED,
-        error: 'already_gone',
-      });
+      await this.audit.logTenantGovernance(
+        'hard_delete',
+        command.organizationId,
+        command.operatorId,
+        {
+          from: TENANT_STATUS.DELETED,
+          error: 'already_gone',
+        },
+      );
       return null;
     }
 
-    this.audit.logTenantGovernance('hard_delete', command.organizationId, command.operatorId, {
-      from: TENANT_STATUS.DELETED,
-    });
+    await this.audit.logTenantGovernance(
+      'hard_delete',
+      command.organizationId,
+      command.operatorId,
+      {
+        from: TENANT_STATUS.DELETED,
+      },
+    );
     return { organizationId: command.organizationId, purgedEvents };
   }
 }

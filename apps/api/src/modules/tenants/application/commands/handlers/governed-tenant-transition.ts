@@ -42,7 +42,7 @@ export async function governedTenantTransition(
   });
   if (result.kind === 'not-found') return null;
   if (result.kind === 'illegal') {
-    deps.audit.logTenantGovernance(input.action, input.organizationId, input.operatorId, {
+    await deps.audit.logTenantGovernance(input.action, input.organizationId, input.operatorId, {
       from: result.from,
       to: result.to,
       error: 'illegal_transition',
@@ -52,7 +52,7 @@ export async function governedTenantTransition(
       { errorCode: ERROR_CODES.TENANCY_ILLEGAL_TRANSITION },
     );
   }
-  deps.audit.logTenantGovernance(input.action, input.organizationId, input.operatorId, {
+  await deps.audit.logTenantGovernance(input.action, input.organizationId, input.operatorId, {
     from: result.previous,
     to: result.status,
   });

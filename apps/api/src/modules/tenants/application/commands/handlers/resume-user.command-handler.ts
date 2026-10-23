@@ -26,7 +26,7 @@ export class ResumeUserCommandHandler implements ICommandHandler<ResumeUserComma
     });
     if (result.kind === 'not-found') return null;
     if (result.kind === 'illegal') {
-      this.audit.logUserGovernance('resume', command.userId, command.operatorId, {
+      await this.audit.logUserGovernance('resume', command.userId, command.operatorId, {
         from: result.from,
         to: result.to,
         error: 'illegal_transition',
@@ -36,7 +36,7 @@ export class ResumeUserCommandHandler implements ICommandHandler<ResumeUserComma
         { errorCode: ERROR_CODES.USER_ILLEGAL_TRANSITION },
       );
     }
-    this.audit.logUserGovernance('resume', command.userId, command.operatorId, {
+    await this.audit.logUserGovernance('resume', command.userId, command.operatorId, {
       from: result.previous,
       to: result.status,
     });

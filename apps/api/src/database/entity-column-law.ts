@@ -28,6 +28,7 @@ export const IMMUTABLE_TABLES: readonly string[] = [
   'event', // ES 事件流：版本化追加，投递状态列亦由 relay 单向推进（dispatchedAt 非「修改」语义·留痕）
   'tenant_role_grant', // 一权限格一行：变更=增删行（OR 并集语义），不原地改
   'tenant_role_audit', // 变更留痕：只插不改不删（甲裁）
+  'audit_log', // 治理审计耐久账本：append-only（global-governance-lifecycle-consolidation 切片 E）
 ];
 
 /**

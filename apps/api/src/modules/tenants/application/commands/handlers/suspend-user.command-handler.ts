@@ -47,7 +47,7 @@ export class SuspendUserCommandHandler implements ICommandHandler<SuspendUserCom
     });
     if (result.kind === 'not-found') return null;
     if (result.kind === 'illegal') {
-      this.audit.logUserGovernance('suspend', command.userId, command.operatorId, {
+      await this.audit.logUserGovernance('suspend', command.userId, command.operatorId, {
         from: result.from,
         to: result.to,
         error: 'illegal_transition',
@@ -57,9 +57,10 @@ export class SuspendUserCommandHandler implements ICommandHandler<SuspendUserCom
         { errorCode: ERROR_CODES.USER_ILLEGAL_TRANSITION },
       );
     }
-    this.audit.logUserGovernance('suspend', command.userId, command.operatorId, {
+    await this.audit.logUserGovernance('suspend', command.userId, command.operatorId, {
       from: result.previous,
       to: result.status,
+      reason: command.reason,
     });
     return { userId: command.userId, status: result.status };
   }

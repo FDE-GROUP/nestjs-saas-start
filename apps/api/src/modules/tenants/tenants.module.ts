@@ -2,6 +2,7 @@ import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/te
 import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
 import { USER_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+import { AUDIT_LOG_STORE } from '@core/saas-kit/shared-kernel/audit/audit-log.store';
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TenantsController } from './api/tenants.controller';
@@ -24,6 +25,7 @@ import { ListPlatformUsersQueryHandler } from './application/queries/handlers/li
 import { TENANT_GOVERNANCE_REPOSITORY } from './domain/repositories/tenant-governance.repository';
 import { TENANT_PROVISIONING_REPOSITORY } from './domain/repositories/tenant-provisioning.repository';
 import { USER_GOVERNANCE_REPOSITORY } from './domain/repositories/user-governance.repository';
+import { MikroAuditLogStore } from './infrastructure/mikro-audit-log.store';
 import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
 import { MikroTenantGovernanceRepository } from './infrastructure/repositories/mikro-tenant-governance.repository';
@@ -85,6 +87,9 @@ const QueryHandlers = [
     UserStatusService,
     { provide: TENANT_STATUS_STORE, useClass: MikroTenantStatusStore },
     { provide: USER_STATUS_STORE, useClass: MikroUserStatusStore },
+    // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本适配（唯一写面·属主 tenants）。
+    //  core `PlatformAuditService`（PlatformModule @Global）经本端口消费·@Global 保跨模块可见。
+    { provide: AUDIT_LOG_STORE, useClass: MikroAuditLogStore },
     // 领域细化重构 A3：RBAC 仓储绑定与 TenantRbacAdminService 已迁 AuthorizationModule
     // （tenants 经全局 ROLE_ASSIGNABILITY_READER published port 消费角色可挂载判定）。
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
@@ -97,6 +102,7 @@ const QueryHandlers = [
     UserStatusService,
     TENANT_STATUS_STORE,
     USER_STATUS_STORE,
+    AUDIT_LOG_STORE,
   ],
 })
 export class TenantsModule {}

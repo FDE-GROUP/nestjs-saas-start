@@ -25,7 +25,7 @@ export class DeleteTenantCommandHandler implements ICommandHandler<DeleteTenantC
     });
     if (result.kind === 'not-found') return null;
     if (result.kind === 'illegal') {
-      this.audit.logTenantGovernance('delete', command.organizationId, command.operatorId, {
+      await this.audit.logTenantGovernance('delete', command.organizationId, command.operatorId, {
         from: result.from,
         to: result.to,
         error: 'illegal_transition',
@@ -35,7 +35,7 @@ export class DeleteTenantCommandHandler implements ICommandHandler<DeleteTenantC
         { errorCode: ERROR_CODES.TENANCY_ILLEGAL_TRANSITION },
       );
     }
-    this.audit.logTenantGovernance('delete', command.organizationId, command.operatorId, {
+    await this.audit.logTenantGovernance('delete', command.organizationId, command.operatorId, {
       from: result.previous,
       to: result.status,
     });

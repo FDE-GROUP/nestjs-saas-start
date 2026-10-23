@@ -1,6 +1,6 @@
 # global-governance-lifecycle-consolidation：治理生命周期归列——撤 tenant/user_status 旁表、撤治理面 ES 真相源、立 audit_log 审计账本
 
-> 用途: **方案（提案–审计–实施）** | 状态: 已审签·实施中（A/B/C/D 已落地·E/F 待推） | 版本: 0.3.2
+> 用途: **方案（提案–审计–实施）** | 状态: 已审签·实施中（A/B/C/D/E 已落地·F 待推） | 版本: 0.3.3
 > 定位: 用户确立「框架定位·设计合理性第一·成本/工作量/沉没不作否决项·零技术债」原则后，复核 `global-tenant-entity-reclamation` 立下的 `tenant` 自有旁表，判其两根承重柱已被新约束抽掉，令「改」。
 > 关联（翻案/牵连）: **反悔** global-tenant-entity-reclamation 核心裁（建自有 tenant 表收权）· global-entity-column-law（`BA_CONTRACT_TABLES` 禁加列律 + 17 表恒等）· global-ba-entity-domain-placement（「库约束接口·域拥有事实」）· table-ownership（tenant/userStatus 属主）· module-es-r1-replay-core（tenant 为 R1 治理面试点）· S4 审批制 · S6 用户暂停（user_status）· glossary/architecture±zh（Tenant 词条 + BA 定位条）。
 
@@ -49,7 +49,7 @@
 - [x] B：`tenant` 表 DROP + organization 携 `status` CHECK（✅ 2026-10-23·迁20261023093000·dev 实库对拍 4 active+1 pending 保 pending_approval·二次空 diff·`tenant-table.e2e` 迁 organization 真库跑住·O1 缺席态消失 provisioning 置 pending）。
 - [x] C：`user_status` DROP + user 携 `status`/`statusReason`（✅ 2026-10-23·迁20261023100000·值域 {active,suspended,deleted} CHECK·治理写经 AUTH_USER_STORE.updateStatus 落 auth 属主·backfill 实库逐行等值对拍（旧旁表 0 行→8 user 全默认 active）·二次空 diff·守卫 16→15 恒等重算）。
 - [ ] D：全仓 grep `replayTenantLifecycle`/`ES_TRUTH_SOURCE_TENANTS`/`applyTenantEvent` = 0；subscriptions ES 正交不受累；`TenantStatusTransitionedEvent` 联动 e2e 仍绿。
-- [ ] E：`audit_log` append-only + 治理动作落账 + PII 最小化负向测；`AUDIT_LOG_STORE` 端口装配。
+- [x] E：`audit_log` append-only + 治理动作落账 + PII 最小化负向测；`AUDIT_LOG_STORE` 端口装配（✅ 2026-10-23·迁20261023110000·新表纯 additive·DDL 实库逐列对拍 10 列/bigserial PK/`audit_log_entity_created_idx`/`actorId→user ON DELETE SET NULL`·二次空 diff·守卫 15→16 恒等重算（自撰 8/不可变 4）·治理审计单点 `PlatformAuditService` 双通道演进（pino 恒发 + 已提交动作（无 `error`）落 `audit_log`）·PII 负向测锁无 email 键·硬闸 ci PASSED(863)/test:fullstack exit 0(零足迹)/verify:prod-boot exit 0）。
 - [ ] F：glossary/architecture±zh 翻案成文两版镜像；reclamation plan 修订注；README 单源翻正。
 - [ ] `ci`/`ci:db`/`verify:prod-boot` 全绿（含迁移回填 gated 段）。
 
@@ -61,6 +61,7 @@
 | 2026-10-23 | 0.3.0 | 人「整案 GO·2 另案·3 归 tenants·④ 合并」——四裁点全定·过审计门 | §4 记 GO·状态翻「已签核·实施中」·进逐片实施 |
 | 2026-10-23 | 0.3.1 | 切片 B 实施中发现：`approvedAt`/`suspendedAt` 系死 schema（零写零读·违「不预置扩展位」律）；且 DROP `tenant` 与撤治理面 ES 覆盖层经 `ci:db` 强耦合 | §2-B 划去 `approvedAt`/`suspendedAt`（scoped-down·时刻审计归 E `audit_log`）·记 B·D 同变更集实施；status 列 `NOT NULL DEFAULT 'active'` 语义成文 |
 | 2026-10-23 | 0.3.2 | 切片 B·D（租户生命周期链）已落地并推远端（commit 95a3600）；切片 C（user_status 归列）实施完成 | §5 回写 B·C 验收判据（带实库对拍取证）；C 采「读侧宽松直读 `user.status`·写侧经 AUTH_USER_STORE 委托落 auth 属主」消写侧越界（沿 PIPL 硬删同型）·user_status 非 ES 真相源无需撤覆盖层 |
+| 2026-10-23 | 0.3.3 | 切片 C 已提交并推远端（commit e723606）；切片 E（立 `audit_log` 治理审计耐久账本）实施完成 | §5 回写 E 验收判据（DDL 实库逐列对拍 + 二次空 diff + 三重硬闸取证）；E 对拍 `tenant_role_audit` 先例·`PlatformAuditService`（FR-6 唯一单点）双通道演进（pino 观测 + `audit_log` 落账·以 `detail.error` 为判别子免改 handler 分支）·`entityId` 多态裸值非 FK 承 R4 硬删幸存·§5-E PII 最小化负向测·属主=tenants（§3 裁点③） |
 
 ---
 

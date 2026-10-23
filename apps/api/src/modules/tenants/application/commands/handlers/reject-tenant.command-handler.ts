@@ -52,7 +52,7 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
     // 仅显式 pending 可驳回。read 对「不存在」返回 undefined，交给 remove 谓词裁决
     //（命中 0 行 → false → 控制层 404；驳回路径 以 pending 为唯一合法域，FR-1 语义）。
     if (current !== undefined && current !== TENANT_STATUS.PENDING) {
-      this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
+      await this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
         from: current,
         error: 'not_pending',
       });
@@ -77,7 +77,7 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
         return r;
       }),
     );
-    this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
+    await this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
       from: removed ? TENANT_STATUS.PENDING : current,
       to: TENANT_STATUS.DELETED,
       error: removed ? undefined : 'not_found',

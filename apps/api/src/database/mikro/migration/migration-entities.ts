@@ -6,6 +6,7 @@ import {
   TENANT_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
+import { AUDIT_LOG_META } from '../../../modules/tenants/infrastructure/entities/audit-log.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
 import { buildMigrationEntity } from '../column-meta';
@@ -247,7 +248,10 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   User,
 });
 
-/** 迁移基线用的全表忠实实体集（15 表·与 schema 逐列对齐·global-governance-lifecycle-consolidation 切片 C DROP user_status 旁表后）。 */
+// global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·同元数据双变体派生·纯 additive）。
+export const AuditLog = buildMigrationEntity(AUDIT_LOG_META, { User });
+
+/** 迁移基线用的全表忠实实体集（16 表·与 schema 逐列对齐·global-governance-lifecycle-consolidation 切片 E 立 `audit_log` 账本后 15→16）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -264,4 +268,5 @@ export const MIKRO_MIGRATION_ENTITIES = [
   TenantRole,
   TenantRoleGrant,
   TenantRoleAudit,
+  AuditLog,
 ];

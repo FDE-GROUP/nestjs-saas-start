@@ -1,19 +1,23 @@
 import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
+import type { AuditLogEntry } from '@core/saas-kit/shared-kernel/audit/audit-log.store';
 import { Logger } from '@nestjs/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('PlatformAuditService (S5 · FR-6 结构化审计单点)', () => {
+describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通道)', () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
-  const svc = new PlatformAuditService();
+  let appended: AuditLogEntry[];
+  const store = { append: (e: AuditLogEntry) => Promise.resolve(void appended.push(e)) };
+  const svc = new PlatformAuditService(store);
 
   beforeEach(() => {
+    appended = [];
     logSpy = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('emits a machine-readable audit payload for a governance action', () => {
-    svc.logTenantGovernance('approve', 'orgA', 'op1', {
+  it('已提交动作：pino 结构化载荷 + audit_log 落账（entityType=tenant）', async () => {
+    await svc.logTenantGovernance('approve', 'orgA', 'op1', {
       from: TENANT_STATUS.PENDING,
       to: TENANT_STATUS.ACTIVE,
     });
@@ -26,39 +30,60 @@ describe('PlatformAuditService (S5 · FR-6 结构化审计单点)', () => {
       from: TENANT_STATUS.PENDING,
       to: TENANT_STATUS.ACTIVE,
     });
-    expect(typeof payload.at).toBe('string');
+    expect(appended).toHaveLength(1);
+    expect(appended[0]).toMatchObject({
+      entityType: 'tenant',
+      entityId: 'orgA',
+      action: 'approve',
+      from: TENANT_STATUS.PENDING,
+      to: TENANT_STATUS.ACTIVE,
+      actorId: 'op1',
+    });
   });
 
-  it('emits a platform.user audit payload for a user governance action (S6)', () => {
-    svc.logUserGovernance('suspend', 'u1', 'op1', {
+  it('用户治理动作：落账 entityType=user（S6）', async () => {
+    await svc.logUserGovernance('suspend', 'u1', 'op1', {
       from: TENANT_STATUS.ACTIVE,
       to: TENANT_STATUS.SUSPENDED,
+      reason: 'abuse',
     });
-    const payload = logSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(payload).toMatchObject({
-      audit: 'platform.user',
+    expect(appended).toHaveLength(1);
+    expect(appended[0]).toMatchObject({
+      entityType: 'user',
+      entityId: 'u1',
       action: 'suspend',
-      userId: 'u1',
-      operatorId: 'op1',
-      from: TENANT_STATUS.ACTIVE,
-      to: TENANT_STATUS.SUSPENDED,
+      reason: 'abuse',
     });
   });
 
-  it('carries the failure context on an illegal transition', () => {
-    svc.logTenantGovernance('suspend', 'orgA', 'op1', {
+  it('失败尝试（携 error）：仅观测·不入耐久账本', async () => {
+    await svc.logTenantGovernance('suspend', 'orgA', 'op1', {
       from: TENANT_STATUS.PENDING,
       to: TENANT_STATUS.SUSPENDED,
       error: 'illegal_transition',
     });
-    const payload = logSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(payload.error).toBe('illegal_transition');
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(appended).toHaveLength(0);
   });
 
-  it('omits detail fields when none are provided', () => {
-    svc.logTenantGovernance('delete', 'orgB', 'op2');
-    const payload = logSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(payload.from).toBeUndefined();
-    expect(payload.to).toBeUndefined();
+  it('驳回/硬删无 to：from 落账、to 归 null', async () => {
+    await svc.logTenantGovernance('hard_delete', 'orgC', 'op2', {
+      from: TENANT_STATUS.DELETED,
+    });
+    expect(appended[0]).toMatchObject({ entityId: 'orgC', from: TENANT_STATUS.DELETED, to: null });
+  });
+
+  it('PII 最小化（负向）：账条目绝不含 email/姓名等个人数据字段', async () => {
+    await svc.logUserGovernance('resume', 'u9', 'op1', {
+      from: TENANT_STATUS.SUSPENDED,
+      to: TENANT_STATUS.ACTIVE,
+    });
+    const entry = appended[0] as unknown as Record<string, unknown>;
+    for (const forbidden of ['email', 'name', 'phone', 'password', 'user', 'operator']) {
+      expect(Object.keys(entry), `账条目泄漏 PII 键：${forbidden}`).not.toContain(forbidden);
+    }
+    // 只允许裸 id（entityId/actorId）承载身份，不承载任何可识别个人数据。
+    expect(entry.entityId).toBe('u9');
+    expect(entry.actorId).toBe('op1');
   });
 });
