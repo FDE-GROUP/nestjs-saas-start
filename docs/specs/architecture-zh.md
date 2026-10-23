@@ -38,7 +38,7 @@
 | D3 | `authorization` | **四层形状合规（无形状偏移）**——例外在于 RBAC *裁决* 外俱**CASL 引擎**（grant 事实居 DB 行、CASL 规则为运行时投影），且 authorization 双栖（裁决机器=机制、管理面=支撑域） | **CASL(`@casl/ability`)** 供能力语言·*库约束接口、域拥有事实* | 永久·开发者已确认 — §机制层vs业务域 · §技术栈(Authorization) |
 | D4 | 战术 DDD（范式级） | 聚合优先战术 DDD **不采用**；唯一天然聚合 User 的生命周期归 Better Auth | Better Auth 拥有 user 生命周期 | 永久 — §核心设计原则（函数式内核条） |
 
-> **非偏移澄清**：`payment`/`storage` 是出站网关型上下文、**仍呈完整四层**（domain policies + application + infrastructure + api）——属范式*变体*、非偏移。
+> **非偏移澄清**：`payment`/`storage` 是出站网关型上下文、**仍呈完整四层**（domain policies + application + infrastructure + api）——属范式*变体*、非偏移。同理 `tenants` **非层形偏移、属跨包放置粒度差异**：它是完整 apps 本地垂直切片，仅其共用的纯生命周期内核作为 P1 函数核件上抽至 `libs/core/…/tenants/lifecycle`（区别于 D1–D4 的层形例外）。
 
 ### 函数式内核件清单（P1 的物理地图·架构精度修宪补笔）
 
@@ -57,7 +57,7 @@ P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度
 
 ## 目录结构
 
-> **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenancy/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces`/`tenants` 的 `domain/`+`application/`）实际位于 `libs/core`。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。
+> **逻辑视图。** 下方目录树是**合并后的分层视图**，**并非**单个 `apps/api/src` 目录：其中若干目录（`shared-kernel/`、`tenancy/`、`authorization/`、`platform/`，以及 `subscriptions`/`workspaces` 的 `domain/`+`application/`）实际位于 `libs/core`（`tenants` 则不然——它是**完整 apps 本地垂直切片**，仅其共用的纯状态机内核 `libs/core/modules/tenants/lifecycle/tenant-lifecycle.ts` 作为 P1 函数核件上抽至 kit、**非层拆分**）。它们在两个后端包之间的精确归属见下方 **§两包物理布局**。
 
 ```
 src/
@@ -103,13 +103,13 @@ src/
 libs/core   (@core/saas-kit)                 # kit——轻框架、可移植，**不含任何基础设施**
 ├── shared-kernel/                           # L0 战术原语（domain/cqrs/context/errors/util）
 ├── tenancy/  authorization/  platform/      # L1 跨上下文机制 + 已发布契约/端口
-└── modules/{subscriptions,workspaces,tenants}
-                                             # L2 随 kit 发售的上下文：domain/（实体 + 仓储**端口**）+ application/（CQRS 处理器）——仅端口
+└── modules/{subscriptions,workspaces}       # L2 随 kit 发售的上下文：domain/（实体 + 仓储**端口**）+ application/（CQRS 处理器）——仅端口
+    modules/tenants/lifecycle/               # 非发售切片——仅共用的纯租户/用户状态机内核（P1 函数核件）；tenants 自身的 domain/application 在 apps/api（见下）
 
 apps/api                                     # 参考应用——所有具体实现物均在此
 ├── modules/<ctx>/{api,infrastructure}       # HTTP controller + MikroORM 适配器，**绑定** core 端口（端口→适配器）
 ├── database/  config/  main.ts  app.module.ts   # 全局基础设施 + DI 装配根
-├── modules/{users,posts,payment,storage}    # 完整本地垂直切片（domain→application→infrastructure→api）
+├── modules/{tenants,users,posts,payment,storage}  # 完整本地垂直切片（domain→application→infrastructure→api）；`tenants` 与 `libs/core/modules/tenants/lifecycle` 共用其纯生命周期内核
 └── modules/auth                             # 系统机制上下文——层形见 §层形：`domain/ports/`（已发布 AUTH_*_STORE 端口）+ `infrastructure/`（BA 适配）+ `api/`（守卫/装饰器）；无 application spine（认证不变量归 BA）
 
 apps/web            # 可部署前端壳（React + Vite）· F0

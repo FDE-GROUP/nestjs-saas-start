@@ -40,7 +40,7 @@ The vertical-slice + DDD/functional-core paradigm in §Core Design Principles is
 | D3 | `authorization` | **Four-layer shape is compliant (no shape deviation)** — the exception is that RBAC *ruling* is delegated to an **external CASL engine** (grant facts live in DB rows, CASL rules are a runtime projection) and authorization is dual-natured (ruling machinery = mechanism, management face = supporting domain) | **CASL (`@casl/ability`)** supplies the ability language; *the library constrains the interface, the domain owns the facts* | Permanent · developer-confirmed — §Mechanism Layer vs Business Domain · §Tech Stack (Authorization) |
 | D4 | tactical DDD (paradigm-level) | Aggregate-first tactical DDD is **not adopted**; the one natural aggregate (User) has its lifecycle owned by Better Auth | Better Auth owns the user lifecycle | Permanent — §Core Design Principles (functional-core bullet) |
 
-> **Non-deviations clarified**: `payment`/`storage` are outbound-gateway contexts that **still present the full four-layer slice** (domain policies + application + infrastructure + api) — a paradigm *variant*, not a deviation.
+> **Non-deviations clarified**: `payment`/`storage` are outbound-gateway contexts that **still present the full four-layer slice** (domain policies + application + infrastructure + api) — a paradigm *variant*, not a deviation. Likewise `tenants` is **not a layer-shape deviation but a cross-package placement nuance**: it is a full apps-local vertical slice whose only shared pure lifecycle kernel is carved into `libs/core/…/tenants/lifecycle` as a P1 functional-core piece (distinct from the D1–D4 layer-shape exceptions).
 
 ### Functional-core inventory (physical map of P1 · precision amendment addendum)
 
@@ -59,7 +59,7 @@ P1 is a pattern, not a folder — kernel pieces live across contexts. Admission 
 
 ## Directory Structure
 
-> **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenancy/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`/`tenants`) physically live in `libs/core`. Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
+> **Logical view.** The tree below is the merged layer taxonomy, **not** a single `apps/api/src` directory: several folders shown here (`shared-kernel/`, `tenancy/`, `authorization/`, `platform/`, and the `domain/`+`application/` of `subscriptions`/`workspaces`) physically live in `libs/core` (`tenants`, by contrast, is a **full apps-local vertical slice** — only its shared pure state-machine kernel `libs/core/modules/tenants/lifecycle/tenant-lifecycle.ts` is carved into the kit as a P1 functional-core piece, **not** a layer split). Their precise placement across the two backend packages is defined in **§Two-package physical layout** below.
 
 ```
 src/
@@ -106,13 +106,13 @@ src/
 libs/core   (@core/saas-kit)                 # the kit — framework-light, portable, contains NO infrastructure
 ├── shared-kernel/                           # L0 tactical primitives (domain/cqrs/context/errors/util)
 ├── tenancy/  authorization/  platform/      # L1 cross-context mechanism + published contracts/ports
-└── modules/{subscriptions,workspaces,tenants}
-                                             # L2 shipped contexts: domain/ (entities + repository PORTS) + application/ (CQRS handlers) — ports only
+└── modules/{subscriptions,workspaces}       # L2 shipped contexts: domain/ (entities + repository PORTS) + application/ (CQRS handlers) — ports only
+    modules/tenants/lifecycle/               # NOT a shipped slice — only the shared pure tenant/user state-machine kernel (P1 functional-core piece); tenants' own domain/application live in apps/api (below)
 
 apps/api                                     # the reference application — all concretions live here
 ├── modules/<ctx>/{api,infrastructure}       # HTTP controllers + MikroORM adapters that BIND core ports (ports→adapters)
 ├── database/  config/  main.ts  app.module.ts   # global infra + DI composition root
-├── modules/{users,posts,payment,storage}    # full local vertical slices (domain→application→infrastructure→api)
+├── modules/{tenants,users,posts,payment,storage}  # full local vertical slices (domain→application→infrastructure→api); `tenants` shares its pure lifecycle kernel with `libs/core/modules/tenants/lifecycle`
 └── modules/auth                             # system-mechanism context — layer-shape per §Layer-shape: `domain/ports/` (published AUTH_*_STORE ports) + `infrastructure/` (BA adapters) + `api/` (guards/decorators); NO application spine (BA owns auth invariants)
 
 apps/web            # deployable frontend shell (React + Vite) — F0
