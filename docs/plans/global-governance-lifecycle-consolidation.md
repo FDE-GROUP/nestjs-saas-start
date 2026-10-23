@@ -1,6 +1,6 @@
 # global-governance-lifecycle-consolidation：治理生命周期归列——撤 tenant/user_status 旁表、撤治理面 ES 真相源、立 audit_log 审计账本
 
-> 用途: **方案（提案–审计–实施）** | 状态: 已审签·实施中（A/B/C/D/E 已落地·F 文档翻案已成文·待提交） | 版本: 0.3.5
+> 用途: **方案（提案–审计–实施）** | 状态: 已审签·A→F 全落地推远端（`b9346a4`）·待人类验收 | 版本: 0.3.6
 > 定位: 用户确立「框架定位·设计合理性第一·成本/工作量/沉没不作否决项·零技术债」原则后，复核 `global-tenant-entity-reclamation` 立下的 `tenant` 自有旁表，判其两根承重柱已被新约束抽掉，令「改」。
 > 关联（翻案/牵连）: **反悔** global-tenant-entity-reclamation 核心裁（建自有 tenant 表收权）· global-entity-column-law（`BA_CONTRACT_TABLES` 禁加列律 + 17 表恒等）· global-ba-entity-domain-placement（「库约束接口·域拥有事实」）· table-ownership（tenant/userStatus 属主）· module-es-r1-replay-core（tenant 为 R1 治理面试点）· S4 审批制 · S6 用户暂停（user_status）· glossary/architecture±zh（Tenant 词条 + BA 定位条）。
 
@@ -63,7 +63,7 @@
 | 2026-10-23 | 0.3.2 | 切片 B·D（租户生命周期链）已落地并推远端（commit 95a3600）；切片 C（user_status 归列）实施完成 | §5 回写 B·C 验收判据（带实库对拍取证）；C 采「读侧宽松直读 `user.status`·写侧经 AUTH_USER_STORE 委托落 auth 属主」消写侧越界（沿 PIPL 硬删同型）·user_status 非 ES 真相源无需撤覆盖层 |
 | 2026-10-23 | 0.3.3 | 切片 C 已提交并推远端（commit e723606）；切片 E（立 `audit_log` 治理审计耐久账本）实施完成 | §5 回写 E 验收判据（DDL 实库逐列对拍 + 二次空 diff + 三重硬闸取证）；E 对拍 `tenant_role_audit` 先例·`PlatformAuditService`（FR-6 唯一单点）双通道演进（pino 观测 + `audit_log` 落账·以 `detail.error` 为判别子免改 handler 分支）·`entityId` 多态裸值非 FK 承 R4 硬删幸存·§5-E PII 最小化负向测·属主=tenants（§3 裁点③） |
 | 2026-10-23 | 0.3.4 | 人令「先处理 hardDelete 隐患」——切片 C 遗留 PIPL 硬删静默失效缺陷闭合 | `MikroUserStoreAdapter.hardDelete` 谓词 `{ userId }`→`{ id: userId }`（user 主键系 `id`·无 `userId` 列）；运行时铁证：旧码 `nativeDelete(User,{userId})` 抛 `Trying to query by not existing property User.userId` → `DELETE /users/me` 必 500、被遗忘权失效（handler 测整 stub 端口·无 gated e2e 跑真库故长期潜伏）；去 `as never`（type-escape 基线下调 33 文件·149 处）；补 `user-hard-delete.e2e.test.ts`（走 CommandBus 全链·真库锁 account/session FK cascade + consent set-null 幸存 + user 聚合事件补删 + 重复删 NotFound·旧码下第①段必红）登记 `GATED_E2E_FILES`（13 gated+1 exempt 恒等）；三重硬闸全绿（ci 863 / test:fullstack exit 0 零足迹 / prod-boot /health 200） |
-| 2026-10-23 | 0.3.5 | 人「同意」推切片 F（收尾·文档翻案）·零代码/零 schema/零部署 | §5 回写 A/D/F 验收判据（均带取证·原已勾 B/C/E）：architecture.md±zh 术语段+auth 条镜像翻案（自有户籍表 `tenant`→`organization.status` 治理列·presentation token 同步）·glossary Tenant/User 两词条 v0.3.0 + 演变行（不改史）·domain-concepts.md v0.4.0 整件重写（ASCII 图+散文+映射表+表数 17→16）·global-tenant-entity-reclamation 顶部修订注（只标反悔）·README L11 consolidation 行状态 + L107 reclamation 行标⚠️已被反悔·`ci` 复跑 PASSED（863 passed | 48 skipped·fallow 0）·待提交
+| 2026-10-23 | 0.3.5 | 人「同意」推切片 F（收尾·文档翻案）·零代码/零 schema/零部署 | §5 回写 A/D/F 验收判据（均带取证·原已勾 B/C/E）：architecture.md±zh 术语段+auth 条镜像翻案（自有户籍表 `tenant`→`organization.status` 治理列·presentation token 同步）·glossary Tenant/User 两词条 v0.3.0 + 演变行（不改史）·domain-concepts.md v0.4.0 整件重写（ASCII 图+散文+映射表+表数 17→16）·global-tenant-entity-reclamation 顶部修订注（只标反悔）·README L11 consolidation 行状态 + L107 reclamation 行标⚠️已被反悔·`ci` 复跑 PASSED（863 passed | 48 skipped·fallow 0）·已提交推送 `b9346a4`
 
 ---
 
