@@ -78,7 +78,7 @@
 
 ```
 libs/
-├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenant-isolation/authorization 契约，以及 subscriptions/workspaces 领域层
+├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenant-isolation/authorization 契约，以及 organizations 生命周期状态机内核（lifecycle/）、subscriptions/workspaces 领域层
 ├─ contracts/src/     # @saas/contracts 跨端传输契约单源（请求/响应/envelope 的 zod schema + 派生类型）
 └─ ba-mikro-adapter/  # Better Auth × MikroORM 适配层
 apps/
@@ -159,7 +159,7 @@ pnpm run ci:db       # 带数据库全链：静态检查 + 测试 + 一次性 Po
 
 - 本地 / 依赖服务：`docker-compose.dev.yml`（PostgreSQL、pgAdmin 等）。
 - 生产镜像：多阶段 `Dockerfile`；完整部署说明见 [Docker 部署指南](./docs/docker-deployment.md)。
-- 生产回归防线：`pnpm run verify:prod-boot`（构建后真实起服并校验 `/health`）。
+- 生产回归防线：`pnpm run verify:prod-boot`（构建后真实起服并校验 `/api/v1/health`）。
 
 ## 文档
 
