@@ -29,6 +29,19 @@
 - **Event Sourcing (capability baseline · per-module adoption · phased)**: confirmed architectural goal (human clarification 2026-10-14; truth-source re-direction + capability/implementation separation, human 2026-10-20, supersedes the "Phase C optional / CRUD-as-default-end-state" wording of the 2026-10-20 precision amendment — see [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)). The architecture **must fully provide** CQRS/ES/EDA capabilities (ports, mechanism, reference demo); **adoption is decided per business module** on real needs — for eventized aggregates the event store is the single source of truth ("replay = truth", read tables are rebuildable projections); simple-CRUD / stateless data (sessions, verification, memberships…) may **legally remain CRUD forever**. Landed today: shadow-append + transactional outbox + relay (`EVENT_PUBLISH_MODE: inproc|shadow|outbox`, default inproc); events are published from service/handler layer (P3 — "operation record" semantics; the aggregate event pipeline was removed in S1). Replay-as-truth is proven **per-module**: the `subscriptions` lifecycle is today's sole truth-source demonstration, while tenant/user governance has been **demoted to audit/integration events only** — the `ES_TRUTH_SOURCE_TENANTS` knob was retired with the governance ES overlay per the 2026-10-23 governance-lifecycle consolidation ([global-governance-lifecycle-consolidation.md](../plans/global-governance-lifecycle-consolidation.md)). See [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md).
 - **EDA (event-driven architecture, committed)**: domain events are the **only** cross-context integration mechanism; evolution path = in-process dispatch (landed) → transactional outbox for durable publish (Phase B) → cross-process broker subscription (only after microservice triggers fire, see [microservice-readiness.md](../plans/microservice-readiness.md)).
 
+### Paradigm Deviations — confirmed exceptions register (human-approved · pointers only)
+
+The vertical-slice + DDD/functional-core paradigm in §Core Design Principles is the **rule**. Wherever a context intentionally departs from that shape, it is recorded here as a **developer-confirmed exception** (not structural debt): misreading a confirmed exception as debt — or letting undeclared drift borrow an exception's cover — is exactly what this register prevents. The table is a **pointer only**; each row's authoritative detail stays in its linked section and this register adds no new rule.
+
+| # | Subject | Deviation from the standard four-layer shape | Cause (locked tool) | Status · authority |
+|---|---------|----------------------------------------------|---------------------|--------------------|
+| D1 | `auth` | No self-owned aggregates/policies · **no `application/` spine**; `domain/` holds **only the published `AUTH_*_STORE` ports**, remaining content placed by layer under `infrastructure/` + `api/` | **Better Auth** (permanently locked) owns authentication semantics | Permanent · developer-confirmed — §Layer-shape |
+| D2 | `platform` | No `domain/` entities — a governance facade with **no physical table of its own** | Data owned by `tenants`/`users` | Permanent · developer-confirmed — §Layer-shape |
+| D3 | `authorization` | **Four-layer shape is compliant (no shape deviation)** — the exception is that RBAC *ruling* is delegated to an **external CASL engine** (grant facts live in DB rows, CASL rules are a runtime projection) and authorization is dual-natured (ruling machinery = mechanism, management face = supporting domain) | **CASL (`@casl/ability`)** supplies the ability language; *the library constrains the interface, the domain owns the facts* | Permanent · developer-confirmed — §Mechanism Layer vs Business Domain · §Tech Stack (Authorization) |
+| D4 | tactical DDD (paradigm-level) | Aggregate-first tactical DDD is **not adopted**; the one natural aggregate (User) has its lifecycle owned by Better Auth | Better Auth owns the user lifecycle | Permanent — §Core Design Principles (functional-core bullet) |
+
+> **Non-deviations clarified**: `payment`/`storage` are outbound-gateway contexts that **still present the full four-layer slice** (domain policies + application + infrastructure + api) — a paradigm *variant*, not a deviation.
+
 ### Functional-core inventory (physical map of P1 · precision amendment addendum)
 
 P1 is a pattern, not a folder — kernel pieces live across contexts. Admission criteria: **provable purity** (zero imports, or vocabulary/self-owned VO only) + **driven by the shell** (load → decide → write inside a UoW). Purity is enforced by `libs/core/src/core-purity.test.ts` (dual lock: `@nestjs/common` imports ⊆ DI minimal surface + zero `HttpException/HttpStatus`). New decisions follow this shape:
@@ -256,9 +269,11 @@ expressed as domain events subscribed via `@EventsHandler`. `stripe` (payment) a
 `storage` are **outbound-gateway contexts and still follow the four-layer vertical
 slice** (`domain/` holds the provider port + real policies such as channel selection
 & degradation, upload validation, money/currency and object-key naming; `application/`
-orchestrates; `infrastructure/` holds the SDK adapters; `api/` the controllers). Only
-`auth` currently remains a thin adapter/glue plane (Better Auth surface) as a
-transitional exception pending its own dedicated layering plan; should a context develop
+orchestrates; `infrastructure/` holds the SDK adapters; `api/` the controllers). `auth`
+is a **recorded layer-shape exception** (system-mechanism plane: `domain/ports/` +
+`infrastructure/` + `api/`, no `application/` spine — see §Layer-shape and deviation
+register D1; its layering was completed via global-auth-layering-consistency, so it is no
+longer "pending"). Should a context develop
 real aggregate needs later, that goes through a trigger-criteria-gated plan (no
 more "designated slots").
 

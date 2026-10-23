@@ -27,6 +27,19 @@
 - **Event Sourcing（能力基线·逐模块按需·分期递进）**：确定的架构目标（人澄清 2026-10-14；2026-10-20 人再定向「回放即真相」+ 能力/实施分离，**supersede** 同日精度修宪的「Phase C 可选·终态缺省=审计日志」口径——见 [module-es-truth-source-amendment.md](../plans/module-es-truth-source-amendment.md)）。架构必须**完备提供** CQRS/ES/EDA 能力（端口、机制、参考示范）；**实施按业务模块实际需求逐模块裁**——被事件化的聚合以 event store 为唯一真相源（「回放即真相」·读表降为可重建投影）；简单 CRUD / 无状态数据（sessions、verification、成员关系等）**可依法永远不事件化**。已落地：shadow-append + 同事务 outbox + relay（`EVENT_PUBLISH_MODE: inproc|shadow|outbox`·缺省 inproc）；事件由 service/handler 层发布（P3·「操作记录」语义·聚合事件管道已于精度修宪 S1 删除）。回放即真相**逐模块**实证：订阅生命周期为当前唯一真相源翻面示范，而租户/用户治理面已**降为仅审计/集成事件**——`ES_TRUTH_SOURCE_TENANTS` 旋钮随治理面 ES 覆盖层于 2026-10-23 治理生命周期收束案中退役（见 [global-governance-lifecycle-consolidation.md](../plans/global-governance-lifecycle-consolidation.md)）。详见 [event-sourcing-roadmap.md](../plans/event-sourcing-roadmap.md)。
 - **EDA（事件驱动架构·确定采纳）**：领域事件是上下文间**唯一**集成机制；演进路径 = 进程内派发（已落地）→ 同事务 outbox 耐久发布（Phase B）→ 跨进程 broker 订阅（仅微服务触发器成立后，见 [microservice-readiness.md](../plans/microservice-readiness.md)）。
 
+### 范式偏移登记册（人确认例外·只作指针）
+
+上方 §核心设计原则 的垂直切片 + DDD/函数式内核范式是**通则**。凡某上下文有意偏离此形状者，在此登记为**开发者已确认的例外**（非结构债）：把已确认例外误读为债、或让未登记的漂移冒用例外之名，正是本登记册要防的。下表**只作指针**：各行权威细节仍在其链接段，本册不新增规则。
+
+| # | 主体 | 相对标准四层的偏移 | 成因（锁定工具） | 状态·权威 |
+|---|------|--------------------|------------------|-----------|
+| D1 | `auth` | 无自持聚合/policies·**无 `application/` spine**；`domain/` 仅承载已发布 `AUTH_*_STORE` 端口，其余内容按层归位 `infrastructure/` + `api/` | **Better Auth**（永久锁定）拥有认证语义 | 永久·开发者已确认 — §层形 |
+| D2 | `platform` | 无 `domain/` 实体——治理门面·**无自有物理表** | 数据归 `tenants`/`users` | 永久·开发者已确认 — §层形 |
+| D3 | `authorization` | **四层形状合规（无形状偏移）**——例外在于 RBAC *裁决* 外俱**CASL 引擎**（grant 事实居 DB 行、CASL 规则为运行时投影），且 authorization 双栖（裁决机器=机制、管理面=支撑域） | **CASL(`@casl/ability`)** 供能力语言·*库约束接口、域拥有事实* | 永久·开发者已确认 — §机制层vs业务域 · §技术栈(Authorization) |
+| D4 | 战术 DDD（范式级） | 聚合优先战术 DDD **不采用**；唯一天然聚合 User 的生命周期归 Better Auth | Better Auth 拥有 user 生命周期 | 永久 — §核心设计原则（函数式内核条） |
+
+> **非偏移澄清**：`payment`/`storage` 是出站网关型上下文、**仍呈完整四层**（domain policies + application + infrastructure + api）——属范式*变体*、非偏移。
+
 ### 函数式内核件清单（P1 的物理地图·架构精度修宪补笔）
 
 P1 不是目录而是模式——内核件散布各上下文，判据 = **纯度可证**（零 import 或仅词表/自家 VO）+ **被外壳驱动**（load → 裁决 → write 全程 UoW）。纯度由 `libs/core/src/core-purity.test.ts` 双锁强制（`@nestjs/common` import ⊆ DI 最小面 + `HttpException/HttpStatus` 零出现）。新裁决一律以此为形：
@@ -229,8 +242,9 @@ checker、经 D 片不再自住平台治理。
 上下文之间绝不互相 import 内部实现。跨上下文的副作用通过领域事件表达，用
 `@EventsHandler` 订阅。`stripe`（payment）与 `storage` 属**出站网关型上下文，仍须走四层垂直切片**
 （`domain/` 放 provider 端口 + 真实策略：通道选择与降级、上传校验、金额/货币、对象键命名；
-`application/` 编排；`infrastructure/` 放 SDK 适配器；`api/` 放控制器）。仅 `auth` 作为 Better Auth
-适配面暂保留薄适配/胶水层（过渡例外·待其专属分层专项）；未来若某上下文
+`application/` 编排；`infrastructure/` 放 SDK 适配器；`api/` 放控制器）。`auth` 为**已在案的层形例外**（系统机制面：`domain/ports/` +
+`infrastructure/` + `api/`·无 `application/` spine·见 §层形与偏移登记册 D1；其分层已由
+global-auth-layering-consistency 完成、非「待专项」）。未来若某上下文
 出现真聚合需求，经触发判据立项再引入（不再有「指定预留位」）。
 
 ## 上下文边界：认证（authentication）↔ 用户（users）
