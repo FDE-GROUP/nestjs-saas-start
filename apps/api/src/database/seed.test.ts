@@ -16,8 +16,8 @@ import {
   createPosts,
   createUsers,
   enforceSeedPasswordPolicy,
+  ensureActiveOrganizationContext,
   ensureLoginableUser,
-  ensureTenantContext,
   runSeed,
 } from './seed';
 
@@ -304,7 +304,7 @@ describe('seed runSeed 编排', () => {
       return Promise.resolve(null);
     });
     spies.find.mockImplementation((entity: unknown, where?: Record<string, unknown>) => {
-      // ensureTenantContext 按 slug 查 → 空（走 createOrganization）；createPosts 无 where → 命中 org-1。
+      // ensureActiveOrganizationContext 按 slug 查 → 空（走 createOrganization）；createPosts 无 where → 命中 org-1。
       if (entity === Organization && where?.slug) return Promise.resolve([]);
       if (entity === Organization) return Promise.resolve([{ id: 'org-1' }]);
       return Promise.resolve([]);
@@ -330,13 +330,13 @@ describe('seed runSeed 编排', () => {
   });
 });
 
-describe('seed ensureTenantContext（预建活跃 org+owner）', () => {
+describe('seed ensureActiveOrganizationContext（预建活跃 org+owner）', () => {
   it('无同 slug org → createOrganization 系统动作（body.userId=owner）·返 created·不直插', async () => {
     const { em, spies } = makeEm();
     const { auth, spies: as } = makeAuth();
     spies.find.mockResolvedValueOnce([]); // 无 org
 
-    const result = await ensureTenantContext(em, auth, {
+    const result = await ensureActiveOrganizationContext(em, auth, {
       slug: 'seed-acme',
       name: 'Acme (Seed)',
       ownerUserId: 'u1',
@@ -356,7 +356,7 @@ describe('seed ensureTenantContext（预建活跃 org+owner）', () => {
     spies.find.mockResolvedValueOnce([{ id: 'org-1' }]); // 有 org
     spies.findOne.mockResolvedValueOnce(null); // 无 member
 
-    const result = await ensureTenantContext(em, auth, {
+    const result = await ensureActiveOrganizationContext(em, auth, {
       slug: 'seed-acme',
       name: 'Acme (Seed)',
       ownerUserId: 'u1',
@@ -380,7 +380,7 @@ describe('seed ensureTenantContext（预建活跃 org+owner）', () => {
     spies.find.mockResolvedValueOnce([{ id: 'org-1' }]);
     spies.findOne.mockResolvedValueOnce({ id: 'm1', role: 'owner' }); // member 存在
 
-    const result = await ensureTenantContext(em, auth, {
+    const result = await ensureActiveOrganizationContext(em, auth, {
       slug: 'seed-acme',
       name: 'Acme (Seed)',
       ownerUserId: 'u1',

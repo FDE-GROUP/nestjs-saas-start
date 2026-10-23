@@ -26,7 +26,7 @@ function quotaService(over = false) {
   } as unknown as QuotaService;
 }
 
-function tenantContext(organizationId?: string) {
+function isolationContext(organizationId?: string) {
   return { organizationId: organizationId } as unknown as TenantIsolationService;
 }
 
@@ -35,28 +35,32 @@ describe('QuotaGuard (S7 · FR-7 opt-in 逐路由·S2 后 402 翻译归本守卫
 
   it('is a no-op when the route declares no @Quota (opt-in)', async () => {
     const svc = quotaService(false);
-    const guard = new QuotaGuard(reflectorReturning(undefined), tenantContext('t1'), svc);
+    const guard = new QuotaGuard(reflectorReturning(undefined), isolationContext('t1'), svc);
     await expect(guard.canActivate(ctx())).resolves.toBe(true);
     expect(svc.checkSeats).not.toHaveBeenCalled();
   });
 
   it('checks seats against the active tenant with the declared delta', async () => {
     const svc = quotaService(false);
-    const guard = new QuotaGuard(reflectorReturning({ seats: 3 }), tenantContext('t1'), svc);
+    const guard = new QuotaGuard(reflectorReturning({ seats: 3 }), isolationContext('t1'), svc);
     await expect(guard.canActivate(ctx())).resolves.toBe(true);
     expect(svc.checkSeats).toHaveBeenCalledWith('t1', 3);
   });
 
   it('defaults the delta to 1 when @Quota is declared without seats', async () => {
     const svc = quotaService(false);
-    const guard = new QuotaGuard(reflectorReturning({}), tenantContext('t1'), svc);
+    const guard = new QuotaGuard(reflectorReturning({}), isolationContext('t1'), svc);
     await guard.canActivate(ctx());
     expect(svc.checkSeats).toHaveBeenCalledWith('t1', 1);
   });
 
   it('fails closed (403) when there is no active tenant context', async () => {
     const svc = quotaService(false);
-    const guard = new QuotaGuard(reflectorReturning({ seats: 1 }), tenantContext(undefined), svc);
+    const guard = new QuotaGuard(
+      reflectorReturning({ seats: 1 }),
+      isolationContext(undefined),
+      svc,
+    );
     await expect(guard.canActivate(ctx())).rejects.toBeInstanceOf(ForbiddenException);
     expect(svc.checkSeats).not.toHaveBeenCalled();
   });
@@ -64,7 +68,7 @@ describe('QuotaGuard (S7 · FR-7 opt-in 逐路由·S2 后 402 翻译归本守卫
   it('translates an over-quota verdict into 402 with the billing errorCode (S2·P1 消费点翻译)', async () => {
     const guard = new QuotaGuard(
       reflectorReturning({ seats: 1 }),
-      tenantContext('t1'),
+      isolationContext('t1'),
       quotaService(true),
     );
     // Nest 12 基类 HttpException(msg, status, { errorCode }) 的 getResponse() 为裸串——

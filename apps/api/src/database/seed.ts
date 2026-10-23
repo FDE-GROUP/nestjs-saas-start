@@ -248,7 +248,7 @@ export async function createUsers(
  *   未命中则 `createOrganization`（BA 自带 owner member），返 `'created'`。
  * - **不**在此 `setActiveOrganization`（逐会话事实、对浏览器新会话无效·见 plan 证据链）。
  */
-export async function ensureTenantContext(
+export async function ensureActiveOrganizationContext(
   em: EntityManager,
   auth: LoginableAuth,
   spec: { slug: string; name: string; ownerUserId: string },
@@ -314,7 +314,7 @@ export async function ensureSeedOrganizations(
       console.warn(`⚠  跳过预建组织 ${p.slug}：owner ${p.email} 尚无 user 行`);
       continue;
     }
-    const result = await ensureTenantContext(em, auth, {
+    const result = await ensureActiveOrganizationContext(em, auth, {
       slug: p.slug,
       name: p.name,
       ownerUserId,
