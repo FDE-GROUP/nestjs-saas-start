@@ -6,10 +6,10 @@ import { ThemeProvider } from '../lib/theme-provider';
 import { routeTree } from '../routeTree.gen';
 
 /**
- * dashboard loader「引导落租」路由级集成（module-frontend-tenant-bootstrap-activation A）。
+ * dashboard loader「引导落租」路由级集成（module-frontend-organization-bootstrap-activation A）。
  * 承 `invitations.test.tsx` 手法：`vi.mock(lib/session·lib/api)` 注入拟真 envelope·经真实 routeTree
  * 的 memory router 打穿 loader·全 mock 不触网。钉四条落租分支：
- * - 无 active + 恰一个成员组织 → 自动 `POST /tenants/active`（body=该 org）+ 订阅取数 → SubscriptionView；
+ * - 无 active + 恰一个成员组织 → 自动 `POST /organizations/active`（body=该 org）+ 订阅取数 → SubscriptionView；
  * - 已有 active → 不自动激活、直接订阅取数；
  * - 无 active + 多组织 → 不自动择（交手动切换器）·订阅面不打·呈现切换引导；
  * - 无 active + 零组织 → 不激活·订阅面不打·呈现 onboarding 引导（申请入口 + 邀请链接）。
@@ -41,11 +41,11 @@ function session(activeOrganizationId?: string) {
   };
 }
 
-/** GET 按 path 分派：/tenants 返回成员组织列表·/subscriptions/current 返回订阅快照。 */
-function stubGet(tenants: { id: string; name: string }[]) {
+/** GET 按 path 分派：/organizations 返回成员组织列表·/subscriptions/current 返回订阅快照。 */
+function stubGet(organizations: { id: string; name: string }[]) {
   mocks.GET.mockImplementation((path: string) => {
-    if (path === '/api/v1/tenants')
-      return Promise.resolve({ data: { data: tenants }, error: null });
+    if (path === '/api/v1/organizations')
+      return Promise.resolve({ data: { data: organizations }, error: null });
     if (path === '/api/v1/subscriptions/current')
       return Promise.resolve({ data: { data: activeSub }, error: null });
     return Promise.resolve({ data: null, error: null });
@@ -79,7 +79,7 @@ describe('dashboard loader 引导落租', () => {
     stubGet([{ id: 'org-a', name: 'Acme' }]);
     renderAt('/');
     await vi.waitFor(() => expect(screen.getByTestId('sub-plan').textContent).toBe('pro'));
-    expect(mocks.POST).toHaveBeenCalledWith('/api/v1/tenants/active', {
+    expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/active', {
       body: { organizationId: 'org-a' },
     });
     expect(mocks.GET).toHaveBeenCalledWith('/api/v1/subscriptions/current');
@@ -121,7 +121,7 @@ describe('dashboard loader 引导落租', () => {
     expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
   });
 
-  it('零组织 onboarding 提交申请 → POST /tenants/applications（body name+slug）·回执 pending 提示', async () => {
+  it('零组织 onboarding 提交申请 → POST /organizations/applications（body name+slug）·回执 pending 提示', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
     stubGet([]);
     const { container } = renderAt('/');
@@ -136,7 +136,7 @@ describe('dashboard loader 引导落租', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '申请创建组织' }));
     await vi.waitFor(() =>
-      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/tenants/applications', {
+      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/applications', {
         body: { name: 'Acme', slug: 'acme' },
       }),
     );

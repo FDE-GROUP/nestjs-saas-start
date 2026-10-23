@@ -18,6 +18,6 @@ export const IS_TENANT_EXEMPT_KEY = Symbol('isTenantExempt');
  * 全局 `TenantScopeGuard` 对二者皆旁路（`@Public` 蕴含无租户）；漏标=合法无租户流被 403 死锁，
  * 滥用=租户隔离旁路缺口。故每一处 `@TenantExempt()` 都是需审计的显式决定。
  *
- * @example 类级：`@TenantExempt()` 于 `TenantsController`（建租/审批皆跨租或无租户态）。
+ * @example 类级：`@TenantExempt()` 于 `OrganizationsController`（建租/审批皆跨租或无租户态）。
  */
 export const TenantExempt = () => SetMetadata(IS_TENANT_EXEMPT_KEY, true);

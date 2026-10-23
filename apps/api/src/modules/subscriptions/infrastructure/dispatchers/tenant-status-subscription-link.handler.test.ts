@@ -1,7 +1,7 @@
 import { EVENT_TYPE_REGISTRY } from '@app/database/eventing/event-type-registry';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrganizationStatusSubscriptionLinkHandler } from './tenant-status-subscription-link.handler';
 

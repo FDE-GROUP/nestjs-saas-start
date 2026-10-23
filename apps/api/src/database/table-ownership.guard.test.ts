@@ -23,11 +23,11 @@ import { TABLE_OWNERSHIP, WRITE_EXCEPTIONS } from './table-ownership';
 const SRC_ROOT = join(__dirname, '..');
 const SCAN_DIRS = ['modules', 'tenancy'];
 
-/** 文件路径 → 限界上下文：`modules/<ctx>/**` 取 <ctx>；`tenancy/**` 归 `tenants`。 */
+/** 文件路径 → 限界上下文：`modules/<ctx>/**` 取 <ctx>；`tenancy/**` 归 `organizations`。 */
 function contextOf(relPath: string): string | null {
   const parts = relPath.split(sep);
   if (parts[0] === 'modules' && parts.length > 2) return parts[1];
-  if (parts[0] === 'tenancy') return 'tenants';
+  if (parts[0] === 'tenancy') return 'organizations';
   return null;
 }
 

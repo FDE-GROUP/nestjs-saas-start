@@ -4,7 +4,7 @@ import { PLATFORM_IDENTITY_LOOKUP } from '@core/saas-kit/platform/platform-ident
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
-import { PlatformTenantsController } from './api/platform-tenants.controller';
+import { PlatformOrganizationsController } from './api/platform-organizations.controller';
 import { PlatformUsersController } from './api/platform-users.controller';
 import { ConfigPlatformSettings } from './infrastructure/config-platform.settings';
 import { MikroPlatformIdentityLookup } from './infrastructure/mikro-platform-identity.lookup';
@@ -29,7 +29,7 @@ import { MikroPlatformIdentityLookup } from './infrastructure/mikro-platform-ide
 @Global()
 @Module({
   imports: [CqrsModule],
-  controllers: [PlatformTenantsController, PlatformUsersController],
+  controllers: [PlatformOrganizationsController, PlatformUsersController],
   providers: [
     PlatformOperatorGuard,
     PlatformAuditService,

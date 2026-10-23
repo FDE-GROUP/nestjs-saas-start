@@ -1,7 +1,7 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { SubscriptionBootstrappedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-bootstrapped.event';
-import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';

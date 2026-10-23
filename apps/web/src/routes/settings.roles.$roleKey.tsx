@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Feedback } from '../components/forms';
+import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { ErrorPanel, SectionHeading } from '../components/panels';
 import {
   cellKey,
@@ -8,13 +9,12 @@ import {
   type TenantAction,
   type TenantSubject,
 } from '../components/rbac-matrix';
-import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
+import { probeOrganizationContext } from '../lib/organization-context-guide';
 import { requireSession } from '../lib/session';
-import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /**
  * 权限矩阵页（前端 F3 · module-frontend-rbac-admin §2.2·A2）。
@@ -25,10 +25,10 @@ export const Route = createFileRoute('/settings/roles/$roleKey')({
   loader: async ({ params }) => {
     await requireSession();
     const roleKey = params.roleKey;
-    const { data: rolesData, error: rolesError } = await api.GET('/api/v1/tenants/roles');
+    const { data: rolesData, error: rolesError } = await api.GET('/api/v1/organizations/roles');
     if (rolesError) {
-      logApiError({ path: '/api/v1/tenants/roles', scope: 'role.matrix' }, rolesError);
-      const guide = await probeTenantContext(rolesError);
+      logApiError({ path: '/api/v1/organizations/roles', scope: 'role.matrix' }, rolesError);
+      const guide = await probeOrganizationContext(rolesError);
       if (guide) return { kind: 'guide' as const, guide: guide.hasMemberships };
       return { kind: 'error' as const, body: describeApiError(rolesError) };
     }
@@ -36,11 +36,17 @@ export const Route = createFileRoute('/settings/roles/$roleKey')({
     if (!role) {
       return { kind: 'notFound' as const, roleKey };
     }
-    const { data: grantsData, error: grantsError } = await api.GET('/api/v1/tenants/roles/grants', {
-      params: { query: { roleKey } },
-    });
+    const { data: grantsData, error: grantsError } = await api.GET(
+      '/api/v1/organizations/roles/grants',
+      {
+        params: { query: { roleKey } },
+      },
+    );
     if (grantsError) {
-      logApiError({ path: '/api/v1/tenants/roles/grants', scope: 'role.matrix' }, grantsError);
+      logApiError(
+        { path: '/api/v1/organizations/roles/grants', scope: 'role.matrix' },
+        grantsError,
+      );
       return { kind: 'error' as const, body: describeApiError(grantsError) };
     }
     return { kind: 'ok' as const, role, grants: grantsData?.data ?? [] };
@@ -53,7 +59,8 @@ function RoleMatrixPage() {
   const action = useAction();
   const [pendingCell, setPendingCell] = useState<string | null>(null);
 
-  if (result.kind === 'guide') return <TenantContextGuidePanel hasMemberships={result.guide} />;
+  if (result.kind === 'guide')
+    return <OrganizationContextGuidePanel hasMemberships={result.guide} />;
   if (result.kind === 'error') return <ErrorPanel message={result.body} />;
   if (result.kind === 'notFound') return <ErrorPanel message={`角色不存在：${result.roleKey}`} />;
 
@@ -70,23 +77,23 @@ function RoleMatrixPage() {
     try {
       if (currentlyGranted) {
         await action.run({
-          path: '/api/v1/tenants/roles/grants/revoke',
+          path: '/api/v1/organizations/roles/grants/revoke',
           method: 'POST',
           scope: 'role.revoke',
           successMessage: `已撤销 ${subject}:${actionName}`,
           thunk: () =>
-            api.POST('/api/v1/tenants/roles/grants/revoke', {
+            api.POST('/api/v1/organizations/roles/grants/revoke', {
               body: { roleKey: role.key, subject, action: actionName },
             }),
         });
       } else {
         await action.run({
-          path: '/api/v1/tenants/roles/grants',
+          path: '/api/v1/organizations/roles/grants',
           method: 'POST',
           scope: 'role.grant',
           successMessage: `已授予 ${subject}:${actionName}`,
           thunk: () =>
-            api.POST('/api/v1/tenants/roles/grants', {
+            api.POST('/api/v1/organizations/roles/grants', {
               body: { roleKey: role.key, subject, action: actionName },
             }),
         });

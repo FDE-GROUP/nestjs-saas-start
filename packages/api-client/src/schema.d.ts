@@ -21,7 +21,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/roles": {
+    "/api/v1/organizations/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -39,7 +39,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/roles/rename": {
+    "/api/v1/organizations/roles/rename": {
         parameters: {
             query?: never;
             header?: never;
@@ -56,7 +56,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/roles/delete": {
+    "/api/v1/organizations/roles/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -73,7 +73,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/roles/grants": {
+    "/api/v1/organizations/roles/grants": {
         parameters: {
             query?: never;
             header?: never;
@@ -91,7 +91,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/roles/grants/revoke": {
+    "/api/v1/organizations/roles/grants/revoke": {
         parameters: {
             query?: never;
             header?: never;
@@ -108,7 +108,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/tenants": {
+    "/api/v1/platform/organizations": {
         parameters: {
             query?: never;
             header?: never;
@@ -116,7 +116,7 @@ export interface paths {
             cookie?: never;
         };
         /** List all tenants across the platform (operator only) */
-        get: operations["PlatformTenantsController_list_v1"];
+        get: operations["PlatformOrganizationsController_list_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -125,7 +125,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}": {
+    "/api/v1/platform/organizations/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -133,17 +133,17 @@ export interface paths {
             cookie?: never;
         };
         /** Get one tenant (operator only) */
-        get: operations["PlatformTenantsController_detail_v1"];
+        get: operations["PlatformOrganizationsController_detail_v1"];
         put?: never;
         post?: never;
         /** Soft-delete a tenant (→ deleted terminal · row kept for export) */
-        delete: operations["PlatformTenantsController_remove_v1"];
+        delete: operations["PlatformOrganizationsController_remove_v1"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}/diagnostics": {
+    "/api/v1/platform/organizations/{id}/diagnostics": {
         parameters: {
             query?: never;
             header?: never;
@@ -151,7 +151,7 @@ export interface paths {
             cookie?: never;
         };
         /** Per-tenant diagnostics: member/invitation/workspace/post counts */
-        get: operations["PlatformTenantsController_diagnostics_v1"];
+        get: operations["PlatformOrganizationsController_diagnostics_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -160,7 +160,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}/export": {
+    "/api/v1/platform/organizations/{id}/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
             cookie?: never;
         };
         /** Export all tenant-owned data as a single JSON payload (NFR-6) */
-        get: operations["PlatformTenantsController_exportData_v1"];
+        get: operations["PlatformOrganizationsController_exportData_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,7 +177,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}/suspend": {
+    "/api/v1/platform/organizations/{id}/suspend": {
         parameters: {
             query?: never;
             header?: never;
@@ -191,10 +191,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Suspend an active tenant (active → suspended · fail-closed失能) */
-        patch: operations["PlatformTenantsController_suspend_v1"];
+        patch: operations["PlatformOrganizationsController_suspend_v1"];
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}/resume": {
+    "/api/v1/platform/organizations/{id}/resume": {
         parameters: {
             query?: never;
             header?: never;
@@ -208,10 +208,10 @@ export interface paths {
         options?: never;
         head?: never;
         /** Resume a suspended tenant (suspended → active) */
-        patch: operations["PlatformTenantsController_resume_v1"];
+        patch: operations["PlatformOrganizationsController_resume_v1"];
         trace?: never;
     };
-    "/api/v1/platform/tenants/{id}/permanent": {
+    "/api/v1/platform/organizations/{id}/permanent": {
         parameters: {
             query?: never;
             header?: never;
@@ -222,7 +222,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Hard-delete a deleted-terminal tenant (irreversible · FK cascade + event purge · NFR-6) */
-        delete: operations["PlatformTenantsController_permanentRemove_v1"];
+        delete: operations["PlatformOrganizationsController_permanentRemove_v1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -367,7 +367,7 @@ export interface paths {
         patch: operations["WorkspacesController_update_v1"];
         trace?: never;
     };
-    "/api/v1/tenants/applications": {
+    "/api/v1/organizations/applications": {
         parameters: {
             query?: never;
             header?: never;
@@ -377,14 +377,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Apply to create a tenant (user-level · lands pending_approval) */
-        post: operations["TenantsController_apply_v1"];
+        post: operations["OrganizationsController_apply_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/applications/{id}/approve": {
+    "/api/v1/organizations/applications/{id}/approve": {
         parameters: {
             query?: never;
             header?: never;
@@ -394,14 +394,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Approve a pending tenant (platform operator · pending → active) */
-        post: operations["TenantsController_approve_v1"];
+        post: operations["OrganizationsController_approve_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/applications/{id}/reject": {
+    "/api/v1/organizations/applications/{id}/reject": {
         parameters: {
             query?: never;
             header?: never;
@@ -411,14 +411,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reject a pending tenant (platform operator · hard-delete) */
-        post: operations["TenantsController_reject_v1"];
+        post: operations["OrganizationsController_reject_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/members": {
+    "/api/v1/organizations/members": {
         parameters: {
             query?: never;
             header?: never;
@@ -426,7 +426,7 @@ export interface paths {
             cookie?: never;
         };
         /** List members of the active tenant (all roles · CASL read) */
-        get: operations["TenantsOrgAdminController_listMembers_v1"];
+        get: operations["OrganizationsOrgAdminController_listMembers_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -435,7 +435,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/members/role": {
+    "/api/v1/organizations/members/role": {
         parameters: {
             query?: never;
             header?: never;
@@ -445,14 +445,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Update a member role (owner/admin · CASL update) */
-        post: operations["TenantsOrgAdminController_updateMemberRole_v1"];
+        post: operations["OrganizationsOrgAdminController_updateMemberRole_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/members/remove": {
+    "/api/v1/organizations/members/remove": {
         parameters: {
             query?: never;
             header?: never;
@@ -462,14 +462,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Remove a member (owner/admin · CASL delete) */
-        post: operations["TenantsOrgAdminController_removeMember_v1"];
+        post: operations["OrganizationsOrgAdminController_removeMember_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/invitations": {
+    "/api/v1/organizations/invitations": {
         parameters: {
             query?: never;
             header?: never;
@@ -477,17 +477,17 @@ export interface paths {
             cookie?: never;
         };
         /** List pending invitations of the active tenant (all roles) */
-        get: operations["TenantsOrgAdminController_listInvitations_v1"];
+        get: operations["OrganizationsOrgAdminController_listInvitations_v1"];
         put?: never;
         /** Invite a member to the active tenant (owner/admin · CASL create) */
-        post: operations["TenantsOrgAdminController_createInvitation_v1"];
+        post: operations["OrganizationsOrgAdminController_createInvitation_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/invitations/cancel": {
+    "/api/v1/organizations/invitations/cancel": {
         parameters: {
             query?: never;
             header?: never;
@@ -497,14 +497,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cancel an invitation (owner/admin · CASL cancel) */
-        post: operations["TenantsOrgAdminController_cancelInvitation_v1"];
+        post: operations["OrganizationsOrgAdminController_cancelInvitation_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants": {
+    "/api/v1/organizations": {
         parameters: {
             query?: never;
             header?: never;
@@ -512,7 +512,7 @@ export interface paths {
             cookie?: never;
         };
         /** List organizations the current user belongs to (personal channel) */
-        get: operations["TenantsSelfController_listMyOrganizations_v1"];
+        get: operations["OrganizationsSelfController_listMyOrganizations_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -521,7 +521,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/active": {
+    "/api/v1/organizations/active": {
         parameters: {
             query?: never;
             header?: never;
@@ -531,14 +531,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Switch the session's active organization (must be a member) */
-        post: operations["TenantsSelfController_setActive_v1"];
+        post: operations["OrganizationsSelfController_setActive_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/members/leave": {
+    "/api/v1/organizations/members/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -548,14 +548,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Leave a tenant (self-service · last-owner cannot leave) */
-        post: operations["TenantsSelfController_leave_v1"];
+        post: operations["OrganizationsSelfController_leave_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/invitations/accept": {
+    "/api/v1/organizations/invitations/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -565,14 +565,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Accept an invitation addressed to the current user */
-        post: operations["TenantsSelfController_acceptInvitation_v1"];
+        post: operations["OrganizationsSelfController_acceptInvitation_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/invitations/reject": {
+    "/api/v1/organizations/invitations/reject": {
         parameters: {
             query?: never;
             header?: never;
@@ -582,14 +582,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** Reject an invitation addressed to the current user */
-        post: operations["TenantsSelfController_rejectInvitation_v1"];
+        post: operations["OrganizationsSelfController_rejectInvitation_v1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/tenants/invitations/mine": {
+    "/api/v1/organizations/invitations/mine": {
         parameters: {
             query?: never;
             header?: never;
@@ -597,7 +597,7 @@ export interface paths {
             cookie?: never;
         };
         /** List pending invitations addressed to the current user */
-        get: operations["TenantsSelfController_listMyInvitations_v1"];
+        get: operations["OrganizationsSelfController_listMyInvitations_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -862,7 +862,7 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        PlatformTenantRowResponse: {
+        PlatformOrganizationRowResponse: {
             /** @description organization 主键（= 租户 id）。 */
             organizationId: string;
             name: string;
@@ -875,8 +875,8 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
-        PlatformTenantPageResponse: {
-            items: components["schemas"]["PlatformTenantRowResponse"][];
+        PlatformOrganizationPageResponse: {
+            items: components["schemas"]["PlatformOrganizationRowResponse"][];
             /** @description 全量行数。 */
             total: number;
             /** @description 回显页宽。 */
@@ -884,9 +884,9 @@ export interface components {
             /** @description 回显偏移。 */
             offset: number;
         };
-        TenantDiagnosticsResponse: {
+        OrganizationDiagnosticsResponse: {
             /** @description 租户行。 */
-            tenant: components["schemas"]["PlatformTenantRowResponse"];
+            tenant: components["schemas"]["PlatformOrganizationRowResponse"];
             /** @description 成员数。 */
             memberCount: number;
             /** @description 待处理邀请数。 */
@@ -896,13 +896,13 @@ export interface components {
             /** @description 帖子数。 */
             postCount: number;
         };
-        TenantHardDeleteResultResponse: {
+        OrganizationHardDeleteResultResponse: {
             /** @description 被硬删的 organization 主键。 */
             organizationId: string;
             /** @description 本次清除的 lifecycle 事件数（供审计核对）。 */
             purgedEvents: number;
         };
-        TenantApplicationResponse: {
+        OrganizationApplicationResponse: {
             /** @description organization 主键（= 租户 id）。 */
             organizationId: string;
             /**
@@ -1544,7 +1544,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_list_v1: {
+    PlatformOrganizationsController_list_v1: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1564,7 +1564,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["PlatformTenantPageResponse"];
+                        data?: components["schemas"]["PlatformOrganizationPageResponse"];
                     };
                 };
             };
@@ -1579,7 +1579,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_detail_v1: {
+    PlatformOrganizationsController_detail_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1597,7 +1597,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["PlatformTenantRowResponse"];
+                        data?: components["schemas"]["PlatformOrganizationRowResponse"];
                     };
                 };
             };
@@ -1612,7 +1612,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_remove_v1: {
+    PlatformOrganizationsController_remove_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1630,7 +1630,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantApplicationResponse"];
+                        data?: components["schemas"]["OrganizationApplicationResponse"];
                     };
                 };
             };
@@ -1654,7 +1654,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_diagnostics_v1: {
+    PlatformOrganizationsController_diagnostics_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1672,7 +1672,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantDiagnosticsResponse"];
+                        data?: components["schemas"]["OrganizationDiagnosticsResponse"];
                     };
                 };
             };
@@ -1687,7 +1687,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_exportData_v1: {
+    PlatformOrganizationsController_exportData_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1698,7 +1698,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Six-section tenant data export (credentials excluded)（透传面·形参真相源 = TenantDataExport（bulk-export·六段聚合）） */
+            /** @description Six-section tenant data export (credentials excluded)（透传面·形参真相源 = OrganizationDataExport（bulk-export·六段聚合）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1722,7 +1722,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_suspend_v1: {
+    PlatformOrganizationsController_suspend_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1740,7 +1740,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantApplicationResponse"];
+                        data?: components["schemas"]["OrganizationApplicationResponse"];
                     };
                 };
             };
@@ -1764,7 +1764,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_resume_v1: {
+    PlatformOrganizationsController_resume_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1782,7 +1782,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantApplicationResponse"];
+                        data?: components["schemas"]["OrganizationApplicationResponse"];
                     };
                 };
             };
@@ -1806,7 +1806,7 @@ export interface operations {
             };
         };
     };
-    PlatformTenantsController_permanentRemove_v1: {
+    PlatformOrganizationsController_permanentRemove_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1824,7 +1824,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantHardDeleteResultResponse"];
+                        data?: components["schemas"]["OrganizationHardDeleteResultResponse"];
                     };
                 };
             };
@@ -2256,7 +2256,7 @@ export interface operations {
             };
         };
     };
-    TenantsController_apply_v1: {
+    OrganizationsController_apply_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2279,7 +2279,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantApplicationResponse"];
+                        data?: components["schemas"]["OrganizationApplicationResponse"];
                     };
                 };
             };
@@ -2303,7 +2303,7 @@ export interface operations {
             };
         };
     };
-    TenantsController_approve_v1: {
+    OrganizationsController_approve_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2321,7 +2321,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["TenantApplicationResponse"];
+                        data?: components["schemas"]["OrganizationApplicationResponse"];
                     };
                 };
             };
@@ -2345,7 +2345,7 @@ export interface operations {
             };
         };
     };
-    TenantsController_reject_v1: {
+    OrganizationsController_reject_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2383,7 +2383,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_listMembers_v1: {
+    OrganizationsOrgAdminController_listMembers_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2416,7 +2416,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_updateMemberRole_v1: {
+    OrganizationsOrgAdminController_updateMemberRole_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2456,7 +2456,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_removeMember_v1: {
+    OrganizationsOrgAdminController_removeMember_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2495,7 +2495,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_listInvitations_v1: {
+    OrganizationsOrgAdminController_listInvitations_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2528,7 +2528,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_createInvitation_v1: {
+    OrganizationsOrgAdminController_createInvitation_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2568,7 +2568,7 @@ export interface operations {
             };
         };
     };
-    TenantsOrgAdminController_cancelInvitation_v1: {
+    OrganizationsOrgAdminController_cancelInvitation_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2607,7 +2607,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_listMyOrganizations_v1: {
+    OrganizationsSelfController_listMyOrganizations_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2640,7 +2640,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_setActive_v1: {
+    OrganizationsSelfController_setActive_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2688,7 +2688,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_leave_v1: {
+    OrganizationsSelfController_leave_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2736,7 +2736,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_acceptInvitation_v1: {
+    OrganizationsSelfController_acceptInvitation_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2784,7 +2784,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_rejectInvitation_v1: {
+    OrganizationsSelfController_rejectInvitation_v1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2832,7 +2832,7 @@ export interface operations {
             };
         };
     };
-    TenantsSelfController_listMyInvitations_v1: {
+    OrganizationsSelfController_listMyInvitations_v1: {
         parameters: {
             query?: never;
             header?: never;

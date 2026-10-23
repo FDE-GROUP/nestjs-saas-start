@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { TransactionScope } from '@app/database/eventing/transaction-scope';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { decodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';

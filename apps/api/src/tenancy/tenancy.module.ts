@@ -16,7 +16,7 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：deny-list 状态机
  * （`OrganizationStatusService`/`UserStatusService` + `TENANT/USER_STATUS_STORE` 适配）已归位
- * `TenantsModule`（租户治理域策略），席位配额（`QuotaService`/`QuotaGuard` + `QUOTA_STORE`）
+ * `OrganizationsModule`（租户治理域策略），席位配额（`QuotaService`/`QuotaGuard` + `QUOTA_STORE`）
  * 已归位 `SubscriptionsModule`（订阅域策略·FR-7）——两模块沿 Authorization/Platform 先例升 @Global
  * 保持原可见性语义（本模块 `TenantMiddleware` 的 deny-list 消费与 auth/platform 注入面零行为变更）。
  *
@@ -30,7 +30,7 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
  * 隔离层，归 `AuthorizationModule`（@Global 供给）；领域细化重构 D：平台治理
  * （`PlatformOperatorGuard`/`PlatformAuditService` + `PLATFORM_IDENTITY_LOOKUP`/`PLATFORM_SETTINGS`
  * 适配）亦迁出，归 `PlatformModule`（@Global 供给）——本模块只留隔离机制与会话适配，
- * 不再依赖 TenantsModule。
+ * 不再依赖 OrganizationsModule。
  *
  * 命名纪律（global-domain-context-refactor 未决项 6·不改名裁定）：本目录定名 `tenancy/`
  * （业界机制名，如 nestjs-tenancy），不改 `multi-tenancy/`——`tenant`=业务概念 / `tenancy`=隔离机制
@@ -54,7 +54,7 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
   exports: [
     TenantContextService,
     TenantScopeGuard,
-    // 端口 token 随 @Global 一并导出：守卫/服务在消费模块（如 TenantsModule）就地实例化时
+    // 端口 token 随 @Global 一并导出：守卫/服务在消费模块（如 OrganizationsModule）就地实例化时
     // 也能解析到应用侧会话适配（对齐原 `原数据库服务` 经 @Global DatabaseModule 全局可见）。
     SESSION_READER,
   ],

@@ -3,9 +3,9 @@ import {
   ORGANIZATION_ROLE_GRANT_META,
   ORGANIZATION_ROLE_META,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
+import { AUDIT_LOG_META } from '@app/modules/organizations/infrastructure/entities/audit-log.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { AUDIT_LOG_META } from '@app/modules/tenants/infrastructure/entities/audit-log.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
 import {

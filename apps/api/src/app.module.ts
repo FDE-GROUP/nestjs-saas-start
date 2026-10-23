@@ -13,12 +13,12 @@ import { LoggerModule } from './logger/logger.module';
 import { MailerModule } from './mailer/mailer.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuthorizationModule } from './modules/authorization/authorization.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
-import { TenantsModule } from './modules/tenants/tenants.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module';
 import { TenancyModule } from './tenancy/tenancy.module';
@@ -43,7 +43,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
     UsersModule,
     PostsModule,
     WorkspacesModule,
-    TenantsModule,
+    OrganizationsModule,
     SubscriptionsModule,
     StorageModule.register(),
     PaymentModule.register(),

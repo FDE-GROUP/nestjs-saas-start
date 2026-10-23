@@ -12,7 +12,7 @@ import { MikroEventStore } from '../../database/eventing/mikro-event-store';
 import { MikroUnitOfWork } from '../../database/eventing/mikro-unit-of-work';
 import { TransactionScope } from '../../database/eventing/transaction-scope';
 import { MikroOrmService } from '../../database/mikro/mikro-orm.service';
-import { Organization } from '../tenants/infrastructure/entities/ba-org.entities';
+import { Organization } from '../organizations/infrastructure/entities/ba-org.entities';
 import { TenantSubscription } from './infrastructure/entities/tenant-subscription.entity';
 import { MikroSubscriptionLifecycle } from './infrastructure/mikro-subscription.lifecycle';
 

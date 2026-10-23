@@ -38,7 +38,7 @@ describe('isSealedOrgHttpPath（BA org 内置授权面封堵谓词）', () => {
       '/api/v1/auth/sign-out',
       '/api/v1/auth/callback/github',
       '/api/v1/auth/organizations', // 复数近形词：不属内置端点，不应误伤
-      '/api/v1/tenants/members', // 我方门面路由（唯谓词只在 auth handler 入口使用）
+      '/api/v1/organizations/members', // 我方门面路由（唯谓词只在 auth handler 入口使用）
     ]) {
       expect(isSealedOrgHttpPath(p), `不应封堵 ${p}`).toBe(false);
     }

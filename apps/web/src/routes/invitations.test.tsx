@@ -53,7 +53,7 @@ describe('我的邀请（路由级 · loader 三分支）', () => {
     renderAt('/invitations');
     await vi.waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(screen.getByRole('alert').textContent).toContain('邀请服务暂不可用');
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/tenants/invitations/mine');
+    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/organizations/invitations/mine');
   });
 
   it('loader ok 空列表 → EmptyPanel', async () => {

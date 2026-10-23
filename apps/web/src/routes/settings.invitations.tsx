@@ -5,14 +5,14 @@ import { createInvitationSchema } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, Select, SubmitButton } from '../components/forms';
+import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
+import { probeOrganizationContext } from '../lib/organization-context-guide';
 import { requireSession } from '../lib/session';
-import { probeTenantContext } from '../lib/tenant-context-guide';
 import { clientValidateFields } from '../lib/validation';
 
 interface InvitationRow {
@@ -39,10 +39,10 @@ const INVITE_ROLES = [
 export const Route = createFileRoute('/settings/invitations')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/tenants/invitations');
+    const { data, error } = await api.GET('/api/v1/organizations/invitations');
     if (error) {
-      logApiError({ path: '/api/v1/tenants/invitations', scope: 'invitations' }, error);
-      const guide = await probeTenantContext(error);
+      logApiError({ path: '/api/v1/organizations/invitations', scope: 'invitations' }, error);
+      const guide = await probeOrganizationContext(error);
       if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
@@ -59,7 +59,7 @@ function InvitationsAdminPage() {
   const [fieldErr, setFieldErr] = useState<Record<string, string>>({});
 
   if (result.kind === 'guide')
-    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
+    return <OrganizationContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   const invitations = extractInvitations(result.raw);
@@ -74,12 +74,12 @@ function InvitationsAdminPage() {
     }
     setFieldErr({});
     const ok = await create.run({
-      path: '/api/v1/tenants/invitations',
+      path: '/api/v1/organizations/invitations',
       method: 'POST',
       scope: 'invitation.create',
       successMessage: `已邀请 ${email}`,
       thunk: () =>
-        api.POST('/api/v1/tenants/invitations', {
+        api.POST('/api/v1/organizations/invitations', {
           body: { email, role },
         }),
     });
@@ -134,12 +134,12 @@ function InvitationCancelRow({ invitation }: { invitation: InvitationRow }) {
 
   async function handleCancel() {
     await cancel.run({
-      path: '/api/v1/tenants/invitations/cancel',
+      path: '/api/v1/organizations/invitations/cancel',
       method: 'POST',
       scope: 'invitation.cancel',
       successMessage: `${invitation.email} 的邀请已撤回`,
       thunk: () =>
-        api.POST('/api/v1/tenants/invitations/cancel', {
+        api.POST('/api/v1/organizations/invitations/cancel', {
           body: { invitationId: invitation.id ?? '' },
         }),
     });

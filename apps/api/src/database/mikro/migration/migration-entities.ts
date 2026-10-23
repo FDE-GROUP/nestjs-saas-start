@@ -5,8 +5,8 @@ import {
   ORGANIZATION_ROLE_GRANT_META,
   ORGANIZATION_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
+import { AUDIT_LOG_META } from '../../../modules/organizations/infrastructure/entities/audit-log.entity';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { AUDIT_LOG_META } from '../../../modules/tenants/infrastructure/entities/audit-log.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
 import { buildMigrationEntity } from '../column-meta';

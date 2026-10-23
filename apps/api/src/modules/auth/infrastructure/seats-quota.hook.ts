@@ -17,7 +17,7 @@
  */
 
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Invitation } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
+import { Invitation } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import type { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';

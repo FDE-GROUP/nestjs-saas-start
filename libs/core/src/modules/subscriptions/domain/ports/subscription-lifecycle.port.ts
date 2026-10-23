@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from '../../quota/tenant-plans';
+import type { SubscriptionStatus } from '../../quota/organization-plans';
 
 /**
  * 订阅生命周期的**治理联动端口**（系统面 · module-es-first-real-consumer 治理档）。

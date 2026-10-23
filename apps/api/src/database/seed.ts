@@ -14,8 +14,11 @@ import {
   User,
   Verification,
 } from '../modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  Member,
+  Organization,
+} from '../modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '../modules/posts/infrastructure/entities/post.entity';
-import { Member, Organization } from '../modules/tenants/infrastructure/entities/ba-org.entities';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 import { MIKRO_SYS_ENTITIES } from './mikro/sys-entities';
 
@@ -286,7 +289,7 @@ async function resolveUserId(em: EntityManager, email: string): Promise<string |
  * `user{i}@example.com` for i in 1..userCount-1 仅 `includeTestData`），保证**任一** seed 号登录后恰有
  * 唯一成员组织（A 片自动落租无歧义）。user 行不存在（如零号 demo）→ 回查失败→跳过（warn）。
  */
-export async function ensureSeedTenants(
+export async function ensureSeedOrganizations(
   em: EntityManager,
   auth: LoginableAuth,
   options: SeedOptions,
@@ -408,7 +411,7 @@ export async function cleanup(em: EntityManager): Promise<void> {
   }
 }
 
-/** seed 四段编排（可注入 em/auth·供镜测直调）：cleanup → createUsers → ensureSeedTenants → createPosts。 */
+/** seed 四段编排（可注入 em/auth·供镜测直调）：cleanup → createUsers → ensureSeedOrganizations → createPosts。 */
 export async function runSeed(
   em: EntityManager,
   options: SeedOptions,
@@ -416,7 +419,7 @@ export async function runSeed(
 ): Promise<void> {
   await cleanup(em);
   await createUsers(em, options, auth);
-  await ensureSeedTenants(em, auth, options);
+  await ensureSeedOrganizations(em, auth, options);
   await createPosts(em, options);
 }
 

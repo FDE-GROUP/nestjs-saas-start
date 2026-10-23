@@ -4,22 +4,22 @@ import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
 import type {
-  PlatformTenantRowView,
+  organizationDiagnosticsSchema,
+  organizationHardDeleteResultSchema,
+  PlatformOrganizationRowView,
   PlatformUserRowView,
-  platformTenantPageSchema,
+  platformOrganizationPageSchema,
   platformUserPageSchema,
-  tenantDiagnosticsSchema,
-  tenantHardDeleteResultSchema,
   userGovernanceResultSchema,
 } from '@saas/contracts/index';
 import type { z } from 'zod';
-import type { TenantHardDeleteResult } from '../../../tenants/application/commands/delete-tenant-permanently.command';
-import type { UserGovernanceResult } from '../../../tenants/application/read-models/platform-user.read-model';
+import type { OrganizationHardDeleteResult } from '../../../organizations/application/commands/delete-organization-permanently.command';
+import type { UserGovernanceResult } from '../../../organizations/application/read-models/platform-user.read-model';
 import type {
-  PlatformTenantRow,
-  TenantDiagnostics,
-} from '../../../tenants/domain/repositories/tenant-governance.repository';
-import type { PlatformUserRow } from '../../../tenants/domain/repositories/user-governance.repository';
+  OrganizationDiagnostics,
+  PlatformOrganizationRow,
+} from '../../../organizations/domain/repositories/organization-governance.repository';
+import type { PlatformUserRow } from '../../../organizations/domain/repositories/user-governance.repository';
 
 /**
  * 平台治理面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
@@ -29,7 +29,7 @@ import type { PlatformUserRow } from '../../../tenants/domain/repositories/user-
  */
 const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
 
-export class PlatformTenantRowResponse {
+export class PlatformOrganizationRowResponse {
   @ApiProperty({ description: 'organization 主键（= 租户 id）。' })
   organizationId!: string;
 
@@ -47,15 +47,15 @@ export class PlatformTenantRowResponse {
 }
 
 // —— 编译期双向对拍：response 类与真相源结构恒等，任一侧漂移则 tsc 红。——
-const _ptrf: PlatformTenantRowResponse = {} as PlatformTenantRow;
-const _ptrb: PlatformTenantRow = {} as PlatformTenantRowResponse;
+const _ptrf: PlatformOrganizationRowResponse = {} as PlatformOrganizationRow;
+const _ptrb: PlatformOrganizationRow = {} as PlatformOrganizationRowResponse;
 void _ptrf;
 void _ptrb;
 
-/** offset 分页整体响应（`PlatformTenantPage = Page<PlatformTenantRow>`·整个分页对象裹入 data）。 */
-export class PlatformTenantPageResponse {
-  @ApiProperty({ isArray: true, type: () => PlatformTenantRowResponse })
-  items!: PlatformTenantRowResponse[];
+/** offset 分页整体响应（`PlatformOrganizationPage = Page<PlatformOrganizationRow>`·整个分页对象裹入 data）。 */
+export class PlatformOrganizationPageResponse {
+  @ApiProperty({ isArray: true, type: () => PlatformOrganizationRowResponse })
+  items!: PlatformOrganizationRowResponse[];
 
   @ApiProperty({ description: '全量行数。' })
   total!: number;
@@ -67,14 +67,14 @@ export class PlatformTenantPageResponse {
   offset!: number;
 }
 
-const _ptpf: PlatformTenantPageResponse = {} as Page<PlatformTenantRow>;
-const _ptpb: Page<PlatformTenantRow> = {} as PlatformTenantPageResponse;
+const _ptpf: PlatformOrganizationPageResponse = {} as Page<PlatformOrganizationRow>;
+const _ptpb: Page<PlatformOrganizationRow> = {} as PlatformOrganizationPageResponse;
 void _ptpf;
 void _ptpb;
 
-export class TenantDiagnosticsResponse {
-  @ApiProperty({ type: () => PlatformTenantRowResponse, description: '租户行。' })
-  tenant!: PlatformTenantRowResponse;
+export class OrganizationDiagnosticsResponse {
+  @ApiProperty({ type: () => PlatformOrganizationRowResponse, description: '租户行。' })
+  tenant!: PlatformOrganizationRowResponse;
 
   @ApiProperty({ description: '成员数。' })
   memberCount!: number;
@@ -89,12 +89,12 @@ export class TenantDiagnosticsResponse {
   postCount!: number;
 }
 
-const _tdf: TenantDiagnosticsResponse = {} as TenantDiagnostics;
-const _tdb: TenantDiagnostics = {} as TenantDiagnosticsResponse;
+const _tdf: OrganizationDiagnosticsResponse = {} as OrganizationDiagnostics;
+const _tdb: OrganizationDiagnostics = {} as OrganizationDiagnosticsResponse;
 void _tdf;
 void _tdb;
 
-export class TenantHardDeleteResultResponse {
+export class OrganizationHardDeleteResultResponse {
   @ApiProperty({ description: '被硬删的 organization 主键。' })
   organizationId!: string;
 
@@ -102,8 +102,8 @@ export class TenantHardDeleteResultResponse {
   purgedEvents!: number;
 }
 
-const _thdf: TenantHardDeleteResultResponse = {} as TenantHardDeleteResult;
-const _thdb: TenantHardDeleteResult = {} as TenantHardDeleteResultResponse;
+const _thdf: OrganizationHardDeleteResultResponse = {} as OrganizationHardDeleteResult;
+const _thdb: OrganizationHardDeleteResult = {} as OrganizationHardDeleteResultResponse;
 void _thdf;
 void _thdb;
 
@@ -163,17 +163,17 @@ void _ugrf;
 void _ugrb;
 
 // —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源（缺字段红；多字段由 strip 剥落）。——
-const _pt1: PlatformTenantRowView = {} as PlatformTenantRow;
-const _pt2: PlatformTenantRow = {} as PlatformTenantRowView;
+const _pt1: PlatformOrganizationRowView = {} as PlatformOrganizationRow;
+const _pt2: PlatformOrganizationRow = {} as PlatformOrganizationRowView;
 const _gv1: PlatformUserRowView = {} as PlatformUserRow;
 const _gv2: PlatformUserRow = {} as PlatformUserRowView;
-const _td1: z.infer<typeof tenantDiagnosticsSchema> = {} as TenantDiagnostics;
-const _td2: TenantDiagnostics = {} as z.infer<typeof tenantDiagnosticsSchema>;
-const _hd1: z.infer<typeof tenantHardDeleteResultSchema> = {} as TenantHardDeleteResult;
-const _hd2: TenantHardDeleteResult = {} as z.infer<typeof tenantHardDeleteResultSchema>;
+const _td1: z.infer<typeof organizationDiagnosticsSchema> = {} as OrganizationDiagnostics;
+const _td2: OrganizationDiagnostics = {} as z.infer<typeof organizationDiagnosticsSchema>;
+const _hd1: z.infer<typeof organizationHardDeleteResultSchema> = {} as OrganizationHardDeleteResult;
+const _hd2: OrganizationHardDeleteResult = {} as z.infer<typeof organizationHardDeleteResultSchema>;
 const _hg1: z.infer<typeof userGovernanceResultSchema> = {} as UserGovernanceResult;
 const _hg2: UserGovernanceResult = {} as z.infer<typeof userGovernanceResultSchema>;
-const _tpg: Page<PlatformTenantRow> = {} as z.infer<typeof platformTenantPageSchema>;
+const _tpg: Page<PlatformOrganizationRow> = {} as z.infer<typeof platformOrganizationPageSchema>;
 const _upg: Page<PlatformUserRow> = {} as z.infer<typeof platformUserPageSchema>;
 void _pt1;
 void _pt2;

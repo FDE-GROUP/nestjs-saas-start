@@ -28,15 +28,15 @@ import '../apps/api/src/load-env.ts';
 
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
-import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { Event } from '../apps/api/src/database/eventing/entities/event.entity.ts';
 import { hydrateEventRows } from '../apps/api/src/database/eventing/event-hydration.ts';
 import { initMikroOrm } from '../apps/api/src/database/mikro/mikro-orm.factory.ts';
 import { MIKRO_SYS_ENTITIES } from '../apps/api/src/database/mikro/sys-entities.ts';
+import { Organization } from '../apps/api/src/modules/organizations/infrastructure/entities/ba-org.entities.ts';
 import { TenantSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/tenant-subscription.entity.ts';
-import { Organization } from '../apps/api/src/modules/tenants/infrastructure/entities/ba-org.entities.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {

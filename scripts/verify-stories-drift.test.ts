@@ -6,23 +6,23 @@ import { extractStoryRefs, findMissing } from './verify-stories-drift';
 describe('extractStoryRefs — 溯源引用提取', () => {
   it('正态：plan 链接 / .ts 文件名（裸名 + 带路径取 basename）/ wire 码 / 符号 皆入集', () => {
     const md =
-      '关联 [`x`](../plans/global-tenancy.md) · `TenantsController.apply`（`tenants.controller.ts`）· ' +
+      '关联 [`x`](../plans/global-tenancy.md) · `OrganizationsController.apply`（`organizations.controller.ts`）· ' +
       '源 `libs/core/src/tenancy/organization-lifecycle.ts` · wire 值 `TENANCY:NO_ACTIVE_CONTEXT` · 码 `USER:NOT_FOUND` · ' +
-      '命令 `SubmitTenantApplicationCommand` → `MikroTenantProvisioningRepository.submit`。';
+      '命令 `SubmitOrganizationApplicationCommand` → `MikroOrganizationProvisioningRepository.submit`。';
     const r = extractStoryRefs(md);
     expect(r.planLinks).toEqual(['global-tenancy.md']);
-    expect(r.tsFiles).toEqual(['tenants.controller.ts', 'organization-lifecycle.ts']);
+    expect(r.tsFiles).toEqual(['organizations.controller.ts', 'organization-lifecycle.ts']);
     expect(r.wireCodes).toEqual(['TENANCY:NO_ACTIVE_CONTEXT', 'USER:NOT_FOUND']);
     expect(r.symbols).toEqual([
-      'TenantsController',
-      'SubmitTenantApplicationCommand',
-      'MikroTenantProvisioningRepository',
+      'OrganizationsController',
+      'SubmitOrganizationApplicationCommand',
+      'MikroOrganizationProvisioningRepository',
     ]);
   });
 
   it('负态：路由串 / 目录 / 小写点分事件名 / 含空格冒号代码片段 / 类方法 皆不误纳', () => {
     const md =
-      '`POST /api/v1/tenants/applications` · `libs/core/src/tenancy`（目录无 .ts）· `user.registered`（点分小写）· ' +
+      '`POST /api/v1/organizations/applications` · `libs/core/src/tenancy`（目录无 .ts）· `user.registered`（点分小写）· ' +
       '`em.upsert(Tenant,{status:PENDING})`（含空格）· `!tenantId → 403` · ';
     const r = extractStoryRefs(md);
     expect(r.tsFiles).toEqual([]);
@@ -38,11 +38,11 @@ describe('extractStoryRefs — 溯源引用提取', () => {
 
   it('符号正态：仅以角色后缀收尾者入集·且剔重', () => {
     const r = extractStoryRefs(
-      '`TenantScopeGuard` · `ApproveTenantCommand` · `tenant.rejected` 事件 `OrganizationRejectedEvent` · `TenantScopeGuard`',
+      '`TenantScopeGuard` · `ApproveOrganizationCommand` · `tenant.rejected` 事件 `OrganizationRejectedEvent` · `TenantScopeGuard`',
     );
     expect(r.symbols).toEqual([
       'TenantScopeGuard',
-      'ApproveTenantCommand',
+      'ApproveOrganizationCommand',
       'OrganizationRejectedEvent',
     ]);
   });

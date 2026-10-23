@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, FormWrap, Select, SubmitButton } from '../components/forms';
+import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
+import { probeOrganizationContext } from '../lib/organization-context-guide';
 import { requireSession } from '../lib/session';
-import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /** Better Auth `auth.api.listMembers` 透传成员项（非 Nest 契约类型·形参真相源见下）。 */
 interface MemberRow {
@@ -20,10 +20,10 @@ interface MemberRow {
 export const Route = createFileRoute('/settings/members')({
   loader: async () => {
     const session = await requireSession();
-    const { data, error } = await api.GET('/api/v1/tenants/members');
+    const { data, error } = await api.GET('/api/v1/organizations/members');
     if (error) {
-      logApiError({ path: '/api/v1/tenants/members', scope: 'members' }, error);
-      const guide = await probeTenantContext(error);
+      logApiError({ path: '/api/v1/organizations/members', scope: 'members' }, error);
+      const guide = await probeOrganizationContext(error);
       if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
@@ -43,7 +43,7 @@ function MembersPage() {
   const leave = useAction();
 
   if (result.kind === 'guide')
-    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
+    return <OrganizationContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   const members = extractMembers(result.raw);
@@ -52,12 +52,12 @@ function MembersPage() {
     const orgId = result.orgId;
     if (!orgId) return;
     await leave.run({
-      path: '/api/v1/tenants/members/leave',
+      path: '/api/v1/organizations/members/leave',
       method: 'POST',
       scope: 'member.leave',
       successMessage: '已退出组织',
       thunk: () =>
-        api.POST('/api/v1/tenants/members/leave', {
+        api.POST('/api/v1/organizations/members/leave', {
           body: { organizationId: orgId },
         }),
     });
@@ -96,12 +96,12 @@ function MemberActions({ member }: { member: MemberRow }) {
   async function handleChangeRole(e: React.FormEvent) {
     e.preventDefault();
     await roleAction.run({
-      path: '/api/v1/tenants/members/role',
+      path: '/api/v1/organizations/members/role',
       method: 'POST',
       scope: 'member.role',
       successMessage: `${member.userId} 角色已更新`,
       thunk: () =>
-        api.POST('/api/v1/tenants/members/role', {
+        api.POST('/api/v1/organizations/members/role', {
           body: { memberId: member.id ?? '', role },
         }),
     });
@@ -109,12 +109,12 @@ function MemberActions({ member }: { member: MemberRow }) {
 
   async function handleRemove() {
     await removeAction.run({
-      path: '/api/v1/tenants/members/remove',
+      path: '/api/v1/organizations/members/remove',
       method: 'POST',
       scope: 'member.remove',
       successMessage: `${member.userId} 已移除`,
       thunk: () =>
-        api.POST('/api/v1/tenants/members/remove', {
+        api.POST('/api/v1/organizations/members/remove', {
           body: { memberId: member.id ?? '' },
         }),
     });
@@ -150,7 +150,7 @@ function extractMembers(raw: unknown): MemberRow[] {
 
 /**
  * 纯展示（成员只读表）。
- * 注意：GET /tenants/members 系 Better Auth 服务端直调**透传面**（F1 诚实降档·非 Nest 契约类型），
+ * 注意：GET /organizations/members 系 Better Auth 服务端直调**透传面**（F1 诚实降档·非 Nest 契约类型），
  * 故此处据运行时 `{ members: [...] }` 形防御性取值，不假称 typed 字段。
  */
 export function MembersView({ raw }: { raw?: unknown }) {

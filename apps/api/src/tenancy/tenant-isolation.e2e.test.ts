@@ -9,8 +9,11 @@ import {
   Session,
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  Member,
+  Organization,
+} from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

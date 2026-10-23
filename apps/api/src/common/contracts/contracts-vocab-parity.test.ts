@@ -4,7 +4,7 @@ import {
   TENANT_SUBJECT_VALUES,
 } from '@core/saas-kit/authorization/tenant-rules';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { TENANT_PLANS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { ORGANIZATION_PLANS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import {
   TENANT_ACTION_VALUES as CONTRACT_ACTION_VALUES,
   TENANT_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
@@ -31,8 +31,8 @@ describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
     expect(asSet(CONTRACT_ACTION_VALUES)).toEqual(asSet(TENANT_ACTION_VALUES));
   });
 
-  it('订阅档位 id 与 TENANT_PLANS 键集一致', () => {
-    expect(asSet(TENANT_PLAN_IDS)).toEqual(asSet(Object.keys(TENANT_PLANS)));
+  it('订阅档位 id 与 ORGANIZATION_PLANS 键集一致', () => {
+    expect(asSet(TENANT_PLAN_IDS)).toEqual(asSet(Object.keys(ORGANIZATION_PLANS)));
   });
 
   it('租户生命周期状态与 @core ORGANIZATION_STATUS 值域逐字一致', () => {

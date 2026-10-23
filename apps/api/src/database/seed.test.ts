@@ -4,8 +4,11 @@ import {
   User,
   Verification,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  Member,
+  Organization,
+} from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -291,7 +294,7 @@ describe('seed cleanup（BA 表随 user 清·切片 A）', () => {
 });
 
 describe('seed runSeed 编排', () => {
-  it('按 cleanup → createUsers → ensureSeedTenants → createPosts 次序（含 auth 注入）', async () => {
+  it('按 cleanup → createUsers → ensureSeedOrganizations → createPosts 次序（含 auth 注入）', async () => {
     vi.stubEnv('SEED_CLEANUP', 'true');
     const { em, spies } = makeEm();
     const { auth, spies: as } = makeAuth();
@@ -316,7 +319,7 @@ describe('seed runSeed 编排', () => {
       ...spies.insert.mock.calls.map(() => 'insert'),
     ];
     expect(order[0]).toBe('delete');
-    // operator 有 account → 仅 nativeUpdate（不 signUp）；ensureSeedTenants 建租（createOrganization）；createPosts 插 Post。
+    // operator 有 account → 仅 nativeUpdate（不 signUp）；ensureSeedOrganizations 建租（createOrganization）；createPosts 插 Post。
     expect(as.signUpEmail).not.toHaveBeenCalled();
     expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
     expect(as.createOrganization).toHaveBeenCalledTimes(1);

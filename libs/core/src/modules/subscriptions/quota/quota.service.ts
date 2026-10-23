@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { FREE_PLAN } from './organization-plans';
 import { type ActiveSubscriptionView, QUOTA_STORE, type QuotaStore } from './quota.store';
 import { Quota } from './quota.vo';
-import { FREE_PLAN } from './tenant-plans';
 
 /** 一次座位配额裁决的结果（used/limit 供审计与回显·HTTP 翻译归消费点——P1）。 */
 export interface SeatQuotaVerdict {

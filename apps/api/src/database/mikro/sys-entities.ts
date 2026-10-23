@@ -5,13 +5,13 @@ import {
   ORGANIZATION_ROLE_GRANT_META,
   ORGANIZATION_ROLE_META,
 } from '../../modules/authorization/infrastructure/entities/rbac.entities';
+import { AuditLog } from '../../modules/organizations/infrastructure/entities/audit-log.entity';
+import { MIKRO_ORG_ENTITIES } from '../../modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '../../modules/posts/infrastructure/entities/post.entity';
 import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { AuditLog } from '../../modules/tenants/infrastructure/entities/audit-log.entity';
-import { MIKRO_ORG_ENTITIES } from '../../modules/tenants/infrastructure/entities/ba-org.entities';
 import {
   WORKSPACE_META,
   Workspace,

@@ -17,7 +17,7 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
   afterEach(() => vi.restoreAllMocks());
 
   it('已提交动作：pino 结构化载荷 + audit_log 落账（entityType=tenant）', async () => {
-    await svc.logTenantGovernance('approve', 'orgA', 'op1', {
+    await svc.logOrganizationGovernance('approve', 'orgA', 'op1', {
       from: ORGANIZATION_STATUS.PENDING,
       to: ORGANIZATION_STATUS.ACTIVE,
     });
@@ -57,7 +57,7 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
   });
 
   it('失败尝试（携 error）：仅观测·不入耐久账本', async () => {
-    await svc.logTenantGovernance('suspend', 'orgA', 'op1', {
+    await svc.logOrganizationGovernance('suspend', 'orgA', 'op1', {
       from: ORGANIZATION_STATUS.PENDING,
       to: ORGANIZATION_STATUS.SUSPENDED,
       error: 'illegal_transition',
@@ -67,7 +67,7 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
   });
 
   it('驳回/硬删无 to：from 落账、to 归 null', async () => {
-    await svc.logTenantGovernance('hard_delete', 'orgC', 'op2', {
+    await svc.logOrganizationGovernance('hard_delete', 'orgC', 'op2', {
       from: ORGANIZATION_STATUS.DELETED,
     });
     expect(appended[0]).toMatchObject({

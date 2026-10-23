@@ -1,12 +1,12 @@
 import { z } from 'zod';
+import { ORGANIZATION_STATUS_VALUES } from './organizations';
 import { offsetPageSchema } from './page';
-import { ORGANIZATION_STATUS_VALUES } from './tenants';
 
 /**
  * 平台治理面响应契约（S7b·真相源 = platform-tenants / platform-users 各 controller 返回类型·
  * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `ORGANIZATION_STATUS_VALUES`（UserStatus ≡ OrganizationStatus 别名）。
  */
-export const platformTenantRowSchema = z.object({
+export const platformOrganizationRowSchema = z.object({
   /** organization 主键（= 租户 id）。 */
   organizationId: z.string(),
   name: z.string(),
@@ -15,20 +15,20 @@ export const platformTenantRowSchema = z.object({
   status: z.enum(ORGANIZATION_STATUS_VALUES),
   createdAt: z.instanceof(Date),
 });
-export type PlatformTenantRowView = z.infer<typeof platformTenantRowSchema>;
+export type PlatformOrganizationRowView = z.infer<typeof platformOrganizationRowSchema>;
 
-/** offset 分页整体响应（`Page<PlatformTenantRow>`）。 */
-export const platformTenantPageSchema = offsetPageSchema(platformTenantRowSchema);
+/** offset 分页整体响应（`Page<PlatformOrganizationRow>`）。 */
+export const platformOrganizationPageSchema = offsetPageSchema(platformOrganizationRowSchema);
 
-export const tenantDiagnosticsSchema = z.object({
-  tenant: platformTenantRowSchema,
+export const organizationDiagnosticsSchema = z.object({
+  tenant: platformOrganizationRowSchema,
   memberCount: z.number(),
   invitationCount: z.number(),
   workspaceCount: z.number(),
   postCount: z.number(),
 });
 
-export const tenantHardDeleteResultSchema = z.object({
+export const organizationHardDeleteResultSchema = z.object({
   /** 被硬删的 organization 主键。 */
   organizationId: z.string(),
   /** 本次清除的 lifecycle 事件数（供审计核对）。 */

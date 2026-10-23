@@ -43,7 +43,7 @@ function mountAt(path: string) {
 
 beforeEach(() => {
   mocks.GET.mockReset().mockImplementation((path: string) => {
-    if (path === '/api/v1/tenants/roles')
+    if (path === '/api/v1/organizations/roles')
       return Promise.resolve({ data: { data: roleRows }, error: null });
     return Promise.resolve({ data: { data: [] }, error: null });
   });

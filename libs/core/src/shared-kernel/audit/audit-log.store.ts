@@ -3,7 +3,7 @@
  *
  * 治理动作（approve/reject/suspend/resume/soft-delete + user suspend/resume/delete）的**耐久审计
  * 账本**持久化抽象。约束③「审计另立显式 `audit_log` 表（不复用事件流）」——本端口不感知表形，
- * 适配在参考应用实现（居 `modules/tenants/**`·`audit_log` 属主=tenants·见 §3 裁点③），
+ * 适配在参考应用实现（居 `modules/organizations/**`·`audit_log` 属主=tenants·见 §3 裁点③），
  * 由治理审计单点 `PlatformAuditService`（core）消费（端口倒置·沿 `USER_STATUS_STORE` 先例）。
  *
  * **PII 最小化**（人裁·仅 id·不携邮箱）：条目只承载被治理实体/操作者的**标识符**与动作语义，

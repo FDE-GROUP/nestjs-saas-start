@@ -1,10 +1,10 @@
 import { DomainEvent, type DomainEventProps } from '../../../../shared-kernel/domain/domain-event';
 import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-names';
 
-export interface TenantRejectedPayload {
+export interface OrganizationRejectedPayload {
   /** 驳回动作主体（会话用户 id）。 */
   readonly actorId?: string;
-  /** 预留向后兼容位：当前 RejectTenantCommand 无 reason 字段，本切片恒不填（plan §3）。 */
+  /** 预留向后兼容位：当前 RejectOrganizationCommand 无 reason 字段，本切片恒不填（plan §3）。 */
   readonly reason?: string;
 }
 
@@ -18,12 +18,14 @@ export interface TenantRejectedPayload {
  * PII 边界：payload 只证明「何人何时驳回何 orgId」，不携 name/slug——
  * 驳回即应抹掉申请内容。aggregateType 取 `tenant` 与 tenant.transitioned 同流。
  */
-export class OrganizationRejectedEvent extends DomainEvent<TenantRejectedPayload> {
+export class OrganizationRejectedEvent extends DomainEvent<OrganizationRejectedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantRejected;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
 
-  constructor(props: Omit<DomainEventProps<TenantRejectedPayload>, 'eventType' | 'aggregateType'>) {
+  constructor(
+    props: Omit<DomainEventProps<OrganizationRejectedPayload>, 'eventType' | 'aggregateType'>,
+  ) {
     super({
       ...props,
       aggregateType: OrganizationRejectedEvent.AGGREGATE_TYPE,

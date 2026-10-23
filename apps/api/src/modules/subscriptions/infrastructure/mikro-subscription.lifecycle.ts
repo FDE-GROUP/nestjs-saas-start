@@ -7,7 +7,7 @@ import {
   applySubscriptionEvent,
   replaySubscriptionLifecycle,
 } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
-import type { SubscriptionStatus } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import type { SubscriptionStatus } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import { ES_TRUTH_SOURCE_SUBSCRIPTIONS } from '@core/saas-kit/shared-kernel/domain/es-truth-source.port';
 import {

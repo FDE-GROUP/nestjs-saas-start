@@ -103,7 +103,7 @@ describe('壳层 header 会话面板', () => {
     // authed 导航同样可换行（响应式意图锁）。
     expect(banner.querySelector('nav')?.className).toContain('flex-wrap');
     expect(screen.queryByRole('link', { name: '登录' })).toBeNull();
-    // 当前落 /（非 /platform/tenants）→ 控制台链非命中 → 无 aria-current（不误激活）。
+    // 当前落 /（非 /platform/organizations）→ 控制台链非命中 → 无 aria-current（不误激活）。
     expect(
       within(banner).getByRole('link', { name: '平台运营' }).getAttribute('aria-current'),
     ).toBe(null);
@@ -142,11 +142,11 @@ describe('深链守卫 beforeLoad（deep-link return）', () => {
 
   it('anon 携查询深链 → next 完整保留查询串', async () => {
     mocks.getSession.mockResolvedValue(null);
-    const router = renderAt('/platform/tenants?q=acme');
+    const router = renderAt('/platform/organizations?q=acme');
     await vi.waitFor(() => expect(router.state.location.pathname).toBe('/login'));
     // 目标 route 的 validateSearch 会给 searchStr 补默认 offset，故用 stringContaining 保宽松（回跳仍为正确深链）。
     expect(router.state.location.search).toMatchObject({
-      next: expect.stringContaining('/platform/tenants?q=acme'),
+      next: expect.stringContaining('/platform/organizations?q=acme'),
     });
   });
 

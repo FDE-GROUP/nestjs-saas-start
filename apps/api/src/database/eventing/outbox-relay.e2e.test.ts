@@ -3,7 +3,7 @@ import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
-import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
+import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { EventBus } from '@nestjs/cqrs';

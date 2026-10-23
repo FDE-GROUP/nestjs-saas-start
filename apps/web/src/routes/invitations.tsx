@@ -29,9 +29,12 @@ function extractMyInvitations(raw: unknown): MyInvitationRow[] {
 export const Route = createFileRoute('/invitations')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/tenants/invitations/mine');
+    const { data, error } = await api.GET('/api/v1/organizations/invitations/mine');
     if (error) {
-      logApiError({ path: '/api/v1/tenants/invitations/mine', scope: 'my-invitations' }, error);
+      logApiError(
+        { path: '/api/v1/organizations/invitations/mine', scope: 'my-invitations' },
+        error,
+      );
       return { kind: 'error' as const, body: error };
     }
     return { kind: 'ok' as const, raw: data?.data };
@@ -66,12 +69,12 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
 
   async function handleAccept() {
     await accept.run({
-      path: '/api/v1/tenants/invitations/accept',
+      path: '/api/v1/organizations/invitations/accept',
       method: 'POST',
       scope: 'my-invitation.accept',
       successMessage: `已接受邀请`,
       thunk: () =>
-        api.POST('/api/v1/tenants/invitations/accept', {
+        api.POST('/api/v1/organizations/invitations/accept', {
           body: { invitationId: invitation.id ?? '' },
         }),
     });
@@ -79,12 +82,12 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
 
   async function handleReject() {
     await reject.run({
-      path: '/api/v1/tenants/invitations/reject',
+      path: '/api/v1/organizations/invitations/reject',
       method: 'POST',
       scope: 'my-invitation.reject',
       successMessage: '已拒绝邀请',
       thunk: () =>
-        api.POST('/api/v1/tenants/invitations/reject', {
+        api.POST('/api/v1/organizations/invitations/reject', {
           body: { invitationId: invitation.id ?? '' },
         }),
     });

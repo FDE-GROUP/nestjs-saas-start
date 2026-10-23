@@ -1,14 +1,14 @@
 import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
+import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { TenantContextGuidePanel } from '../components/tenant-context-guide';
 import { api } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
+import { probeOrganizationContext } from '../lib/organization-context-guide';
 import { requireSession } from '../lib/session';
-import { probeTenantContext } from '../lib/tenant-context-guide';
 
 /**
  * 角色管理面（前端 F3 · module-frontend-rbac-admin §2.2·A1）。
@@ -21,10 +21,10 @@ type OrganizationRoleView =
 export const Route = createFileRoute('/settings/roles')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/tenants/roles');
+    const { data, error } = await api.GET('/api/v1/organizations/roles');
     if (error) {
-      logApiError({ path: '/api/v1/tenants/roles', scope: 'roles' }, error);
-      const guide = await probeTenantContext(error);
+      logApiError({ path: '/api/v1/organizations/roles', scope: 'roles' }, error);
+      const guide = await probeOrganizationContext(error);
       if (guide) return { kind: 'guide' as const, guide };
       return { kind: 'error' as const, body: error };
     }
@@ -41,21 +41,21 @@ function RolesPage() {
   const matchRoute = useMatchRoute();
 
   // 权限矩阵页 `/settings/roles/$roleKey` 是本路由的文件式子路由——命中子路由时交由 Outlet 委托渲染
-  // （镜像 platform.tenants.tsx L54；缺此委托则子页永不挂载·见 module-frontend-roles-outlet-delegation）。
+  // （镜像 platform.organizations.tsx L54；缺此委托则子页永不挂载·见 module-frontend-roles-outlet-delegation）。
   if (matchRoute({ to: '/settings/roles/$roleKey' })) return <Outlet />;
 
   if (result.kind === 'guide')
-    return <TenantContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
+    return <OrganizationContextGuidePanel hasMemberships={result.guide.hasMemberships} />;
   if (result.kind === 'error') return <ErrorPanel message={describeApiError(result.body)} />;
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const ok = await create.run({
-      path: '/api/v1/tenants/roles',
+      path: '/api/v1/organizations/roles',
       method: 'POST',
       scope: 'role.create',
       successMessage: `已创建角色「${name}」`,
-      thunk: () => api.POST('/api/v1/tenants/roles', { body: { key, name } }),
+      thunk: () => api.POST('/api/v1/organizations/roles', { body: { key, name } }),
     });
     if (ok) {
       setKey('');
@@ -99,23 +99,23 @@ function RoleRow({ role }: { role: OrganizationRoleView }) {
   async function handleRename(e: React.FormEvent) {
     e.preventDefault();
     const ok = await rename.run({
-      path: '/api/v1/tenants/roles/rename',
+      path: '/api/v1/organizations/roles/rename',
       method: 'POST',
       scope: 'role.rename',
       successMessage: '已重命名',
       thunk: () =>
-        api.POST('/api/v1/tenants/roles/rename', { body: { key: role.key, name: editName } }),
+        api.POST('/api/v1/organizations/roles/rename', { body: { key: role.key, name: editName } }),
     });
     if (ok) setEditing(false);
   }
 
   async function handleDelete() {
     await del.run({
-      path: '/api/v1/tenants/roles/delete',
+      path: '/api/v1/organizations/roles/delete',
       method: 'POST',
       scope: 'role.delete',
       successMessage: `已删除「${role.name}」`,
-      thunk: () => api.POST('/api/v1/tenants/roles/delete', { body: { key: role.key } }),
+      thunk: () => api.POST('/api/v1/organizations/roles/delete', { body: { key: role.key } }),
     });
   }
 

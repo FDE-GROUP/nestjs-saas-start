@@ -1,10 +1,10 @@
 import type { components } from '@saas/api-client';
 import type { ReactNode } from 'react';
-import { StatusBadge } from './platform-tenants';
+import { StatusBadge } from './platform-organizations';
 
 /**
  * 平台用户治理面纯展示/判定基元（前端 F4b · module-frontend-platform §F4b）。
- * 治理动作可用性镜像后端 `UserStatus = TenantStatus` 状态机——suspend 仅 active · resume 仅
+ * 治理动作可用性镜像后端 `UserStatus = OrganizationStatus` 状态机——suspend 仅 active · resume 仅
  * suspended（无删除面）。前端 disable 非法动作仅为止损体验，最终裁判仍是后端 409（双保险·对齐 F4a）。
  */
 type UserRow = components['schemas']['PlatformUserRowResponse'];

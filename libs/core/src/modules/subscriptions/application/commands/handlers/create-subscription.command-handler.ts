@@ -21,9 +21,9 @@ import {
   SUBSCRIPTION_REPOSITORY,
   type SubscriptionRepository,
 } from '../../../domain/repositories/subscription.repository';
+import { resolvePlanDef } from '../../../quota/organization-plans';
 import { QuotaService } from '../../../quota/quota.service';
 import { Quota } from '../../../quota/quota.vo';
-import { resolvePlanDef } from '../../../quota/tenant-plans';
 import type { TenantSubscriptionView } from '../../read-models/subscription.read-model';
 import { CreateSubscriptionCommand } from '../create-subscription.command';
 

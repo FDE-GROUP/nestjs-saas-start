@@ -1,12 +1,12 @@
 import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
 import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
-import { ResumeUserCommand } from '@app/modules/tenants/application/commands/resume-user.command';
-import { SuspendUserCommand } from '@app/modules/tenants/application/commands/suspend-user.command';
-import { ListPlatformUsersQuery } from '@app/modules/tenants/application/queries/list-platform-users.query';
+import { ResumeUserCommand } from '@app/modules/organizations/application/commands/resume-user.command';
+import { SuspendUserCommand } from '@app/modules/organizations/application/commands/suspend-user.command';
+import { ListPlatformUsersQuery } from '@app/modules/organizations/application/queries/list-platform-users.query';
 import type {
   PlatformUserPage,
   UserGovernanceResult,
-} from '@app/modules/tenants/application/read-models/platform-user.read-model';
+} from '@app/modules/organizations/application/read-models/platform-user.read-model';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantExempt } from '@core/saas-kit/tenancy/tenant-exempt.decorator';

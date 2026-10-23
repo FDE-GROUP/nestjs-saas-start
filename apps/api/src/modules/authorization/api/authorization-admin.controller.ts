@@ -63,8 +63,8 @@ import {
   OrganizationRoleViewResponse,
   OrganizationRoleGrantViewResponse,
 )
-@ApiTags('tenants')
-@Controller('tenants/roles')
+@ApiTags('organizations')
+@Controller('organizations/roles')
 @UseGuards(TenantScopeGuard, TenantPermissionGuard)
 export class AuthorizationAdminController {
   constructor(

@@ -1,7 +1,7 @@
 import { createApiClient } from '@saas/api-client';
 
 /**
- * 后端 Nest 面 typed 客户端单例（F2 · module-frontend-tenant-console §2.1）。
+ * 后端 Nest 面 typed 客户端单例（F2 · module-frontend-organization-console §2.1）。
  *
  * 同源相对：`DEFAULT_BASE_PATH=''`，路径自带 `/api/v1` 前缀；dev 经 `vite.config.ts` 的
  * `/api` 反代至 :7009（okee 同源约定），生产同域反代下零绝对 URL。

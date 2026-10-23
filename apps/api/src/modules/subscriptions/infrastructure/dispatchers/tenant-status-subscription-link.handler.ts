@@ -4,7 +4,7 @@ import {
   SUBSCRIPTION_LIFECYCLE,
   type SubscriptionLifecycle,
 } from '@core/saas-kit/modules/subscriptions/domain/ports/subscription-lifecycle.port';
-import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { Inject, Logger } from '@nestjs/common';
 import { EventsHandler, type IEventHandler } from '@nestjs/cqrs';
 

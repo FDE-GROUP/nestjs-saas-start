@@ -3,7 +3,7 @@ import { strictObject } from '../strict';
 
 /**
  * 订阅档位 id（**传输层 wire enum 单源**）。
- * ⚠ 领域档位目录 SSOT 在 `@core/saas-kit/modules/subscriptions/quota/tenant-plans`（`TENANT_PLANS` 键）；
+ * ⚠ 领域档位目录 SSOT 在 `@core/saas-kit/modules/subscriptions/quota/organization-plans`（`ORGANIZATION_PLANS` 键）；
  * contracts 保持零依赖，内联同一键集，由 apps/api `contracts-vocab-parity.test.ts` 对拍锁定，防漂移。
  */
 export const TENANT_PLAN_IDS = ['free', 'pro', 'enterprise'] as const;

@@ -17,7 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  *   `reclaimOnce()` 只删过期（剩 M）→ 二次调用删 0（幂等·`nativeDelete` 天然可重入）。
  * 顺带坐实 F1 迁移已落库：`session_token_idx` unique 约束在位（重复 token 插入即撞）。
  *
- * 走 `MikroOrmService.fork()` + `em.insert`/`em.count`/`em.nativeDelete`（沿 tenant-hard-delete.e2e 范式）。
+ * 走 `MikroOrmService.fork()` + `em.insert`/`em.count`/`em.nativeDelete`（沿 organization-hard-delete.e2e 范式）。
  * **默认跳过**：仅当 `E2E_DATABASE_URL` 存在时运行，不破默认 CI 的 DB-free 不变量。夹具用时间戳后缀
  * 唯一键，afterAll 显式清净，运行幂等。回收服务缺省 enabled=false 不启后台 timer，无需 override。
  */

@@ -4,7 +4,7 @@ import { AUDIT_LOG_STORE, type AuditLogStore } from '../shared-kernel/audit/audi
 import { currentRequestId } from '../shared-kernel/context/request-context';
 
 /** 平台级治理动作（FR-6 · S4/S5）：审批/驳回 + 暂停/恢复/删除。 */
-export type PlatformTenantAction =
+export type PlatformOrganizationAction =
   | 'approve'
   | 'reject'
   | 'suspend'
@@ -47,8 +47,8 @@ export class PlatformAuditService {
   ) {}
 
   /** 记录一次租户治理动作；`error` 携失败上下文（如非法迁移被拒·此时不入耐久账本仅观测）。 */
-  async logTenantGovernance(
-    action: PlatformTenantAction,
+  async logOrganizationGovernance(
+    action: PlatformOrganizationAction,
     organizationId: string,
     operatorId: string,
     detail?: GovernanceAuditDetail,

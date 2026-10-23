@@ -1,11 +1,11 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { Member } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
-import { Member } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
+import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type {
   ActiveSubscriptionView,
   QuotaStore,
 } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
-import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 

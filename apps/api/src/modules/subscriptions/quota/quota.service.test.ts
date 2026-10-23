@@ -1,9 +1,9 @@
+import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import type {
   ActiveSubscriptionView,
   QuotaStore,
 } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
-import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**

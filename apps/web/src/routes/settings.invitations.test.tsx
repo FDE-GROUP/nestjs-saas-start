@@ -57,7 +57,7 @@ describe('邀请管理（路由级 · loader 分支 + 表单）', () => {
     await vi.waitFor(() => expect(screen.getByText('发送邀请')).toBeTruthy());
     expect(screen.getByText('暂无待处理邀请。')).toBeTruthy();
     expect(screen.getByRole('button', { name: '邀请' })).toBeTruthy();
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/tenants/invitations');
+    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/organizations/invitations');
   });
 
   it('loader ok 有行 → 邮箱 + 撤回动作', async () => {

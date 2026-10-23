@@ -4,21 +4,21 @@ import {
   createCheckoutSchema,
   createCustomerSchema,
   createInvitationSchema,
+  createOrganizationApplicationSchema,
   createPostSchema,
   createRoleSchema,
   createSubscriptionSchema,
-  createTenantApplicationSchema,
   createWorkspaceSchema,
   grantRolePermissionSchema,
   invitationIdSchema,
-  leaveTenantSchema,
+  leaveOrganizationSchema,
   listCursorQuerySchema,
   listPageQuerySchema,
-  listPlatformTenantsQuerySchema,
+  listPlatformOrganizationsQuerySchema,
   refundPaymentSchema,
   removeMemberSchema,
   renameRoleSchema,
-  setActiveTenantSchema,
+  setActiveOrganizationSchema,
   suspendUserSchema,
   updateMemberRoleSchema,
   updateWorkspaceSchema,
@@ -101,8 +101,8 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
     expectIssueAt(createPostSchema, { title: 'x', extra: 1 }, '');
   });
 
-  it('createWorkspaceSchema / createTenantApplicationSchema：name/slug 必填 + slug 形态回 key', () => {
-    for (const schema of [createWorkspaceSchema, createTenantApplicationSchema]) {
+  it('createWorkspaceSchema / createOrganizationApplicationSchema：name/slug 必填 + slug 形态回 key', () => {
+    for (const schema of [createWorkspaceSchema, createOrganizationApplicationSchema]) {
       expect(parseOk(schema, { name: 'Acme', slug: 'acme-1' })).toEqual({
         name: 'Acme',
         slug: 'acme-1',
@@ -133,7 +133,12 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
       role: 'custom-role',
     });
     expectIssueKey(removeMemberSchema, {}, 'memberId', 'validate.memberId.required');
-    expectIssueKey(leaveTenantSchema, {}, 'organizationId', 'validate.organizationId.required');
+    expectIssueKey(
+      leaveOrganizationSchema,
+      {},
+      'organizationId',
+      'validate.organizationId.required',
+    );
     // createInvitation.email：旧 @IsString+@IsNotEmpty（非 @IsEmail）——非邮箱串仍放行，只挡空
     expect(parseOk(createInvitationSchema, { email: 'not-an-email', role: 'member' })).toEqual({
       email: 'not-an-email',
@@ -146,7 +151,12 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
       'validate.email.required',
     );
     expectIssueKey(invitationIdSchema, {}, 'invitationId', 'validate.invitationId.required');
-    expectIssueKey(setActiveTenantSchema, {}, 'organizationId', 'validate.organizationId.required');
+    expectIssueKey(
+      setActiveOrganizationSchema,
+      {},
+      'organizationId',
+      'validate.organizationId.required',
+    );
   });
 
   it('createRole/renameRole：roleKey/roleName 必填回 key', () => {
@@ -223,13 +233,13 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
     expectIssueAt(refundPaymentSchema, { checkoutId: 'pi_1', amount: 0 }, 'amount');
   });
 
-  it('listPlatformTenantsQuerySchema：继承分页 + search 可选', () => {
-    expect(parseOk(listPlatformTenantsQuerySchema, { search: 'ac' })).toEqual({
+  it('listPlatformOrganizationsQuerySchema：继承分页 + search 可选', () => {
+    expect(parseOk(listPlatformOrganizationsQuerySchema, { search: 'ac' })).toEqual({
       limit: 20,
       offset: 0,
       search: 'ac',
     });
-    expectIssueAt(listPlatformTenantsQuerySchema, { bogus: 1 }, '');
+    expectIssueAt(listPlatformOrganizationsQuerySchema, { bogus: 1 }, '');
   });
 
   it('suspendUserSchema：reason 可选·超 500 拒·空对象放行', () => {
@@ -294,7 +304,7 @@ describe('@saas/contracts · 业务文本入参 maxLength 输入卫生（承 fol
     expectIssueKey(updateWorkspaceSchema, { name: TOO(201) }, 'name', 'validate.text.maxLength');
     // tenant name 200 / email 254 / memberId 128
     expectIssueKey(
-      createTenantApplicationSchema,
+      createOrganizationApplicationSchema,
       { name: TOO(201), slug: 'ok' },
       'name',
       'validate.text.maxLength',
@@ -326,9 +336,9 @@ describe('@saas/contracts · 业务文本入参 maxLength 输入卫生（承 fol
       'validate.text.maxLength',
     );
     // platform search 200（可选）
-    parseOk(listPlatformTenantsQuerySchema, { search: TOO(200) });
+    parseOk(listPlatformOrganizationsQuerySchema, { search: TOO(200) });
     expectIssueKey(
-      listPlatformTenantsQuerySchema,
+      listPlatformOrganizationsQuerySchema,
       { search: TOO(201) },
       'search',
       'validate.text.maxLength',

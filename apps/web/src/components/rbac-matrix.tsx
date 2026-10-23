@@ -14,7 +14,7 @@ import type { components, paths } from '@saas/api-client';
  * subject/action 联合遂由授予端点请求体派生（后端枚举改动会在此即时拓红·编译期）。
  */
 type GrantRequestBody =
-  paths['/api/v1/tenants/roles/grants']['post']['requestBody']['content']['application/json'];
+  paths['/api/v1/organizations/roles/grants']['post']['requestBody']['content']['application/json'];
 export type TenantSubject = GrantRequestBody['subject'];
 export type TenantAction = GrantRequestBody['action'];
 export type OrganizationRoleGrantView = components['schemas']['OrganizationRoleGrantViewResponse'];

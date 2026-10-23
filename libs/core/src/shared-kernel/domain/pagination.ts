@@ -1,6 +1,6 @@
 /**
  * 分页契约（module-common-pagination-contract · softkit 借鉴 #2「借思路不借库」）：
- * 平台侧两个同构分页面（PlatformTenantPage/PlatformUserPage）的重复形状收敛为
+ * 平台侧两个同构分页面（PlatformOrganizationPage/PlatformUserPage）的重复形状收敛为
  * 单一泛型契约。纯 TS 零依赖（与 DomainEvent 同居 shared-kernel，
  * core 外部依赖不变：仅 node/peer）。`Page<T>` 为 offset 语义（治理面/中小数据量）；
  * `CursorPage<T>` 为游标语义（就绪预备切片 B·立「新列表端点宜游标·offset 为例外」标准），

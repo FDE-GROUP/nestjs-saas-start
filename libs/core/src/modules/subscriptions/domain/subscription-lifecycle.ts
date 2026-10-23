@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from '../quota/tenant-plans';
+import type { SubscriptionStatus } from '../quota/organization-plans';
 
 /**
  * 订阅治理生命周期状态机（ES R4 第二上下文推广 · module-es-r4-second-context-subscriptions）。
@@ -7,7 +7,7 @@ import type { SubscriptionStatus } from '../quota/tenant-plans';
  * 状态真相源化后（R4c）读侧裁决形态 = `replaySubscriptionLifecycle` fold 的重放态；
  * 本件只留纯态判定 + 合法迁移表（裁ⓑ·人 2026-10-21 按推荐档签发）。
  *
- * 态值单源对齐 quota 面既有 `SubscriptionStatus`（`../quota/tenant-plans.ts:17`·此处不重定义
+ * 态值单源对齐 quota 面既有 `SubscriptionStatus`（`../quota/organization-plans.ts:17`·此处不重定义
  * 联合类型，`satisfies` 锁值集不逸出）；contracts 侧 wire enum 一致性由对拍测锁漂移。
  */
 export const SUBSCRIPTION_STATUS = {

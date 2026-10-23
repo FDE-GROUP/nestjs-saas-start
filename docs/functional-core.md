@@ -13,15 +13,15 @@
 本仓库的旗舰样例（91 行、零 import、同时服务租户与用户两条生命周期）：
 
 ```ts
-// libs/core/src/modules/tenants/lifecycle/tenant-lifecycle.ts
-const TRANSITIONS: Record<TenantStatus, readonly TenantStatus[]> = {
+// libs/core/src/modules/organizations/lifecycle/organization-lifecycle.ts
+const TRANSITIONS: Record<OrganizationStatus, readonly OrganizationStatus[]> = {
   pending_approval: ['active', 'deleted'],
   active: ['active', 'suspended', 'deleted'],
   suspended: ['active', 'deleted'],
   deleted: [],                                  // 终态
 };
 
-export function canTransition(from: TenantStatus, to: TenantStatus): boolean {
+export function canTransition(from: OrganizationStatus, to: OrganizationStatus): boolean {
   return TRANSITIONS[from]?.includes(to) ?? false;
 }
 ```
@@ -34,11 +34,11 @@ const result = await this.uow.run(async () => {
   if (!row) return { kind: 'not-found' };
   if (!canTransition(row.status, target))           // 纯：裁决
     return { kind: 'illegal', from: row.status, to: target };
-  await store.save(withTenantStatus(row, target));  // 副作用：写
-  await events.publishAll([new TenantStatusTransitionedEvent(...)]); // 副作用：发布
+  await store.save(withOrganizationStatus(row, target));  // 副作用：写
+  await events.publishAll([new OrganizationStatusTransitionedEvent(...)]); // 副作用：发布
   return { kind: 'ok', previous: row.status, status: target };
 });
-// HTTP 翻译（409/404）在 handler 层，见 governedTenantTransition
+// HTTP 翻译（409/404）在 handler 层，见 governedOrganizationTransition
 ```
 
 ## 2. 它解决什么问题
@@ -52,7 +52,7 @@ const result = await this.uow.run(async () => {
 架构精度修宪（2026-10-20）的论证链，三步：
 
 1. **域的复杂度画像**：多租户 SaaS 脚手架的复杂度在**隔离、治理、配额、计费的技术架构与策略规则**，不在千条业务不变量的业务密度。规则形态是"状态迁移表 + 策略闸 + 不变量"，天然是函数形状，不是实体形状。
-2. **代码自己投过票**：仓内质量最高的领域代码（tenants 生命周期状态机）**自发采用**了纯函数 + result-union + 服务编排，从未采用聚合风格。
+2. **代码自己投过票**：仓内质量最高的领域代码（organizations 生命周期状态机）**自发采用**了纯函数 + result-union + 服务编排，从未采用聚合风格。
 3. **唯一按战术 DDD 建的实体是死代码**：User 聚合的 `register`/`pullDomainEvents`/`changeEmail` 生产零调用（注册走 Better Auth），连同其事件管道、no-op dispatcher、孤儿 Email VO 与 AggregateRoot 基类一并删除（修宪 S1）。
 
 结论：**不是放弃纪律，是停止表演**——宣称从「Clean Architecture + DDD + CQRS」精度化为「以 Clean Architecture（同族亦称六边形）为纲 + 函数式内核 + CQRS 按需」。
@@ -67,7 +67,7 @@ const result = await this.uow.run(async () => {
 | 时间/随机 | **不做** `Date.now()`/`Math.random()`（经参数注入） | 负责取 now、生成 id，显式传入内核 |
 | 测试 | 传对象断言返回值，零 mock | 集成/gated e2e |
 
-接缝的固定形状：**load → 裁决 → write → publish，全程一个 UoW**。`TenantStatusService.transition`、`UserStatusService.transition`（复用同一个 `canTransition`）、`suspend-user`（S3 起状态写与 session 删同事务）都是这个形状的实例。
+接缝的固定形状：**load → 裁决 → write → publish，全程一个 UoW**。`OrganizationStatusService.transition`、`UserStatusService.transition`（复用同一个 `canTransition`）、`suspend-user`（S3 起状态写与 session 删同事务）都是这个形状的实例。
 
 ## 5. 两条纯度硬约束（最常见的假纯度误区）
 
@@ -100,7 +100,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 | 内部件 | 职责 | 纯度 |
 |---|---|---|
-| `libs/core/src/modules/tenants/lifecycle/tenant-lifecycle.ts` | 租户/用户**共用**状态机迁移表 + `canTransition`（旗舰样例） | 零 import |
+| `libs/core/src/modules/organizations/lifecycle/organization-lifecycle.ts` | 组织/用户**共用**状态机迁移表 + `canTransition`（旗舰样例） | 零 import |
 | `libs/core/src/authorization/instance-predicate.ts` | RBAC 查询级谓词语法 → DB 谓词编译 | 零 import |
 | `apps/api/src/modules/authorization/domain/policies/tenant-rbac.policy.ts` | 角色 key/conditions 策略闸 | 仅词表常量 |
 | `libs/core/src/modules/subscriptions/quota/tenant-plans.ts` | 档位目录 + `resolvePlanDef` | 仅自家 VO |
@@ -125,7 +125,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 - **领域实体 vs 数据实体**：每个有持久化的限界上下文区分两物——`domain/entities/` 下的**领域实体**是不可变数据载体（持构造期不变量 + 返回新实例的纯迁移函数、零框架 import），`infrastructure/entities/` 下的**数据实体**是映射到物理表的 MikroORM `defineEntity`。旧的"record"即领域实体的持久态契约（如 `PostState`）。
 - **一致性目标 = 投影而非 1:1**：目标不是领域实体与表的朴素全等（Evans 式聚合根天生破坏它），而是投影 `领域态 ⊆ (数据实体 ≡ 表)`。
 - **三件套强制**：（1）*数据实体 ≡ 表* 经 `migration:generate` diff + 实体列定律守卫（已在位）；（2）**纯全函数 mapper** `fromRow`（数据实体 → 领域复原）作仓储适配器的唯一映射缝——领域态正是经此纯函数从数据实体投影而来；（3）**编译期结构锁**焊 `PostState ↔ PostEntity`，落 `infrastructure/`（`domain/` 绝不 import `infrastructure/`）。存储专用列（乐观锁 `version`、FK、discriminator）走白名单：mapper 读之、不镜射进领域态。
-- **进度**：参考实现 `posts`；其余持久化上下文（`tenants`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`）**待跟进**，各自经已审方案落地，非即时违宪。
+- **进度**：参考实现 `posts`；其余持久化上下文（`organizations`/`users`/`subscriptions`/`workspaces`/`authorization`/`auth`）**待跟进**，各自经已审方案落地，非即时违宪。
 
 ## 10. 测试形态
 
@@ -150,7 +150,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 1. **写内核函数**：`canXxx(input): Verdict`——零 import（或仅词表/VO）、result-union 判别联合、不变量违约抛原生 Error；需要时间就加 `now: Date` 入参。
 2. **定 Verdict 类型**：`{ kind: 'ok'; ... } | { kind: 'not-found' } | { kind: 'illegal'; from; to }` 形状，成功失败同构可穷尽 switch。
 3. **外壳接线**：service/handler 里 load（凑齐全部决策输入）→ 调内核 → write/publish，关键段包 `uow.run`。
-4. **HTTP 翻译归外壳**：`kind: 'illegal'` → 409 + `errorCode`（参照 `governedTenantTransition`）。
+4. **HTTP 翻译归外壳**：`kind: 'illegal'` → 409 + `errorCode`（参照 `governedOrganizationTransition`）。
 5. **测试**：内核矩阵测试（零 mock）+ 外壳时序锁 +（如涉及公共契约）gated e2e。
 6. **进守卫**：新文件落在扫描面内即自动受纯度双锁保护——若它真是适配器角色，按 guard/decorator/middleware 后缀命名或留待 http/ 目录演进。
 
@@ -162,7 +162,7 @@ P1 不是目录而是模式，内核件散布各上下文（判据 = 纯度可�
 
 **Q：测试里为什么要 stub QuotaService/checkSeats？** 因为你测的是**外壳**（守卫/handler 的翻译行为）；内核自身的裁决另有零 mock 测试。两层测试各管一半，正是该模式的红利。
 
-**Q：未来出现"跨多次修改的密集不变量"怎么办？** 按 P2/P1 升级为函数式聚合：`load → 纯迁移函数 → save`——`TenantStatusService.transition` 已经是这个形态（没有 class 外壳的聚合事务）。不需要回到实体类。
+**Q：未来出现"跨多次修改的密集不变量"怎么办？** 按 P2/P1 升级为函数式聚合：`load → 纯迁移函数 → save`——`OrganizationStatusService.transition` 已经是这个形态（没有 class 外壳的聚合事务）。不需要回到实体类。
 
 ## 14. 参考谱系（母本出处·非本仓自创）
 

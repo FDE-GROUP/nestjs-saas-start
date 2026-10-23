@@ -1,4 +1,4 @@
-import type { SubscriptionStatus } from '../../quota/tenant-plans';
+import type { SubscriptionStatus } from '../../quota/organization-plans';
 
 /**
  * Tenant subscription repository port (domain-owned · global-tenancy S7 · FR-7/FR-8/D5).

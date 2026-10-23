@@ -12,17 +12,17 @@ import { requireSession } from '../lib/session';
 
 type SubscriptionResponse = components['schemas']['SubscriptionResponse'];
 
-/** 透传面防御形（GET /tenants 返回 BA organization 列表·无 Nest typed 契约）。 */
-interface TenantOrg {
+/** 透传面防御形（GET /organizations 返回 BA organization 列表·无 Nest typed 契约）。 */
+interface OrganizationOrg {
   id?: string;
   name?: string;
   slug?: string;
 }
-function extractTenants(raw: unknown): TenantOrg[] {
-  if (Array.isArray(raw)) return raw as TenantOrg[];
+function extractOrganizations(raw: unknown): OrganizationOrg[] {
+  if (Array.isArray(raw)) return raw as OrganizationOrg[];
   if (raw && typeof raw === 'object' && 'organizations' in raw) {
     const list = (raw as { organizations?: unknown }).organizations;
-    if (Array.isArray(list)) return list as TenantOrg[];
+    if (Array.isArray(list)) return list as OrganizationOrg[];
   }
   return [];
 }
@@ -31,24 +31,29 @@ export const Route = createFileRoute('/')({
   // 未登录直接弹回登录页（deny-by-default 的前端映射·与后端会话墙同向）。
   loader: async () => {
     const session = await requireSession();
-    // 先取「我可成员的组织」列表（GET /tenants）——用于判定是否需引导落租（须先于订阅取数）。
-    const { data: tenantData, error: tenantError } = await api.GET('/api/v1/tenants');
-    if (tenantError) logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, tenantError);
-    const tenants = tenantError ? [] : extractTenants(tenantData?.data);
+    // 先取「我可成员的组织」列表（GET /organizations）——用于判定是否需引导落租（须先于订阅取数）。
+    const { data: organizationData, error: organizationError } =
+      await api.GET('/api/v1/organizations');
+    if (organizationError)
+      logApiError({ path: '/api/v1/organizations', scope: 'organizations' }, organizationError);
+    const organizations = organizationError ? [] : extractOrganizations(organizationData?.data);
 
-    // 引导落租（module-frontend-tenant-bootstrap-activation）：会话未带 activeOrganizationId 且
-    // **恰有一个**成员组织时自动 `POST /api/v1/tenants/active`（消订阅面冷 403·多组织交手动切换器·不自动择）。
+    // 引导落租（module-frontend-organization-bootstrap-activation）：会话未带 activeOrganizationId 且
+    // **恰有一个**成员组织时自动 `POST /api/v1/organizations/active`（消订阅面冷 403·多组织交手动切换器·不自动择）。
     let activeOrganizationId = session.session.activeOrganizationId;
     let note: string | null = null;
-    if (!activeOrganizationId && tenants.length === 1 && tenants[0]?.id) {
-      const { error: activateError } = await api.POST('/api/v1/tenants/active', {
-        body: { organizationId: tenants[0].id },
+    if (!activeOrganizationId && organizations.length === 1 && organizations[0]?.id) {
+      const { error: activateError } = await api.POST('/api/v1/organizations/active', {
+        body: { organizationId: organizations[0].id },
       });
       if (activateError) {
-        logApiError({ path: '/api/v1/tenants/active', scope: 'tenant.bootstrap' }, activateError);
+        logApiError(
+          { path: '/api/v1/organizations/active', scope: 'organization.bootstrap' },
+          activateError,
+        );
         note = describeApiError(activateError);
       } else {
-        activeOrganizationId = tenants[0].id;
+        activeOrganizationId = organizations[0].id;
       }
     }
 
@@ -66,17 +71,17 @@ export const Route = createFileRoute('/')({
 
     return {
       user: session.user,
-      hasActiveTenant: !!activeOrganizationId,
+      hasActiveOrganization: !!activeOrganizationId,
       subscription,
       note,
-      tenants,
+      organizations,
     };
   },
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { user, hasActiveTenant, subscription, note, tenants } = Route.useLoaderData();
+  const { user, hasActiveOrganization, subscription, note, organizations } = Route.useLoaderData();
   const navigate = useNavigate();
 
   async function onSignOut() {
@@ -107,13 +112,13 @@ function DashboardPage() {
         </div>
       </section>
 
-      <TenantSwitchSection tenants={tenants} />
+      <OrganizationSwitchSection organizations={organizations} />
 
       <section className="flex flex-col gap-3">
         <SectionHeading>订阅摘要</SectionHeading>
-        {!hasActiveTenant && tenants.length === 0 ? (
-          <TenantOnboardingPanel />
-        ) : !hasActiveTenant ? (
+        {!hasActiveOrganization && organizations.length === 0 ? (
+          <OrganizationOnboardingPanel />
+        ) : !hasActiveOrganization ? (
           <EmptyPanel label="尚无活跃组织，请在「我的组织」中切换。" />
         ) : note ? (
           <ErrorPanel message={note} />
@@ -147,29 +152,29 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
 }
 
 /** 租户切换区域（操作面）。 */
-function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
+function OrganizationSwitchSection({ organizations }: { organizations: OrganizationOrg[] }) {
   const switchAction = useAction();
 
   async function handleSwitch(orgId: string, orgName: string) {
     await switchAction.run({
-      path: '/api/v1/tenants/active',
+      path: '/api/v1/organizations/active',
       method: 'POST',
-      scope: 'tenant.switch',
+      scope: 'organization.switch',
       successMessage: `已切换到「${orgName}」`,
       thunk: () =>
-        api.POST('/api/v1/tenants/active', {
+        api.POST('/api/v1/organizations/active', {
           body: { organizationId: orgId },
         }),
     });
   }
 
-  if (tenants.length === 0) return null;
+  if (organizations.length === 0) return null;
 
   return (
     <section className="flex flex-col gap-3">
       <SectionHeading>我的组织</SectionHeading>
       <div className="flex flex-col gap-2">
-        {tenants.map((t) => (
+        {organizations.map((t) => (
           <div
             key={t.id}
             className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
@@ -190,12 +195,12 @@ function TenantSwitchSection({ tenants }: { tenants: TenantOrg[] }) {
 }
 
 /**
- * 零组织新注册引导（module-frontend-tenant-onboarding）：承 A 片 §4 发现项，替此前纯文案死胡同。
- * 两条**合规**出路——① 申请创建自有组织（走 `POST /api/v1/tenants/applications`·落 `pending_approval`
+ * 零组织新注册引导（module-frontend-organization-onboarding）：承 A 片 §4 发现项，替此前纯文案死胡同。
+ * 两条**合规**出路——① 申请创建自有组织（走 `POST /api/v1/organizations/applications`·落 `pending_approval`
  * 经平台审批·FR-1/FR-12）；② 经邀请链接加入既有组织（引导至既有 `/invitations` 页）。
  * **不**自动建活跃组织（直冲 S4 审批制·见 plan §4-① 建议拒绝），MVP 以静态 pending 回执呈现。
  */
-function TenantOnboardingPanel() {
+function OrganizationOnboardingPanel() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const applyAction = useAction();
@@ -203,11 +208,11 @@ function TenantOnboardingPanel() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     await applyAction.run({
-      path: '/api/v1/tenants/applications',
+      path: '/api/v1/organizations/applications',
       method: 'POST',
-      scope: 'tenant.apply',
+      scope: 'organization.apply',
       successMessage: '已提交，等待平台审批。',
-      thunk: () => api.POST('/api/v1/tenants/applications', { body: { name, slug } }),
+      thunk: () => api.POST('/api/v1/organizations/applications', { body: { name, slug } }),
     });
   }
 
