@@ -1,9 +1,9 @@
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   USER_STATUS,
   UserStatusService,
-} from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
-import type { UserStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+} from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
+import type { UserStatusStore } from '@core/saas-kit/modules/organizations/lifecycle/user-status.store';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -59,11 +59,14 @@ describe('UserStatusService.transition (S6 · FR-10 用户暂停单点)', () => 
   });
 
   it('returns illegal without writing when the edge is disallowed (deleted is terminal)', async () => {
-    const { svc, upsert, published } = makeService({ exists: true, status: TENANT_STATUS.DELETED });
+    const { svc, upsert, published } = makeService({
+      exists: true,
+      status: ORGANIZATION_STATUS.DELETED,
+    });
     const result = await svc.transition('u1', USER_STATUS.SUSPENDED);
     expect(result).toEqual({
       kind: 'illegal',
-      from: TENANT_STATUS.DELETED,
+      from: ORGANIZATION_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
     });
     expect(upsert).not.toHaveBeenCalled();

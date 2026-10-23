@@ -1,11 +1,11 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import type { TenantStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { OrganizationStatusStore } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
 import { Inject, Injectable } from '@nestjs/common';
 
 /**
- * `TenantStatusStore` 的 **MikroORM 适配**（`TENANT_STATUS_STORE` 绑定·MikroORM 为唯一实现·
+ * `OrganizationStatusStore` 的 **MikroORM 适配**（`ORGANIZATION_STATUS_STORE` 绑定·MikroORM 为唯一实现·
  * global-governance-lifecycle-consolidation 切片 B：态从自有 `tenant` 旁表归位 `organization.status`
  * 真列（BA 表共享·additive 自撰域列）·旁表随本案 DROP）。
  *
@@ -18,13 +18,13 @@ import { Inject, Injectable } from '@nestjs/common';
  * 每次 `fork()` 取独立 em。
  */
 @Injectable()
-export class MikroTenantStatusStore implements TenantStatusStore {
+export class MikroOrganizationStatusStore implements OrganizationStatusStore {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
-  async readStatus(organizationId: string): Promise<TenantStatus | undefined> {
+  async readStatus(organizationId: string): Promise<OrganizationStatus | undefined> {
     const em = await this.mikro.fork();
     const row = await em.findOne(Organization, { id: organizationId } as never);
-    return row ? (row.status as TenantStatus) : undefined;
+    return row ? (row.status as OrganizationStatus) : undefined;
   }
 
   async organizationExists(organizationId: string): Promise<boolean> {
@@ -32,7 +32,7 @@ export class MikroTenantStatusStore implements TenantStatusStore {
     return (await em.findOne(Organization, organizationId)) !== null;
   }
 
-  async upsert(organizationId: string, status: TenantStatus): Promise<void> {
+  async upsert(organizationId: string, status: OrganizationStatus): Promise<void> {
     const em = await this.mikro.fork();
     // 迁移即变更：盖 updatedAt（沿旧链口径）；`transition` 已卡组本体存在，恒为 UPDATE。
     await em.nativeUpdate(Organization, { id: organizationId } as never, {

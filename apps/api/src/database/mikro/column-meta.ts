@@ -46,7 +46,7 @@ export interface TableMeta {
    * 表级 CHECK 约束（global-tenant-entity-reclamation 首用·`tenant.status` 值域 DB 防线）：
    * `expression` 须用**物理列名**（EntityCaseNamingStrategy 下 camelCase 多为原形）；
    * 入元数据则迁移生成器双向往返可见（增/删均进空 diff 恒等闸），表达式值域应自上游单源
-   * 生成（如 `TENANT_STATUS`），枚举漂移由下次 `migration:generate` 非空 diff 捕获。
+   * 生成（如 `ORGANIZATION_STATUS`），枚举漂移由下次 `migration:generate` 非空 diff 捕获。
    */
   checks?: { name: string; expression: string }[];
 }

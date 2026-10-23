@@ -26,9 +26,9 @@
  */
 import '../apps/api/src/load-env.ts';
 
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { Event } from '../apps/api/src/database/eventing/entities/event.entity.ts';
@@ -140,15 +140,19 @@ interface LinkViolation {
 
 /**
  * 丙 · 跨上下文 lost-link 不变量只读对拍（案 §2.4·R3b 重定向）：治理商业规则「tenant suspended ⇒
- * 其订阅不应残留 active」（`TenantStatusSubscriptionLinkHandler`·裁点乙）。若 tenant.status.transitioned
+ * 其订阅不应残留 active」（`OrganizationStatusSubscriptionLinkHandler`·裁点乙）。若 tenant.status.transitioned
  * 已入库但进程内投递在崩溃窗丢失，订阅未联动挂起——而其自有流/投影同步地都没这条 transition，故
  * fold⇄投影医生检不出（盲区）。本对拍专补该盲区：只读·不 raw 改投影，违例点名归后续 relink 片。
  */
 async function scanLinkInvariant(em: EntityManager): Promise<LinkViolation[]> {
   // 租户态已归 `organization.status` 真列（global-governance-lifecycle-consolidation 切片 B·原 tenant 旁表 DROP）。
-  const suspended = (await em.find(Organization, { status: TENANT_STATUS.SUSPENDED } as never, {
-    orderBy: { id: QueryOrder.ASC },
-  })) as Array<{ id: string }>;
+  const suspended = (await em.find(
+    Organization,
+    { status: ORGANIZATION_STATUS.SUSPENDED } as never,
+    {
+      orderBy: { id: QueryOrder.ASC },
+    },
+  )) as Array<{ id: string }>;
   const violations: LinkViolation[] = [];
   for (const t of suspended) {
     const activeSubs = await em.count(TenantSubscription, {

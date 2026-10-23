@@ -1,6 +1,6 @@
-import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
-import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
-import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
+import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
+import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
+import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/user-status-transitioned.event';
 import { DOMAIN_EVENTS } from '@core/saas-kit/shared-kernel/domain/domain-event-names';
 import { describe, expect, it } from 'vitest';
 import { EVENT_TYPE_REGISTRY } from './event-type-registry';
@@ -30,8 +30,8 @@ describe('EVENT_TYPE_REGISTRY ↔ DOMAIN_EVENTS ↔ 事件类 双向锁', () => 
   it('重建契约：信封显式值逐字段透传（不重掷 eventId·不重取 occurredAt——审计按原始时点复原）', () => {
     const classes = [
       UserStatusTransitionedEvent,
-      TenantStatusTransitionedEvent,
-      TenantRejectedEvent,
+      OrganizationStatusTransitionedEvent,
+      OrganizationRejectedEvent,
     ] as const;
     for (const EventClass of classes) {
       const rowEventId = 'row-evt-1';

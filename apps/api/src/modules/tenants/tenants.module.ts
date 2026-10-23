@@ -1,7 +1,7 @@
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
-import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
-import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
-import { USER_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
+import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
+import { USER_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/user-status.store';
 import { AUDIT_LOG_STORE } from '@core/saas-kit/shared-kernel/audit/audit-log.store';
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
@@ -26,7 +26,7 @@ import { TENANT_GOVERNANCE_REPOSITORY } from './domain/repositories/tenant-gover
 import { TENANT_PROVISIONING_REPOSITORY } from './domain/repositories/tenant-provisioning.repository';
 import { USER_GOVERNANCE_REPOSITORY } from './domain/repositories/user-governance.repository';
 import { MikroAuditLogStore } from './infrastructure/mikro-audit-log.store';
-import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
+import { MikroOrganizationStatusStore } from './infrastructure/mikro-organization-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
 import { MikroTenantGovernanceRepository } from './infrastructure/repositories/mikro-tenant-governance.repository';
 import { MikroTenantProvisioningRepository } from './infrastructure/repositories/mikro-tenant-provisioning.repository';
@@ -58,7 +58,7 @@ const QueryHandlers = [
  * resolved without extra imports.
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：deny-list 状态机
- * （`TenantStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenancyModule 归位
+ * （`OrganizationStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenancyModule 归位
  * 本上下文（租户/用户状态机是租户治理域策略·借用机制的域策略还家）；沿 Authorization/Platform
  * 先例升 `@Global` 保持原可见性语义（tenancy 中间件 deny-list 消费、auth 会话墙/platform 闸门注入零行为变更）。
  */
@@ -83,14 +83,14 @@ const QueryHandlers = [
     { provide: USER_GOVERNANCE_REPOSITORY, useClass: MikroUserGovernanceRepository },
     // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenancyModule 归位本上下文。
     // §9.5.4①B 端口倒置：core 服务经端口消费持久化，适配由本（参考）应用装配。
-    TenantStatusService,
+    OrganizationStatusService,
     UserStatusService,
-    { provide: TENANT_STATUS_STORE, useClass: MikroTenantStatusStore },
+    { provide: ORGANIZATION_STATUS_STORE, useClass: MikroOrganizationStatusStore },
     { provide: USER_STATUS_STORE, useClass: MikroUserStatusStore },
     // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本适配（唯一写面·属主 tenants）。
     //  core `PlatformAuditService`（PlatformModule @Global）经本端口消费·@Global 保跨模块可见。
     { provide: AUDIT_LOG_STORE, useClass: MikroAuditLogStore },
-    // 领域细化重构 A3：RBAC 仓储绑定与 TenantRbacAdminService 已迁 AuthorizationModule
+    // 领域细化重构 A3：RBAC 仓储绑定与 OrganizationRbacAdminService 已迁 AuthorizationModule
     // （tenants 经全局 ROLE_ASSIGNABILITY_READER published port 消费角色可挂载判定）。
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
     // handlers·闸门/审计单点由 PlatformModule @Global 供给）；命令/查询 handlers 与读模型
@@ -98,9 +98,9 @@ const QueryHandlers = [
   ],
   exports: [
     // 随 @Global 导出：跨上下文消费面（tenancy 中间件 deny-list·auth 会话墙·platform 闸门）保形。
-    TenantStatusService,
+    OrganizationStatusService,
     UserStatusService,
-    TENANT_STATUS_STORE,
+    ORGANIZATION_STATUS_STORE,
     USER_STATUS_STORE,
     AUDIT_LOG_STORE,
   ],

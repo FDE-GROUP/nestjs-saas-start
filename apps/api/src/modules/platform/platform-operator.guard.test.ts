@@ -1,4 +1,4 @@
-import type { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { PlatformSettings } from '@core/saas-kit/platform/platform-config.port';
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';

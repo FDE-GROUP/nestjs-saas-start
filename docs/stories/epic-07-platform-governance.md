@@ -1,7 +1,7 @@
 # Epic 07 · 平台治理
 
 > 旅程: 平台经营者如何跨租户查看与治理租户/用户生命周期 | 上下文: `platform`（租户治理面 + 用户治理面）
-> 平台级唯一权威（FR-11①/FR-13）：每路由 `@UseGuards(PlatformOperatorGuard)`——判据 = 会话用户 DB email 命中 `platform.operatorEmail`（seed 全局唯一 operator·不由他人任命），**与租户内任何角色无关**（租户 owner 不打平台端点照样 403）。治理面刻意**不绑租户作用域**（跨租·类级 `@TenantExempt`）；生命周期迁移全经 `TenantStatusService.transition` 单点 + 结构化审计行（FR-6）。
+> 平台级唯一权威（FR-11①/FR-13）：每路由 `@UseGuards(PlatformOperatorGuard)`——判据 = 会话用户 DB email 命中 `platform.operatorEmail`（seed 全局唯一 operator·不由他人任命），**与租户内任何角色无关**（租户 owner 不打平台端点照样 403）。治理面刻意**不绑租户作用域**（跨租·类级 `@TenantExempt`）；生命周期迁移全经 `OrganizationStatusService.transition` 单点 + 结构化审计行（FR-6）。
 > 版本: 0.2.0（2026-10-20·逐条对照代码讨论后校正增补）
 
 ## 租户治理（`PlatformTenantsController`·`/platform/tenants`）
@@ -29,7 +29,7 @@
 ### 7.5 暂停租户（active → suspended）
 - **作为** 平台经营者，**我想** 暂停某活跃租户，**以便** 紧急失能其业务面（fail-closed）。
 - **验收**：Given operator + 目标 `active`，When `PATCH /platform/tenants/:id/suspend`，Then `→ suspended`（deny-list 生效·成员业务路由失能）+ 审计行；非法迁移 Then 409；不存在 Then 404。
-- **溯源**：`PATCH /api/v1/platform/tenants/:id/suspend` · `PlatformTenantsController.suspend` · `SuspendTenantCommand` → `TenantStatusService.transition` · `canTransition`（`tenant-lifecycle.ts`）· 失能下游跨引 [Epic 02 §2.4](./epic-02-tenant-onboarding.md)（suspended→deny-list→业务路由 403）。
+- **溯源**：`PATCH /api/v1/platform/tenants/:id/suspend` · `PlatformTenantsController.suspend` · `SuspendTenantCommand` → `OrganizationStatusService.transition` · `canTransition`（`organization-lifecycle.ts`）· 失能下游跨引 [Epic 02 §2.4](./epic-02-tenant-onboarding.md)（suspended→deny-list→业务路由 403）。
 
 ### 7.6 恢复租户（suspended → active）
 - **作为** 平台经营者，**我想** 恢复被暂停的租户，**以便** 重新放行。

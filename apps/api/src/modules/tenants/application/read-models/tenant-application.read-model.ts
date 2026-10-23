@@ -1,5 +1,5 @@
 /** 返回形状（read shape）：query handler 的出参类型——**非** CQRS 物化投影（读写同库同模型·架构精度修宪 S5 正名）。 */
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /**
  * Read-model projection for the tenant application/approval flow (CQRS read side).
@@ -7,5 +7,5 @@ import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tena
  */
 export interface TenantApplicationReadModel {
   organizationId: string;
-  status: TenantStatus;
+  status: OrganizationStatus;
 }

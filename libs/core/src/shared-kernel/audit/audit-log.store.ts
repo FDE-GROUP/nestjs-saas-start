@@ -8,7 +8,7 @@
  *
  * **PII 最小化**（人裁·仅 id·不携邮箱）：条目只承载被治理实体/操作者的**标识符**与动作语义，
  * 严禁落 email/姓名等个人数据；`entityId` 系多态裸值（非 FK），故实体被硬删后账行仍幸存
- * （对齐 `tenant_role_audit`「留痕不因本体消亡而丢」先例）。
+ * （对齐 `organization_role_audit`「留痕不因本体消亡而丢」先例）。
  *
  * 语义：append-only——只插不改不删（`audit_log` 入 `IMMUTABLE_TABLES`）；本端口只暴露 `append`
  * 单原语，不提供任何 update/delete（耐久账本不可篡改是设计而非缺失）。

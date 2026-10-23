@@ -15,18 +15,18 @@ import {
 } from '@nestjs/common';
 import type { RoleAssignabilityReader } from '../domain/ports/role-assignability.port';
 import {
-  TENANT_RBAC_REPOSITORY,
-  type TenantRbacRepository,
-  type TenantRoleGrantView,
-  type TenantRoleView,
-} from '../domain/repositories/tenant-rbac.repository';
+  ORGANIZATION_RBAC_REPOSITORY,
+  type OrganizationRbacRepository,
+  type OrganizationRoleGrantView,
+  type OrganizationRoleView,
+} from '../domain/repositories/organization-rbac.repository';
 
 /**
  * 角色/授权**管理门面应用服务**（module-rbac-dynamic-roles §2.5/§2.6·S3）。
  *
  * 职责边界（授权在我·事实入 DB）：
  *  - 从 ALS 取活动租户（`requireTenantId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
- *  - 委派 `TenantRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
+ *  - 委派 `OrganizationRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
  *  - 将端口返回的**领域结果码**转译为 HTTP 语义（领域不借异常表达事实，转译归应用层）；
  *  - **写成功后失效本租户投影缓存**（`TenantPermissionInvalidator`·热改即生效·读写分治端口）。
  *
@@ -34,21 +34,21 @@ import {
  * 本服务不复权限判定（禁散点特判）；自定义角色对成员的挂载存在性校验见 `isRoleAssignable`。
  */
 @Injectable()
-export class TenantRbacAdminService implements RoleAssignabilityReader {
+export class OrganizationRbacAdminService implements RoleAssignabilityReader {
   constructor(
-    @Inject(TENANT_RBAC_REPOSITORY) private readonly rbac: TenantRbacRepository,
+    @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
     @Inject(TENANT_PERMISSION_INVALIDATOR)
     private readonly invalidator: TenantPermissionInvalidator,
     @Inject(TenantContextService) private readonly ctx: TenantContextService,
   ) {}
 
   /** 本租户全部角色（读面·不触发失效）。 */
-  async listRoles(): Promise<TenantRoleView[]> {
+  async listRoles(): Promise<OrganizationRoleView[]> {
     return this.rbac.listRoles(this.org());
   }
 
   /** 某角色的授权行（查无角色 → 404·供管理面回显勾选态）。 */
-  async getGrants(roleKey: string): Promise<TenantRoleGrantView[]> {
+  async getGrants(roleKey: string): Promise<OrganizationRoleGrantView[]> {
     const grants = await this.rbac.findGrants(this.org(), roleKey);
     if (grants === null) {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
@@ -58,7 +58,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
     return grants;
   }
 
-  async createRole(key: string, name: string): Promise<TenantRoleView> {
+  async createRole(key: string, name: string): Promise<OrganizationRoleView> {
     const org = this.org();
     const result = await this.rbac.createRole(org, key, name, this.actor());
     if (result === 'invalidKey') {

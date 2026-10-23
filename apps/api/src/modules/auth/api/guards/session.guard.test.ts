@@ -1,4 +1,4 @@
-import type { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

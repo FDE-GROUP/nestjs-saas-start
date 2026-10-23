@@ -17,7 +17,7 @@ type GrantRequestBody =
   paths['/api/v1/tenants/roles/grants']['post']['requestBody']['content']['application/json'];
 export type TenantSubject = GrantRequestBody['subject'];
 export type TenantAction = GrantRequestBody['action'];
-export type TenantRoleGrantView = components['schemas']['TenantRoleGrantViewResponse'];
+export type OrganizationRoleGrantView = components['schemas']['OrganizationRoleGrantViewResponse'];
 
 export const SUBJECTS: readonly TenantSubject[] = [
   'Organization',
@@ -56,7 +56,7 @@ export function cellKey(subject: TenantSubject, action: TenantAction): string {
  * 已授予判定：存在一条 conditions==null 的 whole-subject 行即视为勾选。
  * 本片仅管理 whole-subject 行（instance-level conditions 行不在此面呈现·待裁点③甲隔离）。
  */
-export function grantedCellSet(grants: readonly TenantRoleGrantView[]): Set<string> {
+export function grantedCellSet(grants: readonly OrganizationRoleGrantView[]): Set<string> {
   const set = new Set<string>();
   for (const g of grants) {
     if (g.conditions == null) set.add(cellKey(g.subject, g.action));
@@ -65,7 +65,7 @@ export function grantedCellSet(grants: readonly TenantRoleGrantView[]): Set<stri
 }
 
 export interface RbacMatrixProps {
-  grants: readonly TenantRoleGrantView[];
+  grants: readonly OrganizationRoleGrantView[];
   /** 当前正在提交中的 cell 键（pending 态灰格·待裁点⑤甲）。 */
   pendingCell: string | null;
   /** 整表禁用（如加载/无权操作）。 */

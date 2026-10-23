@@ -3,25 +3,25 @@ import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
 
 /**
- * 租户 RBAC 动态化三表（module-rbac-dynamic-roles §2.2·甲裁「行式 grant + 审计表」）——
+ * 组织 RBAC 动态化三表（module-rbac-dynamic-roles §2.2·甲裁「行式 grant + 审计表」）——
  * 列元数据单源 + 双变体派生（γ 惯例·global-entity-context-placement 切片 B 归位：原
  * `database/mikro/rbac-tables.ts`·判据=`table-ownership.ts` 表属主 `tenantRole*→authorization`；
  * 迁移忠实实体见 `migration-entities.ts`，本文件出运行时扁平实体入 `MIKRO_SYS_ENTITIES`）。
  * ⚠ tsx 消费链（迁移装配）文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  *
  * 新宪（丙裁）：**DB 是授权事实 SSOT**——
- *  - `tenant_role`：per-tenant 角色（系统三 key `isSystem=true` 由 lazy-ensure 落行·不可改删；
+ *  - `organization_role`：per-organization 角色（系统三 key `isSystem=true` 由 lazy-ensure 落行·不可改删；
  *    自定义角色由管理门面 CRUD）。BA `member.role` 字符串列（schema 零改动）按 `key` 关联本表。
- *  - `tenant_role_grant`：行式授权（一权限格一行·`conditions` jsonb 承载 check 级实例条件·S4），
+ *  - `organization_role_grant`：行式授权（一权限格一行·`conditions` jsonb 承载 check 级实例条件·S4），
  *    同 (subject, action) 多行 = OR 并集。DB 层**不建** unique(role,subject,action)——同格多条件行
  *    是正当形态，唯一性（含 conditions 等值）由仓储 grant 卡点应用层去重（偏差留痕登 plan §4.1），
  *    复合普通索引保投影读。
- *  - `tenant_role_audit`：变更留痕（who/what/before/after·甲裁定落库可查证），只插不改不删。
+ *  - `organization_role_audit`：变更留痕（who/what/before/after·甲裁定落库可查证），只插不改不删。
  */
 
-export const TENANT_ROLE_META: TableMeta = {
-  name: 'TenantRole',
-  tableName: 'tenant_role',
+export const ORGANIZATION_ROLE_META: TableMeta = {
+  name: 'OrganizationRole',
+  tableName: 'organization_role',
   columns: [
     ['id', { k: 'text', primary: true }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
@@ -32,27 +32,29 @@ export const TENANT_ROLE_META: TableMeta = {
     // 与 organization 表同口径：updatedAt 可空（建后未改的行不伪造时间）。
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
-  uniques: [{ name: 'tenant_role_org_key_idx', properties: ['organizationId', 'key'] }],
+  uniques: [{ name: 'organization_role_org_key_idx', properties: ['organizationId', 'key'] }],
 };
 
-export const TENANT_ROLE_GRANT_META: TableMeta = {
-  name: 'TenantRoleGrant',
-  tableName: 'tenant_role_grant',
+export const ORGANIZATION_ROLE_GRANT_META: TableMeta = {
+  name: 'OrganizationRoleGrant',
+  tableName: 'organization_role_grant',
   columns: [
     ['id', { k: 'bigintAutoPk' }],
-    ['roleId', { k: 'fk', target: 'TenantRole', onDelete: 'cascade' }],
+    ['roleId', { k: 'fk', target: 'OrganizationRole', onDelete: 'cascade' }],
     ['subject', { k: 'text' }],
     ['action', { k: 'text' }],
     // CASL mongo conditions 形（{ ownerId: '{{userId}}' } 模板·S4 解析）；NULL = 整 subject 级。
     ['conditions', { k: 'json', nullable: true }],
     ['createdAt', { k: 'datetime', defaultNow: true }],
   ],
-  indexes: [{ name: 'tenant_role_grant_role_subject_idx', properties: ['roleId', 'subject'] }],
+  indexes: [
+    { name: 'organization_role_grant_role_subject_idx', properties: ['roleId', 'subject'] },
+  ],
 };
 
-export const TENANT_ROLE_AUDIT_META: TableMeta = {
-  name: 'TenantRoleAudit',
-  tableName: 'tenant_role_audit',
+export const ORGANIZATION_ROLE_AUDIT_META: TableMeta = {
+  name: 'OrganizationRoleAudit',
+  tableName: 'organization_role_audit',
   columns: [
     ['id', { k: 'bigintAutoPk' }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
@@ -65,13 +67,16 @@ export const TENANT_ROLE_AUDIT_META: TableMeta = {
     ['createdAt', { k: 'datetime', defaultNow: true }],
   ],
   indexes: [
-    { name: 'tenant_role_audit_org_created_idx', properties: ['organizationId', 'createdAt'] },
+    {
+      name: 'organization_role_audit_org_created_idx',
+      properties: ['organizationId', 'createdAt'],
+    },
   ],
 };
 
 // —— 运行时扁平实体（companion interface + 工厂派生·入 MIKRO_SYS_ENTITIES·app 仓储读写）——
 
-export interface TenantRoleRow {
+export interface OrganizationRoleRow {
   id: string;
   organizationId: string;
   key: string;
@@ -80,11 +85,11 @@ export interface TenantRoleRow {
   createdAt: Date;
   updatedAt: Date | null;
 }
-export const TenantRole: EntitySchema<TenantRoleRow> = buildRuntimeEntity(
-  TENANT_ROLE_META,
-) as EntitySchema<TenantRoleRow>;
+export const OrganizationRole: EntitySchema<OrganizationRoleRow> = buildRuntimeEntity(
+  ORGANIZATION_ROLE_META,
+) as EntitySchema<OrganizationRoleRow>;
 
-export interface TenantRoleGrantRow {
+export interface OrganizationRoleGrantRow {
   id: number;
   roleId: string;
   subject: TenantSubject;
@@ -92,11 +97,11 @@ export interface TenantRoleGrantRow {
   conditions?: Record<string, unknown> | null;
   createdAt: Date;
 }
-export const TenantRoleGrant: EntitySchema<TenantRoleGrantRow> = buildRuntimeEntity(
-  TENANT_ROLE_GRANT_META,
-) as EntitySchema<TenantRoleGrantRow>;
+export const OrganizationRoleGrant: EntitySchema<OrganizationRoleGrantRow> = buildRuntimeEntity(
+  ORGANIZATION_ROLE_GRANT_META,
+) as EntitySchema<OrganizationRoleGrantRow>;
 
-export interface TenantRoleAuditRow {
+export interface OrganizationRoleAuditRow {
   id: number;
   organizationId: string;
   actorId: string | null;
@@ -106,8 +111,12 @@ export interface TenantRoleAuditRow {
   after?: Record<string, unknown> | null;
   createdAt: Date;
 }
-export const TenantRoleAudit: EntitySchema<TenantRoleAuditRow> = buildRuntimeEntity(
-  TENANT_ROLE_AUDIT_META,
-) as EntitySchema<TenantRoleAuditRow>;
+export const OrganizationRoleAudit: EntitySchema<OrganizationRoleAuditRow> = buildRuntimeEntity(
+  ORGANIZATION_ROLE_AUDIT_META,
+) as EntitySchema<OrganizationRoleAuditRow>;
 
-export const MIKRO_RBAC_TABLE_ENTITIES = [TenantRole, TenantRoleGrant, TenantRoleAudit];
+export const MIKRO_RBAC_TABLE_ENTITIES = [
+  OrganizationRole,
+  OrganizationRoleGrant,
+  OrganizationRoleAudit,
+];

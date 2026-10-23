@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
-import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
+import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { EventBus } from '@nestjs/cqrs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -98,8 +98,8 @@ gated('Outbox + relay real-DB round trip (module-es-outbox-transactional · env-
   const orgId = `e2e-outbox-org-${Date.now()}`;
   const tenantAggregateId = `e2e-outbox-tenant-${Date.now()}`;
 
-  const makeEvent = (): TenantRejectedEvent =>
-    new TenantRejectedEvent({
+  const makeEvent = (): OrganizationRejectedEvent =>
+    new OrganizationRejectedEvent({
       aggregateId: tenantAggregateId,
       correlationId: 'corr-e2e',
       payload: { actorId: 'op-e2e' },

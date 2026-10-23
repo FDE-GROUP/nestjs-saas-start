@@ -2,7 +2,7 @@ import type { SubscriptionStatus } from '../quota/tenant-plans';
 
 /**
  * 订阅治理生命周期状态机（ES R4 第二上下文推广 · module-es-r4-second-context-subscriptions）。
- * 纯函数·零框架依赖（沿 tenants `tenant-lifecycle.ts` 先例·裁①乙不复活聚合管道）。
+ * 纯函数·零框架依赖（沿 tenants `organization-lifecycle.ts` 先例·裁①乙不复活聚合管道）。
  *
  * 状态真相源化后（R4c）读侧裁决形态 = `replaySubscriptionLifecycle` fold 的重放态；
  * 本件只留纯态判定 + 合法迁移表（裁ⓑ·人 2026-10-21 按推荐档签发）。

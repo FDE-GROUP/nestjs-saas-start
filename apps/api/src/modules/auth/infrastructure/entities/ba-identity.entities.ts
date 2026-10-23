@@ -1,4 +1,4 @@
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { defineEntity, p } from '@mikro-orm/core';
 
 /**
@@ -16,14 +16,14 @@ import { defineEntity, p } from '@mikro-orm/core';
  */
 
 /**
- * 用户治理态值域 = `USER_STATUS`（active/suspended/deleted 三态·`TENANT_STATUS` 之子集·pending 属租户
+ * 用户治理态值域 = `USER_STATUS`（active/suspended/deleted 三态·`ORGANIZATION_STATUS` 之子集·pending 属租户
  * 准入不入用户）。声明序单源·与迁移工件 `user_status_check` 同表达式（漂移由下次 generate 非空 diff 捕获）。
- * 采纯 `TENANT_STATUS` 构造，勿引 `user-status.service`（Nest 件）——以免把装饰器类拉进迁移/tsx 加载路径。
+ * 采纯 `ORGANIZATION_STATUS` 构造，勿引 `user-status.service`（Nest 件）——以免把装饰器类拉进迁移/tsx 加载路径。
  */
 const USER_STATUS_CHECK_EXPRESSION = `status IN (${[
-  TENANT_STATUS.ACTIVE,
-  TENANT_STATUS.SUSPENDED,
-  TENANT_STATUS.DELETED,
+  ORGANIZATION_STATUS.ACTIVE,
+  ORGANIZATION_STATUS.SUSPENDED,
+  ORGANIZATION_STATUS.DELETED,
 ]
   .map((v) => `'${v}'`)
   .join(', ')})`;
@@ -56,7 +56,7 @@ export const User = defineEntity({
     // 用户治理生命周期态（global-governance-lifecycle-consolidation 切片 C·原 user_status 旁列归位）：
     // NOT NULL DEFAULT 'active'——缺席态消失（deny-list 兑底转真列），BA core signUp 未写此列落 DB 默认 'active'，
     // 暂停/恢复/软删经 AUTH_USER_STORE.updateStatus 显式覆写；statusReason 携治理理由（沿旧 user_status.reason·nullable）。
-    status: p.string().default(TENANT_STATUS.ACTIVE),
+    status: p.string().default(ORGANIZATION_STATUS.ACTIVE),
     statusReason: p.string().nullable(),
     createdAt: p.datetime(),
     updatedAt: p.datetime().nullable(),

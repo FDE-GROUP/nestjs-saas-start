@@ -1,11 +1,11 @@
-import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
-import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
-import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { OrganizationBootstrappedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-bootstrapped.event';
+import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
+import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { DOMAIN_EVENTS } from '@core/saas-kit/shared-kernel/domain/domain-event-names';
 import {
+  ORGANIZATION_STATUS_WIRE,
   TENANT_EVENT_TYPES_WIRE,
-  TENANT_STATUS_WIRE,
   tenantBootstrappedPayloadSchema,
   tenantRejectedPayloadSchema,
   tenantStatusTransitionedPayloadSchema,
@@ -26,29 +26,29 @@ describe('tenant 流事件契约 ⇄ 事件类 对拍（ES R1a · 裁⑥甲）',
     expect(TENANT_EVENT_TYPES_WIRE.bootstrapped).toBe(DOMAIN_EVENTS.tenantBootstrapped);
   });
 
-  it('治理态 wire enum 值集 ⇄ TENANT_STATUS 单源一致（contracts 内联防漂移）', () => {
-    expect([...TENANT_STATUS_WIRE].sort()).toEqual(
-      [...Object.values(TENANT_STATUS)].map(String).sort(),
+  it('治理态 wire enum 值集 ⇄ ORGANIZATION_STATUS 单源一致（contracts 内联防漂移）', () => {
+    expect([...ORGANIZATION_STATUS_WIRE].sort()).toEqual(
+      [...Object.values(ORGANIZATION_STATUS)].map(String).sort(),
     );
   });
 
   it('类 EVENT_TYPE/VERSION/AGGREGATE 静态常量 ⇄ 契约事件名；payload 双向赋值锁', () => {
-    expect(TenantStatusTransitionedEvent.EVENT_TYPE).toBe(
+    expect(OrganizationStatusTransitionedEvent.EVENT_TYPE).toBe(
       TENANT_EVENT_TYPES_WIRE.statusTransitioned,
     );
-    expect(TenantRejectedEvent.EVENT_TYPE).toBe(TENANT_EVENT_TYPES_WIRE.rejected);
-    expect(TenantBootstrappedEvent.EVENT_TYPE).toBe(TENANT_EVENT_TYPES_WIRE.bootstrapped);
+    expect(OrganizationRejectedEvent.EVENT_TYPE).toBe(TENANT_EVENT_TYPES_WIRE.rejected);
+    expect(OrganizationBootstrappedEvent.EVENT_TYPE).toBe(TENANT_EVENT_TYPES_WIRE.bootstrapped);
     for (const Cls of [
-      TenantStatusTransitionedEvent,
-      TenantRejectedEvent,
-      TenantBootstrappedEvent,
+      OrganizationStatusTransitionedEvent,
+      OrganizationRejectedEvent,
+      OrganizationBootstrappedEvent,
     ]) {
       expect(Cls.EVENT_VERSION).toBe(1);
       expect(Cls.AGGREGATE_TYPE).toBe('tenant');
     }
 
     // 方向一：类实例 payload → schema.parse 通过
-    const transitioned = new TenantStatusTransitionedEvent({
+    const transitioned = new OrganizationStatusTransitionedEvent({
       aggregateId: 'orgA',
       payload: { from: null, to: 'active', actorId: 'ops' },
     });
@@ -56,9 +56,12 @@ describe('tenant 流事件契约 ⇄ 事件类 对拍（ES R1a · 裁⑥甲）',
       from: null,
       to: 'active',
     });
-    const rejected = new TenantRejectedEvent({ aggregateId: 'orgA', payload: { actorId: 'ops' } });
+    const rejected = new OrganizationRejectedEvent({
+      aggregateId: 'orgA',
+      payload: { actorId: 'ops' },
+    });
     expect(tenantRejectedPayloadSchema.parse(rejected.payload)).toEqual({ actorId: 'ops' });
-    const bootstrapped = new TenantBootstrappedEvent({
+    const bootstrapped = new OrganizationBootstrappedEvent({
       aggregateId: 'orgA',
       payload: { status: 'pending_approval', actorId: 'bootstrap' },
     });
@@ -71,7 +74,7 @@ describe('tenant 流事件契约 ⇄ 事件类 对拍（ES R1a · 裁⑥甲）',
       from: 'active',
       to: 'suspended',
     });
-    const rebuilt = new TenantStatusTransitionedEvent({
+    const rebuilt = new OrganizationStatusTransitionedEvent({
       aggregateId: 'orgB',
       eventId: 'fixed-event-id',
       occurredAt: new Date('2026-10-21T00:00:00.000Z'),

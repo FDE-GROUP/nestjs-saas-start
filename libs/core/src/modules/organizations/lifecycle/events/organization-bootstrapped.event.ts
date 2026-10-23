@@ -1,10 +1,10 @@
 import { DomainEvent, type DomainEventProps } from '../../../../shared-kernel/domain/domain-event';
 import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-names';
-import type { TenantStatus } from '../tenant-lifecycle';
+import type { OrganizationStatus } from '../organization-lifecycle';
 
 export interface TenantBootstrappedPayload {
   /** 存量行成流时刻的治理态快照（户籍表 `status` 真列原值）。 */
-  readonly status: TenantStatus;
+  readonly status: OrganizationStatus;
   /** bootstrap 动作主体（运维脚本恒 `bootstrap`·审计留痕）。 */
   readonly actorId?: string;
 }
@@ -21,7 +21,7 @@ export interface TenantBootstrappedPayload {
  * PII 边界：payload 仅 `status`（户籍表列实存 = id/status/createdAt/updatedAt·无 name/slug，
  * R1a 实核订正 plan 原表述）。id 即 aggregateId，不重复携带。
  */
-export class TenantBootstrappedEvent extends DomainEvent<TenantBootstrappedPayload> {
+export class OrganizationBootstrappedEvent extends DomainEvent<TenantBootstrappedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantBootstrapped;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
@@ -31,9 +31,9 @@ export class TenantBootstrappedEvent extends DomainEvent<TenantBootstrappedPaylo
   ) {
     super({
       ...props,
-      aggregateType: TenantBootstrappedEvent.AGGREGATE_TYPE,
-      eventType: TenantBootstrappedEvent.EVENT_TYPE,
-      eventVersion: TenantBootstrappedEvent.EVENT_VERSION,
+      aggregateType: OrganizationBootstrappedEvent.AGGREGATE_TYPE,
+      eventType: OrganizationBootstrappedEvent.EVENT_TYPE,
+      eventVersion: OrganizationBootstrappedEvent.EVENT_VERSION,
     });
   }
 }

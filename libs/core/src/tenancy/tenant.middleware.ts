@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, type NestMiddleware } from '@nestjs/common';
-import { TenantStatusService } from '../modules/tenants/lifecycle/tenant-status.service';
-import { UserStatusService } from '../modules/tenants/lifecycle/user-status.service';
+import { OrganizationStatusService } from '../modules/organizations/lifecycle/organization-status.service';
+import { UserStatusService } from '../modules/organizations/lifecycle/user-status.service';
 import { type RequestSessionReader, SESSION_READER } from './session/request-session.port';
 import { type TenantContext, tenantStorage } from './tenant-context';
 
@@ -22,8 +22,8 @@ export class TenantMiddleware implements NestMiddleware {
   constructor(
     @Inject(SESSION_READER)
     private readonly session: RequestSessionReader,
-    @Inject(TenantStatusService)
-    private readonly tenantStatus: TenantStatusService,
+    @Inject(OrganizationStatusService)
+    private readonly tenantStatus: OrganizationStatusService,
     @Inject(UserStatusService)
     private readonly userStatus: UserStatusService,
   ) {}

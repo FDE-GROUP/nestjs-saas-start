@@ -13,7 +13,7 @@ import {
   Organization,
 } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { CommandBus } from '@nestjs/cqrs';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -176,7 +176,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
   it('软删→硬删：六表 cascade 灭、tenant 事件补删、user 幸存；重复硬删 404 幂等', async () => {
     // ① 真软删（transition → deleted 终态）
     const soft = await commandBus.execute(new DeleteTenantCommand(orgId, userId));
-    expect(soft).toMatchObject({ organizationId: orgId, status: TENANT_STATUS.DELETED });
+    expect(soft).toMatchObject({ organizationId: orgId, status: ORGANIZATION_STATUS.DELETED });
 
     // ② 真硬删（先补删事件后删主行）
     const result = await commandBus.execute(new DeleteTenantPermanentlyCommand(orgId, userId));

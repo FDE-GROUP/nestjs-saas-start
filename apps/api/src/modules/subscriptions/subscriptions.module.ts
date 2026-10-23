@@ -11,7 +11,7 @@ import { ES_TRUTH_SOURCE_SUBSCRIPTIONS } from '@core/saas-kit/shared-kernel/doma
 import { Global, Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { SubscriptionsController } from './api/subscriptions.controller';
-import { TenantStatusSubscriptionLinkHandler } from './infrastructure/dispatchers/tenant-status-subscription-link.handler';
+import { OrganizationStatusSubscriptionLinkHandler } from './infrastructure/dispatchers/tenant-status-subscription-link.handler';
 import { MikroQuotaStore } from './infrastructure/mikro-quota.store';
 import { MikroSubscriptionLifecycle } from './infrastructure/mikro-subscription.lifecycle';
 import { PaymentCustomerProvisioner } from './infrastructure/payment-customer.provisioner';
@@ -20,7 +20,7 @@ import { MikroSubscriptionRepository } from './infrastructure/repositories/mikro
 const CommandHandlers = [CreateSubscriptionCommandHandler];
 const QueryHandlers = [GetSubscriptionQueryHandler];
 // ES 首个真实业务消费者（module-es-first-real-consumer 治理档）：跨上下文只经领域事件入本侧
-const EventHandlers = [TenantStatusSubscriptionLinkHandler];
+const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
 
 /**
  * Tenant subscription slice (global-tenancy S7 · FR-7/FR-8/D5).

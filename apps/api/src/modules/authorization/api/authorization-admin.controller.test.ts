@@ -5,9 +5,9 @@ import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serial
 import {
   createRoleSchema,
   grantRolePermissionSchema,
+  organizationRoleGrantViewSchema,
+  organizationRoleViewSchema,
   revokeRolePermissionSchema,
-  tenantRoleGrantViewSchema,
-  tenantRoleViewSchema,
 } from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
 import { AuthorizationAdminController } from './authorization-admin.controller';
@@ -71,13 +71,13 @@ describe('AuthorizationAdminController @SerializeOptions 元数据（S7b 数组�
       }
     )?.schema;
 
-  it('listRoles/createRole 携元素 schema tenantRoleViewSchema', () => {
-    expect(serializeSchema('listRoles')).toBe(tenantRoleViewSchema);
-    expect(serializeSchema('createRole')).toBe(tenantRoleViewSchema);
+  it('listRoles/createRole 携元素 schema organizationRoleViewSchema', () => {
+    expect(serializeSchema('listRoles')).toBe(organizationRoleViewSchema);
+    expect(serializeSchema('createRole')).toBe(organizationRoleViewSchema);
   });
 
-  it('listGrants 携元素 schema tenantRoleGrantViewSchema', () => {
-    expect(serializeSchema('listGrants')).toBe(tenantRoleGrantViewSchema);
+  it('listGrants 携元素 schema organizationRoleGrantViewSchema', () => {
+    expect(serializeSchema('listGrants')).toBe(organizationRoleGrantViewSchema);
   });
 
   it('void 端点（renameRole/deleteRole/grant/revoke）不挂序列化（无载荷·fail-open 透传）', () => {

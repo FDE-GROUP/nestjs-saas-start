@@ -3,14 +3,14 @@ import {
   TENANT_ACTION_VALUES,
   TENANT_SUBJECT_VALUES,
 } from '@core/saas-kit/authorization/tenant-rules';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { TENANT_PLANS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import {
   TENANT_ACTION_VALUES as CONTRACT_ACTION_VALUES,
   TENANT_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
+  ORGANIZATION_STATUS_VALUES,
   PAYMENT_PROVIDER_VALUES,
   TENANT_PLAN_IDS,
-  TENANT_STATUS_VALUES,
 } from '@saas/contracts';
 import { describe, expect, it } from 'vitest';
 
@@ -35,8 +35,8 @@ describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
     expect(asSet(TENANT_PLAN_IDS)).toEqual(asSet(Object.keys(TENANT_PLANS)));
   });
 
-  it('租户生命周期状态与 @core TENANT_STATUS 值域逐字一致', () => {
-    expect(asSet(TENANT_STATUS_VALUES)).toEqual(asSet(Object.values(TENANT_STATUS)));
+  it('租户生命周期状态与 @core ORGANIZATION_STATUS 值域逐字一致', () => {
+    expect(asSet(ORGANIZATION_STATUS_VALUES)).toEqual(asSet(Object.values(ORGANIZATION_STATUS)));
   });
 
   // 支付通道词汇：`PaymentProviderId` 是类型联合（无运行时值域可取），故用编译期双向赋值锁

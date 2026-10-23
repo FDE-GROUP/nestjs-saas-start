@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
-import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
-import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
-import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
+import { OrganizationBootstrappedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-bootstrapped.event';
+import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
+import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/user-status-transitioned.event';
 import { QueryOrder } from '@mikro-orm/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MikroOrmService } from '../mikro/mikro-orm.service';
@@ -100,13 +100,13 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
     const orgId = `es-mikro-tenant-${Date.now()}`;
     aggregateIds.push(orgId);
     await store.append([
-      new TenantStatusTransitionedEvent({
+      new OrganizationStatusTransitionedEvent({
         aggregateId: orgId,
         payload: { from: 'pending_approval', to: 'active', actorId: 'op-1' },
       }),
     ]);
     await store.append([
-      new TenantStatusTransitionedEvent({
+      new OrganizationStatusTransitionedEvent({
         aggregateId: orgId,
         payload: { from: 'active', to: 'suspended', actorId: 'op-2', reason: 'abuse' },
       }),
@@ -163,11 +163,11 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
   it('load 重建实例升序回放·信封透传保真（治理面 ES 覆盖层退役后仅验泛化读侧 · 切片 D）', async () => {
     const orgId = `es-r1a-load-${Date.now()}`;
     aggregateIds.push(orgId);
-    const bootstrap = new TenantBootstrappedEvent({
+    const bootstrap = new OrganizationBootstrappedEvent({
       aggregateId: orgId,
       payload: { status: 'pending_approval', actorId: 'bootstrap' },
     });
-    const approve = new TenantStatusTransitionedEvent({
+    const approve = new OrganizationStatusTransitionedEvent({
       aggregateId: orgId,
       payload: { from: 'pending_approval', to: 'active', actorId: 'op-1' },
     });
@@ -181,23 +181,23 @@ gated('MikroEventStore real-DB round trip (ORM 修宪案 B · 切片 3c-ii-C · 
     // 信封显式值透传不重掷（同 relay 重建契约）
     expect(events[0].eventId).toBe(bootstrap.eventId);
     expect(events[0].occurredAt.getTime()).toBe(bootstrap.occurredAt.getTime());
-    expect(events[0]).toBeInstanceOf(TenantBootstrappedEvent);
-    expect(events[1]).toBeInstanceOf(TenantStatusTransitionedEvent);
-    // 注：原 `replayTenantLifecycle` fold 断言随治理面 ES 覆盖层（tenant-lifecycle-fold）退役而删除——
+    expect(events[0]).toBeInstanceOf(OrganizationBootstrappedEvent);
+    expect(events[1]).toBeInstanceOf(OrganizationStatusTransitionedEvent);
+    // 注：原 `replayTenantLifecycle` fold 断言随治理面 ES 覆盖层（organization-lifecycle-fold）退役而删除——
     // 租户态现归 organization.status 真列（不再「回放即真相」）；本测仅坐实事件流泛化重建读侧。
   });
 
   it('append(expectedVersion) 乐观锁：不符 fail-loud 整批不写，符合则续位', async () => {
     const orgId = `es-r1a-ev-${Date.now()}`;
     aggregateIds.push(orgId);
-    const first = new TenantBootstrappedEvent({
+    const first = new OrganizationBootstrappedEvent({
       aggregateId: orgId,
       payload: { status: 'active' },
     });
     // 空流期望 max+1=1 → 写成功
     await store.append([first], 1);
     // 再携 expectedVersion=1 → 实 max+1=2 不符 → 拒写且行数不变
-    const second = new TenantStatusTransitionedEvent({
+    const second = new OrganizationStatusTransitionedEvent({
       aggregateId: orgId,
       payload: { from: 'active', to: 'suspended' },
     });

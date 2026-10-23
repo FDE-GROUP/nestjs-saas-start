@@ -1,4 +1,4 @@
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /**
  * Tenant provisioning gateway port (domain-owned · global-tenancy S4 · FR-1).
@@ -10,14 +10,14 @@ import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tena
  * `owner` member（FR-12·天然满足），本 port 不另写成员。
  *
  * `remove` 供驳回：硬删 pending 组织行（FK 级联清 member/invitation·pending 期零业务数据）。
- * 状态迁移（approve）不在此 port——由 `TenantStatusService` 统一写回户籍表（禁散点）。
+ * 状态迁移（approve）不在此 port——由 `OrganizationStatusService` 统一写回户籍表（禁散点）。
  */
 export const TENANT_PROVISIONING_REPOSITORY = Symbol('TENANT_PROVISIONING_REPOSITORY');
 
 /** 申请落地后的最小回执（组织 id + 当前生命周期状态）。 */
 export interface TenantProvisioningReceipt {
   organizationId: string;
-  status: TenantStatus;
+  status: OrganizationStatus;
 }
 
 export interface TenantProvisioningRepository {

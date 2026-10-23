@@ -1,8 +1,8 @@
 import type {
-  TenantRbacRepository,
-  TenantRoleGrantView,
-} from '@app/modules/authorization/domain/repositories/tenant-rbac.repository';
-import { TENANT_RBAC_REPOSITORY } from '@app/modules/authorization/domain/repositories/tenant-rbac.repository';
+  OrganizationRbacRepository,
+  OrganizationRoleGrantView,
+} from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
+import { ORGANIZATION_RBAC_REPOSITORY } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import {
   mergePredicatesWithOr,
   toMikroPredicate,
@@ -19,7 +19,7 @@ import { buildTenantAbility, type TenantCaslAbility } from './casl-ability.facto
 
 /** 缓存条目：per-(org,key) 的授权事实源（grants）+ 派生的类型级 ability（守卫热路径复用·免重建）。 */
 interface CachedEntry {
-  readonly grants: readonly TenantRoleGrantView[];
+  readonly grants: readonly OrganizationRoleGrantView[];
   readonly typeLevel: TenantCaslAbility;
 }
 
@@ -48,8 +48,8 @@ function resolveConditions(
 /**
  * `TenantPermissionChecker` 的 CASL 适配（module-rbac-casl §2.2 · module-rbac-dynamic-roles §2.3·S2 落形）。
  *
- * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `TENANT_RBAC_REPOSITORY` 端口读
- * per-tenant 角色规则集，投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
+ * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `ORGANIZATION_RBAC_REPOSITORY` 端口读
+ * per-organization 角色规则集，投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
  *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色）再 `findGrants`；
  *  - **fail-closed**：无租户/无角色/查无角色（null）/零授权（[]）/加载抛错 → 恒 deny，绝不视同放行；
  *  - **进程内版本缓存**：同 (org,key) 记忆 ability（含在途 Promise 防并发重入），守卫热路径不逐请求查库；
@@ -68,7 +68,9 @@ function resolveConditions(
 export class CaslTenantPermissionChecker
   implements TenantPermissionChecker, TenantPermissionInvalidator
 {
-  constructor(@Inject(TENANT_RBAC_REPOSITORY) private readonly rbac: TenantRbacRepository) {}
+  constructor(
+    @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
+  ) {}
 
   /** `(org,key)` 复合键 → 在途/已决投影 Promise（防并发重入·加载失败即时淘汰）。 */
   private readonly abilities = new Map<string, Promise<CachedEntry>>();

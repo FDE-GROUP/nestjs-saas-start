@@ -5,7 +5,7 @@ import {
 } from '@app/modules/auth/auth.constant';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { resolveRequestSession } from '@app/modules/auth/infrastructure/session-resolver';
-import type { TenantRole } from '@core/saas-kit/authorization/tenant-rules';
+import type { OrganizationRole } from '@core/saas-kit/authorization/tenant-rules';
 import type {
   RequestSessionReader,
   SessionRequestLike,
@@ -30,14 +30,14 @@ import { Inject, Injectable } from '@nestjs/common';
  */
 
 /** 按请求记忆活动租户角色，避免同一请求多次 membership 读取。 */
-const roleCache = new WeakMap<SessionRequestLike, TenantRole | undefined>();
+const roleCache = new WeakMap<SessionRequestLike, OrganizationRole | undefined>();
 
 /**
  * BA role 字符串透传归一（module-rbac-dynamic-roles 丙裁：角色是 DB 运行时词汇，系统三 key
  * + 自定义 key 皆合法，不再按封闭词汇表拦截）；非法值（非 string/空串）→ undefined·
  * 消费侧 fail-closed。合法性（角色存在且有授权）由投影侧查 DB grant 行裁决，非本处职责。
  */
-function toTenantRole(raw: unknown): TenantRole | undefined {
+function toOrganizationRole(raw: unknown): OrganizationRole | undefined {
   return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
 }
 
@@ -49,11 +49,11 @@ function toTenantRole(raw: unknown): TenantRole | undefined {
 async function resolveActiveRole(
   auth: AuthInstance,
   req: SessionRequestLike,
-): Promise<TenantRole | undefined> {
+): Promise<OrganizationRole | undefined> {
   const hit = await auth.api.getActiveMemberRole({
     headers: req.headers as unknown as Headers,
   });
-  return toTenantRole((hit as { role?: unknown } | undefined)?.role);
+  return toOrganizationRole((hit as { role?: unknown } | undefined)?.role);
 }
 
 /**

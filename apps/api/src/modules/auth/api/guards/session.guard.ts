@@ -1,4 +1,4 @@
-import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { IS_PUBLIC_KEY } from '@core/saas-kit/tenancy/public.decorator';
 import {

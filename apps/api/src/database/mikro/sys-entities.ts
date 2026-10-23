@@ -1,9 +1,9 @@
 import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
 import {
   MIKRO_RBAC_TABLE_ENTITIES,
-  TENANT_ROLE_AUDIT_META,
-  TENANT_ROLE_GRANT_META,
-  TENANT_ROLE_META,
+  ORGANIZATION_ROLE_AUDIT_META,
+  ORGANIZATION_ROLE_GRANT_META,
+  ORGANIZATION_ROLE_META,
 } from '../../modules/authorization/infrastructure/entities/rbac.entities';
 import { PostEntity } from '../../modules/posts/infrastructure/entities/post.entity';
 import {
@@ -40,7 +40,11 @@ export const MIKRO_THREE_TABLE_ENTITIES = [Workspace, TenantSubscription, Event]
 export const THREE_TABLE_METAS = [WORKSPACE_META, TENANT_SUBSCRIPTION_META, EVENT_META];
 
 /** RBAC 三表元数据（迁移装配可消费）。 */
-export const RBAC_TABLE_METAS = [TENANT_ROLE_META, TENANT_ROLE_GRANT_META, TENANT_ROLE_AUDIT_META];
+export const RBAC_TABLE_METAS = [
+  ORGANIZATION_ROLE_META,
+  ORGANIZATION_ROLE_GRANT_META,
+  ORGANIZATION_ROLE_AUDIT_META,
+];
 
 /** BA 契约面八表全集（身份机器族[auth] + 组织容器族[tenants]·global-ba-entity-domain-placement 归域后装配根聚合）。 */
 export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES];

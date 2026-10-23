@@ -1,4 +1,4 @@
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
 /**
@@ -8,7 +8,7 @@ import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagi
  * 使用——**刻意不做租户过滤**（平台级天然跨租户，FR-11①），因此该 port 绝不允许被
  * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
  *
- * 状态迁移（suspend/resume/delete）不在此 port——统一走 `TenantStatusService.transition`
+ * 状态迁移（suspend/resume/delete）不在此 port——统一走 `OrganizationStatusService.transition`
  * （户籍表 `tenant.status` 单点·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
  */
 export const TENANT_GOVERNANCE_REPOSITORY = Symbol('TENANT_GOVERNANCE_REPOSITORY');
@@ -18,7 +18,7 @@ export interface PlatformTenantRow {
   name: string;
   slug: string;
   /** 无状态记录（存量/seeded）视同 active（与 canTransition/middleware deny-list 同口径）。 */
-  status: TenantStatus;
+  status: OrganizationStatus;
   createdAt: Date;
 }
 
@@ -69,7 +69,7 @@ export interface TenantDataExport {
     slug: string;
     logo: string | null;
     /** 生命周期态（`tenant.status` 真列·无户籍兑底 active·与列表行同口径）。 */
-    status: TenantStatus;
+    status: OrganizationStatus;
     metadata: unknown;
     createdAt: Date;
     updatedAt: Date | null;

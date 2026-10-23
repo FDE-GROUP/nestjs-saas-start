@@ -1,10 +1,10 @@
+import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   SUBSCRIPTION_LIFECYCLE,
   type SubscriptionLifecycle,
 } from '@core/saas-kit/modules/subscriptions/domain/ports/subscription-lifecycle.port';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/tenant-plans';
-import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
 import { Inject, Logger } from '@nestjs/common';
 import { EventsHandler, type IEventHandler } from '@nestjs/cqrs';
 
@@ -19,18 +19,18 @@ import { EventsHandler, type IEventHandler } from '@nestjs/cqrs';
  * 幂等（at-least-once 硬要求）：映射为终态收敛调用，重投/滞后由 `SubscriptionLifecycle`
  * 端口契约收敛为 no-op；本 handler 绝不按事件计数变更。
  */
-@EventsHandler(TenantStatusTransitionedEvent)
-export class TenantStatusSubscriptionLinkHandler
-  implements IEventHandler<TenantStatusTransitionedEvent>
+@EventsHandler(OrganizationStatusTransitionedEvent)
+export class OrganizationStatusSubscriptionLinkHandler
+  implements IEventHandler<OrganizationStatusTransitionedEvent>
 {
-  private readonly logger = new Logger(TenantStatusSubscriptionLinkHandler.name);
+  private readonly logger = new Logger(OrganizationStatusSubscriptionLinkHandler.name);
 
   constructor(@Inject(SUBSCRIPTION_LIFECYCLE) private readonly lifecycle: SubscriptionLifecycle) {}
 
-  async handle(event: TenantStatusTransitionedEvent): Promise<void> {
+  async handle(event: OrganizationStatusTransitionedEvent): Promise<void> {
     const tenantId = event.aggregateId;
     const to = event.payload.to;
-    if (to === TENANT_STATUS.SUSPENDED) {
+    if (to === ORGANIZATION_STATUS.SUSPENDED) {
       const changed = await this.lifecycle.convergeStatus(
         tenantId,
         SUBSCRIPTION_STATUS.ACTIVE,
@@ -41,7 +41,7 @@ export class TenantStatusSubscriptionLinkHandler
       );
       return;
     }
-    if (to === TENANT_STATUS.ACTIVE) {
+    if (to === ORGANIZATION_STATUS.ACTIVE) {
       // resume/approve：仅回收**本次治理挂起**的可恢复行；不回溯历史 cancelled/expired（1:N 历史纪律）
       const changed = await this.lifecycle.convergeStatus(
         tenantId,

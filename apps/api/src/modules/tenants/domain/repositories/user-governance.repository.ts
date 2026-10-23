@@ -1,4 +1,4 @@
-import type { UserStatus } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
 /**

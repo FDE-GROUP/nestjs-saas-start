@@ -1,5 +1,5 @@
-import type { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
-import type { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { RequestSessionReader } from '@core/saas-kit/tenancy/session/request-session.port';
 import { TenantMiddleware } from '@core/saas-kit/tenancy/tenant.middleware';
 import { type TenantContext, tenantStorage } from '@core/saas-kit/tenancy/tenant-context';
@@ -29,7 +29,7 @@ function makeMiddleware(opts: {
     opts.blocked === 'throw'
       ? vi.fn().mockRejectedValue(new Error('db down'))
       : vi.fn().mockResolvedValue(opts.blocked ?? false);
-  const status = { isBlocked } as unknown as TenantStatusService;
+  const status = { isBlocked } as unknown as OrganizationStatusService;
 
   const userIsBlocked = vi.fn().mockResolvedValue(opts.userBlocked ?? false);
   const userStatus = { isBlocked: userIsBlocked } as unknown as UserStatusService;

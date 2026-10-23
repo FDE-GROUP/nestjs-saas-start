@@ -1,5 +1,5 @@
 /** 返回形状（read shape）：query handler 的出参类型——**非** CQRS 物化投影（读写同库同模型·架构精度修宪 S5 正名）。 */
-import type { UserStatus } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 
 /**
  * Platform user-governance read-model projections (FR-6/FR-10 · S6 · CQRS read side).

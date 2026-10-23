@@ -182,7 +182,7 @@ paths:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/TenantRoleViewResponse'
+                          $ref: '#/components/schemas/OrganizationRoleViewResponse'
         '403':
           description: CASL deny (no Role read).
           content:
@@ -225,7 +225,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/TenantRoleViewResponse'
+                        $ref: '#/components/schemas/OrganizationRoleViewResponse'
         '400':
           description: Invalid/reserved role key.
           content:
@@ -337,7 +337,7 @@ paths:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/TenantRoleGrantViewResponse'
+                          $ref: '#/components/schemas/OrganizationRoleGrantViewResponse'
         '404':
           description: Role not found.
           content:
@@ -2194,7 +2194,7 @@ components:
         - timestamp
         - path
         - requestId
-    TenantRoleViewResponse:
+    OrganizationRoleViewResponse:
       type: object
       properties:
         id:
@@ -2202,7 +2202,7 @@ components:
           description: UUIDv7。
         key:
           type: string
-          description: 角色 key（租户内唯一）。
+          description: 角色 key（组织内唯一）。
         name:
           type: string
           description: 人面可读名。
@@ -2214,7 +2214,7 @@ components:
         - key
         - name
         - isSystem
-    TenantRoleGrantViewResponse:
+    OrganizationRoleGrantViewResponse:
       type: object
       properties:
         subject:

@@ -38,10 +38,10 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   post: 'posts',
   tenantSubscription: 'subscriptions',
   // module-rbac-dynamic-roles S1（甲裁三表）·领域细化重构后属 `authorization` 上下文：
-  // 角色/授权/审计均属授权域自有表，唯一写通道 = MikroTenantRbacRepository（门面皆经端口读写，禁散点直访）。
-  tenantRole: 'authorization',
-  tenantRoleGrant: 'authorization',
-  tenantRoleAudit: 'authorization',
+  // 角色/授权/审计均属授权域自有表，唯一写通道 = MikroOrganizationRbacRepository（门面皆经端口读写，禁散点直访）。
+  organizationRole: 'authorization',
+  organizationRoleGrant: 'authorization',
+  organizationRoleAudit: 'authorization',
   // database 基础设施：ES 端口（原事件存储适配）独占写面，业务仓储不得直写 event（§6-丙）
   event: 'database',
 };

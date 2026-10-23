@@ -6,19 +6,23 @@ import {
 } from '../../../shared-kernel/domain/event-publisher.port';
 import { UNIT_OF_WORK, type UnitOfWork } from '../../../shared-kernel/domain/unit-of-work.port';
 import { UserStatusTransitionedEvent } from './events/user-status-transitioned.event';
-import { canTransition, TENANT_STATUS, type TenantStatus } from './tenant-lifecycle';
+import {
+  canTransition,
+  ORGANIZATION_STATUS,
+  type OrganizationStatus,
+} from './organization-lifecycle';
 import { USER_STATUS_STORE, type UserStatusStore } from './user-status.store';
 
 /**
  * 用户生命周期状态复用租户状态机的 active/suspended/deleted 子集
  * （pending 属租户准入语义，用户侧不产生）。
  */
-export type UserStatus = TenantStatus;
+export type UserStatus = OrganizationStatus;
 
 export const USER_STATUS = {
-  ACTIVE: TENANT_STATUS.ACTIVE,
-  SUSPENDED: TENANT_STATUS.SUSPENDED,
-  DELETED: TENANT_STATUS.DELETED,
+  ACTIVE: ORGANIZATION_STATUS.ACTIVE,
+  SUSPENDED: ORGANIZATION_STATUS.SUSPENDED,
+  DELETED: ORGANIZATION_STATUS.DELETED,
 } as const;
 
 /** 严格迁移结果结合：ok 携 previous 供审计；not-found/illegal 由调用方转 404/409。 */

@@ -1,7 +1,7 @@
 import {
-  TENANT_ROLE_AUDIT_META,
-  TENANT_ROLE_GRANT_META,
-  TENANT_ROLE_META,
+  ORGANIZATION_ROLE_AUDIT_META,
+  ORGANIZATION_ROLE_GRANT_META,
+  ORGANIZATION_ROLE_META,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
@@ -64,9 +64,9 @@ const SELF_TABLES: SelfTableFacts[] = [
   metaFacts(WORKSPACE_META),
   metaFacts(TENANT_SUBSCRIPTION_META),
   metaFacts(EVENT_META),
-  metaFacts(TENANT_ROLE_META),
-  metaFacts(TENANT_ROLE_GRANT_META),
-  metaFacts(TENANT_ROLE_AUDIT_META),
+  metaFacts(ORGANIZATION_ROLE_META),
+  metaFacts(ORGANIZATION_ROLE_GRANT_META),
+  metaFacts(ORGANIZATION_ROLE_AUDIT_META),
   metaFacts(AUDIT_LOG_META),
   POST_FACTS,
 ];
@@ -136,7 +136,7 @@ describe('全表登记恒等（16 表·新增/移除未登记即红）', () => {
       expect(classified, `自撰表 ${f.table} 未落入定律任何清单`).toBe(true);
     }
     // 8 BA + 4 不可变 + 3 豁免 + 1 合规 nullable = 16 实数对拍（global-governance-lifecycle-consolidation
-    // 切片 E 立 `audit_log` append-only 账本后·不可变面 event/grant/role_audit/audit_log=4）：合规 nullable 面 = 8−4−3 = 1（tenant_role）
+    // 切片 E 立 `audit_log` append-only 账本后·不可变面 event/grant/role_audit/audit_log=4）：合规 nullable 面 = 8−4−3 = 1（organization_role）
     expect(SELF_TABLES.length).toBe(8);
   });
 });

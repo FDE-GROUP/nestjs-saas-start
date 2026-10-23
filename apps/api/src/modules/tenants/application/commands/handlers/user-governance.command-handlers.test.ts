@@ -1,9 +1,9 @@
 import type { AuthSessionStore } from '@app/modules/auth/domain/ports/session-store.port';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   USER_STATUS,
   type UserStatusService,
-} from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+} from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { ConflictException } from '@nestjs/common';
@@ -54,7 +54,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
   it('transitions to suspended, deletes sessions, and audits', async () => {
     const d = deps({
       kind: 'ok',
-      previous: TENANT_STATUS.ACTIVE,
+      previous: ORGANIZATION_STATUS.ACTIVE,
       status: USER_STATUS.SUSPENDED,
     });
     const handler = new SuspendUserCommandHandler(d.status, d.audit, d.uow, d.sessions);
@@ -70,7 +70,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
     // S3 原子性锁：迁移与 session 删同处一个 uow 关键段（时序 tx-begin → transition → session-delete → tx-end）
     expect(d.order).toEqual(['tx-begin', 'transition', 'session-delete', 'tx-end']);
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'u1', 'op-1', {
-      from: TENANT_STATUS.ACTIVE,
+      from: ORGANIZATION_STATUS.ACTIVE,
       to: USER_STATUS.SUSPENDED,
       reason: 'fraud',
     });
@@ -87,7 +87,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
   it('409s + audits an illegal transition and does NOT delete sessions', async () => {
     const d = deps({
       kind: 'illegal',
-      from: TENANT_STATUS.DELETED,
+      from: ORGANIZATION_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
     });
     const handler = new SuspendUserCommandHandler(d.status, d.audit, d.uow, d.sessions);
@@ -96,7 +96,7 @@ describe('SuspendUserCommandHandler (S6 · FR-10 暂停 + session 硬删)', () =
     );
     expect(d.deleteAllForUser).not.toHaveBeenCalled();
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'u1', 'op-1', {
-      from: TENANT_STATUS.DELETED,
+      from: ORGANIZATION_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
       error: 'illegal_transition',
     });
@@ -107,7 +107,7 @@ describe('ResumeUserCommandHandler (S6 · FR-10 恢复·不重建 session)', () 
   it('transitions suspended → active and audits (no session delete side-effect)', async () => {
     const d = deps({
       kind: 'ok',
-      previous: TENANT_STATUS.SUSPENDED,
+      previous: ORGANIZATION_STATUS.SUSPENDED,
       status: USER_STATUS.ACTIVE,
     });
     const handler = new ResumeUserCommandHandler(d.status, d.audit);
@@ -117,7 +117,7 @@ describe('ResumeUserCommandHandler (S6 · FR-10 恢复·不重建 session)', () 
     });
     expect(d.transition).toHaveBeenCalledWith('u1', USER_STATUS.ACTIVE, { actorId: 'op-1' });
     expect(d.auditSpy).toHaveBeenCalledWith('resume', 'u1', 'op-1', {
-      from: TENANT_STATUS.SUSPENDED,
+      from: ORGANIZATION_STATUS.SUSPENDED,
       to: USER_STATUS.ACTIVE,
     });
   });
@@ -125,7 +125,7 @@ describe('ResumeUserCommandHandler (S6 · FR-10 恢复·不重建 session)', () 
   it('409s + audits an illegal resume (active user is a no-op edge? deleted is terminal)', async () => {
     const d = deps({
       kind: 'illegal',
-      from: TENANT_STATUS.DELETED,
+      from: ORGANIZATION_STATUS.DELETED,
       to: USER_STATUS.ACTIVE,
     });
     const handler = new ResumeUserCommandHandler(d.status, d.audit);
@@ -133,7 +133,7 @@ describe('ResumeUserCommandHandler (S6 · FR-10 恢复·不重建 session)', () 
       ConflictException,
     );
     expect(d.auditSpy).toHaveBeenCalledWith('resume', 'u1', 'op-1', {
-      from: TENANT_STATUS.DELETED,
+      from: ORGANIZATION_STATUS.DELETED,
       to: USER_STATUS.ACTIVE,
       error: 'illegal_transition',
     });

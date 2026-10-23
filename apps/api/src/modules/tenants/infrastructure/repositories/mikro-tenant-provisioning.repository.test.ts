@@ -1,7 +1,7 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroTenantProvisioningRepository } from './mikro-tenant-provisioning.repository';
@@ -55,8 +55,8 @@ describe('MikroTenantProvisioningRepository (S-d2 · FR-1 唯一建租户通道)
     ];
     expect(entity).toBe(Organization);
     expect(where).toEqual({ id: 'org-new' });
-    expect(data).toEqual({ status: TENANT_STATUS.PENDING });
-    expect(receipt).toEqual({ organizationId: 'org-new', status: TENANT_STATUS.PENDING });
+    expect(data).toEqual({ status: ORGANIZATION_STATUS.PENDING });
+    expect(receipt).toEqual({ organizationId: 'org-new', status: ORGANIZATION_STATUS.PENDING });
     expect(spies.nativeDelete).not.toHaveBeenCalled();
   });
 

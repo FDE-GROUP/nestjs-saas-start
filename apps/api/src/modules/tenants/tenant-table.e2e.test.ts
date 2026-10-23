@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -32,7 +32,7 @@ const gated = E2E_DB ? describe : describe.skip;
 gated('organization.status 治理真列库语义（归列切片 B · env-gated）', () => {
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
-  let statusService: TenantStatusService;
+  let statusService: OrganizationStatusService;
 
   const stamp = Date.now();
   const orgId = `e2e-tt-org-${stamp}`;
@@ -53,7 +53,7 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     mikro = app.get(MikroOrmService);
-    statusService = app.get(TenantStatusService);
+    statusService = app.get(OrganizationStatusService);
 
     // 直插 organization（不携 status）——验证列 DB 默认 'active' 落地（缺席态消失·O1 已堵）。
     const em = await mikro.fork();
@@ -78,15 +78,15 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
   });
 
   it('①默认入册：新 org status 默认 active；transition 前置态取 active（非 undefined）·直写 organization.status', async () => {
-    const result = await statusService.transition(orgId, TENANT_STATUS.SUSPENDED);
+    const result = await statusService.transition(orgId, ORGANIZATION_STATUS.SUSPENDED);
     expect(result).toEqual({
       kind: 'ok',
-      previous: TENANT_STATUS.ACTIVE,
-      status: TENANT_STATUS.SUSPENDED,
+      previous: ORGANIZATION_STATUS.ACTIVE,
+      status: ORGANIZATION_STATUS.SUSPENDED,
     });
     const em = await mikro.fork();
     const org = await em.findOne(Organization, { id: orgId } as never);
-    expect(org?.status).toBe(TENANT_STATUS.SUSPENDED);
+    expect(org?.status).toBe(ORGANIZATION_STATUS.SUSPENDED);
     // 归列实证：生命周期态在 organization.status 真列·metadata 不携 status（BA 面零我方寄居键）
     expect((org?.metadata ?? {}) as Record<string, unknown>).not.toHaveProperty('status');
     expect(await statusService.isBlocked(orgId)).toBe(true);
@@ -100,7 +100,7 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
   });
 
   it('③deny-list 读语义：新建 org read 返 active（非 undefined）·不拦', async () => {
-    expect(await statusService.read(bareOrgId)).toBe(TENANT_STATUS.ACTIVE);
+    expect(await statusService.read(bareOrgId)).toBe(ORGANIZATION_STATUS.ACTIVE);
     expect(await statusService.isBlocked(bareOrgId)).toBe(false);
   });
 
@@ -110,7 +110,7 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
     expect(affected).toBe(1);
     expect(await em.findOne(Organization, { id: orgId } as never)).toBeNull();
     // not-found 判据随本体消灭
-    expect(await statusService.transition(orgId, TENANT_STATUS.ACTIVE)).toEqual({
+    expect(await statusService.transition(orgId, ORGANIZATION_STATUS.ACTIVE)).toEqual({
       kind: 'not-found',
     });
   });

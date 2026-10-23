@@ -66,7 +66,7 @@ describe('MikroSubscriptionLifecycle（系统面·终态收敛）', () => {
 
 /**
  * ES R4c 真相源写切换镜测（module-es-r4-second-context-subscriptions §3-R4c·沿 R1c
- * `tenant-status.service.test` 先例）：旋钮开时 `convergeStatus` 以 fold 重放态为裁决输入、
+ * `organization-status.service.test` 先例）：旋钮开时 `convergeStatus` 以 fold 重放态为裁决输入、
  * 走 `publishDurable`（带 expectedVersion 乐观锁）+ 投影 nativeUpdate(fold 结果)，
  * **不调 publishAll**；`rebuildProjection` 单流重建。DB-free（真库往返由 gated 段②③④承担）。
  */

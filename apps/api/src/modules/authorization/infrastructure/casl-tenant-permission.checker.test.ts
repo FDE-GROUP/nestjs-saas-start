@@ -1,7 +1,7 @@
 import type {
-  TenantRbacRepository,
-  TenantRoleGrantView,
-} from '@app/modules/authorization/domain/repositories/tenant-rbac.repository';
+  OrganizationRbacRepository,
+  OrganizationRoleGrantView,
+} from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import { describe, expect, it, vi } from 'vitest';
 import { CaslTenantPermissionChecker } from './casl-tenant-permission.checker';
 
@@ -20,14 +20,14 @@ const grant = (
   subject: string,
   action: string,
   conditions: Record<string, unknown> | null = null,
-) => ({ subject, action, conditions }) as unknown as TenantRoleGrantView;
+) => ({ subject, action, conditions }) as unknown as OrganizationRoleGrantView;
 
-function makeChecker(grantsFor: (org: string, key: string) => TenantRoleGrantView[] | null) {
+function makeChecker(grantsFor: (org: string, key: string) => OrganizationRoleGrantView[] | null) {
   const ensureSystemRoles = vi.fn().mockResolvedValue(undefined);
   const findGrants = vi.fn(async (org: string, key: string) =>
     grantsFor(org, key),
   ) as unknown as ReturnType<typeof vi.fn>;
-  const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
+  const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
   return { checker: new CaslTenantPermissionChecker(rbac), ensureSystemRoles, findGrants };
 }
 
@@ -169,7 +169,7 @@ describe('CaslTenantPermissionChecker（DB 规则源·S2）', () => {
     const findGrants = vi
       .fn()
       .mockResolvedValue([grant('Member', 'read')]) as unknown as ReturnType<typeof vi.fn>;
-    const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
+    const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
     const checker = new CaslTenantPermissionChecker(rbac);
     await expect(
       checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
@@ -352,7 +352,7 @@ describe('CaslTenantPermissionChecker（query 级列表过滤·listPredicate 切
     const rbac = {
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants: vi.fn().mockRejectedValue(new Error('db down')),
-    } as unknown as TenantRbacRepository;
+    } as unknown as OrganizationRbacRepository;
     await expect(new CaslTenantPermissionChecker(rbac).listPredicate(base)).resolves.toEqual({
       kind: 'none',
     });

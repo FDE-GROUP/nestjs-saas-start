@@ -1,6 +1,6 @@
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import type { UserStatus } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
 import type {
@@ -25,9 +25,9 @@ import type { PlatformUserRow } from '../../../tenants/domain/repositories/user-
  * 平台治理面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
  * 真相源 = 各 controller 实际返回类型（platform-tenants / platform-users）；
  * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红），非 runtime 测。
- * 状态枚举复用 @core TENANT_STATUS 单源（UserStatus ≡ TenantStatus 别名）。
+ * 状态枚举复用 @core ORGANIZATION_STATUS 单源（UserStatus ≡ OrganizationStatus 别名）。
  */
-const STATUS_VALUES = Object.values(TENANT_STATUS);
+const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
 
 export class PlatformTenantRowResponse {
   @ApiProperty({ description: 'organization 主键（= 租户 id）。' })
@@ -40,7 +40,7 @@ export class PlatformTenantRowResponse {
   slug!: string;
 
   @ApiProperty({ enum: STATUS_VALUES, description: '生命周期状态（无记录视同 active）。' })
-  status!: TenantStatus;
+  status!: OrganizationStatus;
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;

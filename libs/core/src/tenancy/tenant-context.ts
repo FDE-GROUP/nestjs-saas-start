@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { TenantRole } from '../authorization/tenant-rules';
+import type { OrganizationRole } from '../authorization/tenant-rules';
 
 /**
  * Per-request tenant scope (global-tenancy §9.3 / FR-2).
@@ -12,7 +12,7 @@ export interface TenantContext {
   tenantId?: string;
   workspaceId?: string;
   userId?: string;
-  role?: TenantRole;
+  role?: OrganizationRole;
 }
 
 export const tenantStorage = new AsyncLocalStorage<TenantContext>();

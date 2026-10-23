@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { AppModule } from '@app/app.module';
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
-import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.store';
-import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
-import { USER_STATUS_STORE } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
+import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
+import { USER_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/user-status.store';
 import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
-import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
+import { MikroOrganizationStatusStore } from './infrastructure/mikro-organization-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
 
 /**
@@ -16,12 +16,12 @@ import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
  * 可解析——非手工桩。与 `tenancy/di-context.integration.test.ts` 的机制面锁测互补。
  */
 describe('未决项 4 · lifecycle 归位 tenants 真实装配（整树 DB-free）', () => {
-  it('AppModule 整树解析 TenantStatusService/UserStatusService 与两 store Mikro 适配', async () => {
+  it('AppModule 整树解析 OrganizationStatusService/UserStatusService 与两 store Mikro 适配', async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
 
-    expect(moduleRef.get(TenantStatusService)).toBeInstanceOf(TenantStatusService);
+    expect(moduleRef.get(OrganizationStatusService)).toBeInstanceOf(OrganizationStatusService);
     expect(moduleRef.get(UserStatusService)).toBeInstanceOf(UserStatusService);
-    expect(moduleRef.get(TENANT_STATUS_STORE)).toBeInstanceOf(MikroTenantStatusStore);
+    expect(moduleRef.get(ORGANIZATION_STATUS_STORE)).toBeInstanceOf(MikroOrganizationStatusStore);
     expect(moduleRef.get(USER_STATUS_STORE)).toBeInstanceOf(MikroUserStatusStore);
   });
 });

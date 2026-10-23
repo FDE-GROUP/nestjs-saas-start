@@ -2,7 +2,7 @@ import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import type { TenantPermissionChecker } from '@core/saas-kit/authorization/tenant-permission.port';
-import type { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { PlatformSettings } from '@core/saas-kit/platform/platform-config.port';
 import type { PlatformIdentityLookup } from '@core/saas-kit/platform/platform-identity.port';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';

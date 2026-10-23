@@ -9,10 +9,15 @@ import { strictObject } from '../strict';
  * `@core/saas-kit`（领域形态），两侧一致性由 apps/api 对拍测锁定
  * （`tenant-event-contract.test.ts`·双向赋值锁先例）。
  *
- * wire enum 内联纪律（contracts 零依赖 @core·见 index.ts 头注）：`TENANT_STATUS_WIRE`
- * 值集与 `@core` `TENANT_STATUS` 的一致性由对拍测锁漂移，非 import。
+ * wire enum 内联纪律（contracts 零依赖 @core·见 index.ts 头注）：`ORGANIZATION_STATUS_WIRE`
+ * 值集与 `@core` `ORGANIZATION_STATUS` 的一致性由对拍测锁漂移，非 import。
  */
-export const TENANT_STATUS_WIRE = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
+export const ORGANIZATION_STATUS_WIRE = [
+  'pending_approval',
+  'active',
+  'suspended',
+  'deleted',
+] as const;
 
 /** tenant 流事件名（与 @core `DOMAIN_EVENTS` 三键一致性由对拍测锁）。 */
 export const TENANT_EVENT_TYPES_WIRE = {
@@ -23,12 +28,12 @@ export const TENANT_EVENT_TYPES_WIRE = {
 
 /** `tenant.status.transitioned` v1 payload（from=迁移前态·无记录历史为 null）。 */
 export const tenantStatusTransitionedPayloadSchema = strictObject({
-  from: z.union([z.enum(TENANT_STATUS_WIRE), z.null()]),
-  to: z.enum(TENANT_STATUS_WIRE),
+  from: z.union([z.enum(ORGANIZATION_STATUS_WIRE), z.null()]),
+  to: z.enum(ORGANIZATION_STATUS_WIRE),
   actorId: z.string().optional(),
   reason: z.string().optional(),
 });
-export type TenantStatusTransitionedEventPayload = z.infer<
+export type OrganizationStatusTransitionedEventPayload = z.infer<
   typeof tenantStatusTransitionedPayloadSchema
 >;
 
@@ -37,11 +42,11 @@ export const tenantRejectedPayloadSchema = strictObject({
   actorId: z.string().optional(),
   reason: z.string().optional(),
 });
-export type TenantRejectedEventPayload = z.infer<typeof tenantRejectedPayloadSchema>;
+export type OrganizationRejectedEventPayload = z.infer<typeof tenantRejectedPayloadSchema>;
 
 /** `tenant.bootstrapped` v1 payload（R1b 存量成流快照·流起点·payload 仅治理态）。 */
 export const tenantBootstrappedPayloadSchema = strictObject({
-  status: z.enum(TENANT_STATUS_WIRE),
+  status: z.enum(ORGANIZATION_STATUS_WIRE),
   actorId: z.string().optional(),
 });
-export type TenantBootstrappedEventPayload = z.infer<typeof tenantBootstrappedPayloadSchema>;
+export type OrganizationBootstrappedEventPayload = z.infer<typeof tenantBootstrappedPayloadSchema>;

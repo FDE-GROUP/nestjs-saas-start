@@ -93,7 +93,7 @@ export class MikroSubscriptionLifecycle implements SubscriptionLifecycle {
       );
     }
     // append（事件流）与投影 nativeUpdate 同事务原子（outbox 下·UoW 缺省关时透传·同 R1c）。
-    // 捕获已收窄局部常量（属性收窄不入嵌套闭包·沿 R1c tenant-status.service 无 `!` 写法）。
+    // 捕获已收窄局部常量（属性收窄不入嵌套闭包·沿 R1c organization-status.service 无 `!` 写法）。
     const eventStore = this.eventStore;
     const publishDurable = this.events.publishDurable.bind(this.events);
     const uow = this.uow;

@@ -1,4 +1,4 @@
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { defineEntity, p } from '@mikro-orm/core';
 
 /**
@@ -16,8 +16,8 @@ import { defineEntity, p } from '@mikro-orm/core';
  * ba/ 区随本片消解）。
  */
 
-/** 值域 = `TENANT_STATUS` 声明序单源（与迁移工件 `organization_status_check` 同表达式·枚举漂移由下次 generate 非空 diff 捕获）。 */
-const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANT_STATUS)
+/** 值域 = `ORGANIZATION_STATUS` 声明序单源（与迁移工件 `organization_status_check` 同表达式·枚举漂移由下次 generate 非空 diff 捕获）。 */
+const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(ORGANIZATION_STATUS)
   .map((v) => `'${v}'`)
   .join(', ')})`;
 
@@ -33,7 +33,7 @@ export const Organization = defineEntity({
     // 租户治理生命周期态（global-governance-lifecycle-consolidation 切片 B·原 tenant.status 旁列归位）：
     // NOT NULL DEFAULT 'active'——缺席态消失（堵 O1 fail-open），BA 系统动作直建 org（seed/内部）落 'active'，
     // 自助建租经 provisioning.submit 显式覆写 'pending_approval'（S4 审批制）。
-    status: p.string().default(TENANT_STATUS.ACTIVE),
+    status: p.string().default(ORGANIZATION_STATUS.ACTIVE),
     createdAt: p.datetime(),
     updatedAt: p.datetime().nullable(),
   },

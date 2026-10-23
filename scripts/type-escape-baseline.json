@@ -22,7 +22,7 @@
   "apps/api/src/modules/subscriptions/infrastructure/mikro-quota.store.ts": 2,
   "apps/api/src/modules/subscriptions/infrastructure/mikro-subscription.lifecycle.ts": 8,
   "apps/api/src/modules/subscriptions/infrastructure/repositories/mikro-subscription.repository.ts": 1,
-  "apps/api/src/modules/tenants/infrastructure/mikro-tenant-status.store.ts": 2,
+  "apps/api/src/modules/tenants/infrastructure/mikro-organization-status.store.ts": 2,
   "apps/api/src/modules/tenants/infrastructure/repositories/mikro-tenant-governance.repository.ts": 15,
   "apps/api/src/modules/tenants/infrastructure/repositories/mikro-tenant-provisioning.repository.ts": 2,
   "apps/api/src/modules/tenants/infrastructure/repositories/mikro-user-governance.repository.ts": 2,

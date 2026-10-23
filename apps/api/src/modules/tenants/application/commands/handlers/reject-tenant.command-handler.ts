@@ -1,9 +1,9 @@
-import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
+import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
 import {
-  TENANT_STATUS,
-  type TenantStatus,
-} from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
+  ORGANIZATION_STATUS,
+  type OrganizationStatus,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import {
@@ -38,7 +38,7 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
   constructor(
     @Inject(TENANT_PROVISIONING_REPOSITORY)
     private readonly provisioning: TenantProvisioningRepository,
-    @Inject(TenantStatusService) private readonly status: TenantStatusService,
+    @Inject(OrganizationStatusService) private readonly status: OrganizationStatusService,
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
     // S9 教训：显式 @Inject token + 值导入，防 swc design:paramtypes 退化
     @Inject(DOMAIN_EVENT_PUBLISHER) private readonly events: DomainEventPublisher,
@@ -48,10 +48,10 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
 
   async execute(command: RejectTenantCommand): Promise<boolean> {
     // 前置态取自 organization.status 真列（global-governance-lifecycle-consolidation 切片 B·治理面撤回放即真相）。
-    const current: TenantStatus | undefined = await this.status.read(command.organizationId);
+    const current: OrganizationStatus | undefined = await this.status.read(command.organizationId);
     // 仅显式 pending 可驳回。read 对「不存在」返回 undefined，交给 remove 谓词裁决
     //（命中 0 行 → false → 控制层 404；驳回路径 以 pending 为唯一合法域，FR-1 语义）。
-    if (current !== undefined && current !== TENANT_STATUS.PENDING) {
+    if (current !== undefined && current !== ORGANIZATION_STATUS.PENDING) {
       await this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
         from: current,
         error: 'not_pending',
@@ -66,7 +66,7 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
     const removed = await this.uow.run(() =>
       this.provisioning.remove(command.organizationId).then(async (r) => {
         if (r) {
-          const event = new TenantRejectedEvent({
+          const event = new OrganizationRejectedEvent({
             aggregateId: command.organizationId,
             // 关联 id 统一链（FR-4）：请求内非空，后台/脚本场景 undefined → 持久化仍落 null。
             correlationId: currentRequestId(),
@@ -78,8 +78,8 @@ export class RejectTenantCommandHandler implements ICommandHandler<RejectTenantC
       }),
     );
     await this.audit.logTenantGovernance('reject', command.organizationId, command.operatorId, {
-      from: removed ? TENANT_STATUS.PENDING : current,
-      to: TENANT_STATUS.DELETED,
+      from: removed ? ORGANIZATION_STATUS.PENDING : current,
+      to: ORGANIZATION_STATUS.DELETED,
       error: removed ? undefined : 'not_found',
     });
     return removed;

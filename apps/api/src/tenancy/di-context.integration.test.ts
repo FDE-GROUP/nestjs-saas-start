@@ -3,16 +3,16 @@ import { AppModule } from '@app/app.module';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import {
-  TENANT_RBAC_REPOSITORY,
-  type TenantRbacRepository,
-} from '@app/modules/authorization/domain/repositories/tenant-rbac.repository';
+  ORGANIZATION_RBAC_REPOSITORY,
+  type OrganizationRbacRepository,
+} from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import { CaslTenantPermissionChecker } from '@app/modules/authorization/infrastructure/casl-tenant-permission.checker';
 import { ConfigPlatformSettings } from '@app/modules/platform/infrastructure/config-platform.settings';
 import { MikroPlatformIdentityLookup } from '@app/modules/platform/infrastructure/mikro-platform-identity.lookup';
 import { TenantPermissionGuard } from '@core/saas-kit/authorization/tenant-permission.guard';
 import { TENANT_PERMISSION_CHECKER } from '@core/saas-kit/authorization/tenant-permission.port';
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
-import { UserStatusService } from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { PLATFORM_SETTINGS } from '@core/saas-kit/platform/platform-config.port';
 import { PLATFORM_IDENTITY_LOOKUP } from '@core/saas-kit/platform/platform-identity.port';
@@ -114,16 +114,16 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           // §9.5.4①B · P1b：守卫/中间件经会话/裁决端口消费·此处用真实适配类坐实 DI 解析（依赖全局 AuthInstanceInjectKey）。
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: TENANT_PERMISSION_CHECKER, useClass: CaslTenantPermissionChecker },
-          // S2：checker 现依赖 TENANT_RBAC_REPOSITORY 投影源——此处桩住（不触库），坐实注入可解析。
+          // S2：checker 现依赖 ORGANIZATION_RBAC_REPOSITORY 投影源——此处桩住（不触库），坐实注入可解析。
           {
-            provide: TENANT_RBAC_REPOSITORY,
+            provide: ORGANIZATION_RBAC_REPOSITORY,
             useValue: {
               ensureSystemRoles: async () => {},
               findGrants: async () => null,
-            } as unknown as TenantRbacRepository,
+            } as unknown as OrganizationRbacRepository,
           },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: TenantStatusService, useValue: { isBlocked: async () => false } },
+          { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
         ],
       }).compile();
 
@@ -155,7 +155,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           // 中间件经真实 AuthSessionReader 适配→保留 getSession→ALS 端到端传播保真度。
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: TenantStatusService, useValue: { isBlocked: async () => false } },
+          { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
         ],
       }).compile();
       tcs = moduleRef.get(TenantContextService);
@@ -219,7 +219,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           },
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: TenantStatusService, useValue: { isBlocked: async () => true } },
+          { provide: OrganizationStatusService, useValue: { isBlocked: async () => true } },
         ],
       }).compile();
       const tcs = moduleRef.get(TenantContextService);

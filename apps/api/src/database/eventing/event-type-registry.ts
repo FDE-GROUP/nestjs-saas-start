@@ -1,10 +1,10 @@
+import { OrganizationBootstrappedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-bootstrapped.event';
+import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
+import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
+import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/user-status-transitioned.event';
 import { SubscriptionBootstrappedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-bootstrapped.event';
 import { SubscriptionCreatedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-created.event';
 import { SubscriptionStatusTransitionedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-status-transitioned.event';
-import { TenantBootstrappedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-bootstrapped.event';
-import { TenantRejectedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-rejected.event';
-import { TenantStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/tenant-status-transitioned.event';
-import { UserStatusTransitionedEvent } from '@core/saas-kit/modules/tenants/lifecycle/events/user-status-transitioned.event';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { DOMAIN_EVENTS } from '@core/saas-kit/shared-kernel/domain/domain-event-names';
 
@@ -29,9 +29,9 @@ export const EVENT_TYPE_REGISTRY: ReadonlyMap<string, RegistrableEventClass> = n
   RegistrableEventClass
 >([
   [UserStatusTransitionedEvent.EVENT_TYPE, UserStatusTransitionedEvent],
-  [TenantStatusTransitionedEvent.EVENT_TYPE, TenantStatusTransitionedEvent],
-  [TenantRejectedEvent.EVENT_TYPE, TenantRejectedEvent],
-  [TenantBootstrappedEvent.EVENT_TYPE, TenantBootstrappedEvent],
+  [OrganizationStatusTransitionedEvent.EVENT_TYPE, OrganizationStatusTransitionedEvent],
+  [OrganizationRejectedEvent.EVENT_TYPE, OrganizationRejectedEvent],
+  [OrganizationBootstrappedEvent.EVENT_TYPE, OrganizationBootstrappedEvent],
   [SubscriptionStatusTransitionedEvent.EVENT_TYPE, SubscriptionStatusTransitionedEvent],
   [SubscriptionCreatedEvent.EVENT_TYPE, SubscriptionCreatedEvent],
   [SubscriptionBootstrappedEvent.EVENT_TYPE, SubscriptionBootstrappedEvent],

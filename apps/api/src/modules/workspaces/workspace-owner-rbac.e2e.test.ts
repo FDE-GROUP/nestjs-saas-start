@@ -10,9 +10,9 @@ import {
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import {
-  TenantRole,
-  TenantRoleGrant,
-  type TenantRoleRow,
+  OrganizationRole,
+  OrganizationRoleGrant,
+  type OrganizationRoleRow,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { Member, Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
@@ -40,7 +40,7 @@ import { AppModule } from '../../app.module';
  * 5. **all 全见**：A list → wA/wB/wNull 三行皆可见（类型级无条件授权不受 where 支影响）。
  *
  * 夹具注记：B 以 em 直插 member 行（role 先 'member' 后改 'limited'——同表同列，BA set-active
- * 只校验成员身份不锁 role 值），grant 经 `tenant_role`/`tenant_role_grant` 真实行（与
+ * 只校验成员身份不锁 role 值），grant 经 `organization_role`/`organization_role_grant` 真实行（与
  * dynamic-roles 片仓储视图同形·不自造通道）；`ensureSystemRoles` 由 A 首次 check 触发，
  * 自定义 key 不在其辖内·不播种不回收。
  *
@@ -101,14 +101,14 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     const em = await mikro.fork();
     if (createdOrgIds.length) {
       await em.nativeDelete(Workspace, { organizationId: { $in: createdOrgIds } } as never);
-      await em.nativeDelete(TenantRoleGrant, {
+      await em.nativeDelete(OrganizationRoleGrant, {
         roleId: {
-          $in: (await em.find(TenantRole, { organizationId: { $in: createdOrgIds } } as never)).map(
-            (r) => (r as TenantRoleRow).id,
-          ),
+          $in: (
+            await em.find(OrganizationRole, { organizationId: { $in: createdOrgIds } } as never)
+          ).map((r) => (r as OrganizationRoleRow).id),
         },
       } as never);
-      await em.nativeDelete(TenantRole, { organizationId: { $in: createdOrgIds } } as never);
+      await em.nativeDelete(OrganizationRole, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
     }
@@ -200,7 +200,7 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     // 自定义 limited 角色：create 无条件（类型级放行）+ read 带实例条件（where 支下推）。
     // 分两次 flush：运行时扁平实体无 relation 依赖序，同批会 grant 先于 role（FK 抢跑·实跑自捕）。
     const roleId = uuidv7();
-    em.create(TenantRole, {
+    em.create(OrganizationRole, {
       id: roleId,
       organizationId: orgId,
       key: 'limited',
@@ -210,14 +210,14 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
       updatedAt: null,
     });
     await em.flush();
-    em.create(TenantRoleGrant, {
+    em.create(OrganizationRoleGrant, {
       roleId,
       subject: 'Workspace',
       action: 'create',
       conditions: null,
       createdAt: new Date(),
     });
-    em.create(TenantRoleGrant, {
+    em.create(OrganizationRoleGrant, {
       roleId,
       subject: 'Workspace',
       action: 'read',

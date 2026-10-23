@@ -18,7 +18,7 @@ export interface TenantRejectedPayload {
  * PII 边界：payload 只证明「何人何时驳回何 orgId」，不携 name/slug——
  * 驳回即应抹掉申请内容。aggregateType 取 `tenant` 与 tenant.transitioned 同流。
  */
-export class TenantRejectedEvent extends DomainEvent<TenantRejectedPayload> {
+export class OrganizationRejectedEvent extends DomainEvent<TenantRejectedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.tenantRejected;
   static readonly EVENT_VERSION = 1;
   static readonly AGGREGATE_TYPE = 'tenant';
@@ -26,9 +26,9 @@ export class TenantRejectedEvent extends DomainEvent<TenantRejectedPayload> {
   constructor(props: Omit<DomainEventProps<TenantRejectedPayload>, 'eventType' | 'aggregateType'>) {
     super({
       ...props,
-      aggregateType: TenantRejectedEvent.AGGREGATE_TYPE,
-      eventType: TenantRejectedEvent.EVENT_TYPE,
-      eventVersion: TenantRejectedEvent.EVENT_VERSION,
+      aggregateType: OrganizationRejectedEvent.AGGREGATE_TYPE,
+      eventType: OrganizationRejectedEvent.EVENT_TYPE,
+      eventVersion: OrganizationRejectedEvent.EVENT_VERSION,
     });
   }
 }

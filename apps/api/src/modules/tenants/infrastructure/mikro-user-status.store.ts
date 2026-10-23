@@ -4,7 +4,7 @@ import {
   type AuthUserStore,
 } from '@app/modules/auth/domain/ports/user-store.port';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import type { UserStatusStore } from '@core/saas-kit/modules/tenants/lifecycle/user-status.store';
+import type { UserStatusStore } from '@core/saas-kit/modules/organizations/lifecycle/user-status.store';
 import { Inject, Injectable } from '@nestjs/common';
 
 /**

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { TenantStatus } from '../modules/tenants/lifecycle/tenant-lifecycle';
+import type { OrganizationStatus } from '../modules/organizations/lifecycle/organization-lifecycle';
 import { AUDIT_LOG_STORE, type AuditLogStore } from '../shared-kernel/audit/audit-log.store';
 import { currentRequestId } from '../shared-kernel/context/request-context';
 
@@ -21,8 +21,8 @@ export type PlatformUserAction = 'suspend' | 'resume' | 'delete';
  * 只进 pino 观测流、不入耐久账本（无状态变更可留痕）；无 `error` 即「已提交动作」，同步落 `audit_log`。
  */
 export interface GovernanceAuditDetail {
-  readonly from?: TenantStatus;
-  readonly to?: TenantStatus;
+  readonly from?: OrganizationStatus;
+  readonly to?: OrganizationStatus;
   readonly error?: string;
   readonly reason?: string;
 }

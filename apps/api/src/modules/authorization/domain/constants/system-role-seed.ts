@@ -9,7 +9,7 @@ import type {
  *
  * 定位：本文件是**数据、不是规则**——旧 `TENANT_RULES` 矩阵（2026-10-17 CASL 片）逐格
  * 原样迁为死数据，供两处消费：① lazy-ensure：租户首次解析授权时无角色行则按本数据落
- * `tenant_role`/`tenant_role_grant` 三系统角色（幂等·is_system=true 不可改不可删）；
+ * `organization_role`/`organization_role_grant` 三系统角色（幂等·is_system=true 不可改不可删）；
  * ② 迁移/seed 脚本回填。DB grant 行才是授权事实 SSOT，本数据落库后即不再被裁决链
  * 直接消费（S2 checker 换 DB 源后本文件仅剩 ensure 职责）。
  *

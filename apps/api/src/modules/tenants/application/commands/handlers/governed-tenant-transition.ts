@@ -1,5 +1,5 @@
-import type { TenantStatus } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import type { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
+import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ConflictException } from '@nestjs/common';
@@ -10,7 +10,7 @@ export type GovernedTransitionAction = 'approve' | 'suspend' | 'resume';
 
 /** 最小依赖面（结构性类型·便于单测 stub）。 */
 export interface GovernedTransitionDeps {
-  readonly status: Pick<TenantStatusService, 'transition'>;
+  readonly status: Pick<OrganizationStatusService, 'transition'>;
   readonly audit: Pick<PlatformAuditService, 'logTenantGovernance'>;
 }
 
@@ -18,7 +18,7 @@ export interface GovernedTransitionInput {
   readonly action: GovernedTransitionAction;
   readonly organizationId: string;
   readonly operatorId: string;
-  readonly target: TenantStatus;
+  readonly target: OrganizationStatus;
 }
 
 /**

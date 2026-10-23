@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { offsetPageSchema } from './page';
-import { TENANT_STATUS_VALUES } from './tenants';
+import { ORGANIZATION_STATUS_VALUES } from './tenants';
 
 /**
  * 平台治理面响应契约（S7b·真相源 = platform-tenants / platform-users 各 controller 返回类型·
- * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `TENANT_STATUS_VALUES`（UserStatus ≡ TenantStatus 别名）。
+ * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `ORGANIZATION_STATUS_VALUES`（UserStatus ≡ OrganizationStatus 别名）。
  */
 export const platformTenantRowSchema = z.object({
   /** organization 主键（= 租户 id）。 */
@@ -12,7 +12,7 @@ export const platformTenantRowSchema = z.object({
   name: z.string(),
   slug: z.string(),
   /** 生命周期状态（无记录视同 active）。 */
-  status: z.enum(TENANT_STATUS_VALUES),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
   createdAt: z.instanceof(Date),
 });
 export type PlatformTenantRowView = z.infer<typeof platformTenantRowSchema>;
@@ -40,7 +40,7 @@ export const platformUserRowSchema = z.object({
   name: z.string(),
   email: z.string(),
   /** 治理状态（无记录视同 active）。 */
-  status: z.enum(TENANT_STATUS_VALUES),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
   createdAt: z.instanceof(Date),
 });
 export type PlatformUserRowView = z.infer<typeof platformUserRowSchema>;
@@ -51,5 +51,5 @@ export const platformUserPageSchema = offsetPageSchema(platformUserRowSchema);
 export const userGovernanceResultSchema = z.object({
   userId: z.string(),
   /** 迁移后的新状态。 */
-  status: z.enum(TENANT_STATUS_VALUES),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
 });

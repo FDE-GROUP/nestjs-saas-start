@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { requestStorage } from '../../../shared-kernel/context/request-context';
 import type { DomainEventPublisher } from '../../../shared-kernel/domain/event-publisher.port';
-import { TENANT_STATUS } from './tenant-lifecycle';
-import { TenantStatusService } from './tenant-status.service';
-import type { TenantStatusStore } from './tenant-status.store';
+import { ORGANIZATION_STATUS } from './organization-lifecycle';
+import { OrganizationStatusService } from './organization-status.service';
+import type { OrganizationStatusStore } from './organization-status.store';
 import { UserStatusService } from './user-status.service';
 import type { UserStatusStore } from './user-status.store';
 
@@ -25,11 +25,11 @@ function makeRecorder(): {
   };
 }
 
-describe('TenantStatusService.transition 构造点', () => {
+describe('OrganizationStatusService.transition 构造点', () => {
   it('请求上下文内迁移：tenant.status.transitioned 携带当前 requestId', async () => {
-    const store: TenantStatusStore = {
+    const store: OrganizationStatusStore = {
       async readStatus() {
-        return TENANT_STATUS.PENDING;
+        return ORGANIZATION_STATUS.PENDING;
       },
       async organizationExists() {
         return true;
@@ -37,20 +37,20 @@ describe('TenantStatusService.transition 构造点', () => {
       async upsert() {},
     };
     const rec = makeRecorder();
-    const svc = new TenantStatusService(store, rec as unknown as DomainEventPublisher, {
+    const svc = new OrganizationStatusService(store, rec as unknown as DomainEventPublisher, {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
     await requestStorage.run({ requestId: 'rq-9' }, () =>
-      svc.transition('org-1', TENANT_STATUS.ACTIVE),
+      svc.transition('org-1', ORGANIZATION_STATUS.ACTIVE),
     );
     expect(rec.captured).toHaveLength(1);
     expect(rec.captured[0]?.correlationId).toBe('rq-9');
   });
 
   it('上下文外（后台/脚本）迁移：correlationId undefined·持久化 ?? null 语义不动', async () => {
-    const store: TenantStatusStore = {
+    const store: OrganizationStatusStore = {
       async readStatus() {
-        return TENANT_STATUS.PENDING;
+        return ORGANIZATION_STATUS.PENDING;
       },
       async organizationExists() {
         return true;
@@ -58,10 +58,10 @@ describe('TenantStatusService.transition 构造点', () => {
       async upsert() {},
     };
     const rec = makeRecorder();
-    const svc = new TenantStatusService(store, rec as unknown as DomainEventPublisher, {
+    const svc = new OrganizationStatusService(store, rec as unknown as DomainEventPublisher, {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
-    await svc.transition('org-1', TENANT_STATUS.ACTIVE);
+    await svc.transition('org-1', ORGANIZATION_STATUS.ACTIVE);
     expect(rec.captured[0]?.correlationId).toBeUndefined();
   });
 });
@@ -83,7 +83,7 @@ describe('UserStatusService.transition 构造点', () => {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
     await requestStorage.run({ requestId: 'rq-u1' }, () =>
-      svc.transition('u-1', TENANT_STATUS.SUSPENDED),
+      svc.transition('u-1', ORGANIZATION_STATUS.SUSPENDED),
     );
     expect(rec.captured).toHaveLength(1);
     expect(rec.captured[0]?.correlationId).toBe('rq-u1');

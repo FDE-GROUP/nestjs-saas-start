@@ -2,8 +2,8 @@ import type { TenantPermissionInvalidator } from '@core/saas-kit/authorization/t
 import type { TenantContextService } from '@core/saas-kit/tenancy/tenant-context.service';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TenantRbacRepository } from '../domain/repositories/tenant-rbac.repository';
-import { TenantRbacAdminService } from './tenant-rbac-admin.service';
+import type { OrganizationRbacRepository } from '../domain/repositories/organization-rbac.repository';
+import { OrganizationRbacAdminService } from './organization-rbac-admin.service';
 
 /**
  * 角色/授权管理门面应用服务测（module-rbac-dynamic-roles S3·§2.5/§2.6）。
@@ -30,15 +30,15 @@ function makeHarness() {
     requireTenantId: vi.fn().mockReturnValue('orgA'),
     get: vi.fn().mockReturnValue({ tenantId: 'orgA', userId: 'u1' }),
   } as unknown as TenantContextService;
-  const svc = new TenantRbacAdminService(
-    rbac as unknown as TenantRbacRepository,
+  const svc = new OrganizationRbacAdminService(
+    rbac as unknown as OrganizationRbacRepository,
     { invalidateTenant } as unknown as TenantPermissionInvalidator,
     ctx,
   );
   return { svc, rbac, invalidateTenant };
 }
 
-describe('TenantRbacAdminService', () => {
+describe('OrganizationRbacAdminService', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('createRole 成功 → 落库后回查视图 + 失效投影（actor 取 ALS userId）', async () => {

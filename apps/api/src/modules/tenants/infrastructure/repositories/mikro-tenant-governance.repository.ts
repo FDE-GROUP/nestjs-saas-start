@@ -9,9 +9,9 @@ import {
 } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
-  TENANT_STATUS,
-  type TenantStatus,
-} from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+  ORGANIZATION_STATUS,
+  type OrganizationStatus,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
@@ -29,8 +29,8 @@ import type {
  * 本兑底仅在极端读不到列值时生效——与 `canTransition` 缺省/middleware deny-list 同口径
  * （global-governance-lifecycle-consolidation 切片 B：态从 `tenant` 旁表归位 `organization.status` 真列）。
  */
-function effectiveStatus(status: TenantStatus | undefined): TenantStatus {
-  return status ?? TENANT_STATUS.ACTIVE;
+function effectiveStatus(status: OrganizationStatus | undefined): OrganizationStatus {
+  return status ?? ORGANIZATION_STATUS.ACTIVE;
 }
 
 /**
@@ -60,7 +60,7 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: effectiveStatus(entity.status as TenantStatus),
+      status: effectiveStatus(entity.status as OrganizationStatus),
       createdAt: entity.createdAt,
     };
   }
@@ -120,7 +120,7 @@ export class MikroTenantGovernanceRepository implements TenantGovernanceReposito
       name: org.name,
       slug: org.slug,
       logo: org.logo ?? null,
-      status: effectiveStatus(org.status as TenantStatus),
+      status: effectiveStatus(org.status as OrganizationStatus),
       metadata: org.metadata,
       createdAt: org.createdAt,
       updatedAt: org.updatedAt ?? null,

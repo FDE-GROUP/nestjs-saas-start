@@ -87,7 +87,7 @@ export class CreateSubscriptionCommandHandler
       );
     }
     // 新行 aggregateId=行 id（裁ⓐ甲）·空流起点 expectedVersion=流长+1（新建=1）。
-    // 捕获已收窄局部常量（属性收窄不入嵌套闭包·沿 R1c tenant-status.service 无 `!` 写法）。
+    // 捕获已收窄局部常量（属性收窄不入嵌套闭包·沿 R1c organization-status.service 无 `!` 写法）。
     const eventStore = this.eventStore;
     const publishDurable = this.events.publishDurable.bind(this.events);
     const record = await this.uow.run(async () => {

@@ -5,7 +5,7 @@ import {
 import {
   USER_STATUS,
   UserStatusService,
-} from '@core/saas-kit/modules/tenants/lifecycle/user-status.service';
+} from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import {
   UNIT_OF_WORK,

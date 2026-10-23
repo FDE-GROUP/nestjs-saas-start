@@ -11,7 +11,7 @@
 ### 4.1 列出租户角色
 - **作为** owner/admin，**我想** 查看本租户全部角色（系统 + 自定义），**以便** 了解现有授权结构。
 - **验收**：Given `read Role`，When `GET /tenants/roles`，Then 返回角色视图列表（含 `isSystem` 标记）；deny Then 403。
-- **溯源**：`GET /api/v1/tenants/roles` · `AuthorizationAdminController.listRoles` · `@Can('read','Role')` · `TenantRbacAdminService.listRoles` · 契约 `tenantRoleViewSchema` · 关联 [`module-rbac-dynamic-roles`](../plans/module-rbac-dynamic-roles.md) §2.5。
+- **溯源**：`GET /api/v1/tenants/roles` · `AuthorizationAdminController.listRoles` · `@Can('read','Role')` · `OrganizationRbacAdminService.listRoles` · 契约 `organizationRoleViewSchema` · 关联 [`module-rbac-dynamic-roles`](../plans/module-rbac-dynamic-roles.md) §2.5。
 
 ### 4.2 创建自定义角色
 - **作为** owner/admin，**我想** 新建一个自定义角色，**以便** 定义超出系统三档的职权组合。

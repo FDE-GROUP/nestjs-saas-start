@@ -2,7 +2,7 @@ import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/tenants/infrastructure/entities/ba-org.entities';
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   TenantProvisioningReceipt,
@@ -45,9 +45,9 @@ export class MikroTenantProvisioningRepository implements TenantProvisioningRepo
     // 紧随覆写：显式置 pending_approval（堵 O1）·不盖 updatedAt（provision 非治理·建后未改）。
     const em = await this.mikro.fork();
     await em.nativeUpdate(Organization, { id: organizationId } as never, {
-      status: TENANT_STATUS.PENDING,
+      status: ORGANIZATION_STATUS.PENDING,
     });
-    return { organizationId, status: TENANT_STATUS.PENDING };
+    return { organizationId, status: ORGANIZATION_STATUS.PENDING };
   }
 
   async remove(organizationId: string): Promise<boolean> {

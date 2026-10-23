@@ -1,5 +1,5 @@
-import { TENANT_STATUS } from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
-import { TenantStatusService } from '@core/saas-kit/modules/tenants/lifecycle/tenant-status.service';
+import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ConflictException, Inject } from '@nestjs/common';
@@ -14,15 +14,19 @@ import { DeleteTenantCommand } from '../delete-tenant.command';
 @CommandHandler(DeleteTenantCommand)
 export class DeleteTenantCommandHandler implements ICommandHandler<DeleteTenantCommand> {
   constructor(
-    @Inject(TenantStatusService) private readonly status: TenantStatusService,
+    @Inject(OrganizationStatusService) private readonly status: OrganizationStatusService,
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 
   async execute(command: DeleteTenantCommand): Promise<TenantApplicationReadModel | null> {
-    const result = await this.status.transition(command.organizationId, TENANT_STATUS.DELETED, {
-      actorId: command.operatorId,
-      reason: 'platform_delete',
-    });
+    const result = await this.status.transition(
+      command.organizationId,
+      ORGANIZATION_STATUS.DELETED,
+      {
+        actorId: command.operatorId,
+        reason: 'platform_delete',
+      },
+    );
     if (result.kind === 'not-found') return null;
     if (result.kind === 'illegal') {
       await this.audit.logTenantGovernance('delete', command.organizationId, command.operatorId, {

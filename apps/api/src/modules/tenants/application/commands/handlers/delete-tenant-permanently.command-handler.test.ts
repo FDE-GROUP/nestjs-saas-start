@@ -1,7 +1,7 @@
 import {
-  TENANT_STATUS,
-  type TenantStatus,
-} from '@core/saas-kit/modules/tenants/lifecycle/tenant-lifecycle';
+  ORGANIZATION_STATUS,
+  type OrganizationStatus,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
@@ -14,7 +14,7 @@ import { DeleteTenantPermanentlyCommandHandler } from './delete-tenant-permanent
 /** 调用序记录（坐实「先补删事件、后删主行」的顺序契约）。 */
 const calls: string[] = [];
 const state = {
-  row: undefined as { organizationId: string; status: TenantStatus } | undefined,
+  row: undefined as { organizationId: string; status: OrganizationStatus } | undefined,
   destroyed: true,
 };
 
@@ -53,7 +53,7 @@ describe('DeleteTenantPermanentlyCommandHandler (NFR-6 删除半)', () => {
       calls.push('uow');
       return fn();
     });
-    state.row = { organizationId: 'orgA', status: TENANT_STATUS.DELETED };
+    state.row = { organizationId: 'orgA', status: ORGANIZATION_STATUS.DELETED };
     state.destroyed = true;
   });
 
@@ -66,12 +66,12 @@ describe('DeleteTenantPermanentlyCommandHandler (NFR-6 删除半)', () => {
       'hard_delete',
       'orgA',
       'op1',
-      expect.objectContaining({ from: TENANT_STATUS.DELETED }),
+      expect.objectContaining({ from: ORGANIZATION_STATUS.DELETED }),
     );
   });
 
   it('非 deleted 终态（active）→ 409 前置闸，绝不触事件/主删', async () => {
-    state.row = { organizationId: 'orgA', status: TENANT_STATUS.ACTIVE };
+    state.row = { organizationId: 'orgA', status: ORGANIZATION_STATUS.ACTIVE };
     await expect(
       handler.execute(new DeleteTenantPermanentlyCommand('orgA', 'op1')),
     ).rejects.toThrow(ConflictException);
