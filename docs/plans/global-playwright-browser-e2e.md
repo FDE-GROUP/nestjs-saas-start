@@ -40,11 +40,12 @@
 
 ## 4. 审计结论
 
-**（待人类签核）** 本阶段仅立案、**零实现**：未加任何依赖、未建 config、未写 e2e、未动 `ci.ts`/门禁/宪法。§3 五问得裁并签核后方进实施。
+**已审计·签发**（用户令「同意，推」＝GO 全采推荐 §3 五裁点：ⓐ Vitest Browser Mode／ⓑ opt-in 独立命令·不入默认 `ci`/`pre-push`／ⓒ 仅 chromium·黄金流待切片 B·复用一次性 PG／ⓓ 回灌 tooling 矩阵（待切片 C）／ⓔ 与 browser-use 互补·非替代首轮人签）。高危面=新增依赖·供应链（已 GO）；ⓓ 回灌宪法=高危#5 待切片 C 单列签核。**切片 A 已落地**（见 §5/§6）·切片 B/C 待续。
 
 ## 5. 验收判据（签核实施后回写·带取证·分片）
 
-- [ ] **切片 A（设施）**：装 `@vitest/browser`+`@vitest/browser-playwright`+playwright（chromium·npmmirror 镜像拉取成功存照）+ browser-mode config + `webServer` 复用 7009/5173；一条**冒烟 browser 测**绿；默认 `pnpm run ci` **不受影响**（仍不含浏览器段）。
+- [x] **切片 A（设施）**：装 `@vitest/browser@5.0.4`+`@vitest/browser-playwright@5.0.4`+`playwright@1.64.1`（✅ npmmirror 解析 OK·chromium 二进制经 `PLAYWRIGHT_DOWNLOAD_HOST=cdn.npmmirror.com` 拉取成功 120MB→`~/.cache/ms-playwright`）；独立 `vitest.browser.config.ts`（不并入默认 `vitest.config.ts`）+ `ci:e2e:web` opt-in 脚本；默认 `vitest.config.ts` `exclude` 增 `**/*.browser.test.ts(x)` 防污染默认 ci。一条冒烟 `browser.smoke.browser.test.ts`（2 tests）**真起 chromium 绿**（`PW_SMOKE_EXIT=0`·UA 含 chrom 证非 jsdom）。**双向验收**：① 当前树 `pnpm run ci`（full）**PASSED EXIT=0**（149 测试文件·各闸+fallow 0·默认链无回归）；② 默认 config 定向筛 `browser.smoke` = `No test files found`（exclude 生效·browser 测不入默认链）。
+  - **落地实证 · Vitest 5.0.4 API 校正**：provider 须置 `test.browser.provider: playwright()`（读源 `index.B8VfM7Mf.js:1768` 判据 `browser.provider ?? instances[].provider`·**不认** `plugins` 数组注册——曾误按 5.0.5 plugin 写法致「provider not specified」）；且 `@vitest/browser*` 须与 `vitest` **同 5.0.4**（5.0.5 provider 注册进另一 `@vitest/browser` 实例·内核看不见）。
 - [ ] **切片 B（黄金流）**：2–3 条真栈 E2E（登录→活跃组织→核心写操作·经真实 API+PG，复用 Testcontainers 或 dev 栈）绿；**双向验收**——断言在真链生效 + 人造违规（改坏选择器/断反）必 EXIT=1。
 - [ ] **切片 C（收口）**：浏览器 e2e 文件登记进 gated 清单并双向恒等校验（仿 `ci-fullstack`）；文档/runbook 更新；若裁 ⓓ GO 则回灌 tooling 工具矩阵。基线"只增不减"守住。
 
@@ -52,4 +53,5 @@
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-23 | 0.2.0 | 用户令「同意，推」＝GO 全采五裁点·过审计门·进实施 | **切片 A（设施）落地**：装 `@vitest/browser@5.0.4`+`@vitest/browser-playwright@5.0.4`+`playwright@1.64.1`（npmmirror 解析 + chromium 二进制境内拉取实证成功）；新建独立 `vitest.browser.config.ts`（provider=`test.browser.provider: playwright()`·仅 chromium·headless）+ `ci:e2e:web` opt-in 脚本；默认 `vitest.config.ts` `exclude` 补 `**/*.browser.test.ts(x)`；冒烟 `browser.smoke.browser.test.ts` 真起 chromium 2 passed。**双向验收**：full `pnpm run ci` PASSED EXIT=0（149 文件·fallow 0·默认链无回归）+ 默认 config 筛 browser 测 No test files found。修 Vitest 5.0.4 provider 写法与版本对齐两处坑（见 §5）。未动 `ci.ts`·未入默认链·未回灌宪法（ⓓ 留切片 C·高危#5 待签） |
 | 2026-10-23 | 0.1.0 | 评价建议 4·F 层 10/24 真机验收积压"归人"卡脖子；上轮分层实证"建议 2 被建议 4 阻塞"；用户令「同意」→ 起草采纳案供签 | 首版·候选稿·待审计门：§1 三分取证（含 lock 已现 `@vitest/browser-playwright` 关键发现）·§2 推荐 Vitest Browser Mode + opt-in 门禁 + npmmirror·§3 五归人裁点（选型/门禁位/范围/回灌宪法/与 browser-use 关系）·§4 零实现·§5 三切片双向验收判据。未加依赖·未建 config·未动 ci.ts/宪法 |

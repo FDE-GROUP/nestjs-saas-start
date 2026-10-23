@@ -44,7 +44,7 @@ export default defineConfig({
       'packages/**/*.test.ts',
       'scripts/**/*.test.ts',
     ],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/*.browser.test.ts', '**/*.browser.test.tsx'],
     env: {
       NODE_ENV: 'test',
       LOG_LEVEL: 'silent',
