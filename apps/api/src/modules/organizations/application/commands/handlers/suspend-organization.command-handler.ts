@@ -9,7 +9,7 @@ import { governedOrganizationTransition } from './governed-organization-transiti
 
 /**
  * 暂停租户（FR-6/FR-10·平台级）：`active → suspended`，经 `OrganizationStatusService.transition`
- * 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），`tenant` 户籍表单点写回；
+ * 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），`organization.status` 真列单点写回；
  * 中间件 deny-list 使该租户业务面即时失能。成败均落结构化审计（FR-6）。
  * 架构精度修宪 S4：三分支样板收敛至 `governedOrganizationTransition` 共用用例（薄壳）。
  */

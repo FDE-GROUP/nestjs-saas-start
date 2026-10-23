@@ -43,7 +43,8 @@ export interface TableMeta {
   indexes?: { name: string; properties: string[] }[];
   uniques?: { name: string; properties: string[] }[];
   /**
-   * 表级 CHECK 约束（global-tenant-entity-reclamation 首用·`tenant.status` 值域 DB 防线）：
+   * 表级 CHECK 约束（global-tenant-entity-reclamation 首用·现于 `organization.status` 值域 DB 防线·
+   * consolidation 切片 B 归位）：
    * `expression` 须用**物理列名**（EntityCaseNamingStrategy 下 camelCase 多为原形）；
    * 入元数据则迁移生成器双向往返可见（增/删均进空 diff 恒等闸），表达式值域应自上游单源
    * 生成（如 `ORGANIZATION_STATUS`），枚举漂移由下次 `migration:generate` 非空 diff 捕获。

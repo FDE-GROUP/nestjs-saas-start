@@ -70,7 +70,8 @@ import {
  * spans all tenants (FR-11①), so they deliberately never bind TenantIsolationGuard.
  *
  * Lifecycle transitions route through `OrganizationStatusService.transition` (single choke-point on
- * the `tenant.status` column, §9.4 state machine): suspend (active→suspended), resume (suspended→active),
+ * the `organization.status` column — restored onto the BA shared table by governance-lifecycle-consolidation
+ * slice B, the former `tenant` side table being DROPped; §9.4 state machine): suspend (active→suspended), resume (suspended→active),
  * delete (soft→deleted terminal). Each success/failure emits a structured audit line (FR-6).
  */
 @ApiExtraModels(

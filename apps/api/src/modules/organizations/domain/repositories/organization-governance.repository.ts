@@ -9,7 +9,7 @@ import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagi
  * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
  *
  * 状态迁移（suspend/resume/delete）不在此 port——统一走 `OrganizationStatusService.transition`
- * （户籍表 `tenant.status` 单点·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
+ * （`organization.status` 真列单点·consolidation 切片 B 归位·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
  */
 export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANCE_REPOSITORY');
 
@@ -58,8 +58,8 @@ export interface ExportedOrganizationMember {
 
 /**
  * 按租户导出 payload（六段聚合·SSOT = organizationId 归属可导表）。
- * `tenant` 为 organization 全列 + 户籍态 `status`（收权案切片 B：态在 `tenant.status` 真列·
- * `metadata` 全列透传零我方键）；deleted 终态租户亦可导出
+ * `organization` 为本体全列 + 治理态 `status`（consolidation 切片 B：态在 `organization.status`
+ * 真列·原 `tenant` 旁表已 DROP·`metadata` 全列透传零我方键）；deleted 终态租户亦可导出
  *（S5 软删「保留行供按租户导出/硬删」的取证用途·查询面刻意不按 status 过滤）。
  */
 export interface OrganizationDataExport {
@@ -68,7 +68,7 @@ export interface OrganizationDataExport {
     name: string;
     slug: string;
     logo: string | null;
-    /** 生命周期态（`tenant.status` 真列·无户籍兑底 active·与列表行同口径）。 */
+    /** 生命周期态（`organization.status` 真列·列缺省兑底 active·与列表行同口径）。 */
     status: OrganizationStatus;
     metadata: unknown;
     createdAt: Date;

@@ -15,7 +15,7 @@ export interface OrganizationStatusTransitionedPayload {
  * Raised when a tenant transitions along the §9.4 lifecycle state machine
  * (approve / suspend / resume / delete 平台级动作，reject 不在内·§6-①)。
  * eventType `tenant.status.transitioned`, eventVersion 1, aggregateType `tenant`。
- * 由 `OrganizationStatusService.transition` 成功分支产出（shadow append·`tenant.status` 真列仍是唯一真相源）。
+ * 由 `OrganizationStatusService.transition` 成功分支产出（shadow append·`organization.status` 真列仍是唯一真相源）。
  */
 export class OrganizationStatusTransitionedEvent extends DomainEvent<OrganizationStatusTransitionedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationStatusTransitioned;

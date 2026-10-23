@@ -241,8 +241,9 @@ export async function createUsers(
  * 为某个 persona 幂等预建一个**活跃组织** + 把其置为首名 `owner` 成员（module-db-seed-tenant-isolation-scope C-2）。
  * - 走 BA `createOrganization` 系统动作（无 session + `body.userId` → `isSystemAction`·不受
  *   `allowUserToCreateOrganization:false` 限·BA 原生把创建者置首名 `owner` member·FR-12），
- *   **不经**我方 `submit` 那段「建 `tenant` 户籍行打 `pending_approval`」的门面（global-tenant-
- *   entity-reclamation 切片 B：态存自有表·旧 `metadata.status` 寄居已退场）→ 无户籍行，
+ *   **不经**我方 `submit` 那段「落 `organization.status=pending_approval`」的门面（consolidation
+ *   切片 B 归位真列·原 global-tenant-entity-reclamation 切片 B「态存自有 `tenant` 旁表」与旧
+ *   `metadata.status` 寄居均已退场）→ 直落列默认 `active`，
  *   `TenantIsolationMiddleware` deny-list 视同 legacy/seeded 放行（活跃·非 pending）。
  * - 幂等：按 `slug` find；命中则确保该 user 为 owner member（按 (org,userId) find·缺则直插），返 `'exists'`；
  *   未命中则 `createOrganization`（BA 自带 owner member），返 `'created'`。

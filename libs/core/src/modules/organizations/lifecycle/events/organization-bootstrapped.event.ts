@@ -3,7 +3,7 @@ import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-nam
 import type { OrganizationStatus } from '../organization-lifecycle';
 
 export interface OrganizationBootstrappedPayload {
-  /** 存量行成流时刻的治理态快照（户籍表 `status` 真列原值）。 */
+  /** 存量行成流时刻的治理态快照（当时 `tenant` 户籍表 `status` 真列原值·该旁表已随 consolidation 切片 B DROP）。 */
   readonly status: OrganizationStatus;
   /** bootstrap 动作主体（运维脚本恒 `bootstrap`·审计留痕）。 */
   readonly actorId?: string;
@@ -18,8 +18,8 @@ export interface OrganizationBootstrappedPayload {
  * 避免 version 重排）。version 从流现有 max+1 续位（既有治理事件之后），幂等律 = 流内已含
  * 本事件则跳过（可安全重跑）。
  *
- * PII 边界：payload 仅 `status`（户籍表列实存 = id/status/createdAt/updatedAt·无 name/slug，
- * R1a 实核订正 plan 原表述）。id 即 aggregateId，不重复携带。
+ * PII 边界：payload 仅 `status`（成流时户籍表列实存 = id/status/createdAt/updatedAt·无 name/slug，
+ * R1a 实核订正 plan 原表述；旁表现已 DROP，本语义为历史快照描述）。id 即 aggregateId，不重复携带。
  */
 export class OrganizationBootstrappedEvent extends DomainEvent<OrganizationBootstrappedPayload> {
   static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationBootstrapped;

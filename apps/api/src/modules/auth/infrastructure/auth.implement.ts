@@ -229,8 +229,8 @@ export async function CreateAuth(
       // （@Can + AuthorizationGuard）承接，BA 内置 org HTTP 端点面在 handler 入口封堵（见下）。
       // S4（FR-1 审批制）：`allowUserToCreateOrganization: false` 封死 HTTP 自助即时开通（现叠加
       // 封堵双保险）；建租户唯一通道 = 服务端系统动作（无 session + body.userId → isSystemAction·
-      // 源码坐实不受此开关限），由 tenants 申请端点独享（强制户籍行 tenant.status=pending_approval·
-      // 收权案后 BA metadata 不再携态）。
+      // 源码坐实不受此开关限），由 tenants 申请端点独享（强制组织行 organization.status=pending_approval·
+      // consolidation 切片 B 归位真列·收权案后 BA metadata 不再携态）。
       organization({
         allowUserToCreateOrganization: false,
       }),

@@ -46,7 +46,7 @@ export class OrganizationStatusService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  /** 读取租户当前生命周期状态；本体/户籍无记录 → undefined（deny-list 语义·视同 active）。 */
+  /** 读取租户当前生命周期状态；本体行无记录 → undefined（deny-list 语义·视同 active）。 */
   async read(organizationId: string): Promise<OrganizationStatus | undefined> {
     return this.store.readStatus(organizationId);
   }
@@ -57,7 +57,7 @@ export class OrganizationStatusService {
   }
 
   /**
-   * 是否被拦（S4 中间件失能卡点·deny-list）：无户籍行视同不拦（fail-open
+   * 是否被拦（S4 中间件失能卡点·deny-list）：无状态记录视同不拦（fail-open
    * 仅限「无状态记录」边界，与 fail-closed 隔离不矛盾——本体无行则下游租户解析早已 fail）。
    */
   async isBlocked(organizationId: string): Promise<boolean> {
@@ -66,8 +66,8 @@ export class OrganizationStatusService {
 
   /**
    * 严格状态迁移（S5 收紧）：按 §9.4 迁移表裁决合法边，非法 → illegal（调用方转 409）；
-   * 本体行不存在 → not-found（转 404·判据是 `organizationExists` 非户籍行有无）；合法则
-   * upsert `tenant` 户籍行并返回 previous 供审计。平台级动作专用（approve/suspend/resume/delete），
+   * 本体行不存在 → not-found（转 404·判据是 `organizationExists`）；合法则
+   * 写回 `organization.status` 真列（consolidation 切片 B 归位·原 `tenant` 户籍行 upsert 已退场）并返回 previous 供审计。平台级动作专用（approve/suspend/resume/delete），
    * 权限裁决归 PlatformOperatorGuard。
    * ES Phase B 后半（module-es-outbox-transactional 切片 B）：关键段（写回 + 发布）包入
    * `UNIT_OF_WORK`——outbox 下域行与事件行同事务原子；shadow 下发布/append 失败连带业务写

@@ -1,9 +1,10 @@
 /**
  * 租户生命周期状态机（FR-1 · 方案 §9.4）·纯函数·零框架依赖。
  *
- * 状态存自有 **`tenant.status` 真列**（global-tenant-entity-reclamation 切片 B·人签 2026-10-20：
- * 此前寄居 `organization.metadata` jsonb 的 S4 存储裁定已修订——BA 缩回宪法「纯认证与
- * 成员数据源」定位）。持久化原语经 `OrganizationStatusStore` 端口倒置，本文件只留纯态判定。
+ * 状态存 **`organization.status` 真列**（BA 共享表 additive 自撰域列·global-governance-lifecycle-
+ * consolidation 切片 B·人裁 2026-10-23：原 global-tenant-entity-reclamation 切片 B（人签 2026-10-20）
+ * 定自有 `tenant` 旁表真列、更早寄居 `organization.metadata` jsonb 的 S4 存储裁定均已修订——BA 缩回
+ * 宪法「纯认证与成员数据源」定位·旁表随本案 DROP）。持久化原语经 `OrganizationStatusStore` 端口倒置，本文件只留纯态判定。
  * S4 落地 `pending_approval → active`（审批制准入）；`suspended`/`deleted` 迁移由 S5/S6
  * （经营者治理·fail-closed 暂停）驱动，此处先行定义。
  */
@@ -19,7 +20,7 @@ export type OrganizationStatus = (typeof ORGANIZATION_STATUS)[keyof typeof ORGAN
 /**
  * 拦截判定（S4 中间件失能卡点·deny-list 语义）：仅显式处于
  * `pending_approval` / `suspended` / `deleted` 时拦截。**无状态记录 → 不拦**
- * （兼容存量/seeded 无户籍 org·避免锁定既有 dev 租户）。新申请经申请端点显式打
+ * （兼容存量/seeded 无状态记录 org·避免锁定既有 dev 租户）。新申请经申请端点显式打
  * `pending_approval` → 天然失能，FR-1 闭环不受存量影响。
  */
 export function isOrganizationBlocked(status: OrganizationStatus | undefined): boolean {
@@ -35,7 +36,7 @@ export function isOrganizationBlocked(status: OrganizationStatus | undefined): b
  * - pending_approval → active（审批通过）/ deleted（删除 pending）
  * - active → suspended（暂停）/ deleted（软删）；active → active 保留（审批幂等重提）
  * - suspended → active（恢复）/ deleted；deleted 终态（硬删留运维）
- * 无状态记录（存量/seeded 无户籍）按 active 对待（与中间件 deny-list 同口径）。
+ * 无状态记录（存量/seeded·旧无户籍行）按 active 对待（与中间件 deny-list 同口径）。
  */
 const TRANSITIONS: Record<OrganizationStatus, readonly OrganizationStatus[]> = {
   [ORGANIZATION_STATUS.PENDING]: [ORGANIZATION_STATUS.ACTIVE, ORGANIZATION_STATUS.DELETED],
