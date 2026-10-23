@@ -17,18 +17,18 @@
 
 | 词 | 含义 |
 |----|------|
-| **Tenant（租户）** | 顶层隔离与归属单元（付费主体）；所有业务数据挂 `tenant_id`。物理实体 = **`organization` 行上的 `status` 治理列**（真列 + DB CHECK·`id` = `organization.id` 同主键 1:1·系加于 BA **共享**表 `organization` 上的自撰域列，遵 architecture ±zh「BA 表共享」条）；旧 1:1 自有户籍表 `tenant`（[global-tenant-entity-reclamation](../plans/global-tenant-entity-reclamation.md) 2026-10-20 首立·改判旧「Tenant = organization 不另建表」）已被 [global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md) 2026-10-23 反悔并 DROP——租户身份塌缩回 `organization`、态归其 `status` 列；**系存储实体非 DDD 聚合回归**：内核仍为 record(`TENANT_STATUS`)+port(`TenantStatusStore`)+function(`canTransition`) 三件套（P1 函数式内核）；`organization` 一身兼认证/成员面投影与租户生命周期载体 |
-| **Owner（租户所有者）** | 创建申请人经审批通过即成为首名 owner；最高租户级角色；须至少保留一名（FR-12） |
-| **Workspace（工作区）** | 租户内二级**数据分组**（D2：两级 租户→工作区）；业务表挂 `workspace_id`，查询默认按 `(tenant_id, workspace_id)` 复合过滤（强数据边界，workspace 间默认互不可见）；**无独立角色/权限层** |
-| **Member（成员）** | user × tenant 的**多对多关系**（落 org `member` 表），带该租户内角色；一个 user 可属多个租户、角色互不相干 |
+| **Organization（组织）** | 顶层隔离与归属单元（付费主体）·**业务实体全栈唯一词汇**（[global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 2026-10-23 人裁推翻旧双词汇纪律·原「Tenant（租户）」词条废止；`tenant` 仅存隔离机器内部命名与业界术语 multi-tenancy）；所有业务数据挂 `organizationId`。物理实体 = **`organization` 行上的 `status` 治理列**（真列 + DB CHECK·`id` = `organization.id` 同主键 1:1·系加于 BA **共享**表 `organization` 上的自撰域列，遵 architecture ±zh「BA 表共享」条）；旧 1:1 自有户籍表 `tenant`（[global-tenant-entity-reclamation](../plans/global-tenant-entity-reclamation.md) 2026-10-20 首立·改判旧「Tenant = organization 不另建表」）已被 [global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md) 2026-10-23 反悔并 DROP——组织身份即 `organization` 自身、态归其 `status` 列；**系存储实体非 DDD 聚合回归**：内核仍为 record(`ORGANIZATION_STATUS`)+port(`OrganizationStatusStore`)+function(`canTransition`) 三件套（P1 函数式内核）；`organization` 一身兼认证/成员面投影与组织生命周期载体 |
+| **Owner（组织所有者）** | 创建申请人经审批通过即成为首名 owner；最高组织级角色；须至少保留一名（FR-12） |
+| **Workspace（工作区）** | 组织内二级**数据分组**（D2：两级 组织→工作区）；业务表挂 `workspace_id`，查询默认按 `(organization_id, workspace_id)` 复合过滤（强数据边界，workspace 间默认互不可见）；**无独立角色/权限层** |
+| **Member（成员）** | user × organization 的**多对多关系**（落 org `member` 表），带该组织内角色；一个 user 可属多个组织、角色互不相干 |
 | **Membership 生命周期** | 申请（待批）/ 受邀（待接受）→ 激活 → 分配角色 → 退出仅解除该 membership，user 仍是平台用户 |
-| **Role / Permission** | 租户内 RBAC 角色与权限集（租户级，(user,tenant) 维度，FR-4/FR-11） |
-| **权限层级（Permission Scope）** | 三层：**平台级**（经营者跨租户治理）· **租户级**（(user,tenant) 角色）· **用户级**（绑定用户身份、与租户无关）；各自 fail-closed、互不授予（FR-11） |
-| **User（平台用户）** | 在本平台注册的账号；先成为 user 方可申请 / 关联租户；可被平台经营者暂停（暂停后全局失权）。平台级失能态归 `user` 行上的 `status`/`statusReason` 治理列（[global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md) 切片 C·原 `user_status` 旁表已 DROP·`status` 为 additive 自撰域列）。`user` 表保持平台全局、**不加 `tenant_id`** |
-| **Platform Operator（平台经营者）** | 全局唯一的系统管理身份，由开发者设定、seed 时创建，不可自助注册 / 不由他人任命；统一管理租户与用户（FR-13）；区别于租户内 admin |
-| **activeOrganizationId** | Better Auth org 插件在 `session` 上的字段，表示当前生效租户；本仓租户上下文的数据来源（D4 session-cookie） |
+| **Role / Permission** | 组织内 RBAC 角色与权限集（组织级，(user, organization) 维度，FR-4/FR-11；裁决键词表 `TenantSubject/TenantAction` 系机制层保留名） |
+| **权限层级（Permission Scope）** | 三层：**平台级**（经营者跨组织治理）· **组织级**（(user, organization) 角色）· **用户级**（绑定用户身份、与组织无关）；各自 fail-closed、互不授予（FR-11） |
+| **User（平台用户）** | 在本平台注册的账号；先成为 user 方可申请 / 关联组织；可被平台经营者暂停（暂停后全局失权）。平台级失能态归 `user` 行上的 `status`/`statusReason` 治理列（[global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md) 切片 C·原 `user_status` 旁表已 DROP·`status` 为 additive 自撰域列）。`user` 表保持平台全局、**不加 `organization_id`** |
+| **Platform Operator（平台经营者）** | 全局唯一的系统管理身份，由开发者设定、seed 时创建，不可自助注册 / 不由他人任命；统一管理组织与用户（FR-13）；区别于组织内 admin |
+| **activeOrganizationId** | Better Auth org 插件在 `session` 上的字段，表示当前生效组织；本仓隔离机制（tenancy/ALS）租户上下文的数据来源（D4 session-cookie） |
 | **Plan / Tier（套餐）** | 决定配额与特性开关的档位 |
-| **Quota / Usage（配额/用量）** | 每租户资源计量（用户数、存储、API 调用…） |
+| **Quota / Usage（配额/用量）** | 每组织资源计量（用户数、存储、API 调用…） |
 
 ## 2. 地域与合规（China Region & Compliance）
 
@@ -51,8 +51,9 @@
 | 2026-10-13 | 0.1.0 | 建项目级术语 SSOT，收拢两份 plan 的领域词汇（履行 global-tenancy §7「术语并入 specs」判据） | 新建：§1 多租户 · §2 地域与合规 · 定位与 SSOT 约定 |
 | 2026-10-20 | 0.2.0 | 收权案翻账：Tenant 词条载旧裁「= organization 不另建表」已被签核改判，防术语 SSOT 漂移 | Tenant 词条重写（自有户籍表 `tenant`·同值代理 PK·存储实体非聚合回归·org 为认证/成员面投影），与 architecture ±zh 术语纪律段同源 |
 | 2026-10-23 | 0.3.0 | [global-governance-lifecycle-consolidation](../plans/global-governance-lifecycle-consolidation.md) 归列翻案：`tenant`/`user_status` 两 1:1 旁表 DROP、治理态归 `organization.status` / `user.status` 真列（BA 表共享条款下的 additive 自撰域列） | Tenant 词条撤「自有户籍表 `tenant`」→「`organization` 行上 `status` 治理列·原表已随本案 DROP」；User 词条补 `status`/`statusReason` 治理列，与 architecture ±zh 术语纪律段同源 |
+| 2026-10-23 | 0.4.0 | [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 翻账：人裁推翻双词汇纪律（「这条纪律应该推翻，过时了」），业务实体全栈统一 organization | §1 词条 Tenant（租户）→ **Organization（组织）**（旧词条废止·`tenant` 仅存隔离机器内部命名与业界术语）；Owner/Workspace/Member/Role/权限层级/User/Operator/Quota 诸词条业务词同步换形 organization；内核件符号名更新为 `ORGANIZATION_STATUS`/`OrganizationStatusStore`；与 architecture ±zh 四命题①新措辞同源 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-13 / v0.1.0 起草（新增 specs 文档，随 global-tenancy 审计门一并签核），于 2026-10-20 / v0.2.0 随收权案翻正 Tenant 词条，并于 2026-10-23 / v0.3.0 随 global-governance-lifecycle-consolidation 归列翻案 Tenant/User 两词条（旁表 DROP·治理态归 organization.status / user.status）；词条含义以经人裁决的当前正文为准。
+正文已于 2026-10-13 / v0.1.0 起草（新增 specs 文档，随 global-tenancy 审计门一并签核），于 2026-10-20 / v0.2.0 随收权案翻正 Tenant 词条，于 2026-10-23 / v0.3.0 随 global-governance-lifecycle-consolidation 归列翻案 Tenant/User 两词条（旁表 DROP·治理态归 organization.status / user.status），并于 2026-10-23 / v0.4.0 随 global-organization-vocabulary-pivot 将 Tenant 词条废止、统一为 Organization（双词汇纪律推翻·业务实体全栈 organization 化）；词条含义以经人裁决的当前正文为准。

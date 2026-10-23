@@ -1,6 +1,6 @@
 # 项目愿景（Vision）
 
-> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.6.0 | 日期: 2026-10-21
+> 状态: **已确认**（人裁决定稿 · P7；D1–D6 已落定）| 版本: 0.7.0 | 日期: 2026-10-23
 > 归属: `docs/specs/`（**宪法顶层** · 人/团队平面）| 性质: **重写型**（正文整体重写 + 变更戳 + 演变单列）
 > 地位: 本文件是项目宪法顶层——其余 `specs`（architecture / workflow / tooling-standards）与 `plans` 以其为纲；与它冲突时，**以实现/方案让位于愿景方向**（愿景只指方向，不作技术门禁）。
 > 关联: [workflow.md](./workflow.md)（工作原则）· [architecture.md](./architecture.md)（结构 SSOT）· [tooling-standards.md](./tooling-standards.md)（工具 SSOT）
@@ -19,32 +19,32 @@
 
 ## 2. 北向目标（North Star）
 
-> **接入一个新租户 = 配置，而非改核心代码。** 一份部署服务 N 个租户，隔离性、身份成员体系、计费用量、数据合规**开箱即用**。
+> **接入一个新组织 = 配置，而非改核心代码。** 一份部署服务 N 个组织，隔离性、身份成员体系、计费用量、数据合规**开箱即用**。
 
 方向性度量（非承诺，落地时转为 `plans` 的完成判据）：
-- 租户开通时间（TTHW, time-to-host-a-tenant）趋近于「填表 + 一次迁移」；
-- 每新增租户的**边际工程成本**趋近于零（核心代码零改动）；
-- 隔离采用**行级（`tenant_id`）**单一策略，不牺牲查询与运维体验（**不做物理 / schema 隔离**）。
+- 组织开通时间趋近于「填表 + 一次迁移」（原度量名 TTHW / time-to-host-a-tenant，语义现随 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 收敛为 host-an-organization）；
+- 每新增组织的**边际工程成本**趋近于零（核心代码零改动）；
+- 隔离采用**行级（`organizationId` 列）**单一策略，不牺牲查询与运维体验（**不做物理 / schema 隔离**）。
 
 ## 3. 目标用户与场景（Who）
 
 - **平台 / 产品团队**：以框架为底座快速起一个 SaaS 业务，不自建多租户轮子。
-- **租户管理员**（最终客户的运营者）：申请开通（经平台审批）、配置、成员与角色管理、用量与账单可见。
+- **组织管理员**（最终客户的运营者）：申请开通（经平台审批）、配置、成员与角色管理、用量与账单可见。
 - **框架维护者**（我们）：长期演进横切能力，守住隔离与扩展的边界。
 
-典型形态：**B2B SaaS**，以「组织」为租户、其下「工作区」为二级数据分组（D2）；每租户独立数据边界、配额与有限定制。
+典型形态：**B2B SaaS**，以「组织」为顶层归属单元（即业界多租户语义中的 tenant 单元·D2）、其下「工作区」为二级数据分组；每组织独立数据边界、配额与有限定制。
 
 ## 4. 核心能力支柱（Pillars）
 
 长期方向，按里程碑分阶段（§7）；**须在既有垂直切片模型内扩展，不另起炉灶**：
 
-1. **租户模型与隔离（Tenancy）**：**统一行级隔离**（共享表 + `tenant_id`），**不做 schema / db 物理隔离**；**两级结构 租户 → 工作区（workspace）**——workspace 作**强数据分区**（数据挂 `workspace_id`、查询默认复合过滤），但**不承载独立权限层**。隔离靠贯穿的租户 / 工作区上下文 + 数据层强制约束。基线：MikroORM + PostgreSQL。（细则见 [global-tenancy](../plans/global-tenancy.md) D1/D2）
-2. **身份、成员与授权（Identity）**：由单用户扩展为**多租户身份**——用户为**平台全局实体**，经 **membership 多对多**加入多个租户；**三层权限 平台级 / 租户级 / 用户级**，租户内角色按 `(user, tenant)`、严格限本租户；**平台经营者全局唯一**（开发者 seed 初始化）；**创建租户需平台人工审批**，加入已有租户由租户管理者准入。跨租户鉴权边界 fail-closed。（细则见 global-tenancy D3/D4、CL-1~5）
-3. **计费与用量（Billing）**：**多支付通道并存**——Stripe（海外）+ 微信支付 + 支付宝（大陆），经**统一 provider 抽象**（与存储同构）；升为**租户级**计费闭环，**订阅 + 配额先行**（计量制留后）；周期扣款方式随通道能力差异（支付宝周期扣款 / 微信委托代扣，需资质）在方案层细化。配额驱动限流与用量入账。
-4. **配置与扩展（Extensibility）**：领域上下文即插拔；**租户级特性开关与定制**不得污染核心切片；交付形态采 **core 多租户能力库 + 参考应用两包**（monorepo），core 可被下游业务复用。（见 global-tenancy D6）
-5. **数据与合规（Data & Compliance）**：租户数据驻留、导出、删除（GDPR/被遗忘权）；操作**审计留痕**。
+1. **组织模型与隔离（Tenancy）**：**统一行级隔离**（共享表 + `organizationId` 列），**不做 schema / db 物理隔离**；**两级结构 组织 → 工作区（workspace）**——workspace 作**强数据分区**（数据挂 `workspaceId`、查询默认复合过滤），但**不承载独立权限层**。隔离靠贯穿的组织 / 工作区上下文（机制层名 tenant & workspace scope）+ 数据层强制约束。基线：MikroORM + PostgreSQL。（细则见 [global-tenancy](../plans/global-tenancy.md) D1/D2）
+2. **身份、成员与授权（Identity）**：由单用户扩展为**多租户身份**——用户为**平台全局实体**，经 **membership 多对多**加入多个组织；**三层权限 平台级 / 组织级 / 用户级**，组织内角色按 `(user, organization)`、严格限本组织；**平台经营者全局唯一**（开发者 seed 初始化）；**创建组织需平台人工审批**，加入已有组织由组织管理者准入。跨组织鉴权边界 fail-closed。（细则见 global-tenancy D3/D4、CL-1~5）
+3. **计费与用量（Billing）**：**多支付通道并存**——Stripe（海外）+ 微信支付 + 支付宝（大陆），经**统一 provider 抽象**（与存储同构）；升为**组织级**计费闭环，**订阅 + 配额先行**（计量制留后）；周期扣款方式随通道能力差异（支付宝周期扣款 / 微信委托代扣，需资质）在方案层细化。配额驱动限流与用量入账。
+4. **配置与扩展（Extensibility）**：领域上下文即插拔；**组织级特性开关与定制**不得污染核心切片；交付形态采 **core 多租户能力库 + 参考应用两包**（monorepo），core 可被下游业务复用。（见 global-tenancy D6）
+5. **数据与合规（Data & Compliance）**：组织数据驻留、导出、删除（GDPR/被遗忘权）；操作**审计留痕**。
 6. **运营面（Ops）**：可观测（pino）、限流 / 配额、对象存储（S3/OSS/COS）、邮件、i18n——已具雏形，向「多租户可运维」收口。
-7. **人的界面（Human Interface）**：SaaS 三支柱之外须有**消费面**——租户管理员自助 UI（成员 / 工作区 / 订阅 / 账单）与平台运营面（审批 / 治理）以前端形态落地；前端与后端同仓共 workspace，经 OpenAPI 契约消费后端，**不反向渗透**（后端不得依赖前端制品）。落位与栈见 [global-frontend-adoption](../plans/global-frontend-adoption.md)（2026-10-17 人令引入·参考栈 OdooThink okee）。
+7. **人的界面（Human Interface）**：SaaS 三支柱之外须有**消费面**——组织管理员自助 UI（成员 / 工作区 / 订阅 / 账单）与平台运营面（审批 / 治理）以前端形态落地；前端与后端同仓共 workspace，经 OpenAPI 契约消费后端，**不反向渗透**（后端不得依赖前端制品）。落位与栈见 [global-frontend-adoption](../plans/global-frontend-adoption.md)（2026-10-17 人令引入·参考栈 OdooThink okee）。
 
 ## 5. 非目标（Non-goals）
 
@@ -61,7 +61,7 @@
 愿景的落地方式继承既有宪法，不新造：
 
 - **架构**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + **函数式领域内核**（functional core, imperative shell·含 2026-10-21 投影镜射/实体教义一期）；CQRS **按需**（存在编排/事务/事件的上下文走总线，简单上下文 service 直调为合法终态——2026-10-20 架构精度修宪，不再宣称聚合优先的战术 DDD）。租户 / 工作区上下文（tenant & workspace scope）作为贯穿请求的新横切维度，落点在既有分层内（层**有内容才存在**）；多租户能力沉淀到 **core 包**、参考应用消费之。四点定位（CA 为底 · DDD 量力 · FC 三映射为突破 · CQRS/ES/EDA 按需但备能）已升为宪法定位、canonical 见 [architecture.md](./architecture.md)「Positioning — Four Pillars」。结构细则以 [architecture.md](./architecture.md) 为 SSOT。
-- **落位判据（机制层 vs 业务域）**：新能力落位按「谁定义规则、为谁服务」（非话题）判归属，同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属）——**系统机制**（`auth` 身份机器、authorization 裁决机器、`tenancy/` 横切层、窄义基础设施 database/config/…）与**业务域**（各限界上下文 + authorization 管理面）；三处易错刀口：多租户机制 ≠ 租户业务域、认证机制 ≠ 用户合规域；authorization 双栖（裁决机器=机制 / 授权事实与管理面=支撑域，故为限界上下文非横切层）；`storage`/`payment` 是带领域策略的出站网关上下文、**非**基础设施。判错归属即结构债；四维判据与完整归属表 canonical 见 [architecture.md](./architecture.md)「Mechanism Layer vs Business Domain」。
+- **落位判据（机制层 vs 业务域）**：新能力落位按「谁定义规则、为谁服务」（非话题）判归属，同一主题可两分（四维：变更动因 / 依赖范式 / 测试口径 / 工具归属）——**系统机制**（`auth` 身份机器、authorization 裁决机器、`tenancy/` 横切层、窄义基础设施 database/config/…）与**业务域**（各限界上下文 + authorization 管理面）；三处易错刀口：多租户机制 ≠ 组织业务域、认证机制 ≠ 用户合规域；authorization 双栖（裁决机器=机制 / 授权事实与管理面=支撑域，故为限界上下文非横切层）；`storage`/`payment` 是带领域策略的出站网关上下文、**非**基础设施。判错归属即结构债；四维判据与完整归属表 canonical 见 [architecture.md](./architecture.md)「Mechanism Layer vs Business Domain」。
 - **工程**：本地 CI 为 L1 裁决、fallow 为 L2 佐证（须二判）、**无已审方案不写码**、完成判据可核验+穷尽（[workflow.md](./workflow.md) · [tooling-standards.md](./tooling-standards.md)）。
 - **决策**：权威归人；多租户隔离级别、计费模型等**不可逆决策须人签核**（workflow §3 高危清单）。
 - **地域与合规约束**：本项目面向**中国大陆**用户——技术栈与第三方资源须**境内可访问、合规可用**；依赖镜像（npm / Docker）、支付、登录、短信、监控/日志等**优先境内方案**，并预留 **ICP 备案 / 数据驻留 / 个人信息保护法（PIPL）** 合规要求。**例外**：Google / GitHub 等海外 OAuth 登录**不受本约束影响、予以保留**。与现有假设冲突处的选型（支付已定：**Stripe + 微信 + 支付宝** 三通道并存，见 §4.3；登录已定：保留 Google/GitHub **+ 新增微信、企业微信、钉钉、飞书**（Better Auth 自定义 provider），**不做手机验证码登录**（实名走平台人工审批）；镜像 / 日志后端等**待决策**）统一落 [tooling-standards.md](./tooling-standards.md)。
@@ -71,9 +71,9 @@
 | 阶段 | 目标 | 关键交付 |
 |------|------|----------|
 | **0 · 现状** | 模板就绪 | 单租户结构；users / auth / stripe / storage / mailer 为**样例** |
-| **1 · 租户域** | 行级隔离 + 两级结构跑通 | 租户 / 工作区领域模型（函数式内核·状态机 + 仓储端口）+ `(tenant_id, workspace_id)` 行级隔离 + 上下文贯穿（scope / DI）+ membership + 三层权限 + 审批开通 |
+| **1 · 组织域** | 行级隔离 + 两级结构跑通 | 组织 / 工作区领域模型（函数式内核·状态机 + 仓储端口）+ `(organizationId, workspaceId)` 行级隔离 + 上下文贯穿（scope / DI）+ membership + 三层权限 + 审批开通 |
 | **2 · 计费与配额** | 商业闭环 | 订阅 + 配额闭环（计量制留后）；RBAC 完善；复合索引与单 schema 迁移策略 |
-| **3 · 运营与合规** | 运营与合规收口 | 租户内自助管理 + 平台运营面（审批 / 暂停）+ 数据驻留 / 导出 / 删除 + 水平扩展运维。**已开段**（2026-10-14 人裁·首切片 = 租户级数据导出 [module-tenancy-data-export](../plans/module-tenancy-data-export.md)）。**自助管理面 = 前端首落位**（§4.7 · 2026-10-17 人令） |
+| **3 · 运营与合规** | 运营与合规收口 | 组织内自助管理 + 平台运营面（审批 / 暂停）+ 数据驻留 / 导出 / 删除 + 水平扩展运维。**已开段**（2026-10-14 人裁·首切片 = 组织级数据导出 [module-tenancy-data-export](../plans/module-tenancy-data-export.md)）。**自助管理面 = 前端首落位**（§4.7 · 2026-10-17 人令） |
 
 > 每阶段的具体方案须落 `docs/plans/`（技术方案）并过**审计门**后方可实现（workflow §1/§3）；阶段推进是 `global` blast radius，须人签核。
 > **交付形态（D6）**：全程以 **core 库 + 参考应用两包** 推进；core 承载多租户横切能力、参考应用演示消费。包结构落地前须与 `architecture.md` 协调（另议）。
@@ -82,11 +82,11 @@
 
 ## 8. 待裁决 / 开放问题（请逐条 `✅ / ✏️ / ⏸`）
 
-1. ~~默认隔离档位~~ **已裁决**：行级 `tenant_id` 为唯一隔离策略，**不做物理 / schema 隔离**（见 §4 / §5）。
-2. ~~租户层级~~ **已裁决**：两级「租户 → 工作区（workspace）」（见 global-tenancy D2）。
+1. ~~默认隔离档位~~ **已裁决**：行级 `organizationId` 列为唯一隔离策略，**不做物理 / schema 隔离**（见 §4 / §5）。
+2. ~~层级结构~~ **已裁决**：两级「组织 → 工作区（workspace）」（见 global-tenancy D2）。
 3. ~~计费优先级~~ **已裁决**：订阅 + 配额先行（D5）。
 4. ~~交付形态~~ **已裁决**：拆 **core 库 + 参考应用** 两包（D6）。
-5. ~~首期范围~~ **已裁决（2026-10-14 收口）**：聚焦 §7 阶段 1（租户域）——实际已按 S0–S11 → ES 首三切片 → 微服务就绪首切片 → S7 配额接线（阶段 2 商业闭环合龙）路径落地；后续阶段按 §7 触发判据逐个立项，不再单列“下一个 plan”问题。
+5. ~~首期范围~~ **已裁决（2026-10-14 收口）**：聚焦 §7 阶段 1（组织域）——实际已按 S0–S11 → ES 首三切片 → 微服务就绪首切片 → S7 配额接线（阶段 2 商业闭环合龙）路径落地；后续阶段按 §7 触发判据逐个立项，不再单列“下一个 plan”问题。
 
 ## 9. 演变记录
 
@@ -100,8 +100,9 @@
 | 2026-10-20 | 0.4.0 | **架构精度修宪顶层对齐**（S5 补笔·高危#5 随批）：§6 架构条与改写后 architecture.md 保持宪法层级一致，消除顶层矛盾；§7 阶段 1「聚合」措辞按实交付精度化 | §6 / §7 |
 | 2026-10-21 | 0.5.0 | 宪法成文「机制层 vs 业务域归属判据」（人裁·architecture 总纲）上承至愿景顶层：§6 新增「落位判据」条；同时回正版本头（上一笔 0.4.0 漏更头部） | §6 / 版本头 |
 | 2026-10-21 | 0.6.0 | 首要术语翻正回 Clean Architecture 为纲（四支柱 #1 本就是「CA 为底」）：§6 架构条「六边形」居首改为 CA 居首·六边形降为同族别名；ports & adapters 保留为边界机制。纯措辞·不动代码/目录/依赖方向 | §6 |
+| 2026-10-23 | 0.7.0 | **业务词面随 [global-organization-vocabulary-pivot](../plans/global-organization-vocabulary-pivot.md) 对齐**（人裁 2026-10-23 推翻双词汇纪律·高危#5 随此签）：业务实体「租户」→「组织」、隔离列描述 `tenant_id`→实码 `organizationId`、`(user, tenant)`→`(user, organization)`、阶段名「租户域」→「组织域」；**保留**业界术语「多租户/multi-tenancy」与机制层词面（Tenancy/tenant & workspace scope/单租户结构/schema-per-tenant 等） | §2 / §3 / §4 / §6 / §7 / §8 |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-21 / v0.6.0 变更（§6 架构条首要术语翻正回 Clean Architecture 为纲·六边形降为同族别名），以当前正文内容为准。
+正文已于 2026-10-23 / v0.7.0 变更（业务词面随 global-organization-vocabulary-pivot 收敛为「组织/organization」·多租户业界术语与机制层词面保留），以当前正文内容为准。

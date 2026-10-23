@@ -1,5 +1,7 @@
 # global-userfacing-tenant-naming：用户面术语单源（组织/工作区）+ 术语 SSOT 聚合措辞对账
 
+> ⚠️ **Superseded（部分）**· 2026-10-23：本案的「双词汇纪律」条款（tenant=内部机制词 / organization=用户面词·1:1 两词表·翻译只发生在呈现层）已被 [global-organization-vocabulary-pivot](./global-organization-vocabulary-pivot.md) 人裁推翻（「这条纪律应该推翻，过时了」）——业务实体现全栈统一称 organization，`tenant` 仅存隔离机器内部命名与业界术语 multi-tenancy。本案其余成果（用户面不得出现「租户」文案、工作区二级分组译名）仍有效并被 pivot 案吸收。案文保留存档、不回改。
+
 > 适用范围: `全局`（前端文案 + `docs/specs` 术语条款 + 术语 SSOT 对账·**零 schema、零路由 slug、零机制命名**）← blast radius 中等，但触 `docs/specs` 术语纪律=高危#5，随签
 > 关联: `specs/architecture-zh.md` 术语纪律段 · `specs/glossary.md` §1 · [global-tenant-entity-reclamation](./global-tenant-entity-reclamation.md)（本案**不翻**其已裁定位）· [global-tenancy](./global-tenancy.md) 术语纪律
 > 性质: 新起（候选稿·待审计门）
