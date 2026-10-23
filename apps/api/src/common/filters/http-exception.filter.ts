@@ -1,3 +1,4 @@
+import { STATUS_CODES } from 'node:http';
 import { LoggerService } from '@app/logger/logger.service';
 import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import {
@@ -31,7 +32,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     let message: string | string[] = 'Internal server error';
-    let error = 'Internal Server Error';
+    // 甲·global-error-envelope-reason-phrase：`error` 缺省由状态短名（HTTP reason phrase）推导，
+    // 使裸 HttpException（object 无 error / string response）的 4xx 不再误标 500 味串；未知码回落
+    // 旧缺省保 500/非-HttpException 行为不变。下方 object 分支 `obj.error || …` 令子类自带 error 优先。
+    let error = STATUS_CODES[status] ?? 'Internal Server Error';
     let errorCode: string | undefined;
     let details: ResponseErrorDetail[] | undefined;
 

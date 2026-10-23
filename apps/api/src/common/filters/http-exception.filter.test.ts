@@ -192,3 +192,69 @@ describe('HttpExceptionFilter · errorCode 透传', () => {
     expect('errors' in (sent.body as object)).toBe(false);
   });
 });
+
+describe('HttpExceptionFilter · error 按状态短名归一（global-error-envelope-reason-phrase）', () => {
+  it('裸 object 无 error 的 403（mapBaError 形）→ error 归 Forbidden（不再误标 Internal Server Error）', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/invitations/mine', method: 'GET', id: 11 });
+
+    filter.catch(
+      new HttpException(
+        {
+          message: 'Email verification required',
+          errorCode: ERROR_CODES.ORG_PROVISIONING_REJECTED,
+        },
+        HttpStatus.FORBIDDEN,
+      ),
+      host,
+    );
+
+    expect(sent.status).toBe(403);
+    expect(sent.body?.error).toBe('Forbidden');
+    expect(sent.body?.errorCode).toBe('ORG:PROVISIONING_REJECTED');
+  });
+
+  it('裸 string 的 402（quota 座位超限形）→ error 归 Payment Required 且 errorCode 仍透出', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/seat', method: 'POST', id: 12 });
+
+    filter.catch(
+      new HttpException('Seat quota exceeded', HttpStatus.PAYMENT_REQUIRED, {
+        errorCode: ERROR_CODES.BILLING_SEAT_LIMIT_EXCEEDED,
+      }),
+      host,
+    );
+
+    expect(sent.body?.error).toBe('Payment Required');
+    expect(sent.body?.errorCode).toBe('BILLING:SEAT_LIMIT_EXCEEDED');
+  });
+
+  it('裸 object 无 error 的 400 → error 归 Bad Request', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/dup', method: 'POST', id: 13 });
+
+    filter.catch(new HttpException({ message: 'slug 重复' }, HttpStatus.BAD_REQUEST), host);
+
+    expect(sent.body?.error).toBe('Bad Request');
+  });
+
+  it('回归锁：子类自带 error 优先（UnauthorizedException→Unauthorized）', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/auth', method: 'GET', id: 14 });
+
+    filter.catch(new UnauthorizedException('session expired'), host);
+
+    expect(sent.body?.error).toBe('Unauthorized');
+  });
+
+  it('回归锁：裸 Error（非 HttpException）兜底 500 仍 error=Internal Server Error（行为不变）', () => {
+    const { filter } = createFilter();
+    const { host, sent } = createHost({ url: '/boom', method: 'GET', id: 15 });
+
+    filter.catch(new Error('db exploded'), host);
+
+    expect(sent.status).toBe(500);
+    expect(sent.body?.error).toBe('Internal Server Error');
+    expect(sent.body?.message).toBe('Internal server error');
+  });
+});

@@ -65,36 +65,37 @@ statusCode/message/errorCode/`errors` 语义**逐字不变**，子类自带 `err
 
 ## 4. 审计记录
 
-> 无已审方案不写码。本 plan 触**公共错误契约**（高危#），须人签核后方可实施。
+> 无已审方案不写码。本 plan 触**公共错误契约**（高危），已人签核后实施。
 
-- 结论：**待审计**（本窗仅立案·零代码改动）
-- 未决项：
-  - ⓐ 是否一并把 `message` 裸 Error 缺省也对齐短名（推荐 **不动**——`message` 归一另有防泄语义）；
-  - ⓑ quota 402 的 `error` 维持标准短语「Payment Required」而非业务化文案（推荐 **维持**·业务语义靠 `errorCode`）；
-  - 两未决项采推荐档即无需追加裁定，若改判请批注。
-- 审计人 / 日期：（待签）
+- 结论：**已审计·签发**（人「同意」2026-10-23＝整案 GO·高危·改公共错误契约随此亲签·问责归签核人）
+- 未决项（**采推荐档定案**）：
+  - ⓐ `message` 裸 Error 缺省**不动**（防内部原文外泄的甲档收口语义保留）——已定；
+  - ⓑ quota 402 的 `error` 维持标准短语「Payment Required」而非业务化文案（业务语义靠 `errorCode`）——已定。
+- 审计人 / 日期：人（FDE）/ 2026-10-23
 
 ## 5. 完成判据（可核验 + 穷尽）
 
-- [ ] 真值矩阵（实施后逐项断言）：
+- [x] 真值矩阵（已逐项断言·`http-exception.filter.test.ts` 5 新测）：
   | 抛形 | status | 期望 `error` | 期望 `errorCode` |
   |------|--------|--------------|------------------|
-  | `mapBaError` 裸 object 无 error | 403 | `Forbidden` | `ORG:PROVISIONING_REJECTED`（透传不变）|
-  | quota 裸 string | 402 | `Payment Required` | `BILLING:SEAT_LIMIT_EXCEEDED` |
-  | 裸 `Error`（非 HttpException）| 500 | `Internal Server Error`（不变）| 无 |
-  | `UnauthorizedException`（子类自带 error）| 401 | `Unauthorized`（不变）| 视携带 |
-- [ ] grep 全仓 `error === 'Internal Server Error'` 类硬断言（web/api-client/e2e）无残留反噬或有则同步；
-- [ ] 新增/回归测通过（`http-exception.filter.test.ts`）；
-- [ ] `pnpm run ci` 全绿（含 openapi drift·错误信封 shape 未变应恒等）；
-- [ ] 真机复跑：重现原 403（seed 邮箱未验证访问 `invitations/mine`）→ 信封 `error` 不再是 `Internal Server Error`（应为 `Forbidden`），statusCode/errorCode 不变。
+  | `mapBaError` 裸 object 无 error | 403 | `Forbidden` ✓ | `ORG:PROVISIONING_REJECTED`（透传不变）|
+  | quota 裸 string | 402 | `Payment Required` ✓ | `BILLING:SEAT_LIMIT_EXCEEDED` |
+  | 裸 object 无 error 400 | 400 | `Bad Request` ✓ | — |
+  | 裸 `Error`（非 HttpException）| 500 | `Internal Server Error`（不变 ✓）| 无 |
+  | `UnauthorizedException`（子类自带 error）| 401 | `Unauthorized`（不变 ✓）| 视携带 |
+- [x] grep 全仓 `error === 'Internal Server Error'` 硬断言（web/api-client/e2e）——**无**（无反噬）；
+- [x] 新增/回归测通过：`http-exception.filter.test.ts` **17/17**（12 旧 + 5 新）；
+- [x] `pnpm run ci` 全绿：build + **868 passed**｜48 skipped + openapi drift（错误信封 shape 未变恒等）+ type-escape + fallow 边界 0 违规；
+- [x] 真机复跑：独立端口 7010 起新构建 dist → 登录 operator（未验证邮箱）+ set-active → `GET /organizations/invitations/mine` 回 **403** 信封 `{"statusCode":403,"error":"Forbidden","errorCode":"ORG:PROVISIONING_REJECTED"}`——`error` 不再为 `Internal Server Error`，statusCode/errorCode 逐字不变。
 
 ## 6. 演变记录
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
 | 2026-10-23 | 0.1.0 | 起草 | 首版（真机验证拓出·立案待审·零实现）|
+| 2026-10-23 | 0.2.0 | 签发+落地 | 人「同意」整案 GO（高危·改公共错误契约亲签·ⓐⓑ采推荐定档）；切片 A `http-exception.filter.ts` 一行缺省源 + 切片 B 5 负向测；ci 全链绿 + 真机复现 403 error=Forbidden |
 
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-23 / v0.1.0 变更，以当前正文内容为准。
+正文已于 2026-10-23 / v0.2.0 变更，以当前正文内容为准。
