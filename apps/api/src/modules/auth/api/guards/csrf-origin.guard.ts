@@ -21,8 +21,9 @@ interface CsrfRequestLike {
 }
 
 /**
- * CSRF Origin/Referer 校验守卫（module-auth-csrf-defense · 甲）。
+ * CSRF Origin/Referer 校验守卫（会话墙后的第二道纵深防御）。
  *
+ * @remarks
  * 经 `AuthModule` 注册为全局 `APP_GUARD`，排在 `SessionGuard` 之后（401 先 403）：对**依赖
  * cookie 会话**的**非安全方法**做 Origin 校验——补上「非 auth 端点仅靠 SameSite 缺省 lax」的
  * 纵深防御缺口（生产若翻 SameSite=None 支持跨源前端，此墙独立兜底）。
@@ -34,6 +35,7 @@ interface CsrfRequestLike {
  * - 可信源白名单**复用 CORS 单一真源** `getCorsConfig().origin`（= `ALLOWED_ORIGINS`），不另立门户（覆盖跨源合法前端）；
  * - 无 Origin/Referer（非浏览器 / 服务直连）→ 放行 + warn（镜 IP-trust「warn 非 fail-closed」，防误杀纯 API 后端）；
  * - 有 Origin 且既非同源亦不在白名单 → 403 `AUTH:CSRF_ORIGIN_MISMATCH`。
+ * @public
  */
 @Injectable()
 export class CsrfOriginGuard implements CanActivate {
@@ -44,6 +46,11 @@ export class CsrfOriginGuard implements CanActivate {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
+  /**
+   * 对非安全方法执行 Origin 校验：`@Public` 与安全方法放行，同源/白名单放行，否则 403。
+   * @param context - 执行上下文。
+   * @returns 放行时为 `true`；校验失败时抛 403。
+   */
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),

@@ -15,8 +15,12 @@ import type { InjectAuthInstance } from '../../auth.interface';
 import { resolveRequestSession } from '../../infrastructure/session-resolver';
 
 /**
+ * 已认证主体形状（由 `SessionGuard` 挂到请求上）。
+ *
+ * @remarks
  * Shape of an authenticated principal attached to the request by SessionGuard.
  * Kept intentionally narrow — only the fields the PIPL /users/me/* endpoints need.
+ * @public
  */
 export interface SessionUser {
   id: string;
@@ -24,8 +28,12 @@ export interface SessionUser {
 }
 
 /**
+ * `SessionGuard` 读/写的最小请求形状。
+ *
+ * @remarks
  * Minimal request shape SessionGuard reads/writes. Avoids coupling to a specific
  * HTTP adapter (Fastify vs Express); Nest's `switchToHttp()` supplies a compatible object.
+ * @public
  */
 export interface SessionRequest {
   headers: Record<string, string | string[] | undefined>;
@@ -33,6 +41,9 @@ export interface SessionRequest {
 }
 
 /**
+ * 会话墙全局守卫：从请求头解析 Better Auth 会话并挂 `req.sessionUser`，否则抛 401。
+ *
+ * @remarks
  * Resolves the Better Auth session from the incoming request headers.
  * Attaches `req.sessionUser` on success; otherwise throws 401.
  *
@@ -40,6 +51,7 @@ export interface SessionRequest {
  * 所有路由默认要求已登录会话。仅显式标注 `@Public()` 的路由（存活探针、签名校验的入站回调）
  * 经 `Reflector` 读回旁路元数据后放行。其余守卫（TenantIsolation/Authorization/PlatformOperator/Quota）
  * 仍逐路由叠加，运行于本全局守卫**之后**。`UserStatusService` 暂停联动保持纵深防御（403）。
+ * @public
  */
 @Injectable()
 export class SessionGuard implements CanActivate {
@@ -49,6 +61,11 @@ export class SessionGuard implements CanActivate {
     @Inject(Reflector) private readonly reflector: Reflector,
   ) {}
 
+  /**
+   * 解析并校验会话：`@Public` 路由旁路，否则无会话 401、已暂停 403。
+   * @param context - 执行上下文。
+   * @returns 放行时为 `true`；否则抛异常。
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // S11 · deny-by-default：显式 @Public 的路由（handler 优先于 class）跳过会话墙。
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
