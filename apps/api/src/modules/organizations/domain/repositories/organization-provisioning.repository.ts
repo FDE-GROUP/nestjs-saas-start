@@ -8,7 +8,9 @@ export const ORGANIZATION_PROVISIONING_REPOSITORY = Symbol('ORGANIZATION_PROVISI
  * @public
  */
 export interface OrganizationProvisioningReceipt {
+  /** 所属租户 id。 */
   organizationId: string;
+  /** 状态。 */
   status: OrganizationStatus;
 }
 

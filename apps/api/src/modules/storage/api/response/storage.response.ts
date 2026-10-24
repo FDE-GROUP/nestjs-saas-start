@@ -11,6 +11,7 @@ import type { z } from 'zod';
  * @public
  */
 export class StorageDeleteResponse {
+  /** 是否成功。 */
   @ApiProperty({ description: '删除是否成功。' })
   success!: boolean;
 }
@@ -20,6 +21,7 @@ export class StorageDeleteResponse {
  * @public
  */
 export class StorageUrlResponse {
+  /** 访问 URL。 */
   @ApiProperty({ description: '签名访问 URL。' })
   url!: string;
 }

@@ -5,7 +5,9 @@ import { BaseCommand } from '@core/saas-kit/shared-kernel/cqrs/types';
  * @public
  */
 export interface OrganizationHardDeleteResult {
+  /** 所属租户 id。 */
   organizationId: string;
+  /** 已清除的事件行数。 */
   purgedEvents: number;
 }
 

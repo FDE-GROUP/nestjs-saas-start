@@ -9,22 +9,39 @@ export const AuthInstanceInjectKey = Symbol('AuthInstance');
  * @public
  */
 export enum OAuthProviderType {
+  /** GitHub 社交登录通道。 */
   GITHUB = 'github',
+  /** Google 社交登录通道。 */
   GOOGLE = 'google',
+  /** Facebook 社交登录通道。 */
   FACEBOOK = 'facebook',
+  /** Twitter 社交登录通道。 */
   TWITTER = 'twitter',
+  /** Microsoft 社交登录通道。 */
   MICROSOFT = 'microsoft',
+  /** Discord 社交登录通道。 */
   DISCORD = 'discord',
+  /** Apple 社交登录通道。 */
   APPLE = 'apple',
+  /** LinkedIn 社交登录通道。 */
   LINKEDIN = 'linkedin',
+  /** GitLab 社交登录通道。 */
   GITLAB = 'gitlab',
+  /** Spotify 社交登录通道。 */
   SPOTIFY = 'spotify',
+  /** Twitch 社交登录通道。 */
   TWITCH = 'twitch',
+  /** Reddit 社交登录通道。 */
   REDDIT = 'reddit',
+  /** Dropbox 社交登录通道。 */
   DROPBOX = 'dropbox',
+  /** TikTok 社交登录通道。 */
   TIKTOK = 'tiktok',
+  /** Kick 社交登录通道。 */
   KICK = 'kick',
+  /** Roblox 社交登录通道。 */
   ROBLOX = 'roblox',
+  /** VK 社交登录通道。 */
   VK = 'vk',
 }
 

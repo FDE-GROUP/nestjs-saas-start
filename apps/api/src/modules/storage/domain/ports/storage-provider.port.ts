@@ -5,8 +5,11 @@ import type { ReadStream } from 'fs';
  * @public
  */
 export interface FileUploadOptions {
+  /** 内容类型（MIME）。 */
   contentType?: string;
+  /** 附加元数据（自由键值）。 */
   metadata?: Record<string, string>;
+  /** 访问控制级别（对象 ACL）。 */
   acl?: string;
 }
 
@@ -15,11 +18,17 @@ export interface FileUploadOptions {
  * @public
  */
 export interface UploadedFileResult {
+  /** 对象存储 key。 */
   key: string;
+  /** 访问 URL。 */
   url: string;
+  /** 存储对象 etag（内容标识）。 */
   etag?: string;
+  /** 字节大小。 */
   size: number;
+  /** 文件 MIME 类型。 */
   mimetype: string;
+  /** 上传文件原始文件名。 */
   originalname: string;
 }
 

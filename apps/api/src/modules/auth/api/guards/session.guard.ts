@@ -23,7 +23,9 @@ import { resolveRequestSession } from '../../infrastructure/session-resolver';
  * @public
  */
 export interface SessionUser {
+  /** 用户 id。 */
   id: string;
+  /** 邮箱地址。 */
   email: string;
 }
 
@@ -36,7 +38,9 @@ export interface SessionUser {
  * @public
  */
 export interface SessionRequest {
+  /** 请求头。 */
   headers: Record<string, string | string[] | undefined>;
+  /** 会话解析出的用户。 */
   sessionUser?: SessionUser;
 }
 

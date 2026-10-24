@@ -11,27 +11,35 @@ import type { PostReadModel } from '../../application/read-models/post.read-mode
  * @public
  */
 export class PostResponse {
+  /** 实体唯一标识 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
 
+  /** 标题。 */
   @ApiProperty()
   title!: string;
 
+  /** 正文内容。 */
   @ApiProperty({ nullable: true, type: 'string' })
   content!: string | null;
 
+  /** 是否已发布。 */
   @ApiProperty()
   published!: boolean;
 
+  /** 所属租户 id。 */
   @ApiProperty({ description: '所属组织（ALS 盖章，body 不接受）。' })
   organizationId!: string;
 
+  /** 所属工作区 id。 */
   @ApiProperty({ nullable: true, type: 'string', description: '所属工作区；NULL = 未分区。' })
   workspaceId!: string | null;
 
+  /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
 
+  /** 更新时间。 */
   @ApiProperty({ format: 'date-time' })
   updatedAt!: Date;
 }
@@ -50,12 +58,15 @@ void _pbwd;
  * @public
  */
 export class PostCursorPageResponse {
+  /** 当前页数据条目。 */
   @ApiProperty({ isArray: true, type: () => PostResponse })
   items!: PostResponse[];
 
+  /** 是否还有下一页。 */
   @ApiProperty({ description: '是否还有下一页。' })
   hasMore!: boolean;
 
+  /** 下一页游标。 */
   @ApiProperty({ required: false, description: '不透明游标（hasMore=false 时缺省）。' })
   nextCursor?: string;
 }

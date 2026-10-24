@@ -27,12 +27,15 @@ const PROVIDER_VALUES = ['stripe', 'alipay', 'wechat_pay'] as const;
  * @public
  */
 export class PaymentStatusResponse {
+  /** 支付面状态。 */
   @ApiProperty({ enum: ['ok'], description: '集成状态恒 "ok"。' })
   status!: 'ok';
 
+  /** 当前选定的支付提供方。 */
   @ApiProperty({ enum: PROVIDER_VALUES, description: '当前选定通道。' })
   selected!: PaymentProviderId;
 
+  /** 当前可用支付提供方集合。 */
   @ApiProperty({
     isArray: true,
     enum: PROVIDER_VALUES,
@@ -46,15 +49,19 @@ export class PaymentStatusResponse {
  * @public
  */
 export class PaymentCustomerRefResponse {
+  /** 客户在支付提供方侧 id。 */
   @ApiProperty({ description: '通道侧 customer id。' })
   id!: string;
 
+  /** 支付/账号提供方标识。 */
   @ApiProperty({ enum: PROVIDER_VALUES, description: '所属通道。' })
   providerId!: PaymentProviderId;
 
+  /** 邮箱地址。 */
   @ApiProperty()
   email!: string;
 
+  /** 提供方原始响应负载（透传）。 */
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
@@ -73,18 +80,23 @@ void _pcrb;
  * @public
  */
 export class PaymentCheckoutRefResponse {
+  /** 结账会话在提供方侧 id。 */
   @ApiProperty({ description: 'checkout / payment intent id。' })
   id!: string;
 
+  /** 支付/账号提供方标识。 */
   @ApiProperty({ enum: PROVIDER_VALUES, description: '所属通道。' })
   providerId!: PaymentProviderId;
 
+  /** 结账会话状态。 */
   @ApiProperty({ required: false, description: '通道侧状态串。' })
   status?: string;
 
+  /** 前端初始化结账所需密钥。 */
   @ApiProperty({ required: false, description: '客户端密钥（前端确认支付用）。' })
   clientSecret?: string;
 
+  /** 提供方原始响应负载（透传）。 */
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
@@ -103,18 +115,23 @@ void _pckb;
  * @public
  */
 export class PaymentRefundRefResponse {
+  /** 退款在提供方侧 id。 */
   @ApiProperty({ description: 'refund id。' })
   id!: string;
 
+  /** 支付/账号提供方标识。 */
   @ApiProperty({ enum: PROVIDER_VALUES, description: '所属通道。' })
   providerId!: PaymentProviderId;
 
+  /** 状态。 */
   @ApiProperty({ required: false, description: '通道侧状态串。' })
   status?: string;
 
+  /** 金额（货币最小单位）。 */
   @ApiProperty({ required: false, description: '退款金额（最小货币单位）。' })
   amount?: number;
 
+  /** 提供方原始响应负载（透传）。 */
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
@@ -133,6 +150,7 @@ void _prb;
  * @public
  */
 export class WebhookAckResponse {
+  /** 是否已接收（回执）。 */
   @ApiProperty({ description: '回调是否已接收处理。' })
   received!: boolean;
 }

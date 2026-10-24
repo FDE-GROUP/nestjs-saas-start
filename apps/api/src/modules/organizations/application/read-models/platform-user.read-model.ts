@@ -11,6 +11,8 @@ export type { PlatformUserPage } from '../../domain/repositories/user-governance
 
 /** suspend/resume 迁移成功后的最小回执（供 controller 返回·status 为新态）。 @public */
 export interface UserGovernanceResult {
+  /** 用户 id。 */
   userId: string;
+  /** 状态。 */
   status: UserStatus;
 }

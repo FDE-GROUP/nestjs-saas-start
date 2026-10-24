@@ -24,15 +24,19 @@ import type {
  * @public
  */
 export class OrganizationRoleViewResponse {
+  /** 角色行 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
 
+  /** 唯一 key（角色/存储对象）。 */
   @ApiProperty({ description: '角色 key（组织内唯一）。' })
   key!: string;
 
+  /** 名称。 */
   @ApiProperty({ description: '人面可读名。' })
   name!: string;
 
+  /** 是否为内置系统角色（不可改删）。 */
   @ApiProperty({ description: '系统内置角色（不可改名/删除）。' })
   isSystem!: boolean;
 }
@@ -47,12 +51,15 @@ void _trvb;
  * @public
  */
 export class OrganizationRoleGrantViewResponse {
+  /** 被授权资源主体。 */
   @ApiProperty({ enum: [...AUTHORIZATION_SUBJECT_VALUES], description: '授权主体词汇。' })
   subject!: AuthorizationSubject;
 
+  /** 授权动作（CASL can 第一元组参）。 */
   @ApiProperty({ enum: [...AUTHORIZATION_ACTION_VALUES], description: '动作词汇。' })
   action!: AuthorizationAction;
 
+  /** 授权条件（ABAC 谓词·平铺等值/$in）。 */
   @ApiProperty({
     type: 'object',
     additionalProperties: true,

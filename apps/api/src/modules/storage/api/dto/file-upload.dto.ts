@@ -7,21 +7,27 @@ import type { z } from 'zod';
  * @public
  */
 export class FileUploadResultDto {
+  /** 对象存储 key。 */
   @ApiProperty({ description: 'File unique identifier' })
   key: string;
 
+  /** 访问 URL。 */
   @ApiProperty({ description: 'File access URL' })
   url: string;
 
+  /** 存储对象 etag（内容标识）。 */
   @ApiPropertyOptional({ description: 'File ETag value' })
   etag?: string;
 
+  /** 字节大小。 */
   @ApiProperty({ description: 'File size (bytes)' })
   size: number;
 
+  /** 文件 MIME 类型。 */
   @ApiProperty({ description: 'File MIME type' })
   mimetype: string;
 
+  /** 上传文件原始文件名。 */
   @ApiProperty({ description: 'Original filename' })
   originalname: string;
 }

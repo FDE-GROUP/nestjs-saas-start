@@ -33,18 +33,23 @@ const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
  * @public
  */
 export class PlatformOrganizationRowResponse {
+  /** 所属租户 id。 */
   @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
+  /** 名称。 */
   @ApiProperty()
   name!: string;
 
+  /** URL 友好的短标识。 */
   @ApiProperty()
   slug!: string;
 
+  /** 状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '生命周期状态（无记录视同 active）。' })
   status!: OrganizationStatus;
 
+  /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
 }
@@ -60,15 +65,19 @@ void _ptrb;
  * @public
  */
 export class PlatformOrganizationPageResponse {
+  /** 当前页数据条目。 */
   @ApiProperty({ isArray: true, type: () => PlatformOrganizationRowResponse })
   items!: PlatformOrganizationRowResponse[];
 
+  /** 总条数。 */
   @ApiProperty({ description: '全量行数。' })
   total!: number;
 
+  /** 每页数量上限。 */
   @ApiProperty({ description: '回显页宽。' })
   limit!: number;
 
+  /** 分页偏移量。 */
   @ApiProperty({ description: '回显偏移。' })
   offset!: number;
 }
@@ -83,18 +92,23 @@ void _ptpb;
  * @public
  */
 export class OrganizationDiagnosticsResponse {
+  /** 所属租户行。 */
   @ApiProperty({ type: () => PlatformOrganizationRowResponse, description: '组织行。' })
   organization!: PlatformOrganizationRowResponse;
 
+  /** 成员数量。 */
   @ApiProperty({ description: '成员数。' })
   memberCount!: number;
 
+  /** 邀请数量。 */
   @ApiProperty({ description: '待处理邀请数。' })
   invitationCount!: number;
 
+  /** 工作区数量。 */
   @ApiProperty({ description: '工作区数。' })
   workspaceCount!: number;
 
+  /** 文章数量。 */
   @ApiProperty({ description: '帖子数。' })
   postCount!: number;
 }
@@ -109,9 +123,11 @@ void _tdb;
  * @public
  */
 export class OrganizationHardDeleteResultResponse {
+  /** 所属租户 id。 */
   @ApiProperty({ description: '被硬删的 organization 主键。' })
   organizationId!: string;
 
+  /** 已清除的事件行数。 */
   @ApiProperty({ description: '本次清除的 lifecycle 事件数（供审计核对）。' })
   purgedEvents!: number;
 }
@@ -126,18 +142,23 @@ void _thdb;
  * @public
  */
 export class PlatformUserRowResponse {
+  /** 用户 id。 */
   @ApiProperty({ description: '用户主键。' })
   userId!: string;
 
+  /** 名称。 */
   @ApiProperty()
   name!: string;
 
+  /** 邮箱地址。 */
   @ApiProperty()
   email!: string;
 
+  /** 状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '治理状态（无记录视同 active）。' })
   status!: UserStatus;
 
+  /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
 }
@@ -152,15 +173,19 @@ void _purb;
  * @public
  */
 export class PlatformUserPageResponse {
+  /** 当前页数据条目。 */
   @ApiProperty({ isArray: true, type: () => PlatformUserRowResponse })
   items!: PlatformUserRowResponse[];
 
+  /** 总条数。 */
   @ApiProperty({ description: '全量行数。' })
   total!: number;
 
+  /** 每页数量上限。 */
   @ApiProperty({ description: '回显页宽。' })
   limit!: number;
 
+  /** 分页偏移量。 */
   @ApiProperty({ description: '回显偏移。' })
   offset!: number;
 }
@@ -175,9 +200,11 @@ void _pupb;
  * @public
  */
 export class UserGovernanceResultResponse {
+  /** 用户 id。 */
   @ApiProperty({ description: '用户主键。' })
   userId!: string;
 
+  /** 状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '迁移后的新状态。' })
   status!: UserStatus;
 }

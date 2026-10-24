@@ -22,7 +22,9 @@ import type {
  * @public
  */
 export interface SystemRoleGrantSeed {
+  /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
+  /** 动作集合。 */
   readonly actions: readonly AuthorizationAction[];
 }
 
@@ -31,8 +33,11 @@ export interface SystemRoleGrantSeed {
  * @public
  */
 export interface SystemRoleSeed {
+  /** 唯一 key（角色/存储对象）。 */
   readonly key: SystemRoleKey;
+  /** 名称。 */
   readonly name: string;
+  /** 该角色内置授权项集合。 */
   readonly grants: readonly SystemRoleGrantSeed[];
 }
 

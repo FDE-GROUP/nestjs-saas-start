@@ -16,7 +16,9 @@ export type GovernedTransitionAction = 'approve' | 'suspend' | 'resume';
  * @public
  */
 export interface GovernedTransitionDeps {
+  /** 状态。 */
   readonly status: Pick<OrganizationStatusService, 'transition'>;
+  /** 审计服务依赖（写治理审计行用）。 */
   readonly audit: Pick<PlatformAuditService, 'logOrganizationGovernance'>;
 }
 
@@ -25,9 +27,13 @@ export interface GovernedTransitionDeps {
  * @public
  */
 export interface GovernedTransitionInput {
+  /** 授权动作（CASL can 第一元组参）。 */
   readonly action: GovernedTransitionAction;
+  /** 所属租户 id。 */
   readonly organizationId: string;
+  /** 操作者 id（会话主体·审计用）。 */
   readonly operatorId: string;
+  /** 迁移目标（状态/对象）。 */
   readonly target: OrganizationStatus;
 }
 

@@ -11,21 +11,27 @@ import type { SubscriptionView } from '@saas/contracts/index';
  * @public
  */
 export class SubscriptionResponse {
+  /** 是否存在有效订阅。 */
   @ApiProperty({ description: '是否已有生效订阅。' })
   hasSubscription!: boolean;
 
+  /** 套餐档位标识。 */
   @ApiProperty({ description: '生效档位 plan key（缺订阅回落 FREE_PLAN）。' })
   plan!: string;
 
+  /** 席位数上限。 */
   @ApiProperty({ description: '座位上限。' })
   seatsLimit!: number;
 
+  /** 已用量。 */
   @ApiProperty({ description: '已用座位（= 成员数·实时算）。' })
   used!: number;
 
+  /** 剩余额度。 */
   @ApiProperty({ description: '剩余座位。' })
   remaining!: number;
 
+  /** 支付提供方侧客户 id。 */
   @ApiProperty({
     nullable: true,
     type: 'string',

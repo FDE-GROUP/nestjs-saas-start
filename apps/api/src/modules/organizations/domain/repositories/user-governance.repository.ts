@@ -9,11 +9,15 @@ export const USER_GOVERNANCE_REPOSITORY = Symbol('USER_GOVERNANCE_REPOSITORY');
  * @public
  */
 export interface PlatformUserRow {
+  /** 用户 id。 */
   userId: string;
+  /** 名称。 */
   name: string;
+  /** 邮箱地址。 */
   email: string;
   /** 无 user_status 记录行（存量/未被动过）视同 active。 */
   status: UserStatus;
+  /** 创建时间。 */
   createdAt: Date;
 }
 

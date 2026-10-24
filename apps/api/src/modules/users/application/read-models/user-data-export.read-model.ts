@@ -10,16 +10,27 @@
  * @public
  */
 export interface ExportedUser {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 邮箱地址。 */
   email: string;
+  /** 名称。 */
   name: string;
+  /** 用户名/句柄（唯一标识）。 */
   handle: string;
+  /** 头像 URL。 */
   image: string | null;
+  /** 名。 */
   firstName: string | null;
+  /** 姓。 */
   lastName: string | null;
+  /** 角色标识。 */
   role: string;
+  /** 邮箱是否已验证。 */
   emailVerified: boolean;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 
@@ -28,13 +39,21 @@ export interface ExportedUser {
  * @public
  */
 export interface ExportedAccount {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 社交/第三方账号提供方。 */
   providerId: string;
+  /** 第三方账号在提供方侧 id。 */
   accountId: string;
+  /** 授权范围。 */
   scope: string | null;
+  /** 访问令牌过期时间。 */
   accessTokenExpiresAt: Date | null;
+  /** 刷新令牌过期时间。 */
   refreshTokenExpiresAt: Date | null;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 
@@ -43,10 +62,15 @@ export interface ExportedAccount {
  * @public
  */
 export interface ExportedSession {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 社交登录提供方。 */
   provider: string | null;
+  /** 过期时间。 */
   expiresAt: Date;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 
@@ -55,12 +79,19 @@ export interface ExportedSession {
  * @public
  */
 export interface ExportedConsent {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 同意用途。 */
   purpose: string;
+  /** 版本号/文档版本。 */
   version: string;
+  /** 同意授予时间。 */
   grantedAt: Date;
+  /** 同意撤回时间。 */
   revokedAt: Date | null;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 
@@ -69,8 +100,12 @@ export interface ExportedConsent {
  * @public
  */
 export interface UserDataExportReadModel {
+  /** 所属用户。 */
   user: ExportedUser;
+  /** 账号记录集合。 */
   accounts: ExportedAccount[];
+  /** 会话记录集合。 */
   sessions: ExportedSession[];
+  /** 同意记录集合。 */
   consents: ExportedConsent[];
 }

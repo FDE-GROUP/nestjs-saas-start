@@ -11,9 +11,13 @@ export const ORGANIZATION_RBAC_REPOSITORY = Symbol('ORGANIZATION_RBAC_REPOSITORY
  * @public
  */
 export interface OrganizationRoleView {
+  /** 角色行 id。 */
   readonly id: string;
+  /** 唯一 key（角色/存储对象）。 */
   readonly key: string;
+  /** 名称。 */
   readonly name: string;
+  /** 是否为内置系统角色（不可改删）。 */
   readonly isSystem: boolean;
 }
 
@@ -22,8 +26,11 @@ export interface OrganizationRoleView {
  * @public
  */
 export interface OrganizationRoleGrantView {
+  /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
+  /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
+  /** 授权条件（ABAC 谓词·平铺等值/$in）。 */
   readonly conditions: Record<string, unknown> | null;
 }
 

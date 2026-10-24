@@ -12,18 +12,23 @@ import type { WorkspacePage, WorkspaceView } from '@saas/contracts/index';
  * @public
  */
 export class WorkspaceResponse {
+  /** 实体唯一标识 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
 
+  /** 名称。 */
   @ApiProperty()
   name!: string;
 
+  /** URL 友好的短标识。 */
   @ApiProperty()
   slug!: string;
 
+  /** 所属租户 id。 */
   @ApiProperty({ description: '所属组织（仓储盖章）。' })
   organizationId!: string;
 
+  /** 拥有者用户 id。 */
   @ApiProperty({
     required: false,
     nullable: true,
@@ -32,9 +37,11 @@ export class WorkspaceResponse {
   })
   ownerId?: string | null;
 
+  /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
 
+  /** 更新时间。 */
   @ApiProperty({ format: 'date-time' })
   updatedAt!: Date;
 }
@@ -53,15 +60,19 @@ void _wbwd;
  * @public
  */
 export class WorkspacePageResponse {
+  /** 当前页数据条目。 */
   @ApiProperty({ isArray: true, type: () => WorkspaceResponse })
   items!: WorkspaceResponse[];
 
+  /** 总条数。 */
   @ApiProperty({ description: '全量行数。' })
   total!: number;
 
+  /** 每页数量上限。 */
   @ApiProperty({ description: '回显页宽。' })
   limit!: number;
 
+  /** 分页偏移量。 */
   @ApiProperty({ description: '回显偏移。' })
   offset!: number;
 }

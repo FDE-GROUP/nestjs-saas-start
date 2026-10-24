@@ -9,7 +9,9 @@
  * @public
  */
 export interface UploadConstraint {
+  /** 最大文件字节数。 */
   maxFileSize: number;
+  /** 允许的 MIME 类型白名单。 */
   allowedMimeTypes: string[];
 }
 
@@ -18,7 +20,9 @@ export interface UploadConstraint {
  * @public
  */
 export interface UploadCandidate {
+  /** 字节大小。 */
   size: number;
+  /** 文件 MIME 类型。 */
   mimetype: string;
 }
 

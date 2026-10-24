@@ -19,9 +19,11 @@ export const ORGANIZATION_STATUS_ENUM = [
  * @public
  */
 export class OrganizationApplicationResponse {
+  /** 所属租户 id。 */
   @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
+  /** 状态。 */
   @ApiProperty({ enum: ORGANIZATION_STATUS_ENUM, description: '生命周期状态。' })
   status!: OrganizationStatus;
 }

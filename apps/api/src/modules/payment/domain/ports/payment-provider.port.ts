@@ -9,8 +9,11 @@ export type PaymentProviderId = 'stripe' | 'alipay' | 'wechat_pay';
  * @public
  */
 export interface PaymentCustomerInput {
+  /** 邮箱地址。 */
   email: string;
+  /** 名称。 */
   name?: string;
+  /** 附加元数据（自由键值）。 */
   metadata?: Record<string, string>;
 }
 
@@ -23,7 +26,9 @@ export interface CreateCheckoutInput {
   amount: number;
   /** 三位 ISO 货币码。 */
   currency: string;
+  /** 描述文本。 */
   description?: string;
+  /** 附加元数据（自由键值）。 */
   metadata?: Record<string, string>;
 }
 
@@ -32,8 +37,11 @@ export interface CreateCheckoutInput {
  * @public
  */
 export interface RefundInput {
+  /** 目标结账会话 id。 */
   checkoutId: string;
+  /** 金额（货币最小单位）。 */
   amount?: number;
+  /** 原因/备注文本。 */
   reason?: string;
 }
 
@@ -42,9 +50,13 @@ export interface RefundInput {
  * @public
  */
 export interface PaymentCustomerRef {
+  /** 客户在支付提供方侧 id。 */
   id: string;
+  /** 支付/账号提供方标识。 */
   providerId: PaymentProviderId;
+  /** 邮箱地址。 */
   email: string;
+  /** 提供方原始响应负载（透传）。 */
   raw: unknown;
 }
 
@@ -53,10 +65,15 @@ export interface PaymentCustomerRef {
  * @public
  */
 export interface PaymentCheckoutRef {
+  /** 结账会话在提供方侧 id。 */
   id: string;
+  /** 支付/账号提供方标识。 */
   providerId: PaymentProviderId;
+  /** 结账会话状态。 */
   status?: string;
+  /** 前端初始化结账所需密钥。 */
   clientSecret?: string;
+  /** 提供方原始响应负载（透传）。 */
   raw: unknown;
 }
 
@@ -65,10 +82,15 @@ export interface PaymentCheckoutRef {
  * @public
  */
 export interface PaymentRefundRef {
+  /** 退款在提供方侧 id。 */
   id: string;
+  /** 支付/账号提供方标识。 */
   providerId: PaymentProviderId;
+  /** 状态。 */
   status?: string;
+  /** 金额（货币最小单位）。 */
   amount?: number;
+  /** 提供方原始响应负载（透传）。 */
   raw: unknown;
 }
 
@@ -77,9 +99,13 @@ export interface PaymentRefundRef {
  * @public
  */
 export interface NormalizedPaymentEvent {
+  /** 支付/账号提供方标识。 */
   providerId: PaymentProviderId;
+  /** 支付事件类型判别。 */
   type: string;
+  /** 原始事件负载数据。 */
   data: unknown;
+  /** 提供方原始响应负载（透传）。 */
   raw: unknown;
 }
 
@@ -96,6 +122,7 @@ export interface NormalizedPaymentEvent {
  * @public
  */
 export interface PaymentProvider {
+  /** 支付提供方标识。 */
   readonly id: PaymentProviderId;
 
   /** 能力门：是否支持周期扣款/订阅（ stripe=true；境内代扣依签约能力，见 P3）。 */

@@ -16,13 +16,21 @@ export type UserRole = 'USER' | 'ADMIN';
  * @public
  */
 export interface UserRecord {
+  /** 实体唯一标识 id。 */
   readonly id: string;
+  /** 邮箱地址。 */
   readonly email: string;
+  /** 名。 */
   readonly firstName: string | null;
+  /** 姓。 */
   readonly lastName: string | null;
+  /** 角色标识。 */
   readonly role: UserRole;
+  /** 密码哈希。 */
   readonly passwordHash: string;
+  /** 创建时间。 */
   readonly createdAt: Date;
+  /** 更新时间。 */
   readonly updatedAt: Date;
 }
 

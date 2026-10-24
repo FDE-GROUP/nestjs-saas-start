@@ -3,7 +3,9 @@
  * @public
  */
 export interface PostDraftInput {
+  /** 标题。 */
   title: string;
+  /** 正文内容。 */
   content?: string | null;
 }
 
@@ -12,13 +14,21 @@ export interface PostDraftInput {
  * @public
  */
 export interface PostState {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 标题。 */
   title: string;
+  /** 正文内容。 */
   content: string | null;
+  /** 是否已发布。 */
   published: boolean;
+  /** 所属租户 id。 */
   organizationId: string;
+  /** 所属工作区 id。 */
   workspaceId: string | null;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 

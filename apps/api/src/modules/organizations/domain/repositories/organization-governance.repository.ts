@@ -9,11 +9,15 @@ export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANC
  * @public
  */
 export interface PlatformOrganizationRow {
+  /** 所属租户 id。 */
   organizationId: string;
+  /** 名称。 */
   name: string;
+  /** URL 友好的短标识。 */
   slug: string;
   /** 无状态记录（存量/seeded）视同 active（与 canTransition/middleware deny-list 同口径）。 */
   status: OrganizationStatus;
+  /** 创建时间。 */
   createdAt: Date;
 }
 
@@ -29,10 +33,15 @@ export type PlatformOrganizationPage = Page<PlatformOrganizationRow>;
  * @public
  */
 export interface OrganizationDiagnostics {
+  /** 所属租户行。 */
   organization: PlatformOrganizationRow;
+  /** 成员数量。 */
   memberCount: number;
+  /** 邀请数量。 */
   invitationCount: number;
+  /** 工作区数量。 */
   workspaceCount: number;
+  /** 文章数量。 */
   postCount: number;
 }
 
@@ -45,9 +54,13 @@ export interface OrganizationDiagnostics {
  * @public
  */
 export interface ExportedOrganizationUser {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 名称。 */
   name: string;
+  /** 邮箱地址。 */
   email: string;
+  /** 用户名/句柄（唯一标识）。 */
   handle: string;
 }
 
@@ -56,9 +69,13 @@ export interface ExportedOrganizationUser {
  * @public
  */
 export interface ExportedOrganizationMember {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 角色标识。 */
   role: string;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 所属用户。 */
   user: ExportedOrganizationUser;
 }
 
@@ -72,6 +89,7 @@ export interface ExportedOrganizationMember {
  * @public
  */
 export interface OrganizationDataExport {
+  /** 所属租户行。 */
   organization: {
     id: string;
     name: string;
@@ -83,7 +101,9 @@ export interface OrganizationDataExport {
     createdAt: Date;
     updatedAt: Date | null;
   };
+  /** 成员记录集合。 */
   members: ExportedOrganizationMember[];
+  /** 邀请记录集合。 */
   invitations: {
     id: string;
     email: string;
@@ -93,6 +113,7 @@ export interface OrganizationDataExport {
     inviterId: string;
     createdAt: Date;
   }[];
+  /** 工作区记录集合。 */
   workspaces: {
     id: string;
     name: string;
@@ -100,6 +121,7 @@ export interface OrganizationDataExport {
     createdAt: Date;
     updatedAt: Date;
   }[];
+  /** 订阅记录集合。 */
   subscriptions: {
     id: string;
     plan: string;
@@ -115,6 +137,7 @@ export interface OrganizationDataExport {
     createdAt: Date;
     updatedAt: Date;
   }[];
+  /** 文章记录集合。 */
   posts: {
     id: string;
     title: string;
