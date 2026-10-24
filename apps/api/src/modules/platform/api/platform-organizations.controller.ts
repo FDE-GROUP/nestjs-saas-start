@@ -62,6 +62,9 @@ import {
 } from './response/governance.response';
 
 /**
+ * 平台操作员治理切片的 HTTP 控制器（多租户 S5 · FR-6/FR-11①/FR-13）。
+ *
+ * @remarks
  * Platform operator governance slice (global-tenancy S5 · FR-6/FR-11①/FR-13).
  *
  * Every route is gated by `PlatformOperatorGuard` (the sole cross-tenant authority —
@@ -73,6 +76,7 @@ import {
  * the `organization.status` column — restored onto the BA shared table by governance-lifecycle-consolidation
  * slice B, the former `tenant` side table being DROPped; §9.4 state machine): suspend (active→suspended), resume (suspended→active),
  * delete (soft→deleted terminal). Each success/failure emits a structured audit line (FR-6).
+ * @public
  */
 @ApiExtraModels(
   ApiEnvelope,
@@ -94,6 +98,11 @@ export class PlatformOrganizationsController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * 跨平台列出所有组织（仅操作员·offset 分页）。
+   * @param dto - 分页与搜索请求。
+   * @returns 带生命周期状态的组织分页页。
+   */
   @Get()
   @SerializeOptions({ schema: platformOrganizationPageSchema })
   @ApiOperation({ summary: 'List all organizations across the platform (operator only)' })
@@ -111,6 +120,11 @@ export class PlatformOrganizationsController {
     );
   }
 
+  /**
+   * 取单个组织详情（仅操作员）。
+   * @param id - 组织主键。
+   * @returns 组织行；未命中抛 404。
+   */
   @Get(':id')
   @SerializeOptions({ schema: platformOrganizationRowSchema })
   @ApiOperation({ summary: 'Get one organization (operator only)' })
@@ -130,6 +144,11 @@ export class PlatformOrganizationsController {
     return row;
   }
 
+  /**
+   * 单组织诊断：成员/邀请/工作区/帖子计数。
+   * @param id - 组织主键。
+   * @returns 诊断包；未命中抛 404。
+   */
   @Get(':id/diagnostics')
   @SerializeOptions({ schema: organizationDiagnosticsSchema })
   @ApiOperation({
@@ -151,6 +170,11 @@ export class PlatformOrganizationsController {
     return diag;
   }
 
+  /**
+   * 导出该组织全部数据为单一 JSON（NFR-6·不含凭证）。
+   * @param id - 组织主键。
+   * @returns 六段聚合导出；未命中抛 404。
+   */
   @Get(':id/export')
   @ApiOperation({ summary: 'Export all organization-owned data as a single JSON payload (NFR-6)' })
   @ApiResponse(
@@ -172,6 +196,12 @@ export class PlatformOrganizationsController {
     return payload;
   }
 
+  /**
+   * 暂停活动组织（active→suspended·fail-closed 失能）。
+   * @param id - 组织主键。
+   * @param user - 当前操作员会话。
+   * @returns 暂停后的组织读模型；未命中 404、非法转移 409。
+   */
   @Patch(':id/suspend')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({
@@ -197,6 +227,12 @@ export class PlatformOrganizationsController {
     return result;
   }
 
+  /**
+   * 恢复已暂停组织（suspended→active）。
+   * @param id - 组织主键。
+   * @param user - 当前操作员会话。
+   * @returns 恢复后的组织读模型；未命中 404、非法转移 409。
+   */
   @Patch(':id/resume')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
   @ApiOperation({ summary: 'Resume a suspended organization (suspended → active)' })
@@ -220,6 +256,12 @@ export class PlatformOrganizationsController {
     return result;
   }
 
+  /**
+   * 软删组织（→deleted 终态·行保留供导出）。
+   * @param id - 组织主键。
+   * @param user - 当前操作员会话。
+   * @returns 标记已删的组织读模型；未命中 404、已删 409。
+   */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: organizationApplicationViewSchema })
@@ -248,6 +290,12 @@ export class PlatformOrganizationsController {
     return result;
   }
 
+  /**
+   * 硬删已处 deleted 终态的组织（不可逆·FK 级联 + 事件清除·NFR-6）。
+   * @param id - 组织主键。
+   * @param user - 当前操作员会话。
+   * @returns 含 purgedEvents 的硬删结果；未命中/幂等 404、非终态 409。
+   */
   @Delete(':id/permanent')
   @HttpCode(HttpStatus.OK)
   @SerializeOptions({ schema: organizationHardDeleteResultSchema })

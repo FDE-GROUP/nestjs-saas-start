@@ -21,14 +21,17 @@ import type {
 } from '../../../organizations/domain/repositories/organization-governance.repository';
 import type { PlatformUserRow } from '../../../organizations/domain/repositories/user-governance.repository';
 
-/**
- * 平台治理面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
- * 真相源 = 各 controller 实际返回类型（platform-tenants / platform-users）；
- * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红），非 runtime 测。
- * 状态枚举复用 @core ORGANIZATION_STATUS 单源（UserStatus ≡ OrganizationStatus 别名）。
- */
 const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
 
+/**
+ * 平台治理面单组织行响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ *
+ * @remarks
+ * 真相源 = 各 controller 实际返回类型（platform-tenants / platform-users）；
+ * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红），非 runtime 测。
+ * 状态枚举复用 `@core` ORGANIZATION_STATUS 单源（UserStatus ≡ OrganizationStatus 别名）。
+ * @public
+ */
 export class PlatformOrganizationRowResponse {
   @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
@@ -52,7 +55,10 @@ const _ptrb: PlatformOrganizationRow = {} as PlatformOrganizationRowResponse;
 void _ptrf;
 void _ptrb;
 
-/** offset 分页整体响应（`PlatformOrganizationPage = Page<PlatformOrganizationRow>`·整个分页对象裹入 data）。 */
+/**
+ * 平台组织 offset 分页整体响应契约（`PlatformOrganizationPage = Page<PlatformOrganizationRow>`·整个分页对象裹入 data）。
+ * @public
+ */
 export class PlatformOrganizationPageResponse {
   @ApiProperty({ isArray: true, type: () => PlatformOrganizationRowResponse })
   items!: PlatformOrganizationRowResponse[];
@@ -72,6 +78,10 @@ const _ptpb: Page<PlatformOrganizationRow> = {} as PlatformOrganizationPageRespo
 void _ptpf;
 void _ptpb;
 
+/**
+ * 单组织诊断响应契约（成员/邀请/工作区/帖子计数聚合）。
+ * @public
+ */
 export class OrganizationDiagnosticsResponse {
   @ApiProperty({ type: () => PlatformOrganizationRowResponse, description: '组织行。' })
   organization!: PlatformOrganizationRowResponse;
@@ -94,6 +104,10 @@ const _tdb: OrganizationDiagnostics = {} as OrganizationDiagnosticsResponse;
 void _tdf;
 void _tdb;
 
+/**
+ * 组织硬删结果响应契约（含本次清除的事件数供审计核对）。
+ * @public
+ */
 export class OrganizationHardDeleteResultResponse {
   @ApiProperty({ description: '被硬删的 organization 主键。' })
   organizationId!: string;
@@ -107,6 +121,10 @@ const _thdb: OrganizationHardDeleteResult = {} as OrganizationHardDeleteResultRe
 void _thdf;
 void _thdb;
 
+/**
+ * 平台用户行响应契约（单用户摘要行）。
+ * @public
+ */
 export class PlatformUserRowResponse {
   @ApiProperty({ description: '用户主键。' })
   userId!: string;
@@ -129,7 +147,10 @@ const _purb: PlatformUserRow = {} as PlatformUserRowResponse;
 void _purf;
 void _purb;
 
-/** offset 分页整体响应（`PlatformUserPage = Page<PlatformUserRow>`）。 */
+/**
+ * 平台用户 offset 分页整体响应契约（`PlatformUserPage = Page<PlatformUserRow>`）。
+ * @public
+ */
 export class PlatformUserPageResponse {
   @ApiProperty({ isArray: true, type: () => PlatformUserRowResponse })
   items!: PlatformUserRowResponse[];
@@ -149,6 +170,10 @@ const _pupb: Page<PlatformUserRow> = {} as PlatformUserPageResponse;
 void _pupf;
 void _pupb;
 
+/**
+ * 用户治理迁移结果响应契约（迁移后的新状态）。
+ * @public
+ */
 export class UserGovernanceResultResponse {
   @ApiProperty({ description: '用户主键。' })
   userId!: string;

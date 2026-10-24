@@ -44,6 +44,9 @@ import {
 } from './response/governance.response';
 
 /**
+ * 平台操作员用户治理切片的 HTTP 控制器（多租户 S6 · FR-6/FR-10/FR-11①/FR-13）。
+ *
+ * @remarks
  * Platform operator user-governance slice (global-tenancy S6 · FR-6/FR-10/FR-11①/FR-13).
  *
  * Every route is gated by `PlatformOperatorGuard` (the sole cross-platform authority, fail-closed).
@@ -52,6 +55,7 @@ import {
  *
  * suspend (active→suspended) additionally hard-invalidates the user's sessions (D4 · §159);
  * resume (suspended→active) lifts the deny-list. Each success/failure emits a structured audit line (FR-6).
+ * @public
  */
 @ApiExtraModels(
   ApiEnvelope,
@@ -70,6 +74,11 @@ export class PlatformUsersController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * 跨平台列出所有用户及生命周期状态（仅操作员·offset 分页）。
+   * @param dto - 分页与搜索请求。
+   * @returns 带封禁状态的用户分页页。
+   */
   @Get()
   @SerializeOptions({ schema: platformUserPageSchema })
   @ApiOperation({ summary: 'List all platform users with lifecycle status (operator only)' })
@@ -87,6 +96,13 @@ export class PlatformUsersController {
     );
   }
 
+  /**
+   * 暂停平台用户（active→suspended·会话失效·fail-closed 失能）。
+   * @param id - 用户主键。
+   * @param user - 当前操作员会话。
+   * @param dto - 暂停入参（可选 reason）。
+   * @returns 用户治理结果；未命中 404、非法转移 409。
+   */
   @Patch(':id/suspend')
   @SerializeOptions({ schema: userGovernanceResultSchema })
   @ApiOperation({
@@ -109,6 +125,12 @@ export class PlatformUsersController {
     return result;
   }
 
+  /**
+   * 恢复已暂停的平台用户（suspended→active）。
+   * @param id - 用户主键。
+   * @param user - 当前操作员会话。
+   * @returns 用户治理结果；未命中 404、非法转移 409。
+   */
   @Patch(':id/resume')
   @SerializeOptions({ schema: userGovernanceResultSchema })
   @ApiOperation({ summary: 'Resume a suspended platform user (suspended → active)' })
