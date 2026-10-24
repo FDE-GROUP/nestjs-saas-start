@@ -1,6 +1,11 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["libs/contracts/src/index.ts", "libs/core/src/shared-kernel/index.ts"],
+  "entryPoints": [
+    "libs/contracts/src/index.ts",
+    "libs/core/src/shared-kernel",
+    "libs/core/src/authorization"
+  ],
+  "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
   "out": "docs/api-ref",
   "name": "公共 API 参考（@saas/contracts + @core/saas-kit）",

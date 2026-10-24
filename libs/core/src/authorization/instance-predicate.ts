@@ -69,7 +69,14 @@ function translateValue(field: string, value: unknown, userId?: string): Record<
 
 /**
  * 把单条 grant 行的 conditions 译为 Mikro where 片段（行内多字段 = AND·CASL conditions 同语义）。
+ *
+ * @remarks
  * 入参 conditions 必须是写侧闸放行的形；否则逐值 throw。空对象视为调用方误用（应传 null 走类型级），抛错。
+ *
+ * @param conditions - 单条 grant 行的 conditions（写侧闸已放行的形）
+ * @param userId - 当前操作者 id（解 `{{userId}}` 模板·缺省留字面模板落空 deny）
+ * @returns Mikro where 片段（字段间 AND）
+ * @public
  */
 export function toMikroPredicate(
   conditions: Record<string, unknown>,
@@ -87,12 +94,18 @@ export function toMikroPredicate(
 }
 
 /**
- * 多 grant 行合并（人裁②·$or 并语义·与 CASL check 级并语义同解）：
+ * 多 grant 行合并（人裁②·$or 并语义·与 CASL check 级并语义同解）。
+ *
+ * @remarks
  *  - 传入各行为**已判定带 conditions** 的行译词（调用点已筛掉 conditions=null 的类型级行·那些行
  *    令调用点直接返回 `null` 全量，不进此函数）；
  *  - 空数组 = 无任何匹配行 ⇒ 返回 `undefined`，由调用点归**空集谓词**（fail-closed）；
  *  - 单行 = 直接返回该译词（省一层 `$or`）；
  *  - 多行 = `{ $or: [row1, row2, ...] }`（Mikro 顶层布尔微语法）。
+ *
+ * @param rowPredicates - 各 grant 行已译出的 where 片段（只读）
+ * @returns 合并后的谓词；空数组返回 `undefined`（调用点归空集）
+ * @public
  */
 export function mergePredicatesWithOr(
   rowPredicates: readonly Record<string, unknown>[],

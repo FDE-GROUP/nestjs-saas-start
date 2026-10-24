@@ -27,8 +27,18 @@ import type {
  *  - `userId` 可选——绑定 grant conditions 里的 `{{userId}}` 模板为当前操作者实值（缺省即模板不可解析 → 保守 deny）。
  */
 
+/**
+ * 租户级权限裁决端口的 DI 注入 token。
+ *
+ * @public
+ */
 export const PERMISSION_CHECKER = Symbol('PERMISSION_CHECKER');
 
+/**
+ * `PermissionChecker.can` 入参（一次授权裁决所需的上下文 + 声明）。
+ *
+ * @public
+ */
 export interface PermissionCheckInput {
   /** ALS 活动租户（规则分区键）；undefined = 无租户上下文（适配侧必拒）。 */
   readonly organizationId?: string;
@@ -46,7 +56,11 @@ export interface PermissionCheckInput {
   readonly userId?: string;
 }
 
-/** `listPredicate` 入参（query 级列表过滤·切片 B）：无 resource（非单资源判定），以 userId 解模板。 */
+/**
+ * `listPredicate` 入参（query 级列表过滤·切片 B）：无 resource（非单资源判定），以 userId 解模板。
+ *
+ * @public
+ */
 export interface PermissionListPredicateRequest {
   /** ALS 活动租户（规则分区键）；undefined = 无租户上下文（适配侧必归 none）。 */
   readonly organizationId?: string;
@@ -58,44 +72,74 @@ export interface PermissionListPredicateRequest {
   readonly userId?: string;
 }
 
-/** `listPredicate` 三态返回（见 `PermissionChecker.listPredicate` 文档）。 */
+/**
+ * `listPredicate` 三态返回（见 `PermissionChecker.listPredicate` 文档）。
+ *
+ * @public
+ */
 export type PermissionListPredicate =
   | { readonly kind: 'all' }
   | { readonly kind: 'where'; readonly where: Record<string, unknown> }
   | { readonly kind: 'none' };
 
+/**
+ * 租户级权限裁决端口（读侧：`can` 单点判定 / `listPredicate` 列表谓词）。
+ *
+ * @public
+ */
 export interface PermissionChecker {
   /**
-   * 纯裁决：是否放行。异步签名（S2·规则源 DB）——deny 由守卫落 403（fail-closed）；
-   * 适配器对「查无角色/无租户/词汇外」恒拒，绝不因加载失败视同放行。
+   * 纯裁决：是否放行（异步签名·S2 规则源 DB）。
+   *
+   * @remarks
+   * deny 由守卫落 403（fail-closed）；适配器对「查无角色/无租户/词汇外」恒拒，绝不因加载失败视同放行。
    * 守卫路径（无 resource）的 read/write 分治语义见上方「形状扩展注记」（人裁 A1）。
+   *
+   * @param check - 授权裁决入参
+   * @returns 是否放行
    */
   can(check: PermissionCheckInput): Promise<boolean>;
 
   /**
    * query 级列表过滤谓词（module-rbac-query-level-filtering 切片 B·dynamic-roles §2.4 缓账兑现·丁裁契约 additive）。
    *
+   * @remarks
    * 与 `can` 同源同口径：同一角色 + 同一 userId 下，列表可见集 = 逐条 `can()` 允许集（「列表 ⊆ 逐条」）。
    * 三态返回（消费方=应用层列表面 handler·见参考应用 `ListWorkspacesQueryHandler`·人裁⑤）：
    *  - `{ kind: 'all' }`：该角色对此 action/subject 存在**无条件类型级授权**（conditions=null 行）
    *    ⇒ 列表按 tenantFilter 全量（承 S2 类型级·无 instance 限制）；
    *  - `{ kind: 'where', where }`：仅带 conditions 的授权 ⇒ 实例谓词（$or 并语义·人裁②），由消费方 AND 进 tenantFilter；
    *  - `{ kind: 'none' }`：无任何匹配 grant 行 / 不可解析 / 加载失败 / 无租户无角色 ⇒ **空集**（fail-closed·绝不回退全量）。
+   *
+   * @param check - 列表谓词入参
+   * @returns 三态谓词（all / where / none）
    */
   listPredicate(check: PermissionListPredicateRequest): Promise<PermissionListPredicate>;
 }
 
 /**
- * 租户授权投影失效端口（module-rbac-dynamic-roles §2.3·S3 热改生效面·丁裁②契约新增）。
+ * 租户授权投影失效端口的 DI 注入 token（module-rbac-dynamic-roles §2.3·S3 热改生效面·丁裁②契约新增）。
  *
+ * @remarks
  * 读写分治：`PermissionChecker` 是读侧裁决（守卫消费），本端口是**写侧缓存失效**
  * （管理门面消费）。角色/授权经仓储变更后，同租户的 ability 投影即过时——门面调用本方法
  * 淘汰该租户全部缓存条目，下一请求重新 lazy 投影（单实例内存自洽；多实例一致性留
  * Redis pub/sub 缓账·见 plan §3）。参考应用侧由同一 CASL 适配类兼实现两端口。
+ *
+ * @public
  */
 export const PERMISSION_INVALIDATOR = Symbol('PERMISSION_INVALIDATOR');
 
+/**
+ * 租户授权投影失效端口（写侧缓存失效·管理门面消费）。
+ *
+ * @public
+ */
 export interface PermissionInvalidator {
-  /** 失效某租户的全部角色 ability 投影（同步·幂等·无对应缓存条目时为空操作）。 */
+  /**
+   * 失效某租户的全部角色 ability 投影（同步·幂等·无对应缓存条目时为空操作）。
+   *
+   * @param organizationId - 待失效投影的租户 id
+   */
   invalidate(organizationId: string): void;
 }

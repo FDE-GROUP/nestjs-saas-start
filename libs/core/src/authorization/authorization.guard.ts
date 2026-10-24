@@ -12,6 +12,9 @@ import { CAN_KEY, type CanRequirement } from './can.decorator';
 import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
 
 /**
+ * 租户级 RBAC 守卫（对声明了 `@Can` 的路由裁决放行 / 403）。
+ *
+ * @remarks
  * Enforces tenant-level RBAC for routes annotated with `@Can` (module-rbac-casl §2.2/§2.3 ·
  * global-tenancy §9.3 / FR-4). Applied per-route via `@UseGuards`.
  *
@@ -21,6 +24,8 @@ import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
  * `PermissionChecker` port, whose reference-app adapter projects the tenant's DB grant
  * rows (organization_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
  * auth / CASL impl (§9.5.4①B).
+ *
+ * @public
  */
 @Injectable()
 export class AuthorizationGuard implements CanActivate {
@@ -30,6 +35,12 @@ export class AuthorizationGuard implements CanActivate {
     @Inject(PERMISSION_CHECKER) private readonly checker: PermissionChecker,
   ) {}
 
+  /**
+   * 逐路由裁决：无活动租户即 fail-closed 抛 403；声明了 `@Can` 则交 `PermissionChecker` 判定。
+   *
+   * @param context - Nest 执行上下文（取 handler/class 元数据 + 租户会话）
+   * @returns 放行返回 `true`；否则抛 `ForbiddenException`
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Fail-closed: a tenant-scoped route requires an active tenant (FR-5 seed).
     const organizationId = this.tenantContext.organizationId;
