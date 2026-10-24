@@ -181,6 +181,7 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 - [MikroORM 迁移指南](./docs/mikro-migration-guide.md)
 - [邮件模块指南（英文）](./docs/mailer-en.md)
 - [OAuth 认证指南（英文）](./docs/oauth-guide-en.md)
+- **公共 API 参考（TypeDoc）**：本地 `pnpm run docs:api` 生成（读根 `typedoc.json`·纳 `@saas/contracts` + `@core/saas-kit` + `apps/api` 各 module 对外接口·`excludeNotDocumented` 只文档化已注释件）→ 产 `docs/api-ref/`（生成物·不入库）
 
 **设计方案与调研**（`docs/plans/`、`docs/research/`·技术方案与参考资料）
 

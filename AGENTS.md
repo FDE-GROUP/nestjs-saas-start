@@ -35,6 +35,7 @@ pnpm run ci:db             # 带 DB 全链：check → test → Testcontainers �
 pnpm run test:fullstack    # 只跑上述 DB 段（编排器 = scripts/ci-fullstack.ts）
 pnpm run dev:web / build:web  # 前端（apps/web·Vite dev :5173 反代→7009·tooling §4.12）
 pnpm run verify:prod-boot  # prod 回归防线：构建后真起服验 /health 200
+pnpm run docs:api          # TypeDoc 生成公共 API 参考（out docs/api-ref·.gitignore 不入库·opt-in 不入默认 ci 链·tooling §2）
 pnpm run migration:generate / migration:run / db:setup   # 迁移/数据
 ```
 
