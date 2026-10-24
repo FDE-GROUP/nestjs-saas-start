@@ -12,6 +12,10 @@ import { HttpException, type HttpStatus } from '@nestjs/common';
  * 于 object response（filter 透传入 envelope.errorCode·前端据 code 辨类、据 status 细分；BA 仅回
  * 不透明 message+status，门面不逐态猜具体语义码）；5xx/未知错误原样上抛交全局异常过滤器（500 面不伪装）。
  * 亦兼容仅附数值/数字串 `.status` 的来源（如测试桩）。
+ *
+ * @param err - 捕获自 BA 服务端调用或门面前置拒绝的未知错误。
+ * @returns 从不正常返回：4xx 抛归一 `HttpException`，其余原样上抛。
+ * @public
  */
 export function mapBaError(err: unknown): never {
   if (err instanceof HttpException) throw err;

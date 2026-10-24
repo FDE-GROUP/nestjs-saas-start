@@ -34,19 +34,6 @@ import {
 } from '../../../common/contracts/api-contracts';
 import { mapBaError } from './ba-error.mapping';
 
-/**
- * 租户**个人通道门面**（module-rbac-casl §2.3.1·甲裁严格拆·self 侧）。
- *
- * 与 {@link OrganizationsOrgAdminController} 的分工：本控制器全部端点是「个人对自己成员资格/
- * 邀请的操作」——**合法无 active 租户也可达**（列表/接受邀请皆发生于入组前），故类级
- * `@TenantIsolationExempt()` 旁路租户墙、逐路由 `SessionGuard` 保会话必需；授权语义由 BA 数据面
- * 自身裁决（membership 归属、被邀请人=本人、last-owner 不可退等），CASL 不介入
- * （CASL 矩阵管的是「租户内管理职权」，见 admin 门面）。
- *
- * 数据操作 = BA `auth.api.*` 服务端直调（窄门面透传·BA 侧 hooks/校验照旧，含 seats 配额），
- * 不经被封堵的 BA 内置 org HTTP 面。
- */
-
 /** BA org 个人通道窄类型（服务端 API·非 HTTP）。 */
 interface OrganizationSelfApi {
   listOrganizations(p: { headers: Record<string, unknown> }): Promise<unknown>;
@@ -60,6 +47,20 @@ interface OrganizationSelfApi {
   }): Promise<unknown>;
 }
 
+/**
+ * 租户**个人通道门面**（module-rbac-casl §2.3.1·甲裁严格拆·self 侧）。
+ *
+ * @remarks
+ * 与 `OrganizationsOrgAdminController`（管理门面）的分工：本控制器全部端点是「个人对自己成员资格/
+ * 邀请的操作」——**合法无 active 租户也可达**（列表/接受邀请皆发生于入组前），故类级
+ * `@TenantIsolationExempt()` 旁路租户墙、逐路由 `SessionGuard` 保会话必需；授权语义由 BA 数据面
+ * 自身裁决（membership 归属、被邀请人=本人、last-owner 不可退等），CASL 不介入
+ * （CASL 矩阵管的是「租户内管理职权」，见 admin 门面）。
+ *
+ * 数据操作 = BA `auth.api.*` 服务端直调（窄门面透传·BA 侧 hooks/校验照旧，含 seats 配额），
+ * 不经被封堵的 BA 内置 org HTTP 面。
+ * @public
+ */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('organizations')
 // 入组前/无租户态的合法个人操作（成员资格列表、接受/拒绝邀请）→ 类级豁免租户墙，登录仍必需。
@@ -77,6 +78,11 @@ export class OrganizationsSelfController {
     return auth.api as unknown as OrganizationSelfApi;
   }
 
+  /**
+   * 列出当前用户所属的租户（个人通道）。
+   * @param headers - 透传给 BA 服务端调用的请求头。
+   * @returns BA 成员资格组织列表。
+   */
   @Get()
   @UseGuards(SessionGuard)
   @ApiOperation({ summary: 'List organizations the current user belongs to (personal channel)' })
@@ -95,6 +101,12 @@ export class OrganizationsSelfController {
     }
   }
 
+  /**
+   * 切换会话的 active 租户（须为其成员）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 目标租户 id 载荷。
+   * @returns BA 切换结果；非成员 403 经 `mapBaError` 归一。
+   */
   @Post('active')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -118,6 +130,12 @@ export class OrganizationsSelfController {
     }
   }
 
+  /**
+   * 自助退出租户（last-owner 不可退）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 目标租户 id 载荷。
+   * @returns BA 退出结果；数据守卫拒经 `mapBaError` 归一。
+   */
   @Post('members/leave')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -141,6 +159,12 @@ export class OrganizationsSelfController {
     }
   }
 
+  /**
+   * 接受发给当前用户的邀请。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 邀请 id 载荷。
+   * @returns BA 接受结果；无效/过期/非受邀人经 `mapBaError` 归一。
+   */
   @Post('invitations/accept')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -166,6 +190,12 @@ export class OrganizationsSelfController {
     }
   }
 
+  /**
+   * 拒绝发给当前用户的邀请。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 邀请 id 载荷。
+   * @returns BA 拒绝结果；无效/过期经 `mapBaError` 归一。
+   */
   @Post('invitations/reject')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -189,6 +219,12 @@ export class OrganizationsSelfController {
     }
   }
 
+  /**
+   * 列出发给当前用户的待处理邀请。
+   * @param headers - 透传 BA 的请求头。
+   * @param user - 会话用户（以 email 收敛可见面）。
+   * @returns BA 邀请列表。
+   */
   @Get('invitations/mine')
   @UseGuards(SessionGuard)
   @ApiOperation({ summary: 'List pending invitations addressed to the current user' })

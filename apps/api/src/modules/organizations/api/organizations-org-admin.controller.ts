@@ -40,17 +40,6 @@ import {
 } from '../../../common/contracts/api-contracts';
 import { mapBaError } from './ba-error.mapping';
 
-/**
- * 租户成员/邀请**管理门面**（module-rbac-casl §2.3.1·甲裁严格拆）。
- *
- * 新宪落点：授权裁决 = `@Can` + CASL（authorization-rules 单源·经 AuthorizationGuard 判定），
- * 数据操作 = BA `auth.api.*` **服务端直调**（认证·membership 数据域，不经被封堵的
- * BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验与 seats 配额 hook——
- * 门面是「授权在我、数据在 BA」的收口点，不是重实现。
- *
- * 租户作用域路由：不豁免（S11 全局墙 fail-closed），guard 组合沿用 workspaces 先例。
- */
-
 /** BA org 管理面窄类型（服务端 API·非 HTTP）。 */
 interface OrganizationOrgApi {
   listMembers(p: { headers: Record<string, unknown> }): Promise<unknown>;
@@ -64,6 +53,18 @@ interface OrganizationOrgApi {
   cancelInvitation(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
 }
 
+/**
+ * 租户成员/邀请**管理门面**（module-rbac-casl §2.3.1·甲裁严格拆）。
+ *
+ * @remarks
+ * 新宪落点：授权裁决 = `@Can` + CASL（authorization-rules 单源·经 AuthorizationGuard 判定），
+ * 数据操作 = BA `auth.api.*` **服务端直调**（认证·membership 数据域，不经被封堵的
+ * BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验与 seats 配额 hook——
+ * 门面是「授权在我、数据在 BA」的收口点，不是重实现。
+ *
+ * 租户作用域路由：不豁免（S11 全局墙 fail-closed），guard 组合沿用 workspaces 先例。
+ * @public
+ */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('organizations')
 @Controller('organizations')
@@ -96,6 +97,11 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 列出 active 租户的成员（全角色·CASL read）。
+   * @param headers - 透传 BA 的请求头。
+   * @returns BA 成员列表。
+   */
   @Get('members')
   @Can('read', 'Member')
   @ApiOperation({ summary: 'List members of the active organization (all roles · CASL read)' })
@@ -114,6 +120,12 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 更新成员角色（owner/admin·CASL update）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 成员 id + 新角色载荷。
+   * @returns BA 更新结果；角色不可挂载先 400，CASL/last-owner 拒经 `mapBaError` 归一。
+   */
   @Post('members/role')
   @Can('update', 'Member')
   @HttpCode(HttpStatus.OK)
@@ -137,6 +149,12 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 移除成员（owner/admin·CASL delete）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 成员 id 载荷。
+   * @returns BA 移除结果；自移除等数据守卫拒经 `mapBaError` 归一。
+   */
   @Post('members/remove')
   @Can('delete', 'Member')
   @HttpCode(HttpStatus.OK)
@@ -159,6 +177,11 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 列出 active 租户的待处理邀请（全角色·CASL read）。
+   * @param headers - 透传 BA 的请求头。
+   * @returns BA 邀请列表。
+   */
   @Get('invitations')
   @Can('read', 'Invitation')
   @ApiOperation({ summary: 'List pending invitations of the active organization (all roles)' })
@@ -177,6 +200,12 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 邀请成员加入 active 租户（owner/admin·CASL create）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 邮箱 + 角色载荷。
+   * @returns BA 邀请结果；角色不可挂载先 400，CASL 拒经 `mapBaError` 归一。
+   */
   @Post('invitations')
   @Can('create', 'Invitation')
   @HttpCode(HttpStatus.OK)
@@ -202,6 +231,12 @@ export class OrganizationsOrgAdminController {
     }
   }
 
+  /**
+   * 取消邀请（owner/admin·CASL cancel）。
+   * @param headers - 透传 BA 的请求头。
+   * @param dto - 邀请 id 载荷。
+   * @returns BA 取消结果；不可取消拒经 `mapBaError` 归一。
+   */
   @Post('invitations/cancel')
   @Can('cancel', 'Invitation')
   @HttpCode(HttpStatus.OK)

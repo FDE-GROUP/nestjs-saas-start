@@ -37,8 +37,9 @@ import { mapBaError } from './ba-error.mapping';
 import { OrganizationApplicationResponse } from './response/organization-application.response';
 
 /**
- * Organization application / approval reference slice (global-tenancy S4 · FR-1/FR-11/FR-12).
+ * 租户申请/审批参考切片端点（global-tenancy S4 · FR-1/FR-11/FR-12）。
  *
+ * @remarks
  * FR-11 three-layer separation is expressed by the guard chosen PER ROUTE — none of these
  * is tenant-scoped (you have no active tenant while applying; approval is cross-tenant):
  * - `POST /tenants/applications`         → user-level (SessionGuard): authenticated user applies.
@@ -48,6 +49,7 @@ import { OrganizationApplicationResponse } from './response/organization-applica
  * closed at the BA layer — `allowUserToCreateOrganization:false`); the applicant becomes the
  * first `owner` via BA (FR-12). A pending tenant binds no tenant context, so its business
  * routes fail closed until an operator approves it (S4 middleware deny-list).
+ * @public
  */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, OrganizationApplicationResponse)
 @ApiTags('organizations')
@@ -57,6 +59,12 @@ import { OrganizationApplicationResponse } from './response/organization-applica
 export class OrganizationsController {
   constructor(@Inject(CommandBus) private readonly commandBus: CommandBus) {}
 
+  /**
+   * 已登录用户提交建租申请，落 pending_approval。
+   * @param user - 会话用户。
+   * @param dto - 建租申请载荷（name/slug）。
+   * @returns 新建的待批租户读模型；BA 重复 slug 等 4xx 经 `mapBaError` 归一透传。
+   */
   @Post('applications')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -88,6 +96,12 @@ export class OrganizationsController {
     }
   }
 
+  /**
+   * 平台运营者批准 pending 租户（pending → active）。
+   * @param id - 租户 id。
+   * @param user - 会话用户（操作者）。
+   * @returns 激活后的租户读模型；查无抛 `NotFoundException`。
+   */
   @Post('applications/:id/approve')
   // 激活既有 pending 租户（非新建资源）·运行时对齐 OpenAPI 文档 200（REST 一致性核验片·项③）。
   @HttpCode(HttpStatus.OK)
@@ -116,6 +130,12 @@ export class OrganizationsController {
     return result;
   }
 
+  /**
+   * 平台运营者驳回 pending 租户（硬删）。
+   * @param id - 租户 id。
+   * @param user - 会话用户（操作者）。
+   * @returns 无；查无抛 `NotFoundException`。
+   */
   @Post('applications/:id/reject')
   @UseGuards(PlatformOperatorGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

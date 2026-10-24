@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { OrganizationApplicationView } from '@saas/contracts/index';
 import type { OrganizationApplicationReadModel } from '../../application/read-models/organization-application.read-model';
 
-/** 生命周期状态机取值（SSOT = @core ORGANIZATION_STATUS·枚举形为文档投影·与字段 union 同文法）。 */
+/** 生命周期状态机取值（SSOT = `@core` ORGANIZATION_STATUS·枚举形为文档投影·与字段 union 同文法）。 @public */
 export const ORGANIZATION_STATUS_ENUM = [
   'pending_approval',
   'active',
@@ -13,7 +13,10 @@ export const ORGANIZATION_STATUS_ENUM = [
 
 /**
  * 租户申请/生命周期响应契约（F1 甲①）——真相源 = `OrganizationApplicationReadModel`。
+ *
+ * @remarks
  * 复用于 tenants apply/approve + platform suspend/resume/delete（同一读模型）。
+ * @public
  */
 export class OrganizationApplicationResponse {
   @ApiProperty({ description: 'organization 主键。' })
