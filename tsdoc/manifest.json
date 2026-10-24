@@ -1,0 +1,21 @@
+{
+  "short_name": "Next Flow",
+  "name": "Next Flow",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "256x256",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "favicon.png",
+      "type": "image/png",
+      "sizes": "625x625"
+    }
+  ],
+  "scope": "/",
+  "start_url": "/en/space?project=18888",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
