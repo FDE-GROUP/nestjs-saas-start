@@ -5,13 +5,16 @@ import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { CsrfOriginGuard } from './api/guards/csrf-origin.guard';
 import { SessionGuard } from './api/guards/session.guard';
+import { OauthSsoController } from './api/oauth-sso.controller';
 import { AuthInstanceInjectKey } from './auth.constant';
 import type { AuthInstance } from './auth.interface';
 import { AUTH_SESSION_STORE } from './domain/ports/session-store.port';
 import { AUTH_USER_STORE } from './domain/ports/user-store.port';
 import { AuthBootstrapService } from './infrastructure/auth.bootstrap';
+import { OauthSsoService } from './infrastructure/oauth-sso.service';
 import { SessionReclaimService } from './infrastructure/session-reclaim.service';
 import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
+import { SsoTokenService } from './infrastructure/sso-token.service';
 import { MikroUserStoreAdapter } from './infrastructure/user-store.adapter';
 
 @Module({})
@@ -35,6 +38,9 @@ export class AuthModule {
     return {
       module: AuthModule,
       imports: [ConfigModule, DatabaseModule, MailerModule],
+      // SSO 身份提供方（OP）面（oauth-sso-odoo-integration 切片 C）：SSO OP controller 落 /oauth2/*
+      // （隔离于 BA /auth/* 通配面外），默认受本模块全局 SessionGuard 会话墙约束。
+      controllers: [OauthSsoController],
       providers: [
         SessionGuard,
         CsrfOriginGuard,
@@ -57,6 +63,9 @@ export class AuthModule {
         // module-session-index-and-expiry-reclaim F2（甲′·镜像 OutboxRelay 零依赖）：过期 session 周期回收。
         // 缺省 SESSION_RECLAIM_ENABLED=false ⇒ 不启 timer·不触库（DB-free 不变量不动）。
         SessionReclaimService,
+        // SSO OP 面（切片 C）：token 原语（node:crypto HS256）+ authorize 业务逻辑（client/redirect 白名单）。
+        SsoTokenService,
+        OauthSsoService,
       ],
       exports: [SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
       global: true,
