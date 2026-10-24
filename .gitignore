@@ -66,3 +66,8 @@ odoo/.filestore/
 # 插件落点 odoo/saas-addons/ 走独立私有仓·不入本公共仓（承 module-local-odoo20-ce ⓓ 修订·松耦合各推各的）
 # 首次 clone 本仓后需自行在该路径 git clone 私有插件仓；缺目录时 compose bind-mount 由 docker 自动建空目录
 odoo/saas-addons/
+
+# 治理文档 docs/（specs 宪法 / plans / stories / research 等）不入本公共仓·改由独立私有治理仓承载
+# 承人令「整套 docs 搬私有仓·不影响开发」：文件仍物理留存于本地磁盘（./docs 为私有仓 checkout），
+# 本地 CI 恒等闸（verify-stories-drift 等运行时读 docs/）照常解析；仅主仓不再跟踪。全新 clone 本仓将无 docs/。
+/docs/
