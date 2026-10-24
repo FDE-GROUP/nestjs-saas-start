@@ -115,6 +115,7 @@
 
 ### 4.6 API 文档
 - 运行 `pnpm run openapi:export`（DB-free codegen，无需起服务）导出 `openapi/openapi.yaml`。
+- **TS 码面 API 参考（TypeDoc）的注释书写规则**见 [tsdoc-comment-standards.md](./tsdoc-comment-standards.md)：本文件只定工具选型与命令；怎么写 TSDoc 注释、对外边界、附着与转义纪律以该 spec 为 SSOT（`docs:api` 产物面向 TS API 参考·与本节 OpenAPI REST 契约面并存不混）。
 
 ### 4.7 代码库智能（fallow）
 - **定位（关键）**：fallow 是**前置分析 / 候选生成工具**——它输出的是**待核验的线索，不是可直接执行的判决**。任何结论（尤以 dead-code、未用依赖、边界告警）在据此**动手**（删代码、删依赖、重构）之前，**必须进行二次人工核验**。

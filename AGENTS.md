@@ -12,6 +12,7 @@
 - 结构：[docs/specs/architecture.md](./docs/specs/architecture.md)（[中文](./docs/specs/architecture-zh.md)）
 - 流程 / 原则：[docs/specs/workflow.md](./docs/specs/workflow.md)
 - 工具与命令 SSOT：[docs/specs/tooling-standards.md](./docs/specs/tooling-standards.md)
+- TypeScript 注释书写 SSOT（TSDoc）：[docs/specs/tsdoc-comment-standards.md](./docs/specs/tsdoc-comment-standards.md)
 - 方案状态单源：[docs/plans/README.md](./docs/plans/README.md)
 
 ## 2. 铁律（不得违反）
