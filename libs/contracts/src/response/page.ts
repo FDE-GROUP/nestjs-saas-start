@@ -11,7 +11,13 @@ import { z } from 'zod';
  * 输出值保留 Date 实例，经 JSON 序列化仍为 ISO 串——wire 面逐字不变（S6 人审口径）。
  */
 
-/** 偏移分页整体响应（↔ `Page<T>`·整个分页对象裹入信封 data）。 */
+/**
+ * 偏移分页整体响应（↔ `Page<T>`·整个分页对象裹入信封 data）。
+ *
+ * @param items - 单条 item 的 zod schema
+ * @returns 包裹 items 数组 + total/limit/offset 的响应对象 schema
+ * @public
+ */
 export function offsetPageSchema<T extends z.ZodTypeAny>(items: T) {
   return z.object({
     items: z.array(items),
@@ -21,7 +27,13 @@ export function offsetPageSchema<T extends z.ZodTypeAny>(items: T) {
   });
 }
 
-/** 游标分页整体响应（↔ `CursorPage<T>`·`nextCursor` 在 hasMore=false 时缺省）。 */
+/**
+ * 游标分页整体响应（↔ `CursorPage<T>`·`nextCursor` 在 hasMore=false 时缺省）。
+ *
+ * @param items - 单条 item 的 zod schema
+ * @returns 包裹 items 数组 + hasMore/nextCursor 的响应对象 schema
+ * @public
+ */
 export function cursorPageSchema<T extends z.ZodTypeAny>(items: T) {
   return z.object({
     items: z.array(items),

@@ -4,6 +4,12 @@ import { offsetPageSchema } from './page';
 /**
  * workspaces 上下文响应契约（S7b·真相源 = `WorkspaceReadModel`）。
  */
+
+/**
+ * 工作区视图（`WorkspaceReadModel` 白名单出线面）。
+ *
+ * @public
+ */
 export const workspaceViewSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -17,6 +23,10 @@ export const workspaceViewSchema = z.object({
 });
 export type WorkspaceView = z.infer<typeof workspaceViewSchema>;
 
-/** offset 分页整体响应（`Page<WorkspaceReadModel>`）。 */
+/**
+ * offset 分页整体响应（`Page<WorkspaceReadModel>`）。
+ *
+ * @public
+ */
 export const workspacePageSchema = offsetPageSchema(workspaceViewSchema);
 export type WorkspacePage = z.infer<typeof workspacePageSchema>;

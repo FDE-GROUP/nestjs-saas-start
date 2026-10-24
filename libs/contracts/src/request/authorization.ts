@@ -3,10 +3,14 @@ import { reqStringMax } from '../helpers';
 import { strictObject } from '../strict';
 
 /**
- * 授权资源/动作词汇（**传输层 wire enum 单源**）。
+ * 授权资源（subject）词汇（**传输层 wire enum 单源**）。
+ *
+ * @remarks
  * ⚠ 领域/运行时值域 SSOT 在 `@core/saas-kit/authorization/authorization-rules`；contracts 保持零依赖
  * （前端可安全消费·不含领域内核），故此处内联同一字面量，并由 apps/api 的
  * `contracts-vocab-parity.test.ts` 对拍锁定「contracts wire 值域 === core 值域」——core 改值即时红，防漂移。
+ *
+ * @public
  */
 export const AUTHORIZATION_SUBJECT_VALUES = [
   'Organization',
@@ -16,6 +20,12 @@ export const AUTHORIZATION_SUBJECT_VALUES = [
   'Role',
   'RoleGrant',
 ] as const;
+
+/**
+ * 授权动作（action）词汇（**传输层 wire enum 单源**·纪律同 {@link AUTHORIZATION_SUBJECT_VALUES}）。
+ *
+ * @public
+ */
 export const AUTHORIZATION_ACTION_VALUES = [
   'create',
   'read',
@@ -24,21 +34,33 @@ export const AUTHORIZATION_ACTION_VALUES = [
   'cancel',
 ] as const;
 
-/** 创建角色入参（旧 `CreateRoleDto`）。 */
+/**
+ * 创建角色入参（旧 `CreateRoleDto`）。
+ *
+ * @public
+ */
 export const createRoleSchema = strictObject({
   key: reqStringMax('validate.roleKey.required', 128),
   name: reqStringMax('validate.roleName.required', 200),
 });
 export type CreateRole = z.infer<typeof createRoleSchema>;
 
-/** 重命名角色入参（旧 `RenameRoleDto`·形同 CreateRole）。 */
+/**
+ * 重命名角色入参（旧 `RenameRoleDto`·形同 CreateRole）。
+ *
+ * @public
+ */
 export const renameRoleSchema = strictObject({
   key: reqStringMax('validate.roleKey.required', 128),
   name: reqStringMax('validate.roleName.required', 200),
 });
 export type RenameRole = z.infer<typeof renameRoleSchema>;
 
-/** 删除角色入参（旧 `DeleteRoleDto`）。 */
+/**
+ * 删除角色入参（旧 `DeleteRoleDto`）。
+ *
+ * @public
+ */
 export const deleteRoleSchema = strictObject({
   key: reqStringMax('validate.roleKey.required', 128),
 });
@@ -46,7 +68,11 @@ export type DeleteRole = z.infer<typeof deleteRoleSchema>;
 
 /**
  * 授予/撤销角色权限入参（旧 `GrantRolePermissionDto` 与 `RevokeRolePermissionDto extends` 同形）。
+ *
+ * @remarks
  * `conditions` 旧 `@IsObject({message})`：present 非对象即回 key（服务端策略闸 `isValidGrantConditions` 判内容）。
+ *
+ * @public
  */
 export const grantRolePermissionSchema = strictObject({
   roleKey: reqStringMax('validate.roleKey.required', 128),
@@ -58,6 +84,10 @@ export const grantRolePermissionSchema = strictObject({
 });
 export type GrantRolePermission = z.infer<typeof grantRolePermissionSchema>;
 
-/** 撤权入参（旧 `RevokeRolePermissionDto`·与授予同形，语义差异在服务端按 conditions 是否给精确撤单行）。 */
+/**
+ * 撤权入参（旧 `RevokeRolePermissionDto`·与授予同形，语义差异在服务端按 conditions 是否给精确撤单行）。
+ *
+ * @public
+ */
 export const revokeRolePermissionSchema = grantRolePermissionSchema;
 export type RevokeRolePermission = GrantRolePermission;

@@ -5,7 +5,11 @@ import { strictObject } from '../strict';
 // 故此处不设 `error:`，保持「非 key 消息」语义不变；数值字段用 `z.coerce.number()` 复刻全局管的
 // `enableImplicitConversion`（@Body JSON 正常已为 number，coerce 仅对显式数字串宽容一档·与旧行为一致）。
 
-/** 创建 checkout（支付意图）入参（旧 `CreateCheckoutDto`）。 */
+/**
+ * 创建 checkout（支付意图）入参（旧 `CreateCheckoutDto`）。
+ *
+ * @public
+ */
 export const createCheckoutSchema = strictObject({
   amount: z.coerce.number().min(1),
   currency: z.string().min(1).max(10),
@@ -14,7 +18,11 @@ export const createCheckoutSchema = strictObject({
 });
 export type CreateCheckout = z.infer<typeof createCheckoutSchema>;
 
-/** 创建 provider customer 入参（旧 `CreateCustomerDto`·`email` 旧 `@IsEmail` 校验格式）。 */
+/**
+ * 创建 provider customer 入参（旧 `CreateCustomerDto`·`email` 旧 `@IsEmail` 校验格式）。
+ *
+ * @public
+ */
 export const createCustomerSchema = strictObject({
   email: z.string().email().max(254),
   name: z.string().max(200).optional(),
@@ -22,7 +30,11 @@ export const createCustomerSchema = strictObject({
 });
 export type CreateCustomer = z.infer<typeof createCustomerSchema>;
 
-/** 退款入参（旧 `RefundPaymentDto`·amount 省略即全额退）。 */
+/**
+ * 退款入参（旧 `RefundPaymentDto`·amount 省略即全额退）。
+ *
+ * @public
+ */
 export const refundPaymentSchema = strictObject({
   checkoutId: z.string().min(1).max(128),
   amount: z.coerce.number().min(1).optional(),

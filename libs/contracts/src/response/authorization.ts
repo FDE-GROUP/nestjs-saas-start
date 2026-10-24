@@ -5,8 +5,9 @@ import {
 } from '../request/authorization';
 
 /**
- * 角色/授权面响应契约（S7b·真相源 = `AuthorizationAdminController` 返回类型）。
- * subject/action 词汇复用请求侧内联单源（apps 侧 vocab 对拍锁 vs @core CASL 值域）。
+ * 组织角色视图（S7b·真相源 = `AuthorizationAdminController` 返回类型）。
+ *
+ * @public
  */
 export const organizationRoleViewSchema = z.object({
   id: z.string(),
@@ -18,6 +19,14 @@ export const organizationRoleViewSchema = z.object({
   isSystem: z.boolean(),
 });
 
+/**
+ * 角色授权项视图（subject × action 的授予记录）。
+ *
+ * @remarks
+ * subject/action 词汇复用请求侧内联单源（apps 侧 vocab 对拍锁 vs `@core` CASL 值域）。
+ *
+ * @public
+ */
 export const organizationRoleGrantViewSchema = z.object({
   subject: z.enum(AUTHORIZATION_SUBJECT_VALUES),
   action: z.enum(AUTHORIZATION_ACTION_VALUES),

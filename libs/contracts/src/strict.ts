@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
 /**
- * ④ 裁定「默认严格」的书写入口：复刻现 class-validator 的 `whitelist + forbidNonWhitelisted`
- * ——未知字段（含嵌套）一律拒（issue.code = `unrecognized_keys`）。
+ * 「默认严格」请求对象的书写入口：对 zod 对象施加 `.strict()`，未知字段（含嵌套）一律拒。
+ *
+ * @remarks
+ * ④ 裁定「默认严格」——复刻现 class-validator 的 `whitelist + forbidNonWhitelisted`
+ * （未知键 issue.code = `unrecognized_keys`）。
  *
  * 为什么默认严格：现 `I18nValidationPipe` 已配 `forbidNonWhitelisted: true`，今天多传未知字段本就返回 400，
  * 故 `.strict()` 是**行为保真、非回归**。
@@ -14,6 +17,10 @@ import { z } from 'zod';
  *
  * 例外（须显式、可审计）：确需开放输入的端点（典型：Stripe webhook 签名原始体）不要用本 helper，
  * 改用 `z.object({ ... }).passthrough()` 并在 schema 处注释原因——使「宽松」永远是有意为之。
+ *
+ * @param shape - zod 原始形状（字段名 → schema）。
+ * @returns 施加 `.strict()` 的 zod 对象 schema。
+ * @internal
  */
 export function strictObject<T extends z.ZodRawShape>(shape: T) {
   return z.object(shape).strict();

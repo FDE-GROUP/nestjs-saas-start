@@ -4,6 +4,12 @@ import { z } from 'zod';
  * 存储面响应契约（S7b·上传面真相源 = `FileUploadResultDto`（service 产 plain object）；
  * delete/url 为 controller 内联字面返回）。
  */
+
+/**
+ * 文件上传结果（`FileUploadResultDto` 出线面）。
+ *
+ * @public
+ */
 export const fileUploadResultSchema = z.object({
   /** File unique identifier. */
   key: z.string(),
@@ -19,12 +25,20 @@ export const fileUploadResultSchema = z.object({
   originalname: z.string(),
 });
 
-/** `DELETE /storage/:key`：`{success}`。 */
+/**
+ * `DELETE /storage/:key`：`{success}`。
+ *
+ * @public
+ */
 export const storageDeleteSchema = z.object({
   success: z.boolean(),
 });
 
-/** `GET /storage/url/:key` 类面：`{url}` 签名访问 URL。 */
+/**
+ * `GET /storage/url/:key` 类面：`{url}` 签名访问 URL。
+ *
+ * @public
+ */
 export const storageUrlSchema = z.object({
   url: z.string(),
 });

@@ -3,21 +3,33 @@ import { optStringMax } from '../helpers';
 import { strictObject } from '../strict';
 import { pageShape } from './pagination';
 
-/** 跨租户列表查询（旧 `ListPlatformOrganizationsDto extends ListPageDto` + search 模糊）。 */
+/**
+ * 跨租户列表查询（旧 `ListPlatformOrganizationsDto extends ListPageDto` + search 模糊）。
+ *
+ * @public
+ */
 export const listPlatformOrganizationsQuerySchema = strictObject({
   ...pageShape,
   search: optStringMax(200),
 });
 export type ListPlatformOrganizationsQuery = z.infer<typeof listPlatformOrganizationsQuerySchema>;
 
-/** 跨平台用户列表查询（旧 `ListPlatformUsersDto extends ListPageDto` + search 模糊）。 */
+/**
+ * 跨平台用户列表查询（旧 `ListPlatformUsersDto extends ListPageDto` + search 模糊）。
+ *
+ * @public
+ */
 export const listPlatformUsersQuerySchema = strictObject({
   ...pageShape,
   search: optStringMax(200),
 });
 export type ListPlatformUsersQuery = z.infer<typeof listPlatformUsersQuerySchema>;
 
-/** 暂停用户可选理由（旧 `SuspendUserDto`·写入 `user.statusReason` 真列 + 审计上下文）。 */
+/**
+ * 暂停用户可选理由（旧 `SuspendUserDto`·写入 `user.statusReason` 真列 + 审计上下文）。
+ *
+ * @public
+ */
 export const suspendUserSchema = strictObject({
   reason: z.string().max(500).optional(),
 });
