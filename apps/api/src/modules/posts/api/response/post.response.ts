@@ -4,8 +4,11 @@ import type { PostCursorPage, PostView } from '@saas/contracts/index';
 import type { PostReadModel } from '../../application/read-models/post.read-model';
 
 /**
- * posts 上下文响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ * posts 上下文单帖响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ *
+ * @remarks
  * 真相源 = controller 实际返回类型 `PostReadModel`（领域实体 `Post` 经 application `toPostReadModel` 映射而得）；漂移防线见文末编译期双向赋值锁。
+ * @public
  */
 export class PostResponse {
   @ApiProperty({ description: 'UUIDv7。' })
@@ -40,8 +43,11 @@ void _pfwd;
 void _pbwd;
 
 /**
- * 游标分页整体响应（`CursorPage<PostReadModel>`）——拦截器 normal 分支将整个分页对象裹入 data
- * （`CursorPage` 无 `meta` 键，不触发 `{items,meta}` 提升）。
+ * posts 游标分页整体响应契约（`CursorPage<PostReadModel>`）。
+ *
+ * @remarks
+ * 拦截器 normal 分支将整个分页对象裹入 data（`CursorPage` 无 `meta` 键，不触发 `{items,meta}` 提升）。
+ * @public
  */
 export class PostCursorPageResponse {
   @ApiProperty({ isArray: true, type: () => PostResponse })

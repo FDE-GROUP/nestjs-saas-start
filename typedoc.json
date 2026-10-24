@@ -8,12 +8,15 @@
     "libs/core/src/platform",
     "libs/core/src/modules/organizations",
     "libs/core/src/modules/workspaces",
-    "libs/core/src/modules/subscriptions"
+    "libs/core/src/modules/subscriptions",
+    "apps/api/src/modules/posts/api",
+    "apps/api/src/modules/posts/domain",
+    "apps/api/src/modules/posts/application"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
   "out": "docs/api-ref",
-  "name": "公共 API 参考（@saas/contracts + @core/saas-kit）",
+  "name": "公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）",
   "readme": "none",
   "commentStyle": "jsdoc",
   "exclude": ["**/*.test.ts", "**/*.spec.ts"],

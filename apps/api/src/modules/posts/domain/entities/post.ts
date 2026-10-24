@@ -1,26 +1,16 @@
 /**
- * posts 上下文的**充血领域实体**（Clean Architecture 锥体 Entities 层在本仓的首个物化样板·
- * module-posts-domain-entity-split · architecture「Entity Doctrine」教义）。
- *
- * 与 `infrastructure/entities/post.entity.ts` 的**物理数据实体**（MikroORM `defineEntity`）严格分离：
- * 本类零框架依赖（不 import `@nestjs/*`/`@mikro-orm/*`/HTTP/其他上下文·守 layer 依赖表 domain/ 行），
- * 承载**不可变状态 + 构造期不变量 + 纯转移函数（返回新实例·FC 口径·architecture「投影镜射教义」）**；
- * 二者由仓储适配器经 `infrastructure/repositories/post-mapping.ts` 的纯 `fromRow` mapper 复原映射。
- *
- * 两阶段构造：
- *  - {@link Post.draft} —— 新建写意图（业务字段·经不变量校验）；此时 id/租户/时间戳尚未落，为 `null`。
- *  - {@link Post.restore} —— 从持久层复原（含技术字段·不重复校验）。
- * 仓储 `create/findById/list` 一律返回 `restore` 后的**完整**实例，故 application 侧到传输投影
- * （`PostReadModel`）的映射只发生在完整实例上（领域实体本身绝不越界进 `api/`·守 api/ 行）。
+ * 新建写意图（仅业务字段·原 `PostDraft` 语义上收为工厂入参）。
+ * @public
  */
-
-/** 新建写意图（仅业务字段·原 `PostDraft` 语义上收为工厂入参）。 */
 export interface PostDraftInput {
   title: string;
   content?: string | null;
 }
 
-/** 持久层复原输入（全字段·含 id/租户/工作区/时间戳）。 */
+/**
+ * 持久层复原输入（全字段·含 id/租户/工作区/时间戳）。
+ * @public
+ */
 export interface PostState {
   id: string;
   title: string;
@@ -32,6 +22,20 @@ export interface PostState {
   updatedAt: Date;
 }
 
+/**
+ * posts 上下文的**充血领域实体**（Clean Architecture 锥体 Entities 层在本仓的首个物化样板）。
+ *
+ * @remarks
+ * 与 `infrastructure/entities/post.entity.ts` 的**物理数据实体**（MikroORM `defineEntity`）严格分离：
+ * 本类零框架依赖（不 import `@nestjs/*`/`@mikro-orm/*`/HTTP/其他上下文·守 layer 依赖表 domain/ 行），
+ * 承载**不可变状态 + 构造期不变量 + 纯转移函数（返回新实例·FC 口径·architecture「投影镜射教义」）**；
+ * 二者由仓储适配器经 `infrastructure/repositories/post-mapping.ts` 的纯 `fromRow` mapper 复原映射。
+ *
+ * 两阶段构造：{@link Post.draft} 新建写意图（业务字段·经不变量校验·id/租户/时间戳为 `null`）；
+ * {@link Post.restore} 从持久层复原（含技术字段·不重复校验）。仓储 `create/findById/list` 一律返回
+ * `restore` 后的**完整**实例，故到传输投影 `PostReadModel` 的映射只发生在完整实例上（领域实体绝不越界进 `api/`）。
+ * @public
+ */
 export class Post {
   private constructor(
     private readonly _id: string | null,
@@ -48,6 +52,8 @@ export class Post {
    * 新建一份草稿态帖子（缺省未发布）。不变量**只防御、不比边界严**：title 非空即放行，
    * 口径与 `@saas/contracts` 的 `createPostSchema.title`（`reqString`＝`z.string().min(1)`）一致——
    * HTTP 面已被 zod 先行拦截，此抛错仅护住非 HTTP 直调（承 `Money.fromMinorUnits` 同款「防御不可达」）。
+   * @param input - 新建写意图（业务字段）。
+   * @returns 草稿态 `Post` 实例（id/租户/时间戳为 `null`）。
    */
   static draft(input: PostDraftInput): Post {
     const { title } = input;
@@ -57,7 +63,11 @@ export class Post {
     return new Post(null, title, input.content ?? null, false, null, null, null, null);
   }
 
-  /** 从持久层复原完整实例（不重复业务校验·信任仓储读出的行）。 */
+  /**
+   * 从持久层复原完整实例（不重复业务校验·信任仓储读出的行）。
+   * @param state - 持久层复原输入（含技术字段）。
+   * @returns 完整 `Post` 实例。
+   */
   static restore(state: PostState): Post {
     return new Post(
       state.id,
@@ -106,12 +116,18 @@ export class Post {
     return this._updatedAt;
   }
 
-  /** 发布（生命周期迁移·**纯转移**返回新实例·幂等：已发布则原样返回 `this`）。 */
+  /**
+   * 发布（生命周期迁移·**纯转移**返回新实例·幂等：已发布则原样返回 `this`）。
+   * @returns 已发布的新实例（或原 `this`）。
+   */
   withPublished(): Post {
     return this._published ? this : this.withPublishedFlag(true);
   }
 
-  /** 撤回发布（生命周期迁移·**纯转移**返回新实例·幂等：未发布则原样返回 `this`）。 */
+  /**
+   * 撤回发布（生命周期迁移·**纯转移**返回新实例·幂等：未发布则原样返回 `this`）。
+   * @returns 未发布的新实例（或原 `this`）。
+   */
   withUnpublished(): Post {
     return this._published ? this.withPublishedFlag(false) : this;
   }

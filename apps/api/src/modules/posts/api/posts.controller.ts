@@ -34,10 +34,14 @@ import type { PostReadModel } from '../application/read-models/post.read-model';
 import { PostCursorPageResponse, PostResponse } from './response/post.response';
 
 /**
+ * posts 租户级参考资源的 HTTP 控制器（多租户 S2 · FR-5 样板）。
+ *
+ * @remarks
  * Reference tenant-scoped resource (global-tenancy S2 · FR-5). Both routes are gated by
  * `TenantIsolationGuard` (fail-closed: no active tenant → 403) and read/write exclusively
  * through the tenant-scoped repository — the handler never names a tenant id. This is the
  * template future business features copy, so the isolation boundary is idiomatic, not bolted on.
+ * @public
  */
 @ApiTags('posts')
 // F1 契约面（甲①）：响应 schema 经 @ApiResponse 真挂 DTO；envelope/error 公共形入 components。
@@ -50,6 +54,11 @@ export class PostsController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * 列出当前组织下的帖子（游标分页）。
+   * @param request - 游标分页请求（`cursor`/`limit`）。
+   * @returns 当前组织拥有的帖子游标页。
+   */
   @Get()
   @SerializeOptions({ schema: postCursorPageSchema })
   @ApiOperation({ summary: 'List posts in the active organization (cursor-paginated)' })
@@ -68,6 +77,11 @@ export class PostsController {
     );
   }
 
+  /**
+   * 在当前组织下创建帖子。
+   * @param dto - 创建入参（title/content/published）。
+   * @returns 已落库并盖章当前组织的帖子。
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @SerializeOptions({ schema: postViewSchema })
