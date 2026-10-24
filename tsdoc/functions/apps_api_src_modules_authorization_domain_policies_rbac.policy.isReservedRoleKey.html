@@ -16,21 +16,18 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="isreservedrolekey"><span class="tsd-kind-call-signature">isReservedRoleKey</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#isreservedrolekey" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>租户 RBAC 写侧策略纯函数（domain · module-rbac-dynamic-roles §2.2 conditions 白名单 / S1 判据）。</p>
+<div class="tsd-comment tsd-typography"><p>系统保留角色 key 判定：<code>key ∈ SYSTEM_ROLE_KEYS</code>（owner/admin/member）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">key</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
-<div class="tsd-comment tsd-typography">
-<div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>零依赖零 IO：自定义角色 key 的词法闸 + grant <code>conditions</code> 的形状闸。
-写路径（仓储适配器）先过闸再落行——<strong>闸外形状一律拒</strong>（fail-closed），投影侧
-（CASL matcher）因此只需信任库内形状；读侧无需二次防御。</p>
-</div></div><aside class="tsd-sources">
+<li><span><span class="tsd-kind-parameter">key</span>: <span class="tsd-signature-type">string</span></span>
+<div class="tsd-comment tsd-typography"><p>待判定的角色 key。</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><p>命中系统保留 key 时为 <code>true</code>。</p>
+<aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/apps/api/src/modules/authorization/domain/policies/rbac.policy.ts#L26">apps/api/src/modules/authorization/domain/policies/rbac.policy.ts:26</a></li></ul></aside></div></li></ul></section></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/apps/api/src/modules/authorization/domain/policies/rbac.policy.ts#L24">apps/api/src/modules/authorization/domain/policies/rbac.policy.ts:24</a></li></ul></aside></div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

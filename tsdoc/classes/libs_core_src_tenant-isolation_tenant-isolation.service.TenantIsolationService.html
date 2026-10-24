@@ -22,7 +22,7 @@ singleton can read the per-request store without request-scoping every consumer
 <p>S0 only exposes read access; the fail-closed enforcement guard (FR-5) lands in S2.</p>
 </div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L19">libs/core/src/tenant-isolation/tenant-isolation.service.ts:19</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L19">libs/core/src/tenant-isolation/tenant-isolation.service.ts:19</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -54,7 +54,7 @@ singleton can read the per-request store without request-scoping every consumer
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L26">libs/core/src/tenant-isolation/tenant-isolation.service.ts:26</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L26">libs/core/src/tenant-isolation/tenant-isolation.service.ts:26</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="role"><span>role</span><a href="#role" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -66,7 +66,7 @@ singleton can read the per-request store without request-scoping every consumer
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L43">libs/core/src/tenant-isolation/tenant-isolation.service.ts:43</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L42">libs/core/src/tenant-isolation/tenant-isolation.service.ts:42</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="userid"><span>user<wbr/>Id</span><a href="#userid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -79,20 +79,19 @@ undefined = 未解析出会话——<code>listPredicate</code> 的 <code>{{userI
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L52">libs/core/src/tenant-isolation/tenant-isolation.service.ts:52</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L51">libs/core/src/tenant-isolation/tenant-isolation.service.ts:51</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="workspaceid"><span>workspace<wbr/>Id</span><a href="#workspaceid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li>
 <div class="tsd-signature" id="workspaceidworkspaceid"><span class="tsd-signature-keyword">get</span> <span class="tsd-kind-get-signature">workspaceId</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Active workspace id (S3 · D2/§9.2), or undefined when the request carries no
-<code>x-workspace-id</code> selector. Optional by design: it only NARROWS reads/writes within
-the already-trusted tenant; it is never a security boundary on its own.</p>
+<div class="tsd-comment tsd-typography"><p>活动工作区 id（S3 · D2/§9.2）；请求未携 <code>x-workspace-id</code> 选择器时为 undefined。
+设计上为可选：它只在<strong>已受信租户</strong>内收窄读/写，本身从不作为独立安全边界。</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L35">libs/core/src/tenant-isolation/tenant-isolation.service.ts:35</a></li></ul></aside></div></li></ul></section></section></details>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L34">libs/core/src/tenant-isolation/tenant-isolation.service.ts:34</a></li></ul></aside></div></li></ul></section></section></details>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
@@ -106,26 +105,26 @@ the already-trusted tenant; it is never a security boundary on its own.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <a href="../interfaces/libs_core_src_tenant-isolation_tenant-isolation-scope.TenantIsolationScope.html" class="tsd-signature-type tsd-kind-interface">TenantIsolationScope</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L21">libs/core/src/tenant-isolation/tenant-isolation.service.ts:21</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L21">libs/core/src/tenant-isolation/tenant-isolation.service.ts:21</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="requireactiveorganizationid"><span>require<wbr/>Active<wbr/>Organization<wbr/>Id</span><a href="#requireactiveorganizationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="requireactiveorganizationid-1"><span class="tsd-kind-call-signature">requireActiveOrganizationId</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><a href="#requireactiveorganizationid-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Fail-closed: require an active tenant, else 403. For tenant-scoped endpoints.</p>
+<div class="tsd-comment tsd-typography"><p>fail-closed：要求存在活动租户，否则 403。用于租户作用域端点。</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><p>活动租户 id；无则抛 <code>ForbiddenException</code></p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L72">libs/core/src/tenant-isolation/tenant-isolation.service.ts:72</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L71">libs/core/src/tenant-isolation/tenant-isolation.service.ts:71</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="run"><span>run</span><a href="#run" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="run-1"><span class="tsd-kind-call-signature">run</span><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#runt">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">ctx</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/libs_core_src_tenant-isolation_tenant-isolation-scope.TenantIsolationScope.html" class="tsd-signature-type tsd-kind-interface">TenantIsolationScope</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">fn</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#runt">T</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#runt">T</a><a href="#run-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Run <code>fn</code> within the given tenant context (used by the middleware / tests).</p>
+<div class="tsd-comment tsd-typography"><p>在给定租户上下文内运行 <code>fn</code>（供中间件 / 测试使用）。</p>
 </div>
 <section class="tsd-panel">
 <h4>Type Parameters</h4>
@@ -143,7 +142,7 @@ the already-trusted tenant; it is never a security boundary on its own.</p>
 <h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#runt">T</a></h4><p><code>fn</code> 的结果</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/95a55540651e8cc31f3f7bbdd3b829a1b6501f1f/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L63">libs/core/src/tenant-isolation/tenant-isolation.service.ts:63</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/tenant-isolation/tenant-isolation.service.ts#L62">libs/core/src/tenant-isolation/tenant-isolation.service.ts:62</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
