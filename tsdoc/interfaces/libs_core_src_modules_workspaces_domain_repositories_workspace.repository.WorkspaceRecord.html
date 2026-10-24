@@ -14,7 +14,7 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>已持久化的 workspace 行（含其属主租户以保证透明）。</p>
 </div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">WorkspaceRecord</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#ownerid">ownerId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">WorkspaceRecord</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#createdat">createdAt</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#id">id</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#organizationid">organizationId</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#ownerid">ownerId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#slug">slug</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#updatedat">updatedAt</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div>
 <section class="tsd-panel tsd-hierarchy" data-refl="694">
 <h4>Hierarchy (<a href="../hierarchy.html#libs/core/src/modules/workspaces/domain/repositories/workspace.repository.WorkspaceRecord">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
@@ -22,7 +22,7 @@
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="libs_core_src_modules_workspaces_application_read-models_workspace.read-model.WorkspaceReadModel.html" class="tsd-signature-type tsd-kind-interface">WorkspaceReadModel</a></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L43">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:43</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L45">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:45</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -30,18 +30,66 @@
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-index-list"><a href="#ownerid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner<wbr/>Id?</span></a>
+<div class="tsd-index-list"><a href="#createdat" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>created<wbr/>At</span></a>
+<a href="#id" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>id</span></a>
+<a href="#name" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>name</span></a>
+<a href="#organizationid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a>
+<a href="#ownerid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner<wbr/>Id?</span></a>
+<a href="#slug" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>slug</span></a>
+<a href="#updatedat" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>updated<wbr/>At</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="createdat"><span>created<wbr/>At</span><a href="#createdat" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">createdAt</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
+<div class="tsd-comment tsd-typography"><p>创建时间。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L57">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:57</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="id"><span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>实体唯一标识 id。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L47">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:47</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="name"><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>名称。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L49">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:49</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="organizationid"><span>organization<wbr/>Id</span><a href="#organizationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>所属租户 id。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L53">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:53</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="ownerid"><code class="tsd-tag">Optional</code><span>owner<wbr/>Id</span><a href="#ownerid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">ownerId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>实例属主；NULL/undefined = 不属任何人（存量未回填·人裁②）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L49">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:49</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L55">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:55</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="slug"><span>slug</span><a href="#slug" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">slug</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>URL 友好的短标识。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L51">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:51</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="updatedat"><span>updated<wbr/>At</span><a href="#updatedat" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">updatedAt</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span></div>
+<div class="tsd-comment tsd-typography"><p>更新时间。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts#L59">libs/core/src/modules/workspaces/domain/repositories/workspace.repository.ts:59</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -57,7 +105,7 @@
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#ownerid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner<wbr/>Id</span></a></div></details></div></details></div>
+<div><a href="#createdat"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>created<wbr/>At</span></a><a href="#id"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>id</span></a><a href="#name"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>name</span></a><a href="#organizationid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a><a href="#ownerid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>owner<wbr/>Id</span></a><a href="#slug"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>slug</span></a><a href="#updatedat"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>updated<wbr/>At</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../index.html">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

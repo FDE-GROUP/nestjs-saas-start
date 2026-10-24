@@ -14,9 +14,9 @@
 <section class="tsd-panel tsd-comment">
 <div class="tsd-comment tsd-typography"><p>新建订阅行的写意图（原语·所属租户由 adapter 盖章）。</p>
 </div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SubscriptionDraft</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#provider">provider</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SubscriptionDraft</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#apiquota">apiQuota</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#periodend">periodEnd</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Date</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#plan">plan</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#provider">provider</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#providercustomerid">providerCustomerId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#providersubscriptionid">providerSubscriptionId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#seatslimit">seatsLimit</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#storagequota">storageQuota</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L23">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:23</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L23">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:23</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -24,18 +24,74 @@
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-index-list"><a href="#provider" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider?</span></a>
+<div class="tsd-index-list"><a href="#apiquota" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>api<wbr/>Quota?</span></a>
+<a href="#periodend" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>period<wbr/>End?</span></a>
+<a href="#plan" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>plan</span></a>
+<a href="#provider" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider?</span></a>
+<a href="#providercustomerid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider<wbr/>Customer<wbr/>Id?</span></a>
+<a href="#providersubscriptionid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider<wbr/>Subscription<wbr/>Id?</span></a>
+<a href="#seatslimit" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>seats<wbr/>Limit</span></a>
+<a href="#storagequota" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>storage<wbr/>Quota?</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="apiquota"><code class="tsd-tag">Optional</code><span>api<wbr/>Quota</span><a href="#apiquota" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">apiQuota</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
+<div class="tsd-comment tsd-typography"><p>API 调用配额（null=不限）。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L31">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:31</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="periodend"><code class="tsd-tag">Optional</code><span>period<wbr/>End</span><a href="#periodend" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">periodEnd</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">Date</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
+<div class="tsd-comment tsd-typography"><p>计费周期结束时间。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L33">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:33</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="plan"><span>plan</span><a href="#plan" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">plan</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>套餐档位标识。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L25">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:25</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="provider"><code class="tsd-tag">Optional</code><span>provider</span><a href="#provider" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">provider</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>FR-8 多通道映射（provider 侧引用）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/80c1b7698a75edd53321b5957b37dd42c7446067/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L30">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:30</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L35">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:35</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="providercustomerid"><code class="tsd-tag">Optional</code><span>provider<wbr/>Customer<wbr/>Id</span><a href="#providercustomerid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">providerCustomerId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
+<div class="tsd-comment tsd-typography"><p>支付提供方侧客户 id。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L37">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:37</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="providersubscriptionid"><code class="tsd-tag">Optional</code><span>provider<wbr/>Subscription<wbr/>Id</span><a href="#providersubscriptionid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">providerSubscriptionId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
+<div class="tsd-comment tsd-typography"><p>支付提供方侧订阅 id。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L39">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:39</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="seatslimit"><span>seats<wbr/>Limit</span><a href="#seatslimit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">seatsLimit</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+<div class="tsd-comment tsd-typography"><p>席位数上限。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L27">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:27</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="storagequota"><code class="tsd-tag">Optional</code><span>storage<wbr/>Quota</span><a href="#storagequota" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">storageQuota</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
+<div class="tsd-comment tsd-typography"><p>存储配额（null=不限）。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c7651d263dd441fbb9536ca536151cc7b6bf4e7a/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L29">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:29</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -51,7 +107,7 @@
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#provider"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider</span></a></div></details></div></details></div>
+<div><a href="#apiquota"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>api<wbr/>Quota</span></a><a href="#periodend"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>period<wbr/>End</span></a><a href="#plan"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>plan</span></a><a href="#provider"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider</span></a><a href="#providercustomerid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider<wbr/>Customer<wbr/>Id</span></a><a href="#providersubscriptionid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>provider<wbr/>Subscription<wbr/>Id</span></a><a href="#seatslimit"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>seats<wbr/>Limit</span></a><a href="#storagequota"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>storage<wbr/>Quota</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../index.html">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">
