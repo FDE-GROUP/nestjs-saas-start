@@ -4,8 +4,11 @@ import type { SubscriptionView } from '@saas/contracts/index';
 
 /**
  * 订阅/配额面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ *
+ * @remarks
  * 真相源 = `SubscriptionsController` 实际返回类型 `OrganizationSubscriptionView (≡ SeatQuotaSnapshot)`。
  * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红）。
+ * @public
  */
 export class SubscriptionResponse {
   @ApiProperty({ description: '是否已有生效订阅。' })

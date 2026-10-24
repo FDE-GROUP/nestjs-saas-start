@@ -31,6 +31,9 @@ import {
 import { SubscriptionResponse } from './response/subscription.response';
 
 /**
+ * 组织订阅切片的 HTTP 控制器（多租户 S7 · FR-7/FR-8/D5）。
+ *
+ * @remarks
  * Tenant subscription slice (global-tenancy S7 · FR-7/FR-8/D5).
  *
  * Per-route guards only — the global APP_GUARD stays a signed decision (高危#4):
@@ -43,6 +46,7 @@ import { SubscriptionResponse } from './response/subscription.response';
  * Provision actually calls `PaymentService.createCustomer` to establish the tenant ↔
  * customer mapping (FR-8). Quota超限拒绝 (FR-7) is enforced via `QuotaService`/`QuotaGuard`;
  * the production member-add attach point (Better Auth route) is deferred to a later slice.
+ * @public
  */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, SubscriptionResponse)
 @ApiTags('subscriptions')
@@ -53,6 +57,10 @@ export class SubscriptionsController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * 读取当前组织的有效订阅快照（套餐/席位配额/用量/客户映射）。
+   * @returns 当前组织的订阅视图。
+   */
   @Get('current')
   @UseGuards(TenantIsolationGuard)
   @SerializeOptions({ schema: subscriptionViewSchema })
@@ -71,6 +79,11 @@ export class SubscriptionsController {
     );
   }
 
+  /**
+   * 开通/升级组织订阅（创建支付供应商客户并落席位/存储/API 配额）。
+   * @param dto - 开通入参（plan/customerEmail/seatsLimit/storageQuota/apiQuota）。
+   * @returns 更新后的订阅快照视图。
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(TenantIsolationGuard, AuthorizationGuard)
