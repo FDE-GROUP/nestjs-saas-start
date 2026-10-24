@@ -44,6 +44,7 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/organizations/organization-table.e2e.test.ts',
   'apps/api/src/tenant-isolation/tenant-isolation.e2e.test.ts',
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',
+  'apps/api/src/modules/auth/oauth-sso.e2e.test.ts',
   'apps/api/src/modules/auth/session-reclaim.e2e.test.ts',
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   'apps/api/src/modules/subscriptions/subscription-replay-truth.e2e.test.ts',
