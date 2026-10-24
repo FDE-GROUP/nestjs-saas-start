@@ -1,10 +1,9 @@
 /** 返回形状（read shape）：query handler 的出参类型——**非** CQRS 物化投影（读写同库同模型·架构精度修宪 S5 正名）。 */
 /**
- * Platform governance read-model projections (FR-6 · S5 · CQRS read side).
- * Shapes are owned by the domain port (see `domain/repositories/organization-governance.repository`);
- * this module re-exports them for application/controller consumption.
- * Cross-tenant by design — the platform operator sees every tenant; these shapes
- * must never leak into tenant-scoped slices.
+ * 平台治理读模型形状（FR-6 · S5 · CQRS 读侧）。形状归属 domain 端口
+ * （见 `domain/repositories/organization-governance.repository`），本模块仅 re-export 供
+ * application/controller 消费。设计上跨租户——平台经营者可见全部租户，这些形状
+ * 绝不泄漏进租户作用域切片。
  */
 export type {
   OrganizationDiagnostics,

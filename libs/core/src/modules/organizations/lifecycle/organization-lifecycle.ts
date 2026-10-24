@@ -18,6 +18,7 @@ export const ORGANIZATION_STATUS = {
   DELETED: 'deleted',
 } as const;
 
+/** 租户生命周期状态的字面量联合（自 `ORGANIZATION_STATUS` 派生·契约详见该常量）。 @public */
 export type OrganizationStatus = (typeof ORGANIZATION_STATUS)[keyof typeof ORGANIZATION_STATUS];
 
 /**

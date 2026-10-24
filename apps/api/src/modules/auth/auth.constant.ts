@@ -28,8 +28,12 @@ export enum OAuthProviderType {
   VK = 'vk',
 }
 
-// 会话旁路路径表（module-auth-http-surface·丙清算）：原 AuthMiddleware 消费面已随接线退役，
-// 现唯一消费方 = AuthSessionReader 廉价旁路（免无意义会话查询）。
+/**
+ * 会话旁路路径表（module-auth-http-surface·丙清算）：原 `AuthMiddleware` 消费面已随接线退役，
+ * 现唯一消费方 = `AuthSessionReader` 廉价旁路（免无意义会话查询）。
+ *
+ * @internal
+ */
 export const AUTH_BYPASS_PATHS = [
   // 存活探针（module-common-health-probe）：与 Dockerfile HEALTHCHECK 的 /api/v1/health 口径对齐
   '/health',

@@ -66,6 +66,7 @@ export const ERROR_CODES = {
   STORAGE_UPLOAD_FAILED: 'STORAGE:UPLOAD_FAILED',
 } as const;
 
+/** 业务错误码值的字面量联合（自 `ERROR_CODES` 派生·`NAMESPACE:NAME` 文法·前后端稳定机器契约）。 @public */
 export type ErrorCodeValue = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 /**

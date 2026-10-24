@@ -32,6 +32,7 @@ export type OrganizationRole = string;
  * @public
  */
 export const SYSTEM_ROLE_KEYS = ['owner', 'admin', 'member'] as const;
+/** 内置系统角色 key 的字面量联合（自 `SYSTEM_ROLE_KEYS` 派生·三固定角色值域）。 @public */
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];
 
 /**
@@ -50,6 +51,7 @@ export const AUTHORIZATION_SUBJECT_VALUES = [
   'Role',
   'RoleGrant',
 ] as const;
+/** 可授权资源词汇的字面量联合（自 `AUTHORIZATION_SUBJECT_VALUES` 派生·本表即资源语言 SSOT）。 @public */
 export type AuthorizationSubject = (typeof AUTHORIZATION_SUBJECT_VALUES)[number];
 
 /**
@@ -64,4 +66,5 @@ export const AUTHORIZATION_ACTION_VALUES = [
   'delete',
   'cancel',
 ] as const;
+/** 授权动作词汇的字面量联合（自 `AUTHORIZATION_ACTION_VALUES` 派生·与 CASL `can(action, subject)` 第一元组参一致）。 @public */
 export type AuthorizationAction = (typeof AUTHORIZATION_ACTION_VALUES)[number];

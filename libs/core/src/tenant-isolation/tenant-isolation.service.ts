@@ -28,9 +28,8 @@ export class TenantIsolationService {
   }
 
   /**
-   * Active workspace id (S3 · D2/§9.2), or undefined when the request carries no
-   * `x-workspace-id` selector. Optional by design: it only NARROWS reads/writes within
-   * the already-trusted tenant; it is never a security boundary on its own.
+   * 活动工作区 id（S3 · D2/§9.2）；请求未携 `x-workspace-id` 选择器时为 undefined。
+   * 设计上为可选：它只在**已受信租户**内收窄读/写，本身从不作为独立安全边界。
    */
   get workspaceId(): string | undefined {
     return tenantIsolationStorage.getStore()?.workspaceId;
@@ -54,7 +53,7 @@ export class TenantIsolationService {
   }
 
   /**
-   * Run `fn` within the given tenant context (used by the middleware / tests).
+   * 在给定租户上下文内运行 `fn`（供中间件 / 测试使用）。
    *
    * @param ctx - 待绑定的租户作用域
    * @param fn - 在该作用域内执行的函数
@@ -65,7 +64,7 @@ export class TenantIsolationService {
   }
 
   /**
-   * Fail-closed: require an active tenant, else 403. For tenant-scoped endpoints.
+   * fail-closed：要求存在活动租户，否则 403。用于租户作用域端点。
    *
    * @returns 活动租户 id；无则抛 `ForbiddenException`
    */

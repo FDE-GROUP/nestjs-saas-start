@@ -18,4 +18,5 @@ export const DOMAIN_EVENTS = {
   subscriptionBootstrapped: 'subscription.bootstrapped',
 } as const;
 
+/** 领域事件名的字面量联合（自 `DOMAIN_EVENTS` 派生·跨上下文/投影的契约键集）。 @public */
 export type DomainEventName = (typeof DOMAIN_EVENTS)[keyof typeof DOMAIN_EVENTS];
