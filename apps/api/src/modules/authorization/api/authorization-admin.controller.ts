@@ -47,8 +47,9 @@ import {
 } from './response/role.response';
 
 /**
- * 角色/授权**管理门面**（module-rbac-dynamic-roles §2.5·S3·甲裁自建角色 + 丁裁随片授权面）。
+ * 角色/授权**管理门面**端点（module-rbac-dynamic-roles §2.5·S3·甲裁自建角色 + 丁裁随片授权面）。
  *
+ * @remarks
  * 授权在我·数据在 DB：每端点声明 `@Can(<动作>, 'Role'|'RoleGrant')`，由 `AuthorizationGuard`
  * 携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 `OrganizationRbacAdminService`
  * 落库（写侧过 domain 策略闸 + 同通道审计行 + 写后失效投影缓存）。BA 内置 create-role/roles 端点
@@ -56,6 +57,7 @@ import {
  *
  * `@Can` 落点与 seed 一致：owner/admin 持 `Role`(create/read/update/delete) + `RoleGrant`
  * (create/read/delete)，member 无 → 非管理员请求由守卫 403（fail-closed）。
+ * @public
  */
 @ApiExtraModels(
   ApiEnvelope,
@@ -71,6 +73,10 @@ export class AuthorizationAdminController {
     @Inject(OrganizationRbacAdminService) private readonly rbac: OrganizationRbacAdminService,
   ) {}
 
+  /**
+   * 列出活动租户全部角色（系统 + 自定义）。
+   * @returns 角色读模型列表。
+   */
   @Get()
   @Can('read', 'Role')
   @SerializeOptions({ schema: organizationRoleViewSchema })
@@ -81,6 +87,11 @@ export class AuthorizationAdminController {
     return this.rbac.listRoles();
   }
 
+  /**
+   * 创建自定义角色（仅 owner/admin）。
+   * @param dto - 创建载荷（key/name）。
+   * @returns 创建后的角色读模型。
+   */
   @Post()
   @Can('create', 'Role')
   @HttpCode(HttpStatus.OK)
@@ -95,6 +106,10 @@ export class AuthorizationAdminController {
     return this.rbac.createRole(dto.key, dto.name);
   }
 
+  /**
+   * 自定义角色改名（系统角色屏）。
+   * @param dto - 改名载荷（key/name）。
+   */
   @Post('rename')
   @Can('update', 'Role')
   @HttpCode(HttpStatus.OK)
@@ -106,6 +121,10 @@ export class AuthorizationAdminController {
     await this.rbac.renameRole(dto.key, dto.name);
   }
 
+  /**
+   * 删除自定义角色（授权行级联销；系统角色屏）。
+   * @param dto - 删除载荷（key）。
+   */
   @Post('delete')
   @Can('delete', 'Role')
   @HttpCode(HttpStatus.OK)
@@ -117,6 +136,11 @@ export class AuthorizationAdminController {
     await this.rbac.deleteRole(dto.key);
   }
 
+  /**
+   * 列出某角色的授权行（回显勾选态）。
+   * @param roleKey - 查询参数：目标角色 key（缺失 → 400）。
+   * @returns 授权行读模型列表。
+   */
   @Get('grants')
   @Can('read', 'RoleGrant')
   @SerializeOptions({ schema: organizationRoleGrantViewSchema })
@@ -132,6 +156,10 @@ export class AuthorizationAdminController {
     return this.rbac.getGrants(roleKey);
   }
 
+  /**
+   * 为角色新增授权格（同格多条件行 = OR 并集）。
+   * @param dto - 授权载荷（roleKey/subject/action/conditions）。
+   */
   @Post('grants')
   @Can('create', 'RoleGrant')
   @HttpCode(HttpStatus.OK)
@@ -150,6 +178,10 @@ export class AuthorizationAdminController {
     });
   }
 
+  /**
+   * 撤权（conditions 缺省 = 整 subject 级行；传对象 = 精确撤单条件行）。
+   * @param dto - 撤权载荷（roleKey/subject/action/conditions）。
+   */
   @Post('grants/revoke')
   @Can('delete', 'RoleGrant')
   @HttpCode(HttpStatus.OK)

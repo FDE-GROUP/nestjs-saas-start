@@ -27,6 +27,7 @@ import {
 /**
  * 角色/授权**管理门面应用服务**（module-rbac-dynamic-roles §2.5/§2.6·S3）。
  *
+ * @remarks
  * 职责边界（授权在我·事实入 DB）：
  *  - 从 ALS 取活动租户（`requireActiveOrganizationId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
  *  - 委派 `OrganizationRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
@@ -35,6 +36,7 @@ import {
  *
  * 管理职权本身由 controller `@Can(<动作>, 'Role' | 'RoleGrant')` + CASL 守卫裁决（授权面），
  * 本服务不复权限判定（禁散点特判）；自定义角色对成员的挂载存在性校验见 `isRoleAssignable`。
+ * @public
  */
 @Injectable()
 export class OrganizationRbacAdminService implements RoleAssignabilityReader {
@@ -45,12 +47,19 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
   ) {}
 
-  /** 本租户全部角色（读面·不触发失效）。 */
+  /**
+   * 本租户全部角色（读面·不触发失效）。
+   * @returns 角色读模型列表。
+   */
   async listRoles(): Promise<OrganizationRoleView[]> {
     return this.rbac.listRoles(this.org());
   }
 
-  /** 某角色的授权行（查无角色 → 404·供管理面回显勾选态）。 */
+  /**
+   * 某角色的授权行（查无角色 → 404·供管理面回显勾选态）。
+   * @param roleKey - 角色 key。
+   * @returns 授权行读模型列表。
+   */
   async getGrants(roleKey: string): Promise<OrganizationRoleGrantView[]> {
     const grants = await this.rbac.findGrants(this.org(), roleKey);
     if (grants === null) {
@@ -61,6 +70,12 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     return grants;
   }
 
+  /**
+   * 创建自定义角色（领域码转 HTTP：`invalidKey`→400、`duplicate`→409），成功后失效投影缓存。
+   * @param key - 角色 key（组织内唯一）。
+   * @param name - 人面可读名。
+   * @returns 创建后的角色读模型。
+   */
   async createRole(key: string, name: string): Promise<OrganizationRoleView> {
     const org = this.org();
     const result = await this.rbac.createRole(org, key, name, this.actor());
@@ -85,6 +100,11 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     return role;
   }
 
+  /**
+   * 角色改名（`notFound`→404、`systemRoleProtected`→409），成功后失效投影缓存。
+   * @param key - 待改名的角色 key。
+   * @param name - 新的人面可读名。
+   */
   async renameRole(key: string, name: string): Promise<void> {
     const org = this.org();
     const result = await this.rbac.renameRole(org, key, name, this.actor());
@@ -92,6 +112,10 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     this.invalidator.invalidate(org);
   }
 
+  /**
+   * 删除自定义角色（`notFound`→404、`systemRoleProtected`→409），成功后失效投影缓存。
+   * @param key - 待删除的角色 key。
+   */
   async deleteRole(key: string): Promise<void> {
     const org = this.org();
     const result = await this.rbac.deleteRole(org, key, this.actor());
@@ -99,6 +123,11 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     this.invalidator.invalidate(org);
   }
 
+  /**
+   * 新增授权格（`invalidConditions`→400、`roleNotFound`→404、`duplicate`→409），成功后失效缓存。
+   * @param roleKey - 目标角色 key。
+   * @param entry - 授权行（subject/action/conditions）。
+   */
   async grant(
     roleKey: string,
     entry: {
@@ -127,6 +156,13 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     this.invalidator.invalidate(org);
   }
 
+  /**
+   * 撤权（`roleNotFound`→404、无匹配行→404），成功后失效投影缓存。
+   * @param roleKey - 目标角色 key。
+   * @param subject - 授权主体。
+   * @param action - 授权动作。
+   * @param conditions - 等值匹配条件；`null` = 整 subject 级行。
+   */
   async revoke(
     roleKey: string,
     subject: AuthorizationSubject,
@@ -152,6 +188,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * 成员挂载角色存在性校验（§2.5·S3·供成员/邀请门面复用）：`role` 须 ∈ 系统三 key ∪ 本租户
    * 已存在的自定义角色 key——**查库严格在库 fail-closed**（class-validator 同步式不可查库，故收此处）。
    * 系统三 key 恒可挂（租户尚未 lazy-ensure 时 `findRole` 会查无，故先走内置词汇短路）。
+   * @param role - 待校验的角色 key。
+   * @returns 可挂载时为 `true`。
    */
   async isRoleAssignable(role: string): Promise<boolean> {
     if ((SYSTEM_ROLE_KEYS as readonly string[]).includes(role)) return true;

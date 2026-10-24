@@ -17,8 +17,11 @@ import type {
 
 /**
  * 角色/授权面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ *
+ * @remarks
  * 真相源 = `AuthorizationAdminController` 实际返回类型；漂移防线：文末编译期双向赋值锁。
- * subject/action 词汇复用 @core CASL 单源数组（conditions 为白名单自由对象）。
+ * subject/action 词汇复用 `@core` CASL 单源数组（conditions 为白名单自由对象）。
+ * @public
  */
 export class OrganizationRoleViewResponse {
   @ApiProperty({ description: 'UUIDv7。' })
@@ -39,6 +42,10 @@ const _trvb: OrganizationRoleView = {} as OrganizationRoleViewResponse;
 void _trvf;
 void _trvb;
 
+/**
+ * 授权行响应契约（与域内 `OrganizationRoleGrantView` 同形·编译期锁防漂移）。
+ * @public
+ */
 export class OrganizationRoleGrantViewResponse {
   @ApiProperty({ enum: [...AUTHORIZATION_SUBJECT_VALUES], description: '授权主体词汇。' })
   subject!: AuthorizationSubject;

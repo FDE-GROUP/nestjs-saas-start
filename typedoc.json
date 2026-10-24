@@ -20,7 +20,10 @@
     "apps/api/src/modules/payment/domain",
     "apps/api/src/modules/auth/api",
     "apps/api/src/modules/auth/domain",
-    "apps/api/src/modules/auth/auth.constant.ts"
+    "apps/api/src/modules/auth/auth.constant.ts",
+    "apps/api/src/modules/authorization/api",
+    "apps/api/src/modules/authorization/application",
+    "apps/api/src/modules/authorization/domain"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
