@@ -1,4 +1,4 @@
-name: Deploy Swagger API Documentation
+name: Deploy API Documentation (Swagger + TypeDoc)
 
 on:
   push:
@@ -8,6 +8,12 @@ on:
       - 'apps/**'
       - 'libs/**'
       - 'openapi/**'
+      - 'typedoc.json'
+      - 'tsconfig.doc.json'
+      - 'tsconfig*.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-swagger.yml'
   workflow_dispatch:
 
 permissions:
@@ -27,18 +33,18 @@ jobs:
       APP_DESCRIPTION: ${{ vars.APP_DESCRIPTION || 'NestJS template with best practices' }}
       API_VERSION: ${{ vars.API_VERSION || '1.0' }}
       OPEN_API_VERSION: ${{ vars.OPEN_API_VERSION || '3.1.0' }}
-      
-      # Database（codegen 不连库，仅需通过 Joi 的 postgres|postgresql scheme 校验；
+
+      # Database（codegen 不连库，仅需通过 zod 的 postgres|postgresql scheme 校验；
       # 旧值 mongodb:// 为 Prisma 时代古董，迁 MikroORM+PG 后一直卡死本 workflow）
       DATABASE_URL: ${{ vars.DATABASE_URL || 'postgres://swagger:swagger@localhost:5432/swagger' }}
-      
+
       # Auth
       ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS || 'localhost:*,127.0.0.1,localhost:7009,*:7009' }}
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'dummy-jwt-secret-for-swagger-generation' }}
       JWT_EXPIRES_IN: ${{ vars.JWT_EXPIRES_IN || '30d' }}
       JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'dummy-jwt-refresh-secret-for-swagger-generation' }}
       JWT_REFRESH_EXPIRES_IN: ${{ vars.JWT_REFRESH_EXPIRES_IN || '90d' }}
-      
+
       # Storage
       STORAGE_PROVIDER: ${{ vars.STORAGE_PROVIDER || 's3' }}
       STORAGE_BUCKET: ${{ vars.STORAGE_BUCKET || 'my-bucket' }}
@@ -49,13 +55,13 @@ jobs:
       STORAGE_BASE_URL: ${{ vars.STORAGE_BASE_URL || 'https://my-bucket.s3.us-east-1.amazonaws.com' }}
       STORAGE_MAX_FILE_SIZE: ${{ vars.STORAGE_MAX_FILE_SIZE || '10485760' }}
       STORAGE_ALLOWED_MIME_TYPES: ${{ vars.STORAGE_ALLOWED_MIME_TYPES || 'image/jpeg,image/png,image/gif,application/pdf' }}
-      
+
       # Datadog
       DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY || 'dummy-datadog-api-key' }}
       DATADOG_SERVICE_NAME: ${{ vars.DATADOG_SERVICE_NAME || 'nestjs-structure-practices' }}
       DATADOG_HOST_NAME: ${{ vars.DATADOG_HOST_NAME || 'local-dev' }}
       DATADOG_INTAKE_REGION: ${{ vars.DATADOG_INTAKE_REGION || 'us5' }}
-      
+
       # Stripe
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_dummy_secret_key' }}
       STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY || 'pk_test_dummy_public_key' }}
@@ -78,24 +84,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate OpenAPI documentation
+      - name: Build Swagger + TypeDoc into combined site/
         run: |
-          # DB-free codegen：不启服务直接整树装配导出 spec（就绪首切片 #4，
-          # 替代旧「起服务 + sleep 15 + curl」hack；与运行态导出字节级一致）
-          pnpm run openapi:export
+          set -euo pipefail
 
-          # Create directory for static files
-          mkdir -p swagger-static
-          
-          # Move the generated OpenAPI JSON file to the static directory
-          cp openapi/openapi.yaml swagger-static/swagger.yaml
-          
-          cat > swagger-static/index.html << 'EOF'
+          # ---- 1) Swagger / OpenAPI（DB-free codegen·就绪首切片 #4）----
+          # 不启服务直接整树装配导出 spec（替代旧「起服务 + sleep 15 + curl」hack；
+          # 与运行态导出字节级一致）。产物落子目录 site/swagger/。
+          pnpm run openapi:export
+          mkdir -p site/swagger
+          cp openapi/openapi.yaml site/swagger/swagger.yaml
+
+          cat > site/swagger/index.html << 'SWAGGER_EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
             <meta charset="UTF-8">
-            <title>NestJS API Documentation</title>
+            <title>NestJS API Documentation (Swagger)</title>
             <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
             <style>
               html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
@@ -127,14 +132,72 @@ jobs:
             </script>
           </body>
           </html>
-          EOF
+          SWAGGER_EOF
 
-      - name: Deploy to GitHub Pages
+          # ---- 2) TypeDoc 公共 API 参考（tsdoc-typedoc-docgen 切片 F·ⓕ=乙）----
+          # 读根 typedoc.json（纳 @saas/contracts + @core/saas-kit + apps/api 对外接口·
+          # excludeNotDocumented 只文档化已注释件）→ 产 docs/api-ref/ → 落子目录 site/tsdoc/。
+          pnpm run docs:api
+          mkdir -p site/tsdoc
+          cp -r docs/api-ref/. site/tsdoc/
+
+          # ---- 3) 根落地页（链两子站·消解 peaceiris 整分支替换的双 deploy 互踩）----
+          cat > site/index.html << 'LANDING_EOF'
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>NestJS SaaS Start · API 文档</title>
+            <style>
+              :root { color-scheme: light dark; }
+              * { box-sizing: border-box; }
+              body {
+                margin: 0; min-height: 100vh; display: grid; place-items: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+                background: #0f172a; color: #e2e8f0;
+              }
+              .wrap { max-width: 720px; padding: 48px 24px; text-align: center; }
+              h1 { font-size: 28px; margin: 0 0 8px; }
+              p.lead { color: #94a3b8; margin: 0 0 36px; }
+              .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+              @media (max-width: 560px) { .cards { grid-template-columns: 1fr; } }
+              a.card {
+                display: block; padding: 28px 20px; border-radius: 14px; text-decoration: none;
+                background: #1e293b; border: 1px solid #334155; color: #e2e8f0; transition: .15s;
+              }
+              a.card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+              a.card h2 { margin: 0 0 6px; font-size: 20px; }
+              a.card span { color: #94a3b8; font-size: 14px; }
+              footer { margin-top: 36px; color: #64748b; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="wrap">
+              <h1>NestJS SaaS Start · API 文档</h1>
+              <p class="lead">选择要查看的文档面（由 CI 自动构建 · 勿手工改动）。</p>
+              <div class="cards">
+                <a class="card" href="./swagger/">
+                  <h2>Swagger / OpenAPI</h2>
+                  <span>HTTP 接口契约（端点 · 请求 / 响应 schema）</span>
+                </a>
+                <a class="card" href="./tsdoc/">
+                  <h2>公共 API 参考（TypeDoc）</h2>
+                  <span>contracts + core + apps/api 对外接口 TSDoc</span>
+                </a>
+              </div>
+              <footer>Generated by GitHub Actions · Swagger + TypeDoc · single combined deploy</footer>
+            </div>
+          </body>
+          </html>
+          LANDING_EOF
+
+      - name: Deploy combined site to GitHub Pages
         id: deployment
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./swagger-static
+          publish_dir: ./site
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'chore: update API documentation' 
+          commit_message: 'chore: update API documentation (swagger + tsdoc)'
