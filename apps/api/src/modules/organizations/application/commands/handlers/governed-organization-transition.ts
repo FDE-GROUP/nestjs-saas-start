@@ -5,15 +5,25 @@ import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ConflictException } from '@nestjs/common';
 import type { OrganizationApplicationReadModel } from '../../read-models/organization-application.read-model';
 
-/** 审计动作名（approve/suspend/resume；hard_delete 是独立用例不走本函数）。 */
+/**
+ * 治理迁移动作名（approve/suspend/resume；hard_delete 是独立用例不走本函数）。
+ * @public
+ */
 export type GovernedTransitionAction = 'approve' | 'suspend' | 'resume';
 
-/** 最小依赖面（结构性类型·便于单测 stub）。 */
+/**
+ * 最小依赖面（结构性类型·便于单测 stub）。
+ * @public
+ */
 export interface GovernedTransitionDeps {
   readonly status: Pick<OrganizationStatusService, 'transition'>;
   readonly audit: Pick<PlatformAuditService, 'logOrganizationGovernance'>;
 }
 
+/**
+ * 治理迁移共用用例的入参（动作名 + 目标租户 + 操作者 + 目标态）。
+ * @public
+ */
 export interface GovernedTransitionInput {
   readonly action: GovernedTransitionAction;
   readonly organizationId: string;
@@ -22,7 +32,10 @@ export interface GovernedTransitionInput {
 }
 
 /**
- * 治理迁移**共用用例**（架构精度修宪 S4）：approve/suspend/resume 三个 handler 原为同一
+ * 治理迁移**共用用例**（架构精度修宪 S4）：approve/suspend/resume 三 handler 的样板收敛单点。
+ *
+ * @remarks
+ * 三个 handler 原为同一
  * `result.kind` 三分支样板 ×3（仅动作名与目标状态不同），收敛至此单点。
  *
  * 语义与原逐 handler 实现逐字一致：
@@ -32,6 +45,10 @@ export interface GovernedTransitionInput {
  * - `ok` → 结构化审计（from/to）+ 返回读模型。
  *
  * 行为锁：既有 handler 测试（approve/suspend/resume 三分支持续全绿）+ 状态机矩阵测试。
+ * @param deps - 最小依赖面（状态服务 + 审计服务）。
+ * @param input - 迁移入参。
+ * @returns 迁移后读模型；租户查无为 `null`。
+ * @public
  */
 export async function governedOrganizationTransition(
   deps: GovernedTransitionDeps,

@@ -8,9 +8,13 @@ import { ResumeOrganizationCommand } from '../resume-organization.command';
 import { governedOrganizationTransition } from './governed-organization-transition';
 
 /**
- * 恢复租户（FR-6·平台级）：`suspended → active`，经 `OrganizationStatusService.transition` 严格裁决
+ * 恢复租户 handler（FR-6·平台级）：`suspended → active`，经状态服务严格裁决。
+ *
+ * @remarks
+ * 经 `OrganizationStatusService.transition` 严格裁决
  * （§9.4 迁移表·非法 → 409·不存在 → null 转 404）；撤销中间件 deny-list 失能。落结构化审计。
  * 架构精度修宪 S4：三分支样板收敛至 `governedOrganizationTransition` 共用用例（薄壳）。
+ * @public
  */
 @CommandHandler(ResumeOrganizationCommand)
 export class ResumeOrganizationCommandHandler
@@ -21,6 +25,11 @@ export class ResumeOrganizationCommandHandler
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 
+  /**
+   * 执行恢复迁移（委派共用治理用例）。
+   * @param command - 携带租户 id 与操作者的命令。
+   * @returns 迁移后读模型；租户查无为 `null`。
+   */
   async execute(
     command: ResumeOrganizationCommand,
   ): Promise<OrganizationApplicationReadModel | null> {

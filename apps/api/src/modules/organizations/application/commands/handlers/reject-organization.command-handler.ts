@@ -24,7 +24,10 @@ import {
 import { RejectOrganizationCommand } from '../reject-organization.command';
 
 /**
- * 驳回申请（FR-1·平台级）：硬删 pending 组织行（FK 级联清 member/invitation·pending 期零业务
+ * 驳回申请 handler（FR-1·平台级）：硬删 pending 组织行（FK 级联清 member/invitation）。
+ *
+ * @remarks
+ * pending 期零业务
  * 数据）。S5 收紧：仅显式 `pending_approval` 可驳回——已生效/无状态存量 → 409（生效租的暂停/
  * 删除走治理端点），目标不存在 → false（控制层转 404）。成败均经 PlatformAuditService 落
  * 结构化审计（FR-6）。
@@ -32,6 +35,7 @@ import { RejectOrganizationCommand } from '../reject-organization.command';
  * 消失后这是「存在过并被驳回」的唯一痕迹（not-found/409 零发·失败连带 500）。
  * Phase B 后半（module-es-outbox-transactional 切片 B）：remove + 发布关键段包入
  * `UNIT_OF_WORK`（outbox 同事务原子·shadow 连带回滚·inproc 空转等价）。
+ * @public
  */
 @CommandHandler(RejectOrganizationCommand)
 export class RejectOrganizationCommandHandler
@@ -48,6 +52,11 @@ export class RejectOrganizationCommandHandler
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
+  /**
+   * 执行驳回：非 pending → 409；同事务硬删并发布 `tenant.rejected`；成败均落审计。
+   * @param command - 携带租户 id 与操作者的命令。
+   * @returns 硬删命中时为 `true`，行不存在为 `false`。
+   */
   async execute(command: RejectOrganizationCommand): Promise<boolean> {
     // 前置态取自 organization.status 真列（global-governance-lifecycle-consolidation 切片 B·治理面撤回放即真相）。
     const current: OrganizationStatus | undefined = await this.status.read(command.organizationId);

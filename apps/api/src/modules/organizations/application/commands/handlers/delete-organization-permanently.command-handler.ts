@@ -20,13 +20,17 @@ import {
 } from '../delete-organization-permanently.command';
 
 /**
- * 硬删租户（NFR-6 删除半·FR-6·平台级）：前置闸仅 `deleted` 终态可消灭（甲裁·两段式
+ * 硬删租户 handler（NFR-6 删除半·FR-6·平台级）：前置闸仅 `deleted` 终态可消灭，先补删事件后删主行。
+ *
+ * @remarks
+ * 前置闸（甲裁·两段式
  * 先软后硬，误删 active 无回退路径）；**先补删 tenant 事件、后删主行**（顺序理由见
  * command 注释）。#2 甲档收口（module-p0-async-boundary-correctness 切片 D）：①补删与 ②删主行
  * **包单一 `uow.run`** 同事务原子——二者适配器均 `mikro.fork()`（ALS 感知·事务内复用同一事务 em），
  * 故 ②失败/中途抛错 → ①事件删除一并回滚，闭死「主行已没、事件残留」的孤儿事件窗口（PIPL 不留残迹）；
  * 回滚后 org 仍在可整请求重试。EVENT_STORE 直注不受 EVENT_PUBLISH_MODE 开关控制——表在就要清
- *（同 user 硬删先例·S9 教训显式 @Inject + 值导入）。审计落 pino（库外幸存·乙裁）。
+ *（同 user 硬删先例·S9 教训「显式 `@Inject` + 值导入」）。审计落 pino（库外幸存·乙裁）。
+ * @public
  */
 @CommandHandler(DeleteOrganizationPermanentlyCommand)
 export class DeleteOrganizationPermanentlyCommandHandler
@@ -40,6 +44,11 @@ export class DeleteOrganizationPermanentlyCommandHandler
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
+  /**
+   * 执行硬删：非 deleted 终态 → 409；同事务补删事件 + 删主行；并发已没/查无 → null（404 幂等）。
+   * @param command - 携带租户 id 与操作者的命令。
+   * @returns 硬删结果（组 id + 补删事件数）；行不存在为 `null`。
+   */
   async execute(
     command: DeleteOrganizationPermanentlyCommand,
   ): Promise<OrganizationHardDeleteResult | null> {

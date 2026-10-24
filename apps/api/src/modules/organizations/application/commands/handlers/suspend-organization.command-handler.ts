@@ -8,10 +8,14 @@ import { SuspendOrganizationCommand } from '../suspend-organization.command';
 import { governedOrganizationTransition } from './governed-organization-transition';
 
 /**
- * 暂停租户（FR-6/FR-10·平台级）：`active → suspended`，经 `OrganizationStatusService.transition`
+ * 暂停租户 handler（FR-6/FR-10·平台级）：`active → suspended`，经状态服务严格裁决。
+ *
+ * @remarks
+ * 经 `OrganizationStatusService.transition`
  * 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），`organization.status` 真列单点写回；
  * 中间件 deny-list 使该租户业务面即时失能。成败均落结构化审计（FR-6）。
  * 架构精度修宪 S4：三分支样板收敛至 `governedOrganizationTransition` 共用用例（薄壳）。
+ * @public
  */
 @CommandHandler(SuspendOrganizationCommand)
 export class SuspendOrganizationCommandHandler
@@ -22,6 +26,11 @@ export class SuspendOrganizationCommandHandler
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 
+  /**
+   * 执行暂停迁移（委派共用治理用例）。
+   * @param command - 携带租户 id 与操作者的命令。
+   * @returns 迁移后读模型；租户查无为 `null`。
+   */
   async execute(
     command: SuspendOrganizationCommand,
   ): Promise<OrganizationApplicationReadModel | null> {

@@ -10,8 +10,12 @@ import type { UserGovernanceResult } from '../../read-models/platform-user.read-
 import { ResumeUserCommand } from '../resume-user.command';
 
 /**
- * 恢复平台用户（FR-10/FR-6·平台级）：`suspended → active`，撤去 deny-list 失能。恢复不重建
+ * 恢复平台用户 handler（FR-10/FR-6·平台级）：`suspended → active`，撤去 deny-list 失能。
+ *
+ * @remarks
+ * 恢复不重建
  * session（用户须自行重登）→ 无副作用。非法迁移 → 409；不存在 → null（404）。成败均落审计（FR-6）。
+ * @public
  */
 @CommandHandler(ResumeUserCommand)
 export class ResumeUserCommandHandler implements ICommandHandler<ResumeUserCommand> {
@@ -20,6 +24,11 @@ export class ResumeUserCommandHandler implements ICommandHandler<ResumeUserComma
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 
+  /**
+   * 执行恢复迁移；非法 → 409；查无 → null；成败均落审计。
+   * @param command - 携带用户 id 与操作者的命令。
+   * @returns 治理结果（用户 id + 新态）；查无为 `null`。
+   */
   async execute(command: ResumeUserCommand): Promise<UserGovernanceResult | null> {
     const result = await this.status.transition(command.userId, USER_STATUS.ACTIVE, {
       actorId: command.operatorId,

@@ -30,7 +30,8 @@
     "apps/api/src/modules/storage/api",
     "apps/api/src/modules/storage/application",
     "apps/api/src/modules/storage/domain",
-    "apps/api/src/modules/organizations/domain"
+    "apps/api/src/modules/organizations/domain",
+    "apps/api/src/modules/organizations/application"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
