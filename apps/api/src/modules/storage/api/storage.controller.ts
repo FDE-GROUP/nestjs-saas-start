@@ -40,6 +40,14 @@ import { StorageService } from '../application/storage.service';
 import { FileUploadResultDto } from './dto/file-upload.dto';
 import { StorageDeleteResponse, StorageUrlResponse } from './response/storage.response';
 
+/**
+ * 存储面端点（上传 / 删除 / 签名 URL）。
+ *
+ * @remarks
+ * S11 复合全局：storage 属用户级（上传/下载·不经租户仓储 `requireActiveOrganizationId`）
+ * → 类级豁免全局租户墙（仍靠会话墙）。
+ * @public
+ */
 @ApiExtraModels(
   ApiEnvelope,
   ApiErrorResponse,
@@ -56,6 +64,11 @@ export class StorageController {
 
   constructor(@Inject(StorageService) private readonly storageService: StorageService) {}
 
+  /**
+   * 单文件 multipart 上传（非 multipart → 400；领域校验/通道失败归一 400）。
+   * @param req - Fastify 原始请求（取 multipart 文件流）。
+   * @returns 上传结果 DTO（键/URL/元数据）。
+   */
   @Post('upload')
   @SerializeOptions({ schema: fileUploadResultSchema })
   @ApiOperation({ summary: 'Upload a single file' })
@@ -116,6 +129,11 @@ export class StorageController {
     }
   }
 
+  /**
+   * 删除文件。
+   * @param key - 路径参数：对象唯一键。
+   * @returns `{ success }` —— 删除是否成功。
+   */
   @Delete(':key')
   @SerializeOptions({ schema: storageDeleteSchema })
   @ApiOperation({ summary: 'Delete a file' })
@@ -127,6 +145,12 @@ export class StorageController {
     return { success: result };
   }
 
+  /**
+   * 取文件的签名访问 URL。
+   * @param key - 路径参数：对象唯一键。
+   * @param expiresIn - 查询参数：有效期（秒，可选）。
+   * @returns `{ url }` —— 签名访问 URL。
+   */
   @Get(':key/url')
   @SerializeOptions({ schema: storageUrlSchema })
   @ApiOperation({ summary: 'Get a signed URL for a file' })

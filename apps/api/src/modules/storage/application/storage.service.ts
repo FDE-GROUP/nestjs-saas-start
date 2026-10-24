@@ -8,9 +8,11 @@ import type { StorageProvider, UploadedFileResult } from '../domain/ports/storag
 /**
  * 存储门面（application 编排层·imperative shell）。
  *
+ * @remarks
  * 分层对齐后仅负责编排：调 `domain` 的通道选择/降级策略拿 provider、
  * 调 `domain` 的上传校验策略并映射为 HTTP 异常，再委托端口执行 IO。
  * 临时文件 / 流式上传等基础设施关注点已下沉 `BaseStorageProvider`——本层不碰 `fs`/`path`。
+ * @public
  */
 @Injectable()
 export class StorageService {
@@ -31,6 +33,11 @@ export class StorageService {
     this.allowedMimeTypes = storageConfig.allowedMimeTypes;
   }
 
+  /**
+   * multipart 上传：先过 domain 校验闸（超限/非法类型 → 400），再委托通道落存。
+   * @param file - 文件名/MIME/原始流/尺寸。
+   * @returns 上传结果（键/URL/元数据）。
+   */
   async uploadMultipartFile(file: {
     filename: string;
     mimetype: string;
@@ -69,10 +76,21 @@ export class StorageService {
     }
   }
 
+  /**
+   * 删除文件（透传通道裁决）。
+   * @param key - 对象唯一键。
+   * @returns 删除成功时为 `true`。
+   */
   async deleteFile(key: string): Promise<boolean> {
     return this.storageProvider.deleteFile(key);
   }
 
+  /**
+   * 取文件访问 URL（可签名时效）。
+   * @param key - 对象唯一键。
+   * @param expiresIn - URL 有效期（秒）；缺省由实现方定。
+   * @returns 可访问的 URL 串。
+   */
   async getFileUrl(key: string, expiresIn?: number): Promise<string> {
     return this.storageProvider.getFileUrl(key, expiresIn);
   }

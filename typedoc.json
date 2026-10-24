@@ -26,7 +26,10 @@
     "apps/api/src/modules/authorization/domain",
     "apps/api/src/modules/users/api",
     "apps/api/src/modules/users/application",
-    "apps/api/src/modules/users/domain"
+    "apps/api/src/modules/users/domain",
+    "apps/api/src/modules/storage/api",
+    "apps/api/src/modules/storage/application",
+    "apps/api/src/modules/storage/domain"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",

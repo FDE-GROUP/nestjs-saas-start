@@ -2,6 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { fileUploadResultSchema } from '@saas/contracts/index';
 import type { z } from 'zod';
 
+/**
+ * 文件上传结果响应 DTO（Swagger $ref 源·与 contracts zod 单源由文末编译期锁对拍）。
+ * @public
+ */
 export class FileUploadResultDto {
   @ApiProperty({ description: 'File unique identifier' })
   key: string;
