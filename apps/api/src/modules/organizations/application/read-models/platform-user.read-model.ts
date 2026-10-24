@@ -13,6 +13,6 @@ export type { PlatformUserPage } from '../../domain/repositories/user-governance
 export interface UserGovernanceResult {
   /** 用户 id。 */
   userId: string;
-  /** 状态。 */
+  /** 用户治理状态。 */
   status: UserStatus;
 }

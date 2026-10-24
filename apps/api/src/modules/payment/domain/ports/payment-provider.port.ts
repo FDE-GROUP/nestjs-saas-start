@@ -11,7 +11,7 @@ export type PaymentProviderId = 'stripe' | 'alipay' | 'wechat_pay';
 export interface PaymentCustomerInput {
   /** 邮箱地址。 */
   email: string;
-  /** 名称。 */
+  /** 客户名称。 */
   name?: string;
   /** 附加元数据（自由键值）。 */
   metadata?: Record<string, string>;
@@ -41,7 +41,7 @@ export interface RefundInput {
   checkoutId: string;
   /** 金额（货币最小单位）。 */
   amount?: number;
-  /** 原因/备注文本。 */
+  /** 退款原因。 */
   reason?: string;
 }
 
@@ -86,7 +86,7 @@ export interface PaymentRefundRef {
   id: string;
   /** 支付/账号提供方标识。 */
   providerId: PaymentProviderId;
-  /** 状态。 */
+  /** 退款状态。 */
   status?: string;
   /** 金额（货币最小单位）。 */
   amount?: number;

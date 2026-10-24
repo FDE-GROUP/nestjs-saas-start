@@ -26,7 +26,7 @@ export const SESSION_READER = Symbol('SESSION_READER');
 export interface SessionRequestLike {
   /** 请求头。 */
   headers?: Record<string, string | string[] | undefined>;
-  /** 访问 URL。 */
+  /** 请求 URL。 */
   url?: string;
   /** 原始请求 URL。 */
   originalUrl?: string;

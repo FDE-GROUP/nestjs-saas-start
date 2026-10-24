@@ -11,7 +11,7 @@ export class FileUploadResultDto {
   @ApiProperty({ description: 'File unique identifier' })
   key: string;
 
-  /** 访问 URL。 */
+  /** 文件访问 URL。 */
   @ApiProperty({ description: 'File access URL' })
   url: string;
 
@@ -19,7 +19,7 @@ export class FileUploadResultDto {
   @ApiPropertyOptional({ description: 'File ETag value' })
   etag?: string;
 
-  /** 字节大小。 */
+  /** 文件字节大小。 */
   @ApiProperty({ description: 'File size (bytes)' })
   size: number;
 

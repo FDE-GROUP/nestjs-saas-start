@@ -23,7 +23,7 @@ export class OrganizationApplicationResponse {
   @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
-  /** 状态。 */
+  /** 租户生命周期状态。 */
   @ApiProperty({ enum: ORGANIZATION_STATUS_ENUM, description: '生命周期状态。' })
   status!: OrganizationStatus;
 }

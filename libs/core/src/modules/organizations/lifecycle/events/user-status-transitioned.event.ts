@@ -14,7 +14,7 @@ export interface UserStatusTransitionedPayload {
   readonly to: UserStatus;
   /** 治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱）。 */
   readonly actorId?: string;
-  /** 原因/备注文本。 */
+  /** 用户状态迁移原因。 */
   readonly reason?: string;
 }
 

@@ -26,7 +26,7 @@ export const WORKSPACE_REPOSITORY = Symbol('WORKSPACE_REPOSITORY');
  * @public
  */
 export interface WorkspaceDraft {
-  /** 名称。 */
+  /** 工作区名称。 */
   name: string;
   /** URL 友好的短标识。 */
   slug: string;
@@ -43,9 +43,9 @@ export interface WorkspaceDraft {
  * @public
  */
 export interface WorkspaceRecord {
-  /** 实体唯一标识 id。 */
+  /** 工作区 id。 */
   id: string;
-  /** 名称。 */
+  /** 工作区名称。 */
   name: string;
   /** URL 友好的短标识。 */
   slug: string;

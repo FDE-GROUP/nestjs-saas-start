@@ -21,7 +21,7 @@ export class StorageDeleteResponse {
  * @public
  */
 export class StorageUrlResponse {
-  /** 访问 URL。 */
+  /** 签名访问 URL。 */
   @ApiProperty({ description: '签名访问 URL。' })
   url!: string;
 }

@@ -16,7 +16,7 @@ export type GovernedTransitionAction = 'approve' | 'suspend' | 'resume';
  * @public
  */
 export interface GovernedTransitionDeps {
-  /** 状态。 */
+  /** 租户状态服务端口依赖（非状态值）。 */
   readonly status: Pick<OrganizationStatusService, 'transition'>;
   /** 审计服务依赖（写治理审计行用）。 */
   readonly audit: Pick<PlatformAuditService, 'logOrganizationGovernance'>;

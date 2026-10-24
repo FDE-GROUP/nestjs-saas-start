@@ -14,7 +14,7 @@ export interface SubscriptionStatusTransitionedPayload {
   readonly to: SubscriptionStatus;
   /** 治理动作主体（opaque id·PII 最小化）。 */
   readonly actorId?: string;
-  /** 原因/备注文本。 */
+  /** 订阅状态迁移原因。 */
   readonly reason?: string;
 }
 

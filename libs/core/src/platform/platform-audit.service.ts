@@ -39,7 +39,7 @@ export interface GovernanceAuditDetail {
   readonly to?: OrganizationStatus;
   /** 错误信息。 */
   readonly error?: string;
-  /** 原因/备注文本。 */
+  /** 治理迁移原因（审计记录）。 */
   readonly reason?: string;
 }
 

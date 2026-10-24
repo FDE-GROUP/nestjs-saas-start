@@ -12,11 +12,11 @@ import type { WorkspacePage, WorkspaceView } from '@saas/contracts/index';
  * @public
  */
 export class WorkspaceResponse {
-  /** 实体唯一标识 id。 */
+  /** 工作区 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
 
-  /** 名称。 */
+  /** 工作区名称。 */
   @ApiProperty()
   name!: string;
 

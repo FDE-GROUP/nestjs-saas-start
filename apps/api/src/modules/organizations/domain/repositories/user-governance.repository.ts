@@ -11,7 +11,7 @@ export const USER_GOVERNANCE_REPOSITORY = Symbol('USER_GOVERNANCE_REPOSITORY');
 export interface PlatformUserRow {
   /** 用户 id。 */
   userId: string;
-  /** 名称。 */
+  /** 用户显示名。 */
   name: string;
   /** 邮箱地址。 */
   email: string;

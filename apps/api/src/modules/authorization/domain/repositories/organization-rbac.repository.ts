@@ -15,7 +15,7 @@ export interface OrganizationRoleView {
   readonly id: string;
   /** 唯一 key（角色/存储对象）。 */
   readonly key: string;
-  /** 名称。 */
+  /** 角色显示名。 */
   readonly name: string;
   /** 是否为内置系统角色（不可改删）。 */
   readonly isSystem: boolean;

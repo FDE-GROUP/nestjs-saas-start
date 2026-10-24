@@ -10,7 +10,7 @@ export const ORGANIZATION_PROVISIONING_REPOSITORY = Symbol('ORGANIZATION_PROVISI
 export interface OrganizationProvisioningReceipt {
   /** 所属租户 id。 */
   organizationId: string;
-  /** 状态。 */
+  /** 开通回执的租户生命周期状态。 */
   status: OrganizationStatus;
 }
 

@@ -20,7 +20,7 @@ export interface UploadConstraint {
  * @public
  */
 export interface UploadCandidate {
-  /** 字节大小。 */
+  /** 待校验文件大小（字节）。 */
   size: number;
   /** 文件 MIME 类型。 */
   mimetype: string;

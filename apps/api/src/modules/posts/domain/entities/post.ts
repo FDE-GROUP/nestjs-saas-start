@@ -14,7 +14,7 @@ export interface PostDraftInput {
  * @public
  */
 export interface PostState {
-  /** 实体唯一标识 id。 */
+  /** 文章 id。 */
   id: string;
   /** 标题。 */
   title: string;

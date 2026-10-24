@@ -45,7 +45,7 @@ export interface SubscriptionDraft {
  * @public
  */
 export interface SubscriptionRecord {
-  /** 实体唯一标识 id。 */
+  /** 订阅行 id。 */
   id: string;
   /** 所属租户 id。 */
   organizationId: string;
@@ -63,7 +63,7 @@ export interface SubscriptionRecord {
   periodStart: Date;
   /** 计费周期结束时间。 */
   periodEnd: Date | null;
-  /** 提供方标识。 */
+  /** 支付提供方标识。 */
   provider: string | null;
   /** 支付提供方侧客户 id。 */
   providerCustomerId: string | null;

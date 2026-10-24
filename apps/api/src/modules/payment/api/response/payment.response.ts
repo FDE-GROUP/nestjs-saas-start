@@ -123,7 +123,7 @@ export class PaymentRefundRefResponse {
   @ApiProperty({ enum: PROVIDER_VALUES, description: '所属通道。' })
   providerId!: PaymentProviderId;
 
-  /** 状态。 */
+  /** 退款状态。 */
   @ApiProperty({ required: false, description: '通道侧状态串。' })
   status?: string;
 

@@ -37,7 +37,7 @@ export class PlatformOrganizationRowResponse {
   @ApiProperty({ description: 'organization 主键。' })
   organizationId!: string;
 
-  /** 名称。 */
+  /** 租户名称。 */
   @ApiProperty()
   name!: string;
 
@@ -45,7 +45,7 @@ export class PlatformOrganizationRowResponse {
   @ApiProperty()
   slug!: string;
 
-  /** 状态。 */
+  /** 租户生命周期状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '生命周期状态（无记录视同 active）。' })
   status!: OrganizationStatus;
 
@@ -146,7 +146,7 @@ export class PlatformUserRowResponse {
   @ApiProperty({ description: '用户主键。' })
   userId!: string;
 
-  /** 名称。 */
+  /** 用户显示名。 */
   @ApiProperty()
   name!: string;
 
@@ -154,7 +154,7 @@ export class PlatformUserRowResponse {
   @ApiProperty()
   email!: string;
 
-  /** 状态。 */
+  /** 用户治理状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '治理状态（无记录视同 active）。' })
   status!: UserStatus;
 
@@ -204,7 +204,7 @@ export class UserGovernanceResultResponse {
   @ApiProperty({ description: '用户主键。' })
   userId!: string;
 
-  /** 状态。 */
+  /** 用户治理状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '迁移后的新状态。' })
   status!: UserStatus;
 }

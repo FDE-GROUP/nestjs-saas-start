@@ -10,7 +10,7 @@ import type { UserRole } from '../../domain/repositories/user.repository';
  * @public
  */
 export interface UserReadModel {
-  /** 实体唯一标识 id。 */
+  /** 用户 id。 */
   id: string;
   /** 邮箱地址。 */
   email: string;
@@ -18,7 +18,7 @@ export interface UserReadModel {
   firstName: string | null;
   /** 姓。 */
   lastName: string | null;
-  /** 角色标识。 */
+  /** 用户全局角色。 */
   role: UserRole;
   /** 创建时间。 */
   createdAt: Date;

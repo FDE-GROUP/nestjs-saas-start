@@ -106,7 +106,7 @@ export function createCursorPage<T>(
  * @public
  */
 export interface CursorKey {
-  /** 实体唯一标识 id。 */
+  /** 游标定位键（记录 id）。 */
   readonly id: string;
 }
 

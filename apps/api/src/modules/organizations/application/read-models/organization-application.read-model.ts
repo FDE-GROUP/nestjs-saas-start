@@ -11,6 +11,6 @@ import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/li
 export interface OrganizationApplicationReadModel {
   /** 所属租户 id。 */
   organizationId: string;
-  /** 状态。 */
+  /** 租户生命周期状态。 */
   status: OrganizationStatus;
 }

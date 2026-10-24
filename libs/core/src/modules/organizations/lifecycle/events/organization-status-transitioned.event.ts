@@ -14,7 +14,7 @@ export interface OrganizationStatusTransitionedPayload {
   readonly to: OrganizationStatus;
   /** 治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱·§6-③）。 */
   readonly actorId?: string;
-  /** 原因/备注文本。 */
+  /** 租户状态迁移原因。 */
   readonly reason?: string;
 }
 

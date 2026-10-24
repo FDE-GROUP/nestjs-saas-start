@@ -32,7 +32,7 @@ export class OrganizationRoleViewResponse {
   @ApiProperty({ description: '角色 key（组织内唯一）。' })
   key!: string;
 
-  /** 名称。 */
+  /** 角色显示名。 */
   @ApiProperty({ description: '人面可读名。' })
   name!: string;
 

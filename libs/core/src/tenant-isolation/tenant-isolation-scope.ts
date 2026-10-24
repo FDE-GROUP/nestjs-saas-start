@@ -19,7 +19,7 @@ export interface TenantIsolationScope {
   workspaceId?: string;
   /** 用户 id。 */
   userId?: string;
-  /** 角色标识。 */
+  /** 当前租户内成员角色。 */
   role?: OrganizationRole;
 }
 

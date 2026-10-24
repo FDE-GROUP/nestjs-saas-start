@@ -35,7 +35,7 @@ export interface SystemRoleGrantSeed {
 export interface SystemRoleSeed {
   /** 唯一 key（角色/存储对象）。 */
   readonly key: SystemRoleKey;
-  /** 名称。 */
+  /** 角色显示名。 */
   readonly name: string;
   /** 该角色内置授权项集合。 */
   readonly grants: readonly SystemRoleGrantSeed[];

@@ -34,7 +34,7 @@ export type OrganizationTransitionResult =
 export interface OrganizationTransitionOptions {
   /** 触发迁移的操作者 id（审计用）。 */
   readonly actorId?: string;
-  /** 原因/备注文本。 */
+  /** 迁移原因（审计/事件）。 */
   readonly reason?: string;
 }
 

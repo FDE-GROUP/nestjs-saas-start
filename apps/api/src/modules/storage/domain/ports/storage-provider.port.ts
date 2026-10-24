@@ -20,11 +20,11 @@ export interface FileUploadOptions {
 export interface UploadedFileResult {
   /** 对象存储 key。 */
   key: string;
-  /** 访问 URL。 */
+  /** 文件访问 URL。 */
   url: string;
   /** 存储对象 etag（内容标识）。 */
   etag?: string;
-  /** 字节大小。 */
+  /** 文件字节大小。 */
   size: number;
   /** 文件 MIME 类型。 */
   mimetype: string;

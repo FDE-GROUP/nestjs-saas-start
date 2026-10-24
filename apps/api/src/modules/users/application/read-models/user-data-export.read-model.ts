@@ -10,11 +10,11 @@
  * @public
  */
 export interface ExportedUser {
-  /** 实体唯一标识 id。 */
+  /** 用户 id。 */
   id: string;
   /** 邮箱地址。 */
   email: string;
-  /** 名称。 */
+  /** 用户显示名。 */
   name: string;
   /** 用户名/句柄（唯一标识）。 */
   handle: string;
@@ -39,7 +39,7 @@ export interface ExportedUser {
  * @public
  */
 export interface ExportedAccount {
-  /** 实体唯一标识 id。 */
+  /** 账号 id。 */
   id: string;
   /** 社交/第三方账号提供方。 */
   providerId: string;
@@ -62,7 +62,7 @@ export interface ExportedAccount {
  * @public
  */
 export interface ExportedSession {
-  /** 实体唯一标识 id。 */
+  /** 会话 id。 */
   id: string;
   /** 社交登录提供方。 */
   provider: string | null;
@@ -79,7 +79,7 @@ export interface ExportedSession {
  * @public
  */
 export interface ExportedConsent {
-  /** 实体唯一标识 id。 */
+  /** 同意记录 id。 */
   id: string;
   /** 同意用途。 */
   purpose: string;

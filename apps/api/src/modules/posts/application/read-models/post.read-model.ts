@@ -11,7 +11,7 @@ import type { Post } from '../../domain/entities/post';
  * @public
  */
 export interface PostReadModel {
-  /** 实体唯一标识 id。 */
+  /** 文章 id。 */
   id: string;
   /** 标题。 */
   title: string;

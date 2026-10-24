@@ -11,7 +11,7 @@ import type { PostReadModel } from '../../application/read-models/post.read-mode
  * @public
  */
 export class PostResponse {
-  /** 实体唯一标识 id。 */
+  /** 文章 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
 

@@ -11,7 +11,7 @@ export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANC
 export interface PlatformOrganizationRow {
   /** 所属租户 id。 */
   organizationId: string;
-  /** 名称。 */
+  /** 租户名称。 */
   name: string;
   /** URL 友好的短标识。 */
   slug: string;
@@ -54,9 +54,9 @@ export interface OrganizationDiagnostics {
  * @public
  */
 export interface ExportedOrganizationUser {
-  /** 实体唯一标识 id。 */
+  /** 导出用户行 id。 */
   id: string;
-  /** 名称。 */
+  /** 用户显示名。 */
   name: string;
   /** 邮箱地址。 */
   email: string;
@@ -69,9 +69,9 @@ export interface ExportedOrganizationUser {
  * @public
  */
 export interface ExportedOrganizationMember {
-  /** 实体唯一标识 id。 */
+  /** 导出成员行 id。 */
   id: string;
-  /** 角色标识。 */
+  /** 成员在该租户的角色。 */
   role: string;
   /** 创建时间。 */
   createdAt: Date;
