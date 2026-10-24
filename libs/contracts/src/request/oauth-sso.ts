@@ -18,7 +18,7 @@ const SCOPE_ALLOWED = new Set(['openid', 'profile', 'email']);
  * `response_type` 钉死字面量 `'token'`：CE `auth_oauth` **仅支持隐式流**（无 code flow/PKCE），
  * 传其它值即协议不符，须在传输层 fail-closed 拒入（风险登记 #1·调研 §2.1）。
  * `scope` 为空格分隔串，元素须 ⊆ `openid profile email`（越界拒）。
- * 承 plan [docs/plans/oauth-sso-odoo-integration.md](../../../../docs/plans/oauth-sso-odoo-integration.md) 切片 A。
+ * 承 plan [docs/plans/oauth-sso-odoo-integration.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/plans/oauth-sso-odoo-integration.md) 切片 A。
  *
  * @public
  */

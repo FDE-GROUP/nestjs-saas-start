@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> 用途: **AI 编码工具的 L4 统一入口**（[workflow.md](./docs/specs/workflow.md) §4 / §9.5）| 状态: 候选稿 · P7 | 受众: Agent
+> 用途: **AI 编码工具的 L4 统一入口**（[workflow.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/workflow.md) §4 / §9.5）| 状态: 候选稿 · P7 | 受众: Agent
 > 定位: **消费者·非裁判**——本文件只汇总「当前真相」的**指针**，不复述细节（防双 SSOT 漂移）；与仓库冲突时**以 `docs/specs` / 代码为准**。
 
 ## 0. 权威层级（自上而下）
@@ -8,12 +8,12 @@
 **判断 / 承诺 / 问责永远归人**（P2）；Agent 是执行者与事实查找者。
 
 ## 1. 开工前必读（指针）
-- 愿景：[docs/specs/vision.md](./docs/specs/vision.md)
-- 结构：[docs/specs/architecture.md](./docs/specs/architecture.md)（[中文](./docs/specs/architecture-zh.md)）
-- 流程 / 原则：[docs/specs/workflow.md](./docs/specs/workflow.md)
-- 工具与命令 SSOT：[docs/specs/tooling-standards.md](./docs/specs/tooling-standards.md)
-- TypeScript 注释书写 SSOT（TSDoc）：[docs/specs/tsdoc-comment-standards.md](./docs/specs/tsdoc-comment-standards.md)
-- 方案状态单源：[docs/plans/README.md](./docs/plans/README.md)
+- 愿景：[docs/specs/vision.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/vision.md)
+- 结构：[docs/specs/architecture.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/architecture.md)（[中文](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/architecture-zh.md)）
+- 流程 / 原则：[docs/specs/workflow.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/workflow.md)
+- 工具与命令 SSOT：[docs/specs/tooling-standards.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/tooling-standards.md)
+- TypeScript 注释书写 SSOT（TSDoc）：[docs/specs/tsdoc-comment-standards.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/tsdoc-comment-standards.md)
+- 方案状态单源：[docs/plans/README.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/plans/README.md)
 
 ## 2. 铁律（不得违反）
 - **无已审方案不写码**：审计门**强制**（即便单人）；未过审计不得实现。
@@ -51,7 +51,7 @@ pnpm workspace 四包：`libs/core/src`（@core 共享内核：`shared-kernel` +
 - **分支说明**：`main` 为唯一工作分支；远端 `gh-pages` 是 CI（`.github/workflows/deploy-swagger.yml` 经 `peaceiris/actions-gh-pages`）自动生成的 GitHub Pages 发布分支（孤儿分支·只装 CI 产的 API 文档静态产物【乙布局：根落地页 + `/swagger/` Swagger UI + `/tsdoc/` TypeDoc 公共 API 参考·单 job 合并构建→单次 `publish_dir`】·与 `main` 无共同祖先），**勿与 `main` 合并、勿手工改动、勿更名**（更名会连带 workflow + 仓库 Pages 源设置双处断裂）。
 
 ## 6. 地域与语言
-面向**中国大陆**用户：依赖镜像 `npmmirror` / Docker 国内源；第三方选型见 [global-cn-adaptation](./docs/plans/global-cn-adaptation.md)；**文档 / 注释中文优先**。
+面向**中国大陆**用户：依赖镜像 `npmmirror` / Docker 国内源；第三方选型见 [global-cn-adaptation](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/plans/global-cn-adaptation.md)；**文档 / 注释中文优先**。
 
 ## 7. 遇到边界
 需求不清 / 越界 → **停下**：回改对应 `plan` 留痕或向人提问，**不臆测**、不用启发式掩盖结构缺陷（机制修复不逐模块特判）。

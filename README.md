@@ -104,7 +104,7 @@ packages/
 - **业务域**：各限界上下文的领域规则——`organizations`（租户生命周期与治理）、`workspaces`、`users`、`subscriptions`、`platform` 等，以及 `authorization` 的管理面（角色与授权数据的维护）。这些组件因业务需求而变化，是函数式内核与领域建模的主战场。
 - **易混点**：多租户**机制**（`tenant-isolation/`，不关心"租户是什么"）不同于租户**业务域**（`modules/organizations`，定义租户如何创建、暂停、消亡）；`storage` / `payment` 是带领域策略（上传校验、通道降级、金额与货币）的**出站网关上下文**，而非基础设施——真正的设施是其身后的 provider 适配器。
 
-> 完整结构规则见 [`docs/specs/architecture.md`](./docs/specs/architecture.md)。
+> 完整结构规则见 [`docs/specs/architecture.md`](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/architecture.md)。
 
 ## 功能模块
 
@@ -123,7 +123,7 @@ packages/
 
 ## 快速开始
 
-完整安装与运行步骤见 [安装与运行指南](./docs/install&run.md)。
+完整安装与运行步骤见 [安装与运行指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/install&run.md)。
 
 **前置要求**：Node ≥ 22、pnpm 11、PostgreSQL（或使用 Docker Compose 起库）。
 
@@ -160,33 +160,33 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 ## 部署
 
 - 本地 / 依赖服务：`docker-compose.dev.yml`（PostgreSQL、pgAdmin 等）。
-- 生产镜像：多阶段 `Dockerfile`；完整部署说明见 [Docker 部署指南](./docs/docker-deployment.md)。
+- 生产镜像：多阶段 `Dockerfile`；完整部署说明见 [Docker 部署指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/docker-deployment.md)。
 - 生产回归防线：`pnpm run verify:prod-boot`（构建后真实起服并校验 `/api/v1/health`）。
 
 ## 文档
 
 **规格**（`docs/specs/`·约束性规范）
 
-- [项目愿景](./docs/specs/vision.md)
-- [项目架构](./docs/specs/architecture.md) ｜ [中文](./docs/specs/architecture-zh.md)
-- [工具标准](./docs/specs/tooling-standards.md)
-- [开发工作流程](./docs/specs/workflow.md)
+- [项目愿景](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/vision.md)
+- [项目架构](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/architecture.md) ｜ [中文](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/architecture-zh.md)
+- [工具标准](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/tooling-standards.md)
+- [开发工作流程](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/specs/workflow.md)
 
 **指南**（`docs/`·操作手册）
 
-- [函数式领域内核指南](./docs/functional-core.md)（概念 · 判据 · 地图 · FAQ）
-- [安装与运行](./docs/install&run.md)
-- [前端 dev 反代运行手册](./docs/frontend-dev-proxy-runbook.md)
-- [Docker 部署](./docs/docker-deployment.md)
-- [MikroORM 迁移指南](./docs/mikro-migration-guide.md)
-- [邮件模块指南（英文）](./docs/mailer-en.md)
-- [OAuth 认证指南（英文）](./docs/oauth-guide-en.md)
+- [函数式领域内核指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/functional-core.md)（概念 · 判据 · 地图 · FAQ）
+- [安装与运行](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/install&run.md)
+- [前端 dev 反代运行手册](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/frontend-dev-proxy-runbook.md)
+- [Docker 部署](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/docker-deployment.md)
+- [MikroORM 迁移指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/mikro-migration-guide.md)
+- [邮件模块指南（英文）](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/mailer-en.md)
+- [OAuth 认证指南（英文）](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/oauth-guide-en.md)
 - **公共 API 参考（TypeDoc）**：本地 `pnpm run docs:api` 生成（读根 `typedoc.json`·纳 `@saas/contracts` + `@core/saas-kit` + `apps/api` 各 module 对外接口·`excludeNotDocumented` 只文档化已注释件）→ 产 `api-docs/`（生成物·不入库）
 
 **设计方案与调研**（`docs/plans/`、`docs/research/`·技术方案与参考资料）
 
-- [方案索引](./docs/plans/README.md)（多租户、地域适配、事件溯源、前后端契约等各专项方案）
-- [Clean Architecture 系列整理](./docs/research/clean-architecture/README.md)
+- [方案索引](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/plans/README.md)（多租户、地域适配、事件溯源、前后端契约等各专项方案）
+- [Clean Architecture 系列整理](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/research/clean-architecture/README.md)
 
 ## 联系方式
 

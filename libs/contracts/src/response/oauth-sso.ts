@@ -8,7 +8,7 @@ import { z } from 'zod';
  * 本案统一以 `sub`（平台 user id·稳定）承载；`email` 作 Odoo login 字段（须已验证·切片 D 硬门）；
  * `name` 供 Odoo 建号显示名。**跨系统仅传最小 PII**（风险登记 #8）。
  * 注意：端点须返**裸 JSON**（非本仓 api envelope），否则 Odoo `auth_oauth` 解析失败——归切片 D 实现处置。
- * 承 plan [docs/plans/oauth-sso-odoo-integration.md](../../../../docs/plans/oauth-sso-odoo-integration.md) 切片 A。
+ * 承 plan [docs/plans/oauth-sso-odoo-integration.md](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/plans/oauth-sso-odoo-integration.md) 切片 A。
  *
  * @public
  */
