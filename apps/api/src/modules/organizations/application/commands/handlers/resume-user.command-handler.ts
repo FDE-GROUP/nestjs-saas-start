@@ -28,6 +28,8 @@ export class ResumeUserCommandHandler implements ICommandHandler<ResumeUserComma
    * 执行恢复迁移；非法 → 409；查无 → null；成败均落审计。
    * @param command - 携带用户 id 与操作者的命令。
    * @returns 治理结果（用户 id + 新态）；查无为 `null`。
+   *
+   * @throws {ConflictException} 用户生命周期迁移非法时。
    */
   async execute(command: ResumeUserCommand): Promise<UserGovernanceResult | null> {
     const result = await this.status.transition(command.userId, USER_STATUS.ACTIVE, {

@@ -48,6 +48,8 @@ export class DeleteOrganizationPermanentlyCommandHandler
    * 执行硬删：非 deleted 终态 → 409；同事务补删事件 + 删主行；并发已没/查无 → null（404 幂等）。
    * @param command - 携带租户 id 与操作者的命令。
    * @returns 硬删结果（组 id + 补删事件数）；行不存在为 `null`。
+   *
+   * @throws {ConflictException} 租户未处于 deleted 终态时。
    */
   async execute(
     command: DeleteOrganizationPermanentlyCommand,

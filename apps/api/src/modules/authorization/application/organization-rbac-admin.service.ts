@@ -59,6 +59,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * 某角色的授权行（查无角色 → 404·供管理面回显勾选态）。
    * @param roleKey - 角色 key。
    * @returns 授权行读模型列表。
+   *
+   * @throws {NotFoundException} 指定 roleKey 的角色不存在时。
    */
   async getGrants(roleKey: string): Promise<OrganizationRoleGrantView[]> {
     const grants = await this.rbac.findGrants(this.org(), roleKey);
@@ -75,6 +77,10 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @param key - 角色 key（组织内唯一）。
    * @param name - 人面可读名。
    * @returns 创建后的角色读模型。
+   *
+   * @throws {BadRequestException} 角色 key 非法时。
+   * @throws {ConflictException} 角色 key 已存在时。
+   * @throws {NotFoundException} 创建后回读不到角色时。
    */
   async createRole(key: string, name: string): Promise<OrganizationRoleView> {
     const org = this.org();
@@ -127,6 +133,10 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * 新增授权格（`invalidConditions`→400、`roleNotFound`→404、`duplicate`→409），成功后失效缓存。
    * @param roleKey - 目标角色 key。
    * @param entry - 授权行（subject/action/conditions）。
+   *
+   * @throws {BadRequestException} grant conditions 形状不在白名单内时。
+   * @throws {NotFoundException} 指定角色不存在时。
+   * @throws {ConflictException} 授权条目已存在时。
    */
   async grant(
     roleKey: string,
@@ -162,6 +172,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @param subject - 授权主体。
    * @param action - 授权动作。
    * @param conditions - 等值匹配条件；`null` = 整 subject 级行。
+   *
+   * @throws {NotFoundException} 匹配的授权条目不存在时。
    */
   async revoke(
     roleKey: string,

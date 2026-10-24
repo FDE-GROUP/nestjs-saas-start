@@ -102,6 +102,8 @@ export class PlatformUsersController {
    * @param user - 当前操作员会话。
    * @param dto - 暂停入参（可选 reason）。
    * @returns 用户治理结果；未命中 404、非法转移 409。
+   *
+   * @throws {NotFoundException} 用户不存在时。
    */
   @Patch(':id/suspend')
   @SerializeOptions({ schema: userGovernanceResultSchema })
@@ -130,6 +132,8 @@ export class PlatformUsersController {
    * @param id - 用户主键。
    * @param user - 当前操作员会话。
    * @returns 用户治理结果；未命中 404、非法转移 409。
+   *
+   * @throws {NotFoundException} 用户不存在时。
    */
   @Patch(':id/resume')
   @SerializeOptions({ schema: userGovernanceResultSchema })

@@ -50,6 +50,8 @@ export class CsrfOriginGuard implements CanActivate {
    * 对非安全方法执行 Origin 校验：`@Public` 与安全方法放行，同源/白名单放行，否则 403。
    * @param context - 执行上下文。
    * @returns 放行时为 `true`；校验失败时抛 403。
+   *
+   * @throws {ForbiddenException} Origin 与同站不符（CSRF 校验失败）时。
    */
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [

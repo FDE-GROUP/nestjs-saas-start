@@ -56,6 +56,8 @@ export class RejectOrganizationCommandHandler
    * 执行驳回：非 pending → 409；同事务硬删并发布 `tenant.rejected`；成败均落审计。
    * @param command - 携带租户 id 与操作者的命令。
    * @returns 硬删命中时为 `true`，行不存在为 `false`。
+   *
+   * @throws {ConflictException} 申请非 pending 状态、不可驳回时。
    */
   async execute(command: RejectOrganizationCommand): Promise<boolean> {
     // 前置态取自 organization.status 真列（global-governance-lifecycle-consolidation 切片 B·治理面撤回放即真相）。

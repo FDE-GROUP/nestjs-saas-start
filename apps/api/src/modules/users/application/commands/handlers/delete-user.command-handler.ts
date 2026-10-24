@@ -34,6 +34,8 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
    * 执行硬删：用户查无 → 404；命中则经属主端口删除并清理事件行。
    * @param command - 携带待删用户 id 的命令。
    * @returns 删除完成的 Promise（无返回量）。
+   *
+   * @throws {NotFoundException} 指定 userId 的用户不存在时。
    */
   async execute(command: DeleteUserCommand): Promise<void> {
     const existing = await this.users.findById(command.userId);

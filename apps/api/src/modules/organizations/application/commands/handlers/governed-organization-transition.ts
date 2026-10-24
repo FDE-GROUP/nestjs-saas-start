@@ -54,6 +54,8 @@ export interface GovernedTransitionInput {
  * @param deps - 最小依赖面（状态服务 + 审计服务）。
  * @param input - 迁移入参。
  * @returns 迁移后读模型；租户查无为 `null`。
+ *
+ * @throws {ConflictException} 租户生命周期迁移非法时。
  * @public
  */
 export async function governedOrganizationTransition(

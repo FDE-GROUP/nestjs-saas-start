@@ -68,6 +68,8 @@ export class StorageController {
    * 单文件 multipart 上传（非 multipart → 400；领域校验/通道失败归一 400）。
    * @param req - Fastify 原始请求（取 multipart 文件流）。
    * @returns 上传结果 DTO（键/URL/元数据）。
+   *
+   * @throws {BadRequestException} 文件上传失败时。
    */
   @Post('upload')
   @SerializeOptions({ schema: fileUploadResultSchema })

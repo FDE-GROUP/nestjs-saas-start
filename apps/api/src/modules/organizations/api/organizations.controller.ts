@@ -101,6 +101,8 @@ export class OrganizationsController {
    * @param id - 租户 id。
    * @param user - 会话用户（操作者）。
    * @returns 激活后的租户读模型；查无抛 `NotFoundException`。
+   *
+   * @throws {NotFoundException} 租户申请不存在时。
    */
   @Post('applications/:id/approve')
   // 激活既有 pending 租户（非新建资源）·运行时对齐 OpenAPI 文档 200（REST 一致性核验片·项③）。
@@ -135,6 +137,8 @@ export class OrganizationsController {
    * @param id - 租户 id。
    * @param user - 会话用户（操作者）。
    * @returns 无；查无抛 `NotFoundException`。
+   *
+   * @throws {NotFoundException} 租户申请不存在时。
    */
   @Post('applications/:id/reject')
   @UseGuards(PlatformOperatorGuard)

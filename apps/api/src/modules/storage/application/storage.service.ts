@@ -37,6 +37,8 @@ export class StorageService {
    * multipart 上传：先过 domain 校验闸（超限/非法类型 → 400），再委托通道落存。
    * @param file - 文件名/MIME/原始流/尺寸。
    * @returns 上传结果（键/URL/元数据）。
+   *
+   * @throws {BadRequestException} 文件上传失败时。
    */
   async uploadMultipartFile(file: {
     filename: string;

@@ -45,6 +45,8 @@ export class SuspendUserCommandHandler implements ICommandHandler<SuspendUserCom
    * 执行暂停：同事务内迁移态 + 删 session；非法 → 409；查无 → null；成败均落审计。
    * @param command - 携带用户 id/操作者/可选原因的命令。
    * @returns 治理结果（用户 id + 新态）；查无为 `null`。
+   *
+   * @throws {ConflictException} 用户生命周期迁移非法时。
    */
   async execute(command: SuspendUserCommand): Promise<UserGovernanceResult | null> {
     const result = await this.uow.run(async () => {

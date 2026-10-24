@@ -69,6 +69,9 @@ export class SessionGuard implements CanActivate {
    * 解析并校验会话：`@Public` 路由旁路，否则无会话 401、已暂停 403。
    * @param context - 执行上下文。
    * @returns 放行时为 `true`；否则抛异常。
+   *
+   * @throws {UnauthorizedException} 会话缺失或非法时。
+   * @throws {ForbiddenException} 账号已停用时。
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // S11 · deny-by-default：显式 @Public 的路由（handler 优先于 class）跳过会话墙。

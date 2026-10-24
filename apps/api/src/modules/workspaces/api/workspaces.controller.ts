@@ -123,6 +123,8 @@ export class WorkspacesController {
    * @param id - 工作区主键。
    * @param dto - 更新入参（name/slug）。
    * @returns 更新后的工作区；未命中则抛 404。
+   *
+   * @throws {NotFoundException} 工作区不存在时。
    */
   @Patch(':id')
   @Can('update', 'Workspace')
@@ -148,6 +150,8 @@ export class WorkspacesController {
    * 删除工作区（owner/admin）。
    * @param id - 工作区主键。
    * @returns 无内容（204）；未命中则抛 404。
+   *
+   * @throws {NotFoundException} 工作区不存在时。
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

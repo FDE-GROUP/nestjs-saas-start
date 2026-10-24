@@ -140,6 +140,8 @@ export class AuthorizationAdminController {
    * 列出某角色的授权行（回显勾选态）。
    * @param roleKey - 查询参数：目标角色 key（缺失 → 400）。
    * @returns 授权行读模型列表。
+   *
+   * @throws {BadRequestException} 缺少 roleKey 查询参数时。
    */
   @Get('grants')
   @Can('read', 'RoleGrant')

@@ -69,6 +69,8 @@ export class PaymentService {
    * 创建下单/收款意图（先经 `Money` 不变量兵底再委托端口）。
    * @param input - 结账入参（amount/currency 等）。
    * @returns 归一化结账引用。
+   *
+   * @throws {BadRequestException} 结算金额或币种非法时。
    */
   createCheckout(input: CreateCheckoutInput): Promise<PaymentCheckoutRef> {
     const money = Money.fromMinorUnits(input.amount, input.currency);

@@ -15,6 +15,8 @@ import { HttpException, type HttpStatus } from '@nestjs/common';
  *
  * @param err - 捕获自 BA 服务端调用或门面前置拒绝的未知错误。
  * @returns 从不正常返回：4xx 抛归一 `HttpException`，其余原样上抛。
+ *
+ * @throws {HttpException} 将 Better Auth 错误映射为对应 HTTP 错误响应时抛出。
  * @public
  */
 export function mapBaError(err: unknown): never {

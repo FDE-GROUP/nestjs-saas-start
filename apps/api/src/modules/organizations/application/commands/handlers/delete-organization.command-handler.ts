@@ -27,6 +27,8 @@ export class DeleteOrganizationCommandHandler
    * 执行软删迁移；非法（已 deleted）→ 409；查无 → null；成败均落审计。
    * @param command - 携带租户 id 与操作者的命令。
    * @returns 迁移后读模型；租户查无为 `null`。
+   *
+   * @throws {ConflictException} 租户生命周期迁移非法时。
    */
   async execute(
     command: DeleteOrganizationCommand,

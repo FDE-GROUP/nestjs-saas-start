@@ -124,6 +124,8 @@ export class PlatformOrganizationsController {
    * 取单个组织详情（仅操作员）。
    * @param id - 组织主键。
    * @returns 组织行；未命中抛 404。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Get(':id')
   @SerializeOptions({ schema: platformOrganizationRowSchema })
@@ -148,6 +150,8 @@ export class PlatformOrganizationsController {
    * 单组织诊断：成员/邀请/工作区/帖子计数。
    * @param id - 组织主键。
    * @returns 诊断包；未命中抛 404。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Get(':id/diagnostics')
   @SerializeOptions({ schema: organizationDiagnosticsSchema })
@@ -174,6 +178,8 @@ export class PlatformOrganizationsController {
    * 导出该组织全部数据为单一 JSON（NFR-6·不含凭证）。
    * @param id - 组织主键。
    * @returns 六段聚合导出；未命中抛 404。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Get(':id/export')
   @ApiOperation({ summary: 'Export all organization-owned data as a single JSON payload (NFR-6)' })
@@ -201,6 +207,8 @@ export class PlatformOrganizationsController {
    * @param id - 组织主键。
    * @param user - 当前操作员会话。
    * @returns 暂停后的组织读模型；未命中 404、非法转移 409。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Patch(':id/suspend')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
@@ -232,6 +240,8 @@ export class PlatformOrganizationsController {
    * @param id - 组织主键。
    * @param user - 当前操作员会话。
    * @returns 恢复后的组织读模型；未命中 404、非法转移 409。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Patch(':id/resume')
   @SerializeOptions({ schema: organizationApplicationViewSchema })
@@ -261,6 +271,8 @@ export class PlatformOrganizationsController {
    * @param id - 组织主键。
    * @param user - 当前操作员会话。
    * @returns 标记已删的组织读模型；未命中 404、已删 409。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
@@ -295,6 +307,8 @@ export class PlatformOrganizationsController {
    * @param id - 组织主键。
    * @param user - 当前操作员会话。
    * @returns 含 purgedEvents 的硬删结果；未命中/幂等 404、非终态 409。
+   *
+   * @throws {NotFoundException} 租户不存在时。
    */
   @Delete(':id/permanent')
   @HttpCode(HttpStatus.OK)

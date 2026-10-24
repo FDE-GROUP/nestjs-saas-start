@@ -37,6 +37,8 @@ export class ExportUserDataQueryHandler
    * 四段白名单投影读并拼装导出体（用户查无 → 404）。
    * @param query - 携带目标用户 id 的查询。
    * @returns 凭据剔除后的个人数据导出体。
+   *
+   * @throws {NotFoundException} 指定 userId 的用户不存在时。
    */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ExportUserDataQuery): Promise<UserDataExportReadModel> {
