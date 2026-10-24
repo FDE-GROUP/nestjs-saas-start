@@ -5,7 +5,8 @@
     "libs/core/src/shared-kernel",
     "libs/core/src/authorization",
     "libs/core/src/tenant-isolation",
-    "libs/core/src/platform"
+    "libs/core/src/platform",
+    "libs/core/src/modules/organizations"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",

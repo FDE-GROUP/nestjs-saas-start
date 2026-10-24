@@ -14,28 +14,45 @@ import {
 import { USER_STATUS_STORE, type UserStatusStore } from './user-status.store';
 
 /**
- * 用户生命周期状态复用租户状态机的 active/suspended/deleted 子集
- * （pending 属租户准入语义，用户侧不产生）。
+ * 用户生命周期状态（复用租户状态机的 active/suspended/deleted 子集）。
+ *
+ * @remarks
+ * pending 属租户准入语义，用户侧不产生。
+ *
+ * @public
  */
 export type UserStatus = OrganizationStatus;
 
+/**
+ * 用户生命周期状态词汇（从租户状态机择取用户侧合法子集）。
+ *
+ * @public
+ */
 export const USER_STATUS = {
   ACTIVE: ORGANIZATION_STATUS.ACTIVE,
   SUSPENDED: ORGANIZATION_STATUS.SUSPENDED,
   DELETED: ORGANIZATION_STATUS.DELETED,
 } as const;
 
-/** 严格迁移结果结合：ok 携 previous 供审计；not-found/illegal 由调用方转 404/409。 */
+/**
+ * 严格迁移结果结合：ok 携 previous 供审计；not-found/illegal 由调用方转 404/409。
+ *
+ * @public
+ */
 export type UserTransitionResult =
   | { kind: 'ok'; previous: UserStatus | undefined; status: UserStatus }
   | { kind: 'not-found' }
   | { kind: 'illegal'; from: UserStatus | undefined; to: UserStatus };
 
 /**
- * 用户状态读写唯一卡点（S6 · FR-10）：经 `USER_STATUS_STORE` 端口落 `user.status` 真列
+ * 用户状态读写唯一卡点（S6 · FR-10）：经 `USER_STATUS_STORE` 端口落 `user.status` 真列。
+ *
+ * @remarks
  * （global-governance-lifecycle-consolidation 切片 C：原 `user_status` 旁表归位 BA `user` 共享表的
  * additive 自撰域列·写经 AUTH_USER_STORE 落 auth 属主）。deny-list 语义——列默认 'active'，
  * 仅显式 suspended/deleted 才失能（本体不存在 → 视同 active）。
+ *
+ * @public
  */
 @Injectable()
 export class UserStatusService {
@@ -48,24 +65,41 @@ export class UserStatusService {
     @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
-  /** 读取用户当前生命周期状态；无记录行 → undefined（视同 active）。 */
+  /**
+   * 读取用户当前生命周期状态；无记录行 → undefined（视同 active）。
+   *
+   * @param userId - 目标用户 id
+   * @returns 当前状态；无记录返回 `undefined`
+   */
   async read(userId: string): Promise<UserStatus | undefined> {
     return (await this.store.readStatus(userId)) as UserStatus | undefined;
   }
 
-  /** 是否被拦（deny-list）：仅显式 suspended/deleted 为真；无行 → 不拦。 */
+  /**
+   * 是否被拦（deny-list）：仅显式 suspended/deleted 为真；无行 → 不拦。
+   *
+   * @param userId - 目标用户 id
+   * @returns 命中失能态返回 `true`；否则 `false`
+   */
   async isBlocked(userId: string): Promise<boolean> {
     const status = await this.read(userId);
     return status === USER_STATUS.SUSPENDED || status === USER_STATUS.DELETED;
   }
 
   /**
-   * 严格状态迁移：目标用户不存在 → not-found（转 404）；非法边 → illegal（转 409）；
+   * 严格状态迁移：目标用户不存在 → not-found（转 404）；非法边 → illegal（转 409）。
+   *
+   * @remarks
    * 合法则 upsert `user_status` 并返回 previous 供审计。平台级动作专用（suspend/resume/delete），
    * 权限裁决归 PlatformOperatorGuard；session 硬删由调用方（治理 handler）叠加。
    * ES 第三切片 + Phase B 后半（module-es-outbox-transactional 切片 B）：upsert + 发布关键段包入
    * `UNIT_OF_WORK`（outbox 同事务原子·shadow 连带回滚·inproc 空转等价），产出
    * `user.status.transitioned`（与 user.registered 同聚合流·not-found/illegal 零发）。
+   *
+   * @param userId - 目标用户 id
+   * @param to - 目标状态
+   * @param opts - 可选治理上下文（主体/理由）
+   * @returns 迁移结果结合（ok/not-found/illegal）
    */
   async transition(
     userId: string,
