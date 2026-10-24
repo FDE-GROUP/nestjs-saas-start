@@ -4,9 +4,12 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { WorkspacePage, WorkspaceView } from '@saas/contracts/index';
 
 /**
- * workspaces 上下文响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ * workspaces 上下文单工作区响应契约（F1 甲①）——schema 源，纯文档面零运行时。
+ *
+ * @remarks
  * 真相源 = controller 实际返回类型 `WorkspaceReadModel`。漂移防线：见文件末编译期双向赋值锁
  * （interface 无运行时形，故以 tsc 结构恒等守，build 拓红），非 runtime 测。
+ * @public
  */
 export class WorkspaceResponse {
   @ApiProperty({ description: 'UUIDv7。' })
@@ -42,7 +45,13 @@ const _wbwd: WorkspaceReadModel = {} as WorkspaceResponse;
 void _wfwd;
 void _wbwd;
 
-/** offset 分页整体响应（`Page<WorkspaceReadModel>`）——整个分页对象裹入 data（无 meta 键）。 */
+/**
+ * workspaces offset 分页整体响应契约（`Page<WorkspaceReadModel>`）。
+ *
+ * @remarks
+ * 整个分页对象裹入 data（无 meta 键）。
+ * @public
+ */
 export class WorkspacePageResponse {
   @ApiProperty({ isArray: true, type: () => WorkspaceResponse })
   items!: WorkspaceResponse[];

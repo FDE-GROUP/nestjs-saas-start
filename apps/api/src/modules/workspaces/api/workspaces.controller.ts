@@ -45,6 +45,9 @@ import {
 import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.response';
 
 /**
+ * 工作区 CRUD 参考切片的 HTTP 控制器（多租户 S3 · D2/§9.1 / FR-4/FR-5）。
+ *
+ * @remarks
  * Workspace CRUD reference slice (global-tenancy S3 · D2/§9.1 / FR-4/FR-5).
  *
  * Both guards run per-route (NOT global — APP_GUARD stays a signed decision, 高危#4):
@@ -55,6 +58,7 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
  * Permission tiers (S3 human call): `workspace:read` for all members;
  * `workspace:create/update/delete` for owner+admin. Row scoping by tenant is enforced in
  * the repository — handlers/controllers never name a tenant id.
+ * @public
  */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse, WorkspaceResponse, WorkspacePageResponse)
 @ApiTags('workspaces')
@@ -66,6 +70,11 @@ export class WorkspacesController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * 分页列出当前组织下的工作区（offset 分页）。
+   * @param request - offset 分页请求。
+   * @returns 当前组织拥有的工作区分页。
+   */
   @Get()
   @Can('read', 'Workspace')
   @SerializeOptions({ schema: workspacePageSchema })
@@ -84,6 +93,11 @@ export class WorkspacesController {
     );
   }
 
+  /**
+   * 创建工作区（owner/admin）。
+   * @param dto - 创建入参（name/slug）。
+   * @returns 已落库并盖章当前组织的工作区。
+   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Can('create', 'Workspace')
@@ -104,6 +118,12 @@ export class WorkspacesController {
     );
   }
 
+  /**
+   * 更新工作区（owner/admin）。
+   * @param id - 工作区主键。
+   * @param dto - 更新入参（name/slug）。
+   * @returns 更新后的工作区；未命中则抛 404。
+   */
   @Patch(':id')
   @Can('update', 'Workspace')
   @SerializeOptions({ schema: workspaceViewSchema })
@@ -124,6 +144,11 @@ export class WorkspacesController {
     return result;
   }
 
+  /**
+   * 删除工作区（owner/admin）。
+   * @param id - 工作区主键。
+   * @returns 无内容（204）；未命中则抛 404。
+   */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Can('delete', 'Workspace')

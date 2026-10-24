@@ -12,7 +12,8 @@
     "apps/api/src/modules/posts/api",
     "apps/api/src/modules/posts/domain",
     "apps/api/src/modules/posts/application",
-    "apps/api/src/modules/subscriptions/api"
+    "apps/api/src/modules/subscriptions/api",
+    "apps/api/src/modules/workspaces/api"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
