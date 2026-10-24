@@ -14,5 +14,9 @@
   "organizationId.required": "Please enter the organization ID",
   "role.required": "Please enter the role",
   "roleKey.required": "Please enter the role key",
-  "roleName.required": "Please enter the role name"
+  "roleName.required": "Please enter the role name",
+  "clientId.required": "Please provide client_id",
+  "redirectUri.required": "Please provide redirect_uri",
+  "responseType.unsupported": "Only implicit flow response_type=token is supported",
+  "scope.invalid": "scope may only contain openid, profile or email"
 }

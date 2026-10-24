@@ -14,5 +14,9 @@
   "organizationId.required": "请输入组织 ID",
   "role.required": "请输入角色",
   "roleKey.required": "请输入角色标识",
-  "roleName.required": "请输入角色名称"
+  "roleName.required": "请输入角色名称",
+  "clientId.required": "请输入 client_id",
+  "redirectUri.required": "请输入 redirect_uri",
+  "responseType.unsupported": "仅支持隐式流 response_type=token",
+  "scope.invalid": "scope 仅可包含 openid、profile、email"
 }
