@@ -1,4 +1,4 @@
-/** 角色可挂载读端口的 DI 注入 token。 */
+/** 角色可挂载读端口的 DI 注入 token。 @public */
 export const ROLE_ASSIGNABILITY_READER = Symbol('ROLE_ASSIGNABILITY_READER');
 
 /**

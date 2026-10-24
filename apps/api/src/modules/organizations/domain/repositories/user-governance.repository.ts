@@ -1,7 +1,7 @@
 import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
-/** 平台用户治理仓储端口的 DI 注入 token。 */
+/** 平台用户治理仓储端口的 DI 注入 token。 @public */
 export const USER_GOVERNANCE_REPOSITORY = Symbol('USER_GOVERNANCE_REPOSITORY');
 
 /**

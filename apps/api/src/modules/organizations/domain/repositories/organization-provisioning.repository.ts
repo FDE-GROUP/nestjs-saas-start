@@ -1,6 +1,6 @@
 import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
-/** 租户开通网关端口的 DI 注入 token。 */
+/** 租户开通网关端口的 DI 注入 token。 @public */
 export const ORGANIZATION_PROVISIONING_REPOSITORY = Symbol('ORGANIZATION_PROVISIONING_REPOSITORY');
 
 /**

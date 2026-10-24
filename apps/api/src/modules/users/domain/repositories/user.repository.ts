@@ -1,4 +1,4 @@
-/** 用户仓储端口的 DI 注入 token（依赖倒置；具体 ORM 适配居 infrastructure 层）。 */
+/** 用户仓储端口的 DI 注入 token（依赖倒置；具体 ORM 适配居 infrastructure 层）。 @public */
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
 
 /**

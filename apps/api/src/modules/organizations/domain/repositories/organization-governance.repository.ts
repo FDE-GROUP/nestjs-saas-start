@@ -1,7 +1,7 @@
 import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
-/** 平台租户治理仓储端口的 DI 注入 token。 */
+/** 平台租户治理仓储端口的 DI 注入 token。 @public */
 export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANCE_REPOSITORY');
 
 /**

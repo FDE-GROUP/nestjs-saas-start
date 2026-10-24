@@ -3,7 +3,7 @@ import type {
   AuthorizationSubject,
 } from '@core/saas-kit/authorization/authorization-rules';
 
-/** 租户 RBAC 仓储端口的 DI 注入 token。 */
+/** 租户 RBAC 仓储端口的 DI 注入 token。 @public */
 export const ORGANIZATION_RBAC_REPOSITORY = Symbol('ORGANIZATION_RBAC_REPOSITORY');
 
 /**
