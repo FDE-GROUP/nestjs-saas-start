@@ -101,11 +101,12 @@ JWT_SECRET='dev-secret-change-in-prod'
 **存照 ②**（可选·诊断）：从宿主机 curl 验证 userinfo 端点可达+形状正确：
 ```bash
 TOKEN=<从存照① 拿到的 access_token>
-curl -s -H "Authorization: Bearer $TOKEN" \
+curl -s --noproxy '*' -H "Authorization: Bearer $TOKEN" \
   http://localhost:7009/api/v1/oauth2/userinfo
 # 期望：{"sub":"<user-id>","email":"<已验证邮箱>","name":"<显示名>"}
 # 注意：裸 JSON·无 {data,statusCode} 信封包裹
 ```
+> ⚠️ 本机设了 `HTTP(S)_PROXY`（大陆镜像）：对 `localhost`/`127.0.0.1` 的 curl **必须加 `--noproxy '*'`**，否则代理会把回环请求伪装成 `502`（假象·非服务故障）。容器内 Odoo 服务端回源不受此影响。
 
 ### 5.4 Odoo 建/链会话
 - Odoo 按 `email` 匹配/创建 `res.users` → 落 Odoo Session → 302 到 `/web`。
@@ -113,10 +114,15 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 **存照 ③**（结项证据·核心断言）：
 ```bash
-# 在已登录的 Odoo 浏览器中（取 Odoo session cookie）：
-curl -s -b '<odoo_session_cookie>' -X POST http://localhost:8081/web/session/get_session_info \
-  -H 'Content-Type: application/json' -d '{}' | jq '.result.user_context.uid'
-# 期望：返回正整数 UID（非 error）→ 证明隐式流端到端通
+# 首选·已封装（绕代理·python3 解析·本机无 jq）：
+bash tmp/sso-evidence.sh '<odoo session_id>'
+# 期望：✅ uid=<正整数>  → 隐式流端到端通
+```
+等价原始调用（须 `--noproxy '*'`）：
+```bash
+curl -s --noproxy '*' -b "session_id=<odoo session_id>" -X POST http://localhost:8081/web/session/get_session_info \
+  -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","method":"call","params":{}}' \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["result"]["user_context"]["uid"])'
 ```
 或在浏览器 DevTools → Network → 观察 `/web/dataset/call_kw` 等后台调用 = Odoo 已认证。
 
