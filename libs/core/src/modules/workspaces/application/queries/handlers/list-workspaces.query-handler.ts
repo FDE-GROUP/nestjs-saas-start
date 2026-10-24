@@ -15,6 +15,9 @@ import type { WorkspaceReadModel } from '../../read-models/workspace.read-model'
 import { ListWorkspacesQuery } from '../list-workspaces.query';
 
 /**
+ * workspace 列表读侧处理器（仓储端口租户卡点 + handler 侧实例级收窄）。
+ *
+ * @remarks
  * Read side goes through the repository port, which enforces the tenant scope
  * (global-tenancy §9.3 / FR-5). 租户隔离（organizationId）仍由仓储适配层唯一卡点保证；
  * 本 handler 只在其上叠加 **instance 级收窄**（module-rbac-query-level-filtering 切片 C·人裁③⑤）：
@@ -22,6 +25,8 @@ import { ListWorkspacesQuery } from '../list-workspaces.query';
  * `all`→不下推（现状）/ `where`→下推 port / `none`→短路空页不触库（fail-closed·绝不回退全量）。
  * 行为注记（已审）：无租户上下文时由旧「仓储层 403」改「空页」——护栏面仍系上游双守卫，
  * 生产入口不可达该分支，列表面只收窄可见性。
+ *
+ * @public
  */
 @QueryHandler(ListWorkspacesQuery)
 export class ListWorkspacesQueryHandler implements IQueryHandler<ListWorkspacesQuery> {
@@ -31,6 +36,12 @@ export class ListWorkspacesQueryHandler implements IQueryHandler<ListWorkspacesQ
     @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
+  /**
+   * 取实例授权谓词后按 all/where/none 下推或短路空页。
+   *
+   * @param query - 待执行的列表查询（分页请求）
+   * @returns 分页信封（none 或无租户 → 空页）
+   */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ListWorkspacesQuery): Promise<Page<WorkspaceReadModel>> {
     const predicate = await this.checker.listPredicate({
