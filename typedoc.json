@@ -36,7 +36,7 @@
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",
-  "out": "docs/api-ref",
+  "out": "api-docs",
   "name": "公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）",
   "readme": "none",
   "plugin": ["typedoc-rhineai-theme"],

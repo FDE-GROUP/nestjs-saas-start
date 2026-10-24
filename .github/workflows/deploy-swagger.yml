@@ -136,10 +136,10 @@ jobs:
 
           # ---- 2) TypeDoc 公共 API 参考（tsdoc-typedoc-docgen 切片 F·ⓕ=乙）----
           # 读根 typedoc.json（纳 @saas/contracts + @core/saas-kit + apps/api 对外接口·
-          # excludeNotDocumented 只文档化已注释件）→ 产 docs/api-ref/ → 落子目录 site/tsdoc/。
+          # excludeNotDocumented 只文档化已注释件）→ 产 api-docs/ → 落子目录 site/tsdoc/。
           pnpm run docs:api
           mkdir -p site/tsdoc
-          cp -r docs/api-ref/. site/tsdoc/
+          cp -r api-docs/. site/tsdoc/
 
           # ---- 3) 根落地页（链两子站·消解 peaceiris 整分支替换的双 deploy 互踩）----
           cat > site/index.html << 'LANDING_EOF'
