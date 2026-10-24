@@ -16,7 +16,9 @@ export const CUSTOMER_PROVISIONER = Symbol('CUSTOMER_PROVISIONER');
  * @public
  */
 export interface ProvisionedCustomer {
+  /** 新建客户在支付提供方侧 id。 */
   readonly id: string;
+  /** 支付/账号提供方标识。 */
   readonly providerId: string;
 }
 

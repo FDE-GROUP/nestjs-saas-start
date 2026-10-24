@@ -31,6 +31,7 @@ export type AuditEntityKind = 'tenant' | 'user';
  * @public
  */
 export interface AuditLogEntry {
+  /** 审计实体类别。 */
   readonly entityType: AuditEntityKind;
   /** 被治理实体 id（organizationId / userId·多态裸值·非 FK·本体硬删后仍留痕）。 */
   readonly entityId: string;

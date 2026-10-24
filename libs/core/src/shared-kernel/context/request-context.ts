@@ -13,6 +13,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
  * @public
  */
 export interface RequestContext {
+  /** 请求关联 id。 */
   readonly requestId: string;
 }
 

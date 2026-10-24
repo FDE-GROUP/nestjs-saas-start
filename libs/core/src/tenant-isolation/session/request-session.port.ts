@@ -24,8 +24,11 @@ export const SESSION_READER = Symbol('SESSION_READER');
  * @public
  */
 export interface SessionRequestLike {
+  /** 请求头。 */
   headers?: Record<string, string | string[] | undefined>;
+  /** 访问 URL。 */
   url?: string;
+  /** 原始请求 URL。 */
   originalUrl?: string;
 }
 
@@ -35,7 +38,9 @@ export interface SessionRequestLike {
  * @public
  */
 export interface SessionView {
+  /** 用户 id。 */
   readonly userId?: string;
+  /** 当前活动租户 id。 */
   readonly activeOrganizationId?: string;
   /**
    * 当前用户在 `activeOrganizationId` 租户内的成员角色（module-rbac-casl 丙裁：会话解析点

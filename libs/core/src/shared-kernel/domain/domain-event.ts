@@ -13,14 +13,23 @@ import { uuidv7 } from '../util/uuid-v7';
  * @public
  */
 export interface DomainEventProps<TPayload extends object = object> {
+  /** 事件所属聚合根 id。 */
   readonly aggregateId: string;
+  /** 事件所属聚合类型名。 */
   readonly aggregateType: string;
+  /** 事件类型名（稳定契约）。 */
   readonly eventType: string;
+  /** 事件负载。 */
   readonly payload: TPayload;
+  /** 事件唯一 id。 */
   readonly eventId?: string;
+  /** 事件 schema 版本。 */
   readonly eventVersion?: number;
+  /** 事件发生时间。 */
   readonly occurredAt?: Date;
+  /** 关联 id：贯穿一次请求链。 */
   readonly correlationId?: string;
+  /** 因果链：直接触发本事件的事件 id。 */
   readonly causationId?: string;
 }
 
@@ -34,14 +43,23 @@ export interface DomainEventProps<TPayload extends object = object> {
  * @public
  */
 export abstract class DomainEvent<TPayload extends object = object> {
+  /** 事件唯一 id。 */
   readonly eventId: string;
+  /** 事件所属聚合根 id。 */
   readonly aggregateId: string;
+  /** 事件所属聚合类型名。 */
   readonly aggregateType: string;
+  /** 事件类型名（稳定契约）。 */
   readonly eventType: string;
+  /** 事件 schema 版本。 */
   readonly eventVersion: number;
+  /** 事件发生时间。 */
   readonly occurredAt: Date;
+  /** 关联 id：贯穿一次请求链。 */
   readonly correlationId?: string;
+  /** 因果链：直接触发本事件的事件 id。 */
   readonly causationId?: string;
+  /** 事件负载。 */
   readonly payload: TPayload;
 
   protected constructor(props: DomainEventProps<TPayload>) {

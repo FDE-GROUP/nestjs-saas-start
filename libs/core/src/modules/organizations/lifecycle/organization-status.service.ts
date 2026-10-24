@@ -32,7 +32,9 @@ export type OrganizationTransitionResult =
  * @public
  */
 export interface OrganizationTransitionOptions {
+  /** 触发迁移的操作者 id（审计用）。 */
   readonly actorId?: string;
+  /** 原因/备注文本。 */
   readonly reason?: string;
 }
 

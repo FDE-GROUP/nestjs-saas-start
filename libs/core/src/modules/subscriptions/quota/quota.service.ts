@@ -9,8 +9,11 @@ import { Quota } from './quota.vo';
  * @public
  */
 export interface SeatQuotaVerdict {
+  /** 判定是否通过。 */
   readonly ok: boolean;
+  /** 已用量。 */
   readonly used: number;
+  /** 每页数量上限。 */
   readonly limit: number;
 }
 
@@ -20,11 +23,17 @@ export interface SeatQuotaVerdict {
  * @public
  */
 export interface SeatQuotaSnapshot {
+  /** 是否存在有效订阅。 */
   readonly hasSubscription: boolean;
+  /** 套餐档位标识。 */
   readonly plan: string;
+  /** 席位数上限。 */
   readonly seatsLimit: number;
+  /** 已用量。 */
   readonly used: number;
+  /** 剩余额度。 */
   readonly remaining: number;
+  /** 支付提供方侧客户 id。 */
   readonly providerCustomerId: string | null;
 }
 

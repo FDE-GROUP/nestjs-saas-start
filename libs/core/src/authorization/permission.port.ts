@@ -44,7 +44,9 @@ export interface PermissionCheckInput {
   readonly organizationId?: string;
   /** ALS 预注入的活动租户成员角色 key（系统三 key 或自定义 key）；undefined = 无/封禁/非法值。 */
   readonly role?: OrganizationRole;
+  /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
+  /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
   /**
    * 实例级判定的资源快照（S4·check 级）。省略 = 类型级裁决（守卫路径·conditions 行保守 deny）；
@@ -66,7 +68,9 @@ export interface PermissionListPredicateRequest {
   readonly organizationId?: string;
   /** ALS 预注入的活动租户成员角色 key；undefined = 无/封禁/非法值（必归 none）。 */
   readonly role?: OrganizationRole;
+  /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
+  /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
   /** 绑定 grant conditions 中 `{{userId}}` 模板的当前操作者 id（缺省则模板不可解析 → 该谓词落空）。 */
   readonly userId?: string;

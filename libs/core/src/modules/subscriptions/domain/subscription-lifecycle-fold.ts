@@ -33,7 +33,9 @@ import {
  * @public
  */
 export interface SubscriptionLifecycleState {
+  /** 订阅 id。 */
   readonly subscriptionId: string;
+  /** 状态。 */
   readonly status: SubscriptionStatus;
   /** 已应用事件数（流内位置）。 */
   readonly version: number;

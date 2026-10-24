@@ -39,10 +39,13 @@ export const SUBSCRIPTION_STATUS = {
  * @public
  */
 export interface OrganizationPlan {
+  /** 套餐档位标识。 */
   readonly plan: string;
   /** 座位限额（P2 · Quota VO·非负安全整数不变量）；storage/api 为占位维度仍裸 number。 */
   readonly seatsLimit: Quota;
+  /** 存储配额（null=不限）。 */
   readonly storageQuota?: number;
+  /** API 调用配额（null=不限）。 */
   readonly apiQuota?: number;
 }
 

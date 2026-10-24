@@ -29,8 +29,11 @@ export interface OrganizationRejectedPayload {
  * @public
  */
 export class OrganizationRejectedEvent extends DomainEvent<OrganizationRejectedPayload> {
+  /** 该事件类型常量（稳定契约名）。 */
   static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationRejected;
+  /** 该事件 schema 版本号。 */
   static readonly EVENT_VERSION = 1;
+  /** 该事件聚合类型常量（供订阅/投影路由）。 */
   static readonly AGGREGATE_TYPE = 'tenant';
 
   constructor(

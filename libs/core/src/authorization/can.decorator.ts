@@ -14,7 +14,9 @@ export const CAN_KEY = 'tenancy:can';
  * @public
  */
 export interface CanRequirement {
+  /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
+  /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
 }
 

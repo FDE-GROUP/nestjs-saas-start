@@ -26,7 +26,9 @@ export const WORKSPACE_REPOSITORY = Symbol('WORKSPACE_REPOSITORY');
  * @public
  */
 export interface WorkspaceDraft {
+  /** 名称。 */
   name: string;
+  /** URL 友好的短标识。 */
   slug: string;
   /**
    * 实例属主（module-workspace-owner-column·人裁③ additive 可选）：由 handler 侧从可信会话（ALS userId）
@@ -41,13 +43,19 @@ export interface WorkspaceDraft {
  * @public
  */
 export interface WorkspaceRecord {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 名称。 */
   name: string;
+  /** URL 友好的短标识。 */
   slug: string;
+  /** 所属租户 id。 */
   organizationId: string;
   /** 实例属主；NULL/undefined = 不属任何人（存量未回填·人裁②）。 */
   ownerId?: string | null;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 

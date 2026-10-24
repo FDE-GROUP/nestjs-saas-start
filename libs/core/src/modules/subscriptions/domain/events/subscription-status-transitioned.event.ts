@@ -10,9 +10,11 @@ import type { SubscriptionStatus } from '../subscription-lifecycle';
 export interface SubscriptionStatusTransitionedPayload {
   /** 迁移前态；空流起点为 null（与 tenants 同口径）。 */
   readonly from: SubscriptionStatus | null;
+  /** 迁移后的目标状态。 */
   readonly to: SubscriptionStatus;
   /** 治理动作主体（opaque id·PII 最小化）。 */
   readonly actorId?: string;
+  /** 原因/备注文本。 */
   readonly reason?: string;
 }
 
@@ -27,8 +29,11 @@ export interface SubscriptionStatusTransitionedPayload {
  * @public
  */
 export class SubscriptionStatusTransitionedEvent extends DomainEvent<SubscriptionStatusTransitionedPayload> {
+  /** 该事件类型常量（稳定契约名）。 */
   static readonly EVENT_TYPE = DOMAIN_EVENTS.subscriptionStatusTransitioned;
+  /** 该事件 schema 版本号。 */
   static readonly EVENT_VERSION = 1;
+  /** 该事件聚合类型常量（供订阅/投影路由）。 */
   static readonly AGGREGATE_TYPE = 'subscription';
 
   constructor(

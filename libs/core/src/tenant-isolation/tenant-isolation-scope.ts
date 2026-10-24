@@ -13,9 +13,13 @@ import type { OrganizationRole } from '../authorization/authorization-rules';
  * @public
  */
 export interface TenantIsolationScope {
+  /** 所属租户 id。 */
   organizationId?: string;
+  /** 所属工作区 id。 */
   workspaceId?: string;
+  /** 用户 id。 */
   userId?: string;
+  /** 角色标识。 */
   role?: OrganizationRole;
 }
 

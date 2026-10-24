@@ -21,14 +21,21 @@ export const SUBSCRIPTION_REPOSITORY = Symbol('SUBSCRIPTION_REPOSITORY');
  * @public
  */
 export interface SubscriptionDraft {
+  /** 套餐档位标识。 */
   plan: string;
+  /** 席位数上限。 */
   seatsLimit: number;
+  /** 存储配额（null=不限）。 */
   storageQuota?: number | null;
+  /** API 调用配额（null=不限）。 */
   apiQuota?: number | null;
+  /** 计费周期结束时间。 */
   periodEnd?: Date | null;
   /** FR-8 多通道映射（provider 侧引用）。 */
   provider?: string | null;
+  /** 支付提供方侧客户 id。 */
   providerCustomerId?: string | null;
+  /** 支付提供方侧订阅 id。 */
   providerSubscriptionId?: string | null;
 }
 
@@ -38,19 +45,33 @@ export interface SubscriptionDraft {
  * @public
  */
 export interface SubscriptionRecord {
+  /** 实体唯一标识 id。 */
   id: string;
+  /** 所属租户 id。 */
   organizationId: string;
+  /** 套餐档位标识。 */
   plan: string;
+  /** 订阅状态。 */
   status: SubscriptionStatus;
+  /** 席位数上限。 */
   seatsLimit: number;
+  /** 存储配额（null=不限）。 */
   storageQuota: number | null;
+  /** API 调用配额（null=不限）。 */
   apiQuota: number | null;
+  /** 计费周期开始时间。 */
   periodStart: Date;
+  /** 计费周期结束时间。 */
   periodEnd: Date | null;
+  /** 提供方标识。 */
   provider: string | null;
+  /** 支付提供方侧客户 id。 */
   providerCustomerId: string | null;
+  /** 支付提供方侧订阅 id。 */
   providerSubscriptionId: string | null;
+  /** 创建时间。 */
   createdAt: Date;
+  /** 更新时间。 */
   updatedAt: Date;
 }
 

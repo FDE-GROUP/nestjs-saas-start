@@ -13,7 +13,9 @@
  * @public
  */
 export interface PageRequest {
+  /** 每页数量上限。 */
   readonly limit: number;
+  /** 分页偏移量。 */
   readonly offset: number;
 }
 
@@ -23,9 +25,13 @@ export interface PageRequest {
  * @public
  */
 export interface Page<T> {
+  /** 当前页数据条目。 */
   readonly items: T[];
+  /** 总条数。 */
   readonly total: number;
+  /** 每页数量上限。 */
   readonly limit: number;
+  /** 分页偏移量。 */
   readonly offset: number;
 }
 
@@ -50,7 +56,9 @@ export function createPage<T>(items: readonly T[], total: number, request: PageR
  * @public
  */
 export interface CursorPageRequest {
+  /** 每页数量上限。 */
   readonly limit: number;
+  /** 游标分页的定位游标。 */
   readonly cursor?: string;
 }
 
@@ -60,8 +68,11 @@ export interface CursorPageRequest {
  * @public
  */
 export interface CursorPage<T> {
+  /** 当前页数据条目。 */
   readonly items: readonly T[];
+  /** 是否还有下一页。 */
   readonly hasMore: boolean;
+  /** 下一页游标。 */
   readonly nextCursor?: string;
 }
 
@@ -95,6 +106,7 @@ export function createCursorPage<T>(
  * @public
  */
 export interface CursorKey {
+  /** 实体唯一标识 id。 */
   readonly id: string;
 }
 

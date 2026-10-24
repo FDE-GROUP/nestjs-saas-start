@@ -10,9 +10,11 @@ import type { UserStatus } from '../user-status.service';
 export interface UserStatusTransitionedPayload {
   /** 迁移前状态；无 user_status 记录行（常见态）为 null（与 previous===undefined 同口径）。 */
   readonly from: UserStatus | null;
+  /** 迁移后的目标状态。 */
   readonly to: UserStatus;
   /** 治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱）。 */
   readonly actorId?: string;
+  /** 原因/备注文本。 */
   readonly reason?: string;
 }
 
@@ -29,8 +31,11 @@ export interface UserStatusTransitionedPayload {
  * @public
  */
 export class UserStatusTransitionedEvent extends DomainEvent<UserStatusTransitionedPayload> {
+  /** 该事件类型常量（稳定契约名）。 */
   static readonly EVENT_TYPE = DOMAIN_EVENTS.userStatusTransitioned;
+  /** 该事件 schema 版本号。 */
   static readonly EVENT_VERSION = 1;
+  /** 该事件聚合类型常量（供订阅/投影路由）。 */
   static readonly AGGREGATE_TYPE = 'user';
 
   constructor(

@@ -33,9 +33,13 @@ export type PlatformUserAction = 'suspend' | 'resume' | 'delete';
  * @public
  */
 export interface GovernanceAuditDetail {
+  /** 迁移前的原状态。 */
   readonly from?: OrganizationStatus;
+  /** 迁移后的目标状态。 */
   readonly to?: OrganizationStatus;
+  /** 错误信息。 */
   readonly error?: string;
+  /** 原因/备注文本。 */
   readonly reason?: string;
 }
 

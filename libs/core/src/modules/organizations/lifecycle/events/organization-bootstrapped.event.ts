@@ -32,8 +32,11 @@ export interface OrganizationBootstrappedPayload {
  * @public
  */
 export class OrganizationBootstrappedEvent extends DomainEvent<OrganizationBootstrappedPayload> {
+  /** 该事件类型常量（稳定契约名）。 */
   static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationBootstrapped;
+  /** 该事件 schema 版本号。 */
   static readonly EVENT_VERSION = 1;
+  /** 该事件聚合类型常量（供订阅/投影路由）。 */
   static readonly AGGREGATE_TYPE = 'tenant';
 
   constructor(

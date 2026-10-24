@@ -16,8 +16,11 @@ export const QUOTA_STORE = Symbol('QUOTA_STORE');
  * @public
  */
 export interface ActiveSubscriptionView {
+  /** 套餐档位标识。 */
   readonly plan: string;
+  /** 席位数上限。 */
   readonly seatsLimit: number;
+  /** 支付提供方侧客户 id。 */
   readonly providerCustomerId: string | null;
 }
 

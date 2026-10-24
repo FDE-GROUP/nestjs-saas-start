@@ -10,9 +10,11 @@ import type { OrganizationStatus } from '../organization-lifecycle';
 export interface OrganizationStatusTransitionedPayload {
   /** 迁移前状态；从未记录状态的行为 null（与 transition 返回的 previous===undefined 同口径）。 */
   readonly from: OrganizationStatus | null;
+  /** 迁移后的目标状态。 */
   readonly to: OrganizationStatus;
   /** 治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱·§6-③）。 */
   readonly actorId?: string;
+  /** 原因/备注文本。 */
   readonly reason?: string;
 }
 
@@ -28,8 +30,11 @@ export interface OrganizationStatusTransitionedPayload {
  * @public
  */
 export class OrganizationStatusTransitionedEvent extends DomainEvent<OrganizationStatusTransitionedPayload> {
+  /** 该事件类型常量（稳定契约名）。 */
   static readonly EVENT_TYPE = DOMAIN_EVENTS.organizationStatusTransitioned;
+  /** 该事件 schema 版本号。 */
   static readonly EVENT_VERSION = 1;
+  /** 该事件聚合类型常量（供订阅/投影路由）。 */
   static readonly AGGREGATE_TYPE = 'tenant';
 
   constructor(
