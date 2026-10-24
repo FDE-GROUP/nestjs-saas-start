@@ -17,12 +17,15 @@ import type {
 /**
  * 支付面响应契约（F1 甲①）——schema 源，纯文档面零运行时。
  * 真相源 = `PaymentService` 各方法返回类型（Payment*Ref）；漂移防线：文末编译期双向赋值锁。
- * 通道词汇单源 = @core payment.interface PaymentProviderId；`raw` 为通道原生载荷透传
+ * 通道词汇单源 = `@core` payment.interface PaymentProviderId；`raw` 为通道原生载荷透传
  * （自由对象·不假精确，对齐 apiOkPassthrough 的诚实纪律）。
  */
 const PROVIDER_VALUES = ['stripe', 'alipay', 'wechat_pay'] as const;
 
-/** `GET /payment/test`：内联字面返回 `{status:'ok', ...describe()}`（无独立真相源类型·不作双向锁）。 */
+/**
+ * 支付状态响应契约（`GET /payment/test`）：内联字面返回 `{status:'ok', ...describe()}`（无独立真相源类型·不作双向锁）。
+ * @public
+ */
 export class PaymentStatusResponse {
   @ApiProperty({ enum: ['ok'], description: '集成状态恒 "ok"。' })
   status!: 'ok';
@@ -38,6 +41,10 @@ export class PaymentStatusResponse {
   available!: PaymentProviderId[];
 }
 
+/**
+ * 支付客户引用响应契约（跨通道归一化 + `raw` 透传）。
+ * @public
+ */
 export class PaymentCustomerRefResponse {
   @ApiProperty({ description: '通道侧 customer id。' })
   id!: string;
@@ -61,6 +68,10 @@ const _pcrb: PaymentCustomerRef = {} as PaymentCustomerRefResponse;
 void _pcrf;
 void _pcrb;
 
+/**
+ * 支付结账引用响应契约（含可选 clientSecret 供前端确认支付）。
+ * @public
+ */
 export class PaymentCheckoutRefResponse {
   @ApiProperty({ description: 'checkout / payment intent id。' })
   id!: string;
@@ -87,6 +98,10 @@ const _pckb: PaymentCheckoutRef = {} as PaymentCheckoutRefResponse;
 void _pckf;
 void _pckb;
 
+/**
+ * 支付退款引用响应契约（跨通道归一化 + `raw` 透传）。
+ * @public
+ */
 export class PaymentRefundRefResponse {
   @ApiProperty({ description: 'refund id。' })
   id!: string;
@@ -113,7 +128,10 @@ const _prb: PaymentRefundRef = {} as PaymentRefundRefResponse;
 void _prf;
 void _prb;
 
-/** `POST /payment/webhooks`：内联字面返回 `{received:true}`（无独立真相源类型·不作双向锁）。 */
+/**
+ * 支付 Webhook 回调 ack 响应契约（`POST /payment/webhooks`）：内联字面返回 `{received:true}`（无独立真相源类型·不作双向锁）。
+ * @public
+ */
 export class WebhookAckResponse {
   @ApiProperty({ description: '回调是否已接收处理。' })
   received!: boolean;
