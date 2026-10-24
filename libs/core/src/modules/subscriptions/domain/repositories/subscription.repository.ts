@@ -1,16 +1,25 @@
 import type { SubscriptionStatus } from '../../quota/organization-plans';
 
 /**
+ * 租户订阅仓储端口的 DI 注入 token（领域自有 · global-tenancy S7 · FR-7/FR-8/D5）。
+ *
+ * @remarks
  * Tenant subscription repository port (domain-owned · global-tenancy S7 · FR-7/FR-8/D5).
  *
  * 订阅是租户自有聚合，1:N 历史（每次改档新增一行·旧行留作升降级审计）。与 workspace port 同构：
  * **不暴露 organizationId 参数**——所属租户由 adapter 从可信 AsyncLocalStorage 上下文注入（`requireActiveOrganizationId`
  * fail-closed·FR-5 单点），任何调用方都无法指向外部租户。配额裁决/限额读取属 `QuotaService`
  * （tenancy 层单点），本 port 只管订阅行的写与历史读，避免限额逻辑散点。
+ *
+ * @public
  */
 export const SUBSCRIPTION_REPOSITORY = Symbol('SUBSCRIPTION_REPOSITORY');
 
-/** 新建订阅行的写意图（原语·所属租户由 adapter 盖章）。 */
+/**
+ * 新建订阅行的写意图（原语·所属租户由 adapter 盖章）。
+ *
+ * @public
+ */
 export interface SubscriptionDraft {
   plan: string;
   seatsLimit: number;
@@ -23,7 +32,11 @@ export interface SubscriptionDraft {
   providerSubscriptionId?: string | null;
 }
 
-/** 已持久化的订阅行（含所属租户以保透明）。 */
+/**
+ * 已持久化的订阅行（含所属租户以保透明）。
+ *
+ * @public
+ */
 export interface SubscriptionRecord {
   id: string;
   organizationId: string;
@@ -41,9 +54,23 @@ export interface SubscriptionRecord {
   updatedAt: Date;
 }
 
+/**
+ * 订阅仓储端口：当前活跃租户下的订阅行写入与历史读取（租户由 adapter 盖章）。
+ *
+ * @public
+ */
 export interface SubscriptionRepository {
-  /** 在当前活跃租户下新建一条 active 订阅行（历史追加·不改旧行）。 */
+  /**
+   * 在当前活跃租户下新建一条 active 订阅行（历史追加·不改旧行）。
+   *
+   * @param draft - 写意图（plan/limits/provider refs）
+   * @returns 新建的持久化订阅行
+   */
   create(draft: SubscriptionDraft): Promise<SubscriptionRecord>;
-  /** 当前活跃租户的订阅历史（periodStart 倒序）。 */
+  /**
+   * 当前活跃租户的订阅历史（periodStart 倒序）。
+   *
+   * @returns 订阅行历史数组
+   */
   history(): Promise<SubscriptionRecord[]>;
 }

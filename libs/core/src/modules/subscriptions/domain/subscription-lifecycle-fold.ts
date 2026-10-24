@@ -10,6 +10,9 @@ import {
 } from './subscription-lifecycle';
 
 /**
+ * 订阅治理折叠后的当前态快照（回放结果）。
+ *
+ * @remarks
  * 订阅治理状态机·轻量溯源 fold（ES R4 第二上下文推广 · module-es-r4-second-context-subscriptions
  * · 复用 R1 seam·裁①乙非聚合管道）。
  *
@@ -26,6 +29,8 @@ import {
  *  - 未知 eventType / 非 subscription 聚合 / payload 关键字段缺失：一律 fail-loud，不猜。
  *
  * `version` 为回放段内已应用事件数（快照重启后从 1 起）；物理并发校验由 `append(expectedVersion)` 承担（R4c）。
+ *
+ * @public
  */
 export interface SubscriptionLifecycleState {
   readonly subscriptionId: string;
@@ -41,7 +46,14 @@ function requireStatus(value: unknown, label: string, eventId: string): Subscrip
   return value as SubscriptionStatus;
 }
 
-/** 单事件推进；非法输入 fail-loud（语义见文件头）。 */
+/**
+ * 单事件推进；非法输入 fail-loud（语义见 `SubscriptionLifecycleState`）。
+ *
+ * @param state - 当前折叠态（起点为 undefined）
+ * @param event - 待应用的领域事件
+ * @returns 推进后的新折叠态
+ * @public
+ */
 export function applySubscriptionEvent(
   state: SubscriptionLifecycleState | undefined,
   event: DomainEvent,
@@ -96,8 +108,13 @@ export function applySubscriptionEvent(
 /**
  * 全流回放（load 的升序结果）；空流 → undefined（无订阅行=无状态记录）。
  *
+ * @remarks
  * 「最后快照重启」（沿 tenants R1b·裁②甲）：流内存在 bootstrapped 时以最后一个为起点折叠——存量
  * backfill 前缀不重排不校验；快照/起点之后仍严格 fold（漂移/非法迁移 fail-loud）。无快照流全严格回放。
+ *
+ * @param events - 升序事件序列
+ * @returns 折叠后的当前态；空流返回 `undefined`
+ * @public
  */
 export function replaySubscriptionLifecycle(
   events: readonly DomainEvent[],

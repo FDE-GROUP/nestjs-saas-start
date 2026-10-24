@@ -1,6 +1,9 @@
 import type { SubscriptionStatus } from '../quota/organization-plans';
 
 /**
+ * 订阅治理生命周期状态词汇（ES R4 第二上下文推广）。
+ *
+ * @remarks
  * 订阅治理生命周期状态机（ES R4 第二上下文推广 · module-es-r4-second-context-subscriptions）。
  * 纯函数·零框架依赖（沿 tenants `organization-lifecycle.ts` 先例·裁①乙不复活聚合管道）。
  *
@@ -9,6 +12,8 @@ import type { SubscriptionStatus } from '../quota/organization-plans';
  *
  * 态值单源对齐 quota 面既有 `SubscriptionStatus`（`../quota/organization-plans.ts:17`·此处不重定义
  * 联合类型，`satisfies` 锁值集不逸出）；contracts 侧 wire enum 一致性由对拍测锁漂移。
+ *
+ * @public
  */
 export const SUBSCRIPTION_STATUS = {
   ACTIVE: 'active',
@@ -17,7 +22,11 @@ export const SUBSCRIPTION_STATUS = {
   CANCELLED: 'cancelled',
 } as const satisfies Record<string, SubscriptionStatus>;
 
-/** 订阅治理态（等价 `SubscriptionStatus`·单源不重掷）。 */
+/**
+ * 订阅治理态（等价 `SubscriptionStatus`·单源不重掷）。
+ *
+ * @public
+ */
 export type { SubscriptionStatus };
 
 /**
@@ -44,7 +53,14 @@ const TRANSITIONS: Record<SubscriptionStatus, readonly SubscriptionStatus[]> = {
   [SUBSCRIPTION_STATUS.CANCELLED]: [],
 };
 
-/** 迁移是否合法（from 缺省视同 active·终态 expired/cancelled 不接受任何迁移）。 */
+/**
+ * 迁移是否合法（from 缺省视同 active·终态 expired/cancelled 不接受任何迁移）。
+ *
+ * @param from - 迁移前状态（undefined 视同 active）
+ * @param to - 目标状态
+ * @returns 合法迁移边返回 `true`；否则 `false`
+ * @public
+ */
 export function canTransition(
   from: SubscriptionStatus | undefined,
   to: SubscriptionStatus,

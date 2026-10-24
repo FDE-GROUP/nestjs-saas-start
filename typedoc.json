@@ -7,7 +7,8 @@
     "libs/core/src/tenant-isolation",
     "libs/core/src/platform",
     "libs/core/src/modules/organizations",
-    "libs/core/src/modules/workspaces"
+    "libs/core/src/modules/workspaces",
+    "libs/core/src/modules/subscriptions"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",

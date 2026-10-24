@@ -14,7 +14,9 @@ import { QUOTA_KEY, type QuotaRequirement } from './quota.decorator';
 import { QuotaService } from './quota.service';
 
 /**
- * 逐路由配额守卫（S7 · FR-7）。仅对声明了 `@Quota({ seats })` 的写路径生效：
+ * 逐路由配额守卫（S7 · FR-7）：仅对声明了 `@Quota({ seats })` 的写路径生效。
+ *
+ * @remarks
  * 从 ALS 取活跃租户（缺失 fail-closed → 403），对照生效订阅限额裁决。架构精度修宪 S2：
  * `QuotaService` 不再抛 HTTP（P1·裁决返 result-union），**402 翻译归本守卫**（适配器
  * 角色文件·合法抛点）。未标注 `@Quota` 直接放行（opt-in）。
@@ -22,6 +24,8 @@ import { QuotaService } from './quota.service';
  * 与 `AuthorizationGuard` 一致：经 `@UseGuards` 逐路由挂载，**不升级为全局
  * APP_GUARD**（blast radius=每路由·高危#4 挂账）。生产挂点（BA member-add 路由）
  * 为接线点留后续切片，本片以单测/守卫测坐实超限拒绝。
+ *
+ * @public
  */
 @Injectable()
 export class QuotaGuard implements CanActivate {
@@ -31,6 +35,12 @@ export class QuotaGuard implements CanActivate {
     @Inject(QuotaService) private readonly quota: QuotaService,
   ) {}
 
+  /**
+   * 裁决：未声明 `@Quota` 放行；无租户 403；超座位限额 402。
+   *
+   * @param context - Nest 执行上下文（读路由元数据 + ALS 租户）
+   * @returns 放行返回 `true`；否则抛 `ForbiddenException` / `HttpException`(402)
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requirement = this.reflector.getAllAndOverride<QuotaRequirement | undefined>(QUOTA_KEY, [
       context.getHandler(),

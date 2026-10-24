@@ -28,10 +28,15 @@ import type { OrganizationSubscriptionView } from '../../read-models/subscriptio
 import { CreateSubscriptionCommand } from '../create-subscription.command';
 
 /**
- * 开通/改档订阅（FR-7/FR-8）。流程：从 ALS 取活跃租户 → 解析档位限额 → **经 `CustomerProvisioner`
+ * 开通/改档订阅的写侧命令处理器（FR-7/FR-8）。
+ *
+ * @remarks
+ * 流程：从 ALS 取活跃租户 → 解析档位限额 → **经 `CustomerProvisioner`
  * 端口建立 tenant↔customer 映射**（§9.5.4①B/④·具体 `PaymentService` 适配留应用侧、无可用通道时适配抛 503）
  * → 追加 active 订阅行（tenant 由仓储盖章·FR-5）→ 返回 `QuotaService.snapshot`。
  * 命令/处理器不命名 organizationId（port/adapter 从 ALS 注入·禁散点）。
+ *
+ * @public
  */
 @CommandHandler(CreateSubscriptionCommand)
 export class CreateSubscriptionCommandHandler
@@ -51,6 +56,12 @@ export class CreateSubscriptionCommandHandler
     @Optional() @Inject(ES_TRUTH_SOURCE_SUBSCRIPTIONS) private readonly truthSource = false,
   ) {}
 
+  /**
+   * 执行开通/改档：经端口建 customer → 追加订阅行（旋钮开时同事务发流起点事件）→ 返快照。
+   *
+   * @param command - 待执行的创建/改档命令
+   * @returns 生效档位/用量/映射的读侧快照
+   */
   async execute(command: CreateSubscriptionCommand): Promise<OrganizationSubscriptionView> {
     const organizationId = this.tenant.requireActiveOrganizationId();
     const planDef = resolvePlanDef(command.plan);
