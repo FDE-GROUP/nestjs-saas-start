@@ -1,0 +1,9 @@
+{
+  "//": "TypeDoc 专用最小 program：只纳入待文档化的后端 libs（contracts + core），排除 apps/web（jsx/dom 专有配置）与测试，避免 root tsconfig 把前端拉进 program 触发大量无关类型错误。paths/装饰器等仍继承 root。",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./"
+  },
+  "include": ["libs/contracts/src/**/*", "libs/core/src/**/*"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "node_modules", "dist"]
+}

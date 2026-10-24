@@ -1,9 +1,9 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["libs/contracts/src/index.ts"],
-  "tsconfig": "libs/contracts/tsconfig.json",
+  "entryPoints": ["libs/contracts/src/index.ts", "libs/core/src/shared-kernel/index.ts"],
+  "tsconfig": "tsconfig.doc.json",
   "out": "docs/api-ref",
-  "name": "@saas/contracts 公共契约参考",
+  "name": "公共 API 参考（@saas/contracts + @core/saas-kit）",
   "readme": "none",
   "commentStyle": "jsdoc",
   "exclude": ["**/*.test.ts", "**/*.spec.ts"],
