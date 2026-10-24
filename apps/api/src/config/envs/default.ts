@@ -1,4 +1,5 @@
 import { parseCorsOrigins } from './cors-origins';
+import { parseSsoClients } from './sso-clients';
 
 export default {
   app: {
@@ -84,6 +85,12 @@ export default {
   // 平台级动作判据 = 会话用户 email 命中此配置（泛 ADMIN 不再持有平台权）。
   platform: {
     operatorEmail: process.env.PLATFORM_OPERATOR_EMAIL || 'admin@example.com',
+  },
+  // SSO 身份提供方（OP）client 注册表（oauth-sso-odoo-integration 切片 B）：走 env/config 不新增 BA 表。
+  // 未配 SSO_OAUTH_CLIENTS → 空数组（fail-closed·authorize 一律拒）；配置非法 → boot 期 fail-loud。
+  // 仅 default.ts 定义（同 platform/esTruthSource 惯例·dev/prod envs 不覆写即继承缺省）。
+  oauthSso: {
+    clients: parseSsoClients(process.env.SSO_OAUTH_CLIENTS),
   },
   oauth: {
     providers: [

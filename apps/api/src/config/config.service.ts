@@ -52,6 +52,11 @@ export class ConfigService {
     return this.get<Config['platform']>('platform');
   }
 
+  /** SSO 身份提供方（OP）client 注册表（oauth-sso-odoo-integration 切片 B）。 */
+  getOauthSsoConfig() {
+    return this.get<Config['oauthSso']>('oauthSso');
+  }
+
   getEventPublishConfig() {
     return this.get<Config['eventPublish']>('eventPublish');
   }

@@ -67,6 +67,9 @@ const createSchemaForEnv = (_isProd: boolean) => {
       .string()
       .regex(/^[1-9]\d*$/)
       .optional(),
+    // SSO 身份提供方（OP）client 注册表（oauth-sso-odoo-integration 切片 B）：JSON 数组 env。
+    // 缺省 optional⇒非必填不上 compose；未配即空注册表（fail-closed）；结构校验在 parseSsoClients（envs 层）。
+    SSO_OAUTH_CLIENTS: z.string().optional(),
   };
   const betterAuthSchema = {};
   // Datadog 已移除（global-cn-adaptation G1 / D6）；生产 / 非生产环境 schema 一致。

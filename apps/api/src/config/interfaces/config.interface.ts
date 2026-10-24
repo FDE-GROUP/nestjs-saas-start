@@ -81,6 +81,14 @@ export interface PlatformConfig {
   operatorEmail: string;
 }
 
+/**
+ * SSO 身份提供方（OP）面（oauth-sso-odoo-integration 切片 B）：本仓对 Odoo `auth_oauth` 暴露的 client 白名单。
+ * 走 env/config 不新增 BA 表；`clients` 缺省空数组（fail-closed·无注册即 authorize 全拒）。
+ */
+export interface OauthSsoConfig {
+  clients: import('../envs/sso-clients').SsoOauthClient[];
+}
+
 export interface Config {
   app: AppConfig;
   auth: AuthConfig;
@@ -91,6 +99,7 @@ export interface Config {
   stripe: StripeConfig;
   payment: PaymentConfig;
   platform: PlatformConfig;
+  oauthSso: OauthSsoConfig;
   oauth: OAuthConfig;
   eventPublish: EventPublishConfig;
   esTruthSource: EsTruthSourceConfig;
