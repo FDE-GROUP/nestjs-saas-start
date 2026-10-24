@@ -1,18 +1,13 @@
 import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
-/**
- * Platform governance repository port (domain-owned · global-tenancy S5 · FR-6).
- *
- * 跨租户运营视图的唯一数据卡点：仅经 `PlatformOperatorGuard` 裁决后的平台级查询/治理
- * 使用——**刻意不做租户过滤**（平台级天然跨租户，FR-11①），因此该 port 绝不允许被
- * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
- *
- * 状态迁移（suspend/resume/delete）不在此 port——统一走 `OrganizationStatusService.transition`
- * （`organization.status` 真列单点·consolidation 切片 B 归位·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
- */
+/** 平台租户治理仓储端口的 DI 注入 token。 */
 export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANCE_REPOSITORY');
 
+/**
+ * 跨租户运营列表行（组织基本盘 + 生命周期态）。
+ * @public
+ */
 export interface PlatformOrganizationRow {
   organizationId: string;
   name: string;
@@ -25,10 +20,14 @@ export interface PlatformOrganizationRow {
 /**
  * 分页形状收敛到 shared-kernel 泛型契约（module-common-pagination-contract · 乙裁：
  * 旧名留作别名，消费方 import 面不动，随重构自然淘汰）。
+ * @public
  */
 export type PlatformOrganizationPage = Page<PlatformOrganizationRow>;
 
-/** 按租户诊断（FR-6）：租户行 + 关联数据量，供经营者一眼判断租户实况。 */
+/**
+ * 按租户诊断（FR-6）：租户行 + 关联数据量，供经营者一眼判断租户实况。
+ * @public
+ */
 export interface OrganizationDiagnostics {
   organization: PlatformOrganizationRow;
   memberCount: number;
@@ -38,9 +37,12 @@ export interface OrganizationDiagnostics {
 }
 
 /**
- * 租户级数据导出（NFR-6 · GDPR 按租户可携）：成员名册行的最小身份面——
+ * 租户级数据导出（NFR-6 · GDPR 按租户可携）：成员名册行的最小身份面。
+ *
+ * @remarks
  * 仅 id/name/email/handle 四项，**绝不携带 password/account/session 凭据**
  *（对齐 users 侧 user-data-export.read-model 的 SECURITY 纪律）。
+ * @public
  */
 export interface ExportedOrganizationUser {
   id: string;
@@ -49,6 +51,10 @@ export interface ExportedOrganizationUser {
   handle: string;
 }
 
+/**
+ * 导出面成员行（角色 + 加入时间 + 最小身份面）。
+ * @public
+ */
 export interface ExportedOrganizationMember {
   id: string;
   role: string;
@@ -58,9 +64,12 @@ export interface ExportedOrganizationMember {
 
 /**
  * 按租户导出 payload（六段聚合·SSOT = organizationId 归属可导表）。
+ *
+ * @remarks
  * `organization` 为本体全列 + 治理态 `status`（consolidation 切片 B：态在 `organization.status`
  * 真列·原 `tenant` 旁表已 DROP·`metadata` 全列透传零我方键）；deleted 终态租户亦可导出
  *（S5 软删「保留行供按租户导出/硬删」的取证用途·查询面刻意不按 status 过滤）。
+ * @public
  */
 export interface OrganizationDataExport {
   organization: {
@@ -117,20 +126,51 @@ export interface OrganizationDataExport {
   }[];
 }
 
+/**
+ * 平台租户治理仓储端口（domain-owned · global-tenancy S5 · FR-6）。
+ *
+ * @remarks
+ * 跨租户运营视图的唯一数据卡点：仅经 `PlatformOperatorGuard` 裁决后的平台级查询/治理
+ * 使用——**刻意不做租户过滤**（平台级天然跨租户，FR-11①），因此该 port 绝不允许被
+ * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
+ *
+ * 状态迁移（suspend/resume/delete）不在此 port——统一走 `OrganizationStatusService.transition`
+ * （`organization.status` 真列单点·consolidation 切片 B 归位·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
+ * @public
+ */
 export interface OrganizationGovernanceRepository {
-  /** 跨租户列表（name/slug 模糊过滤·createdAt 倒序·limit/offset 分页）。 */
+  /**
+   * 跨租户列表（name/slug 模糊过滤·createdAt 倒序·limit/offset 分页）。
+   * @param opts - 分页请求 + 可选搜索串。
+   * @returns 租户行分页页。
+   */
   list(opts: PageRequest & { search?: string }): Promise<PlatformOrganizationPage>;
-  /** 租户详情；不存在 → null（调用方转 404）。 */
+  /**
+   * 租户详情；不存在 → null（调用方转 404）。
+   * @param organizationId - 目标租户 id。
+   * @returns 租户行；查无时为 `null`。
+   */
   findById(organizationId: string): Promise<PlatformOrganizationRow | null>;
-  /** 按租户诊断（成员/邀请/workspace/帖子计数）；不存在 → null。 */
+  /**
+   * 按租户诊断（成员/邀请/workspace/帖子计数）；不存在 → null。
+   * @param organizationId - 目标租户 id。
+   * @returns 诊断快照；查无时为 `null`。
+   */
   diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null>;
-  /** 按租户导出全部名下数据（NFR-6）；不存在 → null。deleted 终态亦可导。 */
+  /**
+   * 按租户导出全部名下数据（NFR-6）；不存在 → null。deleted 终态亦可导。
+   * @param organizationId - 目标租户 id。
+   * @returns 六段聚合导出体；查无时为 `null`。
+   */
   exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null>;
   /**
-   * 运营硬删（NFR-6 删除半）：仅删 organization 主行，五张子表由 DB FK cascade
-   * 自动消灭（单一卡点·应用层不逐表删）；实删 → true，行不存在 → false。
-   * **前置闸（仅 deleted 终态可硬删）在 application 层 handler 裁决**，访问控管在
-   * controller guard——本 port 供纯粹消灭动作，不叠业务门槛（与 diagnostics 同位阶）。
+   * 运营硬删（NFR-6 删除半）：仅删 organization 主行，五张子表由 DB FK cascade 自动消灭。
+   *
+   * @remarks
+   * 单一卡点·应用层不逐表删；**前置闸（仅 deleted 终态可硬删）在 application 层 handler 裁决**，
+   * 访问控管在 controller guard——本 port 供纯粹消灭动作，不叠业务门槛（与 diagnostics 同位阶）。
+   * @param organizationId - 目标租户 id。
+   * @returns 实删时为 `true`，行不存在为 `false`。
    */
   destroy(organizationId: string): Promise<boolean>;
 }
