@@ -24,13 +24,14 @@ import { ExportUserDataQuery } from '../application/queries/export-user-data.que
 import type { UserDataExportReadModel } from '../application/read-models/user-data-export.read-model';
 
 /**
- * Users controller.
+ * 用户自助面端点（仅本人导出 / 本人删除，PIPL 正当通道，各挂 SessionGuard）。
  *
+ * @remarks
  * 暴露面收紧（module-users-surface-reduction·人裁甲）：原 `POST /users`・
  * `GET /users`・`GET /users/:id` 已删除——`user` 表无租户列，三路由为跨租户 PII
  * 冗余危险面且全仓零消费方；管理员查全用户走治理面 `/tenants/admin/users`
- * （PlatformOperatorGuard），建号正道收口 better-auth sign-up。仅存用户自助面
- * （本人导出 / 本人删除，PIPL 正当通道），各挂 SessionGuard。
+ * （PlatformOperatorGuard），建号正道收口 better-auth sign-up。
+ * @public
  */
 @ApiExtraModels(ApiEnvelope, ApiErrorResponse)
 @ApiTags('users')
@@ -45,6 +46,11 @@ export class UsersController {
     @Inject(QueryBus) private readonly queryBus: QueryBus,
   ) {}
 
+  /**
+   * PIPL 右-access：导出当前用户全部个人数据（凭据除外）。
+   * @param user - 由 SessionGuard 挂载的已认证主体。
+   * @returns 四段聚合的个人数据导出体。
+   */
   @Get('me/data-export')
   @UseGuards(SessionGuard)
   @ApiOperation({ summary: 'PIPL right-to-access: export current user personal data (C1 · FR-7)' })
@@ -62,6 +68,10 @@ export class UsersController {
     );
   }
 
+  /**
+   * PIPL 右-erase：硬删当前用户（consent 匿名留存）。
+   * @param user - 由 SessionGuard 挂载的已认证主体。
+   */
   @Delete('me')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

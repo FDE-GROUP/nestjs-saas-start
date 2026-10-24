@@ -2,8 +2,12 @@
 import type { UserRole } from '../../domain/repositories/user.repository';
 
 /**
+ * 用户公开读模型（query handler 返回形状 · CQRS 读面）。
+ *
+ * @remarks
  * Read-model projection returned by query handlers (CQRS read side).
  * Mirrors the pre-refactor public user payload exactly.
+ * @public
  */
 export interface UserReadModel {
   id: string;
@@ -15,7 +19,10 @@ export interface UserReadModel {
   updatedAt: Date;
 }
 
-/** Boolean `columns` map for relational queries (excludes password/name). */
+/**
+ * 对外暴露列白名单（布尔 `columns` map·排除 password/凭据列·PIPL 面治理）。
+ * @public
+ */
 export const userPublicColumns = {
   id: true,
   email: true,

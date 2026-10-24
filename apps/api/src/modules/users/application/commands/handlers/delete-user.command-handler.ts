@@ -9,6 +9,14 @@ import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { USER_REPOSITORY, type UserRepository } from '../../../domain/repositories/user.repository';
 import { DeleteUserCommand } from '../delete-user.command';
 
+/**
+ * PIPL 右-erase 命令处理器：经 auth 域端口硬删用户行并补删其事件台账。
+ *
+ * @remarks
+ * 写面归位属主（切片 A：user 表归 auth）；event 表无 FK，该用户全部事件行由应用层显式补删，
+ * 失败 fail-loud（PIPL 不留残迹）。
+ * @public
+ */
 @CommandHandler(DeleteUserCommand)
 export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserCommand, void> {
   private readonly logger = new Logger(DeleteUserCommandHandler.name);
@@ -22,6 +30,11 @@ export class DeleteUserCommandHandler implements ICommandHandler<DeleteUserComma
     @Inject(EVENT_STORE) private readonly eventStore: EventStore,
   ) {}
 
+  /**
+   * 执行硬删：用户查无 → 404；命中则经属主端口删除并清理事件行。
+   * @param command - 携带待删用户 id 的命令。
+   * @returns 删除完成的 Promise（无返回量）。
+   */
   async execute(command: DeleteUserCommand): Promise<void> {
     const existing = await this.users.findById(command.userId);
     if (!existing) {
