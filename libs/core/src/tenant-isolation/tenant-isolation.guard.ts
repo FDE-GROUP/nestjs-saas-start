@@ -42,6 +42,8 @@ export class TenantIsolationGuard implements CanActivate {
    *
    * @param context - Nest 执行上下文（取 handler/class 元数据 + 租户会话）
    * @returns 放行返回 `true`；否则抛 `ForbiddenException`
+   *
+   * @throws {ForbiddenException} 无活动租户上下文时。
    */
   canActivate(context: ExecutionContext): boolean {
     const targets = [context.getHandler(), context.getClass()];

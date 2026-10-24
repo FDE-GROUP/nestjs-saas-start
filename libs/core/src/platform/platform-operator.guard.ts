@@ -47,6 +47,9 @@ export class PlatformOperatorGuard implements CanActivate {
    *
    * @param context - Nest 执行上下文（取 HTTP 请求头以读会话）
    * @returns 放行返回 `true`；否则抛 `UnauthorizedException` / `ForbiddenException`
+   *
+   * @throws {UnauthorizedException} 会话缺失或非法时。
+   * @throws {ForbiddenException} 非平台经营者身份时。
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context

@@ -67,6 +67,8 @@ export class TenantIsolationService {
    * fail-closed：要求存在活动租户，否则 403。用于租户作用域端点。
    *
    * @returns 活动租户 id；无则抛 `ForbiddenException`
+   *
+   * @throws {ForbiddenException} 缺少活动租户上下文时（fail-closed）。
    */
   requireActiveOrganizationId(): string {
     const organizationId = tenantIsolationStorage.getStore()?.organizationId;

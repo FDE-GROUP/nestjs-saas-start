@@ -40,6 +40,8 @@ export class AuthorizationGuard implements CanActivate {
    *
    * @param context - Nest 执行上下文（取 handler/class 元数据 + 租户会话）
    * @returns 放行返回 `true`；否则抛 `ForbiddenException`
+   *
+   * @throws {ForbiddenException} 缺少所需权限（action + subject）时。
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Fail-closed: a tenant-scoped route requires an active tenant (FR-5 seed).

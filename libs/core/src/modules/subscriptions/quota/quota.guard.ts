@@ -40,6 +40,9 @@ export class QuotaGuard implements CanActivate {
    *
    * @param context - Nest 执行上下文（读路由元数据 + ALS 租户）
    * @returns 放行返回 `true`；否则抛 `ForbiddenException` / `HttpException`(402)
+   *
+   * @throws {ForbiddenException} 无活动租户上下文时。
+   * @throws {HttpException} 席位配额超限时。
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requirement = this.reflector.getAllAndOverride<QuotaRequirement | undefined>(QUOTA_KEY, [
