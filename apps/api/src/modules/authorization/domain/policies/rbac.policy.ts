@@ -15,12 +15,10 @@ const ROLE_KEY_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const FIELD_PATTERN = /^\w{1,64}$/;
 
 /**
- * 租户 RBAC 写侧策略纯函数（domain · module-rbac-dynamic-roles §2.2 conditions 白名单 / S1 判据）。
+ * 系统保留角色 key 判定：`key ∈ SYSTEM_ROLE_KEYS`（owner/admin/member）。
  *
- * @remarks
- * 零依赖零 IO：自定义角色 key 的词法闸 + grant `conditions` 的形状闸。
- * 写路径（仓储适配器）先过闸再落行——**闸外形状一律拒**（fail-closed），投影侧
- * （CASL matcher）因此只需信任库内形状；读侧无需二次防御。
+ * @param key - 待判定的角色 key。
+ * @returns 命中系统保留 key 时为 `true`。
  * @public
  */
 export function isReservedRoleKey(key: string): boolean {
