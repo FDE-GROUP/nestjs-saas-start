@@ -77,13 +77,13 @@
 - 结论：**已审计·签发**（ⓐ–ⓔ 定稿全采推荐·ⓕ=乙·2026-10-24）；用户 GO **进入实施**（切片 A 起·新增依赖 + 高危#5 回灌 tooling 矩阵逐片单列签）
 - 未决项：无（ⓕ 已裁=乙）；**实施期 高危#5 回灌宪法 + 新增依赖（切片 A）、高危#3 改 CI workflow（切片 F）须逐片单列签**
 - 审计人 / 日期：用户（FDE）· 2026-10-24
-- 实施留痕：**切片 A 已落地**（2026-10-24·用户 GO）——新增 `typedoc` devDep + `typedoc.json` + `docs:api` + 高危#5 回灌 tooling 矩阵；contracts 对拍通过·6 warning 归 B。**切片 B 已落地**（2026-10-24·用户 GO）——`libs/contracts` 全导出符号 TSDoc 化（纯注释·零行为变更）·**6 条 `@core` warning 全消解→0**·`docs:api`/`check`/contracts tsc 全绿；**样板交人验收定风格中**，通过才向 C/D 铺开。
+- 实施留痕：**切片 A 已落地**（2026-10-24·用户 GO）——新增 `typedoc` devDep + `typedoc.json` + `docs:api` + 高危#5 回灌 tooling 矩阵；contracts 对拍通过·6 warning 归 B。**切片 B 已落地**（2026-10-24·用户 GO）——`libs/contracts` 全导出符号 TSDoc 化（纯注释·零行为变更）·**6 条 `@core` warning 全消解→0**·`docs:api`/`check`/contracts tsc 全绿；**样板交人验收定风格中**，通过才向 C/D 铺开。**切片 C 已落地**（2026-10-24·用户 GO C + coverage 采「乙」expand）——`libs/core` 68 非测试源分 6 原子提交全导出符号 TSDoc 化（typedoc 转 `entryPointStrategy:"expand"` + `tsconfig.doc.json` 多包 program）·纯注释零行为·代码逐字不变·`docs:api` EXIT=0/0 warning·check/core tsc 全绿·**全量 `ci` PASSED**（877 passed/48 skipped）。
 
 ## 6. 完成判据（签核实施后回写·带取证·分片）
 
 - [x] **切片 A**（2026-10-24 落地）：`typedoc@^0.28.20` 装入根 devDependency（`pnpm add -D -w`）+ `typedoc.json`（ⓐ `excludeNotDocumented:true`／ⓑ `excludeInternal:true`／`commentStyle:jsdoc`／`validation`=`invalidLink`+`notExported`·0.28 已把 `brokenLink` 更名 `invalidLink`）+ `docs:api` 脚本 + 产物 `docs/api-ref/` gitignore（Biome `useIgnoreFile` 自动跳扫）；**contracts 单包实跑对拍 EXIT=0**·HTML 生成（`index.html` + `variables/`52 + `functions/`3·ⓐ 生效剔除无注释装配件）；**6 条 unknown-block-tag warning 全部源于既有中文散文裸 `@core`**（§3.2 预判风险实证命中·反引号包裹不能抑制·归**切片 B** 规范化消解·非工具/配置缺陷·`validation` 未启 `treatWarningsAsErrors` 故仅告警不 fail）；`specs/tooling-standards` §2 矩阵新增「API 文档生成=TypeDoc」行 + §7 补 `docs:api`（ⓔ 高危#5 经 GO 回灌）；默认 `ci` 不受影响（`docs:api` opt-in 不入链）。
 - [x] **切片 B**（2026-10-24 落地）：`libs/contracts` 24 文件全导出符号 TSDoc 化（`summary` + `@remarks` 承既有 why 散文 + 函数 `@param`/`@returns` + `@public`/`@internal` 发布修饰符·代码逐字不变）；@public=对外 wire 契约（各 schema const·view 型·wire enum 值集）·@internal=装配件（`strictObject`/`reqString*`/`optStringMax`/`pageShape`）·type alias 采「不加注释→`excludeNotDocumented` 剔除·doc 落配对 schema const」；**`docs:api` 实跑 EXIT=0 且 warning 6→0**（三处裸 `@core`〔response/authorization·organizations·payment〕+ envelope/event 侧全部反引号消解）·`{@link reqString}`（链被 excludeInternal 剔除符号）改反引号防 `invalidLink`；`pnpm run check` EXIT=0（579 文件）+ `tsc --noEmit -p libs/contracts` EXIT=0。待：样板交人验收定风格 → 通过后向 C/D 铺开。
-- [ ] **切片 C**：`libs/core` 导出面同法·绿。
+- [x] **切片 C**（2026-10-24 落地·6 原子提交）：`libs/core` 68 非测试源全导出符号 TSDoc 化（`summary`〔中文职责首行〕+ `@remarks`〔既有中英 why 散文原样保留·语义不变〕+ `@public`·方法补 `@param`/`@returns`·纯注释零行为·代码逐字不变）。**coverage 采乙 = `entryPointStrategy:"expand"` 逐子域目录**（未加注释符号靠 `excludeNotDocumented` 自动隐身）·分 6 批：shared-kernel 12（`e7c623b`）→ 多包接线 `tsconfig.doc.json`（解 root tsconfig 把 `apps/web` 拖入触发 **880 类型错**·`14fe5b5`）→ authorization 5（转 expand·`9f4afbf`）→ tenant-isolation 7（`7f75a23`）→ platform 4（`8a6d2a3`）→ modules/{organizations 9·workspaces 10·subscriptions 19}（`75789b3`/`c3d6537`/`78fd99e`）。富构造分类法：interface/端口/抽象类/DI Symbol token/泛型工厂/guard·middleware·service 类/装饰器工厂/领域事件类 + payload 接口/VO/命令·查询·处理器。**派生 alias**（`(typeof X)[number]`·`DomainEventName` 等）与私有件不加注自动隐身·**有意义联合类型/词汇**标 `@public`；裸 `@` token（`@Can`/`@app/*`）反引号消解；`fallow-ignore-next-line` 指令保持紧邻 `execute`（TSDoc 置其上）。`barrel`/`src/index.ts` 未改。**验证**：`docs:api` EXIT=0 且 warning **0**（expand 后各子域符号全出）·`check` EXIT=0（580 文件·仅 i18n 脚本 1 既有 info）·core tsc EXIT=0·**全量 `pnpm run ci` PASSED**（877 passed/48 skipped·fallow 无边界违规·各 typecheck/openapi 对拍/domain-layout/stories-drift/overturned-rulings 全绿）。
 - [ ] **切片 D**：`apps/api` 各 module 对外接口同法·分批绿·无行为变更（diff 仅注释·`ci` 测试基线只增不减守住）。
 - [ ] **切片 E**：产物落位/发布指针 + 文档同步（AGENTS §3/README）；（入链与否按 ⓒ）。
 - [ ] **切片 F**：`deploy-swagger.yml` 合并单次 `publish_dir`（ⓕ=乙：根落地页 + `/swagger/` + `/tsdoc/`）·推 `main` 后 `gh-pages` 实跑更新·落地页与两子站均可开（远端真跑存照）·AGENTS §5 分支说明同步。
@@ -93,6 +93,7 @@
 
 | 日期 | 版本 | 变更原因 | 内容修订 |
 |------|------|----------|----------|
+| 2026-10-24 | 0.7.0 | 用户 GO C + coverage 采「乙」expand·切片 C 落地 | **切片 C 完成**：`libs/core` 68 非测试源全导出符号 TSDoc 化（summary+@remarks+@param/@returns+@public·纯注释零行为·代码逐字不变）·typedoc 转 `entryPointStrategy:"expand"` 逐子域（coverage=乙·未注释符号靠 `excludeNotDocumented` 隐身）+ `tsconfig.doc.json` 多包 program（解 root tsconfig 拖入 `apps/web` 触发 880 类型错）·分 6 提交（e7c623b/14fe5b5/9f4afbf/7f75a23/8a6d2a3 + modules 三批 75789b3/c3d6537/78fd99e）·`docs:api` EXIT=0/0 warning·check/core tsc 全绿·**全量 `ci` PASSED**（877/48 skipped）。下一步切片 D（`apps/api` 对外接口·范围最大）/ E（收口同步）/ F（Pages 发布·高危#3） |
 | 2026-10-24 | 0.6.0 | 用户 GO 切片 B 落地 | **切片 B 完成**：`libs/contracts` 全导出符号 TSDoc 化（summary+@remarks+@param/@returns+@public/@internal·纯注释零行为·代码逐字不变）；@public=对外契约 · @internal=装配件（strictObject/reqString*/optStringMax/pageShape）；裸 `@core` 反引号消解 + `{@link reqString}`→反引号；`docs:api` warning **6→0**·check/tsc 全绿。**样板交人验收定风格**·通过才开 C/D |
 | 2026-10-24 | 0.5.0 | 用户 GO 切片 A 落地 | **切片 A 完成**：`typedoc@^0.28.20`（根 devDep·pnpm -w）+ `typedoc.json`（ⓐ/ⓑ/commentStyle/validation）+ `docs:api`（opt-in 不入默认链）+ 产物 `docs/api-ref/` gitignore；contracts 单包实跑对拍 EXIT=0·HTML 生成（52 vars/3 funcs）·6 条 `@core` unknown-tag 归因切片 B；高危#5 回灌 `tooling-standards` §2 矩阵 + §7 命令。下一步切片 B（规范化 contracts 注释定风格·交人验收） |
 | 2026-10-24 | 0.4.0 | 用户三令：ⓕ=乙 · 推 docs · GO 切片 A | **ⓕ 裁=乙**（根落地页链两站·Swagger 迁 `/swagger/`·TypeDoc `/tsdoc/`·接受旧链迁移）·§2/§6 切片 F 同步乙布局·§5 结论翻「进入实施」。切片 A（新增 `typedoc` devDep + `typedoc.json` + `docs:api` + contracts 单包对拍 + 高危#5 回灌 tooling 矩阵）随本次 GO 起实施 |
@@ -103,4 +104,4 @@
 ---
 
 <!-- 变更戳 -->
-正文已于 2026-10-24 / v0.6.0 变更，以当前正文内容为准。
+正文已于 2026-10-24 / v0.7.0 变更，以当前正文内容为准。
