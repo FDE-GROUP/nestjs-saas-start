@@ -165,6 +165,66 @@ paths:
       summary: Liveness probe (ping-only, no dependency checks)
       tags:
         - Health
+  /api/v1/oauth2/authorize:
+    get:
+      operationId: OauthSsoController_authorize_v1
+      parameters:
+        - name: client_id
+          required: true
+          in: query
+          schema:
+            type: string
+            minLength: 1
+        - name: redirect_uri
+          required: true
+          in: query
+          schema:
+            type: string
+            minLength: 1
+        - name: response_type
+          required: true
+          in: query
+          schema:
+            type: string
+            enum:
+              - token
+        - name: scope
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: state
+          required: false
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to whitelisted redirect_uri#access_token=…
+        '400':
+          description: Unregistered client_id or redirect_uri not in whitelist.
+        '401':
+          description: No authenticated session (global session wall).
+      summary: >-
+        OAuth2 implicit-flow authorization endpoint (this repo acts as Odoo
+        auth_oauth OP)
+      tags: &ref_3
+        - oauth-sso
+  /api/v1/oauth2/userinfo:
+    get:
+      operationId: OauthSsoController_userinfo_v1
+      parameters: []
+      responses:
+        '200':
+          description: Raw OIDC claims { sub, email, name }.
+        '401':
+          description: Missing/invalid token or audience not authorized.
+        '403':
+          description: Email not verified.
+      summary: >-
+        OIDC userinfo (Bearer access token; returns raw JSON, not the API
+        envelope)
+      tags: *ref_3
   /api/v1/organizations/roles:
     get:
       operationId: AuthorizationAdminController_listRoles_v1
@@ -190,7 +250,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List roles of the active organization (system + custom)
-      tags: &ref_3
+      tags: &ref_4
         - organizations
     post:
       operationId: AuthorizationAdminController_createRole_v1
@@ -239,7 +299,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a custom role (owner/admin)
-      tags: *ref_3
+      tags: *ref_4
   /api/v1/organizations/roles/rename:
     post:
       operationId: AuthorizationAdminController_renameRole_v1
@@ -279,7 +339,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Rename a custom role (system roles protected)
-      tags: *ref_3
+      tags: *ref_4
   /api/v1/organizations/roles/delete:
     post:
       operationId: AuthorizationAdminController_deleteRole_v1
@@ -314,7 +374,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Delete a custom role (grants cascade; system roles protected)
-      tags: *ref_3
+      tags: *ref_4
   /api/v1/organizations/roles/grants:
     get:
       operationId: AuthorizationAdminController_listGrants_v1
@@ -345,7 +405,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List grant rows of a role (echo checked state)
-      tags: *ref_3
+      tags: *ref_4
     post:
       operationId: AuthorizationAdminController_grant_v1
       parameters: []
@@ -407,7 +467,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Grant a permission cell to a role (multi-condition rows = OR union)
-      tags: *ref_3
+      tags: *ref_4
   /api/v1/organizations/roles/grants/revoke:
     post:
       operationId: AuthorizationAdminController_revoke_v1
@@ -458,7 +518,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Revoke a grant (conditions null = whole-subject row; object = exact row)
-      tags: *ref_3
+      tags: *ref_4
   /api/v1/platform/organizations:
     get:
       operationId: PlatformOrganizationsController_list_v1
@@ -504,7 +564,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List all organizations across the platform (operator only)
-      tags: &ref_4
+      tags: &ref_5
         - platform
   /api/v1/platform/organizations/{id}:
     get:
@@ -534,7 +594,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Get one organization (operator only)
-      tags: *ref_4
+      tags: *ref_5
     delete:
       operationId: PlatformOrganizationsController_remove_v1
       parameters:
@@ -568,7 +628,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Soft-delete an organization (→ deleted terminal · row kept for export)
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/organizations/{id}/diagnostics:
     get:
       operationId: PlatformOrganizationsController_diagnostics_v1
@@ -597,7 +657,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: 'Per-organization diagnostics: member/invitation/workspace/post counts'
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/organizations/{id}/export:
     get:
       operationId: PlatformOrganizationsController_exportData_v1
@@ -629,7 +689,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Export all organization-owned data as a single JSON payload (NFR-6)
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/organizations/{id}/suspend:
     patch:
       operationId: PlatformOrganizationsController_suspend_v1
@@ -664,7 +724,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Suspend an active organization (active → suspended · fail-closed失能)
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/organizations/{id}/resume:
     patch:
       operationId: PlatformOrganizationsController_resume_v1
@@ -699,7 +759,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Resume a suspended organization (suspended → active)
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/organizations/{id}/permanent:
     delete:
       operationId: PlatformOrganizationsController_permanentRemove_v1
@@ -736,7 +796,7 @@ paths:
       summary: >-
         Hard-delete a deleted-terminal organization (irreversible · FK cascade +
         event purge · NFR-6)
-      tags: *ref_4
+      tags: *ref_5
   /api/v1/platform/users:
     get:
       operationId: PlatformUsersController_list_v1
@@ -782,7 +842,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List all platform users with lifecycle status (operator only)
-      tags: &ref_5
+      tags: &ref_6
         - platform
   /api/v1/platform/users/{id}/suspend:
     patch:
@@ -831,7 +891,7 @@ paths:
       summary: >-
         Suspend a platform user (active → suspended · sessions invalidated ·
         fail-closed失能)
-      tags: *ref_5
+      tags: *ref_6
   /api/v1/platform/users/{id}/resume:
     patch:
       operationId: PlatformUsersController_resume_v1
@@ -866,7 +926,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Resume a suspended platform user (suspended → active)
-      tags: *ref_5
+      tags: *ref_6
   /api/v1/users/me/data-export:
     get:
       operationId: UsersController_exportMe_v1
@@ -893,7 +953,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: 'PIPL right-to-access: export current user personal data (C1 · FR-7)'
-      tags: &ref_6
+      tags: &ref_7
         - users
   /api/v1/users/me:
     delete:
@@ -909,7 +969,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: 'PIPL right-to-erase: hard-delete current user (C1 · FR-7)'
-      tags: *ref_6
+      tags: *ref_7
   /api/v1/posts:
     get:
       operationId: PostsController_list_v1
@@ -954,7 +1014,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List posts in the active organization (cursor-paginated)
-      tags: &ref_7
+      tags: &ref_8
         - posts
     post:
       operationId: PostsController_create_v1
@@ -997,7 +1057,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a post in the active organization
-      tags: *ref_7
+      tags: *ref_8
   /api/v1/workspaces:
     get:
       operationId: WorkspacesController_list_v1
@@ -1037,7 +1097,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List workspaces in the active organization
-      tags: &ref_8
+      tags: &ref_9
         - workspaces
     post:
       operationId: WorkspacesController_create_v1
@@ -1081,7 +1141,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a workspace (owner/admin)
-      tags: *ref_8
+      tags: *ref_9
   /api/v1/workspaces/{id}:
     patch:
       operationId: WorkspacesController_update_v1
@@ -1126,7 +1186,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Update a workspace (owner/admin)
-      tags: *ref_8
+      tags: *ref_9
     delete:
       operationId: WorkspacesController_remove_v1
       parameters:
@@ -1145,7 +1205,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Delete a workspace (owner/admin)
-      tags: *ref_8
+      tags: *ref_9
   /api/v1/organizations/applications:
     post:
       operationId: OrganizationsController_apply_v1
@@ -1195,7 +1255,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Apply to create an organization (user-level · lands pending_approval)
-      tags: &ref_9
+      tags: &ref_10
         - organizations
   /api/v1/organizations/applications/{id}/approve:
     post:
@@ -1231,7 +1291,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Approve a pending organization (platform operator · pending → active)
-      tags: *ref_9
+      tags: *ref_10
   /api/v1/organizations/applications/{id}/reject:
     post:
       operationId: OrganizationsController_reject_v1
@@ -1257,7 +1317,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Reject a pending organization (platform operator · hard-delete)
-      tags: *ref_9
+      tags: *ref_10
   /api/v1/organizations/members:
     get:
       operationId: OrganizationsOrgAdminController_listMembers_v1
@@ -1284,7 +1344,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List members of the active organization (all roles · CASL read)
-      tags: &ref_10
+      tags: &ref_11
         - organizations
   /api/v1/organizations/members/role:
     post:
@@ -1329,7 +1389,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Update a member role (owner/admin · CASL update)
-      tags: *ref_10
+      tags: *ref_11
   /api/v1/organizations/members/remove:
     post:
       operationId: OrganizationsOrgAdminController_removeMember_v1
@@ -1368,7 +1428,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Remove a member (owner/admin · CASL delete)
-      tags: *ref_10
+      tags: *ref_11
   /api/v1/organizations/invitations:
     get:
       operationId: OrganizationsOrgAdminController_listInvitations_v1
@@ -1395,7 +1455,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List pending invitations of the active organization (all roles)
-      tags: *ref_10
+      tags: *ref_11
     post:
       operationId: OrganizationsOrgAdminController_createInvitation_v1
       parameters: []
@@ -1438,7 +1498,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Invite a member to the active organization (owner/admin · CASL create)
-      tags: *ref_10
+      tags: *ref_11
   /api/v1/organizations/invitations/cancel:
     post:
       operationId: OrganizationsOrgAdminController_cancelInvitation_v1
@@ -1477,7 +1537,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Cancel an invitation (owner/admin · CASL cancel)
-      tags: *ref_10
+      tags: *ref_11
   /api/v1/organizations:
     get:
       operationId: OrganizationsSelfController_listMyOrganizations_v1
@@ -1504,7 +1564,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List organizations the current user belongs to (personal channel)
-      tags: &ref_11
+      tags: &ref_12
         - organizations
   /api/v1/organizations/active:
     post:
@@ -1552,7 +1612,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Switch the session's active organization (must be a member)
-      tags: *ref_11
+      tags: *ref_12
   /api/v1/organizations/members/leave:
     post:
       operationId: OrganizationsSelfController_leave_v1
@@ -1597,7 +1657,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Leave an organization (self-service · last-owner cannot leave)
-      tags: *ref_11
+      tags: *ref_12
   /api/v1/organizations/invitations/accept:
     post:
       operationId: OrganizationsSelfController_acceptInvitation_v1
@@ -1646,7 +1706,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Accept an invitation addressed to the current user
-      tags: *ref_11
+      tags: *ref_12
   /api/v1/organizations/invitations/reject:
     post:
       operationId: OrganizationsSelfController_rejectInvitation_v1
@@ -1691,7 +1751,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Reject an invitation addressed to the current user
-      tags: *ref_11
+      tags: *ref_12
   /api/v1/organizations/invitations/mine:
     get:
       operationId: OrganizationsSelfController_listMyInvitations_v1
@@ -1718,7 +1778,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List pending invitations addressed to the current user
-      tags: *ref_11
+      tags: *ref_12
   /api/v1/subscriptions/current:
     get:
       operationId: SubscriptionsController_getCurrent_v1
@@ -1744,7 +1804,7 @@ paths:
       summary: >-
         Current organization subscription: plan, seat quota, usage, customer
         mapping
-      tags: &ref_12
+      tags: &ref_13
         - subscriptions
   /api/v1/subscriptions:
     post:
@@ -1811,7 +1871,7 @@ paths:
       summary: >-
         Provision/upgrade the organization subscription (creates the provider
         customer)
-      tags: *ref_12
+      tags: *ref_13
   /api/v1/storage/upload:
     post:
       operationId: StorageController_uploadFile_v1
@@ -1840,7 +1900,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/FileUploadResultDto'
       summary: Upload a single file
-      tags: &ref_13
+      tags: &ref_14
         - storage
   /api/v1/storage/{key}:
     delete:
@@ -1865,7 +1925,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/StorageDeleteResponse'
       summary: Delete a file
-      tags: *ref_13
+      tags: *ref_14
   /api/v1/storage/{key}/url:
     get:
       operationId: StorageController_getFileUrl_v1
@@ -1895,7 +1955,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/StorageUrlResponse'
       summary: Get a signed URL for a file
-      tags: *ref_13
+      tags: *ref_14
   /api/v1/payment/test:
     get:
       operationId: PaymentController_test_v1
@@ -1913,7 +1973,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/PaymentStatusResponse'
       summary: Payment integration status
-      tags: &ref_14
+      tags: &ref_15
         - payment
   /api/v1/payment/customers:
     post:
@@ -1954,7 +2014,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/PaymentCustomerRefResponse'
       summary: Create a payment customer
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/payment/checkouts:
     post:
       operationId: PaymentController_createCheckout_v1
@@ -2003,7 +2063,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a checkout (payment intent)
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/payment/checkouts/{id}:
     get:
       operationId: PaymentController_retrieveCheckout_v1
@@ -2033,7 +2093,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Retrieve a checkout
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/payment/refunds:
     post:
       operationId: PaymentController_refund_v1
@@ -2077,7 +2137,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Refund a checkout
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/payment/webhooks:
     post:
       operationId: PaymentController_handleWebhook_v1
@@ -2107,7 +2167,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Handle payment webhook events
-      tags: *ref_14
+      tags: *ref_15
 info:
   title: NestJS SaaS Start API
   description: NestJS SaaS Start API documentation
@@ -2260,7 +2320,7 @@ components:
           type: string
         status:
           type: string
-          enum: &ref_15
+          enum: &ref_16
             - pending_approval
             - active
             - suspended
@@ -2362,7 +2422,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_15
+          enum: *ref_16
           description: 治理状态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2402,7 +2462,7 @@ components:
           description: 用户主键。
         status:
           type: string
-          enum: *ref_15
+          enum: *ref_16
           description: 迁移后的新状态。
       required:
         - userId
@@ -2595,7 +2655,7 @@ components:
           description: 集成状态恒 "ok"。
         selected:
           type: string
-          enum: &ref_16
+          enum: &ref_17
             - stripe
             - alipay
             - wechat_pay
@@ -2605,7 +2665,7 @@ components:
           description: 可用通道集合。
           items:
             type: string
-            enum: *ref_16
+            enum: *ref_17
       required:
         - status
         - selected
@@ -2618,7 +2678,7 @@ components:
           description: 通道侧 customer id。
         providerId:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 所属通道。
         email:
           type: string
@@ -2639,7 +2699,7 @@ components:
           description: checkout / payment intent id。
         providerId:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 所属通道。
         status:
           type: string
@@ -2663,7 +2723,7 @@ components:
           description: refund id。
         providerId:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 所属通道。
         status:
           type: string
