@@ -39,6 +39,7 @@
   "out": "docs/api-ref",
   "name": "公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）",
   "readme": "none",
+  "plugin": ["typedoc-rhineai-theme"],
   "commentStyle": "jsdoc",
   "exclude": ["**/*.test.ts", "**/*.spec.ts"],
   "excludeNotDocumented": true,

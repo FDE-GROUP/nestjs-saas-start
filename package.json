@@ -138,6 +138,7 @@
     "playwright": "^1.64.1",
     "testcontainers": "^12.2.1",
     "typedoc": "^0.28.20",
+    "typedoc-rhineai-theme": "^1.2.0",
     "typescript": "^5.9.3",
     "unplugin-swc": "^1.5.5",
     "vitest": "^5.0.4"
