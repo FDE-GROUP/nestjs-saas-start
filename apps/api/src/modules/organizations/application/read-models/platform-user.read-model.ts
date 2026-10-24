@@ -10,7 +10,7 @@ import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/
  */
 export type { PlatformUserPage } from '../../domain/repositories/user-governance.repository';
 
-/** suspend/resume 迁移成功后的最小回执（供 controller 返回·status 为新态）。 */
+/** suspend/resume 迁移成功后的最小回执（供 controller 返回·status 为新态）。 @public */
 export interface UserGovernanceResult {
   userId: string;
   status: UserStatus;

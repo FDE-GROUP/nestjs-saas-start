@@ -8,9 +8,13 @@ import type { PlatformOrganizationPage } from '../../read-models/platform-organi
 import { ListPlatformOrganizationsQuery } from '../list-platform-organizations.query';
 
 /**
- * Cross-tenant list (FR-6). Deliberately tenant-agnostic: the governance repository
+ * 跨租户列表查询处理器（FR-6·平台级读侧）。
+ *
+ * @remarks
+ * Deliberately tenant-agnostic: the governance repository
  * applies NO tenant filter (platform-level sees everything, FR-11①); access is gated
  * upstream by `PlatformOperatorGuard` on the controller route.
+ * @public
  */
 @QueryHandler(ListPlatformOrganizationsQuery)
 export class ListPlatformOrganizationsQueryHandler
@@ -21,6 +25,11 @@ export class ListPlatformOrganizationsQueryHandler
     private readonly governance: OrganizationGovernanceRepository,
   ) {}
 
+  /**
+   * 委派治理端口分页取租户列表。
+   * @param query - 携带 limit/offset/search 的查询。
+   * @returns 平台级租户分页页。
+   */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ListPlatformOrganizationsQuery): Promise<PlatformOrganizationPage> {
     return this.governance.list({
