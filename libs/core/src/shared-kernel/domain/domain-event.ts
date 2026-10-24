@@ -1,13 +1,16 @@
 import { uuidv7 } from '../util/uuid-v7';
 
 /**
- * Metadata envelope for a domain event.
+ * 领域事件元数据信封入参（构造 `DomainEvent` 的原始 props）。
  *
+ * @remarks
  * The field set (eventId / aggregateId / aggregateType / eventType / eventVersion /
  * occurredAt / correlationId / causationId) is intentionally shaped for a future
  * Event Sourcing store: these are exactly the columns an append-only event table
  * needs, and `eventVersion` is what an upcaster keys off when the payload schema
  * evolves. For now events are dispatched in-process only (never persisted).
+ *
+ * @public
  */
 export interface DomainEventProps<TPayload extends object = object> {
   readonly aggregateId: string;
@@ -22,9 +25,13 @@ export interface DomainEventProps<TPayload extends object = object> {
 }
 
 /**
- * Framework-free domain event base class (ES hook #3).
+ * 框架无关的领域事件基类（ES 钩子 #3）。
+ *
+ * @remarks
  * Concrete events live next to their aggregate and carry the payload as a typed object.
  * Must never import Nest/ORM packages.
+ *
+ * @public
  */
 export abstract class DomainEvent<TPayload extends object = object> {
   readonly eventId: string;

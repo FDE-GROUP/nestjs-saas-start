@@ -1,6 +1,7 @@
 /**
  * 业务错误码集中常量（就绪预备 §2.3 #3 · module-global-readiness-error-pagination 切片 A）。
  *
+ * @remarks
  * 与 `domain-event-names.ts` 同构的**集中声明纪律**：`errorCode` 是跨前后端（api-client）
  * 的稳定机器标识契约，必须在此单源声明、而非散落字面量；契约测试双向锁定
  * 「码表值 ∈ `NAMESPACE:NAME` 文法」+「抛错点只引用本常量」，防旁逸/漂移。
@@ -11,6 +12,8 @@
  *
  * 命名空间 = 按限界上下文（甲裁）：`AUTH / ISOLATION / ORG / ROLE / GRANT / AUTHZ / USER / WORKSPACE / BILLING / STORAGE`。
  * 新增码一律先加此处，再在抛错点以 object response 携带（filter 透传·零新异常类）。
+ *
+ * @public
  */
 export const ERROR_CODES = {
   // —— 认证与会话层（SessionGuard / 平台层 session 解析 / BA 装配可用性）——
@@ -66,12 +69,22 @@ export const ERROR_CODES = {
 export type ErrorCodeValue = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 /**
- * `errorCode` 值的文法闸（契约测试与运行时防御共用单一源）：`NAMESPACE:NAME`，
+ * `errorCode` 值的文法闸（契约测试与运行时防御共用单一源）：`NAMESPACE:NAME`。
+ *
+ * @remarks
  * 段名皆大写下划线（`[A-Z]+_[A-Z:]*`）。禁裸串散落抛错点——只能引用本常量。
+ *
+ * @public
  */
 export const ERROR_CODE_PATTERN = /^[A-Z][A-Z0-9]*:[A-Z][A-Z0-9_]*$/;
 
-/** 断言某字符串是合法错误码值（抛错点/测试防御复用）。 */
+/**
+ * 断言某字符串是合法错误码值（抛错点/测试防御复用）。
+ *
+ * @param value - 待判定的字符串
+ * @returns 是否匹配 `NAMESPACE:NAME` 文法（类型收窄为 `ErrorCodeValue`）
+ * @public
+ */
 export function isErrorCode(value: string): value is ErrorCodeValue {
   return ERROR_CODE_PATTERN.test(value);
 }
