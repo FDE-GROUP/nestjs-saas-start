@@ -4,7 +4,8 @@
     "libs/contracts/src/index.ts",
     "libs/core/src/shared-kernel",
     "libs/core/src/authorization",
-    "libs/core/src/tenant-isolation"
+    "libs/core/src/tenant-isolation",
+    "libs/core/src/platform"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",

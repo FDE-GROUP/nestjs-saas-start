@@ -18,6 +18,7 @@ import { PLATFORM_IDENTITY_LOOKUP, type PlatformIdentityLookup } from './platfor
 /**
  * 平台级权限守卫（FR-11 三层之顶层 · FR-13 · S5 正式判据）。
  *
+ * @remarks
  * 全局唯一 Platform Operator = 会话用户的 **DB email 命中 `platform.operatorEmail` 配置**
  * （开发者设定 · seed 保障该行存在 · 不可自助注册 / 不由他人任命）。泛 `role=ADMIN` 不再
  * 持有平台权（S4 过渡判据已收敛）。email 据实读 DB（非依赖 session 回传字段），fail-closed：
@@ -29,6 +30,8 @@ import { PLATFORM_IDENTITY_LOOKUP, type PlatformIdentityLookup } from './platfor
  * §9.5.4①B · P1b：会话经 core 自有 `RequestSessionReader` 端口读取（不再 import Better Auth
  * 实例 / `@app/modules/auth`）·适配侧 `resolveRequestSession` 按请求记忆→与中间件共用一次 getSession。
  * §9.5.3 热点③ · P1c：平台配置经 core 自有 `PlatformSettings` 端口（不再 import `@app/config`）。
+ *
+ * @public
  */
 @Injectable()
 export class PlatformOperatorGuard implements CanActivate {
@@ -39,6 +42,12 @@ export class PlatformOperatorGuard implements CanActivate {
     @Inject(UserStatusService) private readonly userStatus: UserStatusService,
   ) {}
 
+  /**
+   * 裁决：无会话 401；被封禁 / 未配置 / email 不命中 / 查无此人 403；命中唯一经营者放行。
+   *
+   * @param context - Nest 执行上下文（取 HTTP 请求头以读会话）
+   * @returns 放行返回 `true`；否则抛 `UnauthorizedException` / `ForbiddenException`
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context
       .switchToHttp()
