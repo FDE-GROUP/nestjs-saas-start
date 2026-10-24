@@ -4,11 +4,16 @@ import { ERROR_CODES } from '../shared-kernel/errors/error-codes';
 import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
 
 /**
+ * 当前请求租户作用域的读取器（ALS 支撑·单例免请求作用域化）。
+ *
+ * @remarks
  * Accessor for the current request's tenant scope. Backed by AsyncLocalStorage so a
  * singleton can read the per-request store without request-scoping every consumer
  * (global-tenancy §9.3 / FR-2).
  *
  * S0 only exposes read access; the fail-closed enforcement guard (FR-5) lands in S2.
+ *
+ * @public
  */
 @Injectable()
 export class TenantIsolationService {
@@ -48,12 +53,22 @@ export class TenantIsolationService {
     return tenantIsolationStorage.getStore()?.userId;
   }
 
-  /** Run `fn` within the given tenant context (used by the middleware / tests). */
+  /**
+   * Run `fn` within the given tenant context (used by the middleware / tests).
+   *
+   * @param ctx - 待绑定的租户作用域
+   * @param fn - 在该作用域内执行的函数
+   * @returns `fn` 的结果
+   */
   run<T>(ctx: TenantIsolationScope, fn: () => T): T {
     return tenantIsolationStorage.run(ctx, fn);
   }
 
-  /** Fail-closed: require an active tenant, else 403. For tenant-scoped endpoints. */
+  /**
+   * Fail-closed: require an active tenant, else 403. For tenant-scoped endpoints.
+   *
+   * @returns 活动租户 id；无则抛 `ForbiddenException`
+   */
   requireActiveOrganizationId(): string {
     const organizationId = tenantIsolationStorage.getStore()?.organizationId;
     if (!organizationId)

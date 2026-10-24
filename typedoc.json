@@ -3,7 +3,8 @@
   "entryPoints": [
     "libs/contracts/src/index.ts",
     "libs/core/src/shared-kernel",
-    "libs/core/src/authorization"
+    "libs/core/src/authorization",
+    "libs/core/src/tenant-isolation"
   ],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.doc.json",

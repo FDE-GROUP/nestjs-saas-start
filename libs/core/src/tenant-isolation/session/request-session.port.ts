@@ -11,16 +11,29 @@ import type { OrganizationRole } from '../../authorization/authorization-rules';
  * 会话未解析出，均归一为 null，故 core 完全不感知认证实现，也不会在旁路路由触发 getSession 查询。
  */
 
+/**
+ * 请求会话读取端口的 DI 注入 token。
+ *
+ * @public
+ */
 export const SESSION_READER = Symbol('SESSION_READER');
 
-/** 会话读取所需的最小请求形状（结构化·core-safe·不含任何 Better Auth 类型）。 */
+/**
+ * 会话读取所需的最小请求形状（结构化·core-safe·不含任何 Better Auth 类型）。
+ *
+ * @public
+ */
 export interface SessionRequestLike {
   headers?: Record<string, string | string[] | undefined>;
   url?: string;
   originalUrl?: string;
 }
 
-/** 透出给 tenancy core 的可信会话视图（仅标量·跨包安全）。 */
+/**
+ * 透出给 tenancy core 的可信会话视图（仅标量·跨包安全）。
+ *
+ * @public
+ */
 export interface SessionView {
   readonly userId?: string;
   readonly activeOrganizationId?: string;
@@ -32,6 +45,17 @@ export interface SessionView {
   readonly role?: OrganizationRole;
 }
 
+/**
+ * 请求会话读取器端口（读可信会话视图·无则 null）。
+ *
+ * @public
+ */
 export interface RequestSessionReader {
+  /**
+   * 读取本次请求的可信会话视图。
+   *
+   * @param req - 最小请求形状（headers/url）
+   * @returns 会话视图；无租户上下文（公开/auth/旁路/无 cookie）返回 `null`
+   */
   read(req: SessionRequestLike): Promise<SessionView | null>;
 }

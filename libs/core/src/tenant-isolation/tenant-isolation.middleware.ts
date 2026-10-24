@@ -5,6 +5,9 @@ import { type RequestSessionReader, SESSION_READER } from './session/request-ses
 import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
 
 /**
+ * 逐请求解析活跃租户并绑定至 AsyncLocalStorage（global-tenancy §9.3 / FR-2）。
+ *
+ * @remarks
  * Resolves the active tenant for each request and binds it to AsyncLocalStorage
  * (global-tenancy §9.3 / FR-2). Reads the trusted session (user id + `activeOrganizationId`)
  * through the core-owned `RequestSessionReader` port — no Better Auth / `@app/modules/auth`
@@ -14,6 +17,8 @@ import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isol
  * The port's `read` already short-circuits public / auth / bypass routes (and any request
  * without a session cookie) to `null`, so this adds a session lookup only where one can
  * exist. Failures degrade to "no tenant" rather than throwing (enforcement is S2).
+ *
+ * @public
  */
 @Injectable()
 export class TenantIsolationMiddleware implements NestMiddleware {
@@ -28,6 +33,13 @@ export class TenantIsolationMiddleware implements NestMiddleware {
     private readonly userStatus: UserStatusService,
   ) {}
 
+  /**
+   * 解析会话→（封禁/失能 fail-closed 后）绑定租户作用域·随后放行 `next`。
+   *
+   * @param req - 入站请求（读会话 + `x-workspace-id` 头）
+   * @param _res - 响应（本中间件不写响应·仅透传）
+   * @param next - 下游继续执行
+   */
   use(req: any, _res: any, next: () => void): void {
     this.session
       .read(req)
