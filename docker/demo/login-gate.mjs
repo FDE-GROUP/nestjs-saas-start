@@ -31,6 +31,15 @@ const ODOO_LOGIN_URL = process.env.ODOO_LOGIN_URL || 'http://localhost:8069/web/
 // WEB_BASE 不带尾斜杠（挂载前缀）；需与镜像构建时 apps/web 的 vite base（`/app/`带尾斜杠）对齐。
 const WEB_BASE = (process.env.WEB_BASE || '/app').replace(/\/+$/, '');
 const WEB_DIST = process.env.WEB_DIST || '/opt/web/dist';
+// 切片 D：第二个同源 SPA 挂载点——私有叠加层演示前端 odoo-rpc（与 apps/web 同机制·同域免改 ALLOWED_ORIGINS）。
+// ODOO_RPC_BASE 不带尾斜杠；需与镜像构建时 web/odoo-rpc 的 vite base（`/odoo-rpc/`带尾斜杠）对齐。
+const ODOO_RPC_BASE = (process.env.ODOO_RPC_BASE || '/odoo-rpc').replace(/\/+$/, '');
+const ODOO_RPC_DIST = process.env.ODOO_RPC_DIST || '/opt/odoo-rpc/dist';
+// 多 SPA 静态服务表（顺序即匹配优先级·两者皆走 serveWeb 同一泛化函数）。
+const SPAS = [
+  { base: WEB_BASE, dist: WEB_DIST },
+  { base: ODOO_RPC_BASE, dist: ODOO_RPC_DIST },
+];
 
 const LOGIN_HTML = `<!doctype html>
 <html lang="zh-CN">
@@ -71,6 +80,7 @@ const LOGIN_HTML = `<!doctype html>
     <input name="password" type="password" autocomplete="current-password" value="admin123" required>
     <button id="b" type="submit">登录并前往 Odoo</button>
     <p class="alt">或 <a href="${WEB_BASE}/">直接进入 Web 应用（apps/web）→</a>·登录后同一会话免二次登录</p>
+    <p class="alt">或 <a href="${ODOO_RPC_BASE}/">Odoo 数据演示（odoo-rpc 集成能力）→</a>·同一会话直读 Odoo 客户/商品</p>
     <div id="msg"></div>
     <footer>演示账号：<code>admin@example.com</code> / <code>admin123</code>（或 <code>user1@example.com</code> / <code>user123</code>）·数据 ephemeral·仅 demo。</footer>
   </form>
@@ -147,15 +157,15 @@ function sendFile(res, absPath) {
   fs.createReadStream(absPath).pipe(res);
 }
 
-function serveWeb(res, urlPath) {
-  const root = path.resolve(WEB_DIST);
+function serveWeb(res, urlPath, base, dist) {
+  const root = path.resolve(dist);
   if (!fs.existsSync(root)) {
     res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Web 应用尚未构建（demo 镜像缺 ' + WEB_DIST + '）');
+    res.end('Web 应用尚未构建（demo 镜像缺 ' + dist + '）');
     return;
   }
   // 去 base 前缀 → dist 相对路径（`/app/assets/x.js`→`/assets/x.js`；`/app/`→`/`）。
-  let rel = decodeURIComponent(urlPath.slice(WEB_BASE.length).split('?')[0] || '/');
+  let rel = decodeURIComponent(urlPath.slice(base.length).split('?')[0] || '/');
   let abs = path.normalize(path.join(root, rel));
   if (!abs.startsWith(root)) {
     res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
@@ -222,15 +232,17 @@ const isGatePath = (rawUrl) => {
 const server = http.createServer((req, res) => {
   const p = (req.url || '/').split('?')[0];
   if (req.method === 'GET') {
-    // 切片 G：/app 前缀走 apps/web 静态（先于 /api 与门页判定）。
-    if (p === WEB_BASE) {
-      res.writeHead(302, { location: WEB_BASE + '/' });
-      res.end();
-      return;
-    }
-    if (p === WEB_BASE + '/' || p.startsWith(WEB_BASE + '/')) {
-      serveWeb(res, p);
-      return;
+    // 切片 G/D：多 SPA 前缀逐个走静态服务（先于 /api 与门页判定）。
+    for (const spa of SPAS) {
+      if (p === spa.base) {
+        res.writeHead(302, { location: spa.base + '/' });
+        res.end();
+        return;
+      }
+      if (p === spa.base + '/' || p.startsWith(spa.base + '/')) {
+        serveWeb(res, p, spa.base, spa.dist);
+        return;
+      }
     }
     if (isGatePath(req.url)) {
       serveLogin(res);
@@ -242,6 +254,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(GATE_PORT, '0.0.0.0', () => {
   console.log(
-    `[gate] 登录门反代 :${GATE_PORT} → 上游 ${UP_HOST}:${UP_PORT} · 前往页 ${ODOO_LOGIN_URL} · Web ${WEB_BASE}/ (dist ${WEB_DIST})`,
+    `[gate] 登录门反代 :${GATE_PORT} → 上游 ${UP_HOST}:${UP_PORT} · 前往页 ${ODOO_LOGIN_URL} · Web ${WEB_BASE}/ (dist ${WEB_DIST}) · odoo-rpc ${ODOO_RPC_BASE}/ (dist ${ODOO_RPC_DIST})`,
   );
 });

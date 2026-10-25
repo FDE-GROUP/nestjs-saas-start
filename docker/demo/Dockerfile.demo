@@ -33,6 +33,24 @@ COPY . .
 RUN pnpm run build && WEB_BASE=/app/ pnpm run build:web
 # demo 运行期需再跑迁移/seed（依赖 tsx + TS 源 + devDep）→ 保留 node_modules 与源整树（体积大·demo-only 已知取舍）
 
+# ---- 1b) 私有叠加层演示前端 web/odoo-rpc（切片 D·独立 workspace·自带 lockfile·仅私有机可构建）----
+# 服务端 feature 已由上面 appbuilder 的 `COPY . .` 纳入工作树副本→`pnpm run build` 编入 dist（无需单独段）；
+# 但前端是**独立 pnpm 工程**（非父仓 workspace），需在 saas-addons 相对结构下单独 install+build。
+FROM ${NODE_IMAGE} AS odoo-rpc-web-builder
+WORKDIR /build
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+# 保留 saas-addons 相对结构：vite alias 从 web/odoo-rpc 的 `../../server/.../odoo-rpc.schemas.ts` 解析到 /build/server/...（契约真源）。
+COPY odoo/saas-addons/server ./server
+# 安装层只依赖 lockfile（独立 workspace 自带·非父仓链）；源码变动时重装走下方 store 挂载秒级完成。
+COPY odoo/saas-addons/web/odoo-rpc/pnpm-lock.yaml odoo/saas-addons/web/odoo-rpc/package.json odoo/saas-addons/web/odoo-rpc/pnpm-workspace.yaml odoo/saas-addons/web/odoo-rpc/.npmrc ./web/odoo-rpc/
+RUN --mount=type=cache,id=pnpm-odoo-rpc,target=/pnpm/store cd web/odoo-rpc && pnpm install --frozen-lockfile
+COPY odoo/saas-addons/web/odoo-rpc ./web/odoo-rpc
+# ODOO_WEB_BASE=/odoo-rpc/ 与登录门同名子路径静态挂载对齐（base + router basepath 同源同值）。
+RUN cd web/odoo-rpc && ODOO_WEB_BASE=/odoo-rpc/ pnpm build
+
 # ---- 2) 运行时：odoo 基础镜像（自带 python3/odoo/wkhtmltopdf/pg 客户端）+ PG server + node ----
 FROM odoo:20 AS runner
 USER root
@@ -57,6 +75,9 @@ COPY --from=appbuilder /app /saas-app
 # 切片 G：apps/web 静态产物→登录门在 :7009/app/ 同源服务（会话 cookie 天然共享·免二次登录）
 COPY --from=appbuilder /app/apps/web/dist /opt/web/dist
 
+# 切片 D：私有叠加层演示前端 odoo-rpc 静态产物→登录门 :7009/odoo-rpc/ 同源服务（同会话免二次登录）
+COPY --from=odoo-rpc-web-builder /build/web/odoo-rpc/dist /opt/odoo-rpc/dist
+
 # Odoo 插件落点（saas-addons 现为空模板·保持通道）
 COPY odoo/saas-addons /mnt/extra-addons
 
@@ -64,6 +85,7 @@ COPY odoo/saas-addons /mnt/extra-addons
 COPY docker/demo/odoo.conf /etc/odoo.conf
 COPY docker/demo/seed_oauth_provider.py /opt/demo/seed_oauth_provider.py
 COPY docker/demo/seed_odoo_users.py /opt/demo/seed_odoo_users.py
+COPY docker/demo/seed_odoo_rpc.py /opt/demo/seed_odoo_rpc.py
 COPY docker/demo/login-gate.mjs /opt/demo/login-gate.mjs
 COPY docker/demo/entrypoint.sh /usr/local/bin/demo-entrypoint.sh
 RUN chmod +x /usr/local/bin/demo-entrypoint.sh \

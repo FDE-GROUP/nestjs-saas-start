@@ -14,6 +14,12 @@ dist
 build
 coverage
 
+# 切片 D：上方裸 `node_modules`/`dist` 只命中根级（docker 忽略语法不递归匹配），
+# 显式排除嵌套独立工程（web/odoo-rpc）的宿主产物，防 COPY 入构建致上下文膨胀/本机产物污染。
+odoo/saas-addons/web/odoo-rpc/node_modules
+odoo/saas-addons/web/odoo-rpc/dist
+odoo/saas-addons/**/node_modules
+
 # Environment files
 .env
 .env.*

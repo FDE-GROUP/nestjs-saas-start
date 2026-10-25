@@ -86,6 +86,13 @@ if [ ! -f "$MARKER" ]; then
   su odoo -s /bin/bash -c "odoo shell -c /etc/odoo.conf -d odoo-demo --no-http < /opt/demo/seed_odoo_users.py" \
     >>/var/log/demo/odoo-init.log 2>&1 || { echo '[demo] Odoo 用户预配失败:'; tail -40 /var/log/demo/odoo-init.log; exit 1; }
 
+  # 切片 D：bake 只读 RPC 服务账号 saas_rpc_ro + 签发 scope=rpc key（供 Nest odoo-rpc feature 经 /jsonrpc 只读访问）。
+  echo "[demo] bake 只读 RPC 服务账号 + 签发密钥（odoo shell）"
+  su odoo -s /bin/bash -c "odoo shell -c /etc/odoo.conf -d odoo-demo --no-http < /opt/demo/seed_odoo_rpc.py" \
+    >>/var/log/demo/odoo-init.log 2>&1 || { echo '[demo] RPC 服务账号预配失败:'; tail -40 /var/log/demo/odoo-init.log; exit 1; }
+  # key 移到数据卷持久化（重启跳 bake 分支仍可读到·demo ephemeral 假凭证）
+  mv /tmp/odoo_rpc_key.txt /var/lib/demo-pg/odoo_rpc_key
+
   touch "$MARKER"
   echo "[demo] bake 完成"
 else
@@ -94,6 +101,16 @@ else
 fi
 
 # ---- 2. 拉起应用 + Odoo（PG 已后台留存）----
+# 切片 D：向 Nest 注入 ODOO_* 四键（odoo-rpc feature 的私有叠加层数据面·同 slice F 内部拓扑：
+# Nest 内监听 :7011·Odoo 同容器 :8069 可达）。key 从数据卷持久化文件读（首启 bake 生成·重启复用）。
+# 注：容器公共基座默认无此四键→feature 缺席态（无 /odoo 路由）；demo 镜像显式注入→在场态。
+export ODOO_BASE_URL="${ODOO_BASE_URL:-http://127.0.0.1:8069}"
+export ODOO_DB="${ODOO_DB:-odoo-demo}"
+export ODOO_LOGIN="${ODOO_LOGIN:-saas_rpc_ro}"
+if [ -f /var/lib/demo-pg/odoo_rpc_key ]; then
+  export ODOO_API_KEY="$(cat /var/lib/demo-pg/odoo_rpc_key)"
+fi
+
 echo "[demo] 启动 SaaS 应用（node dist/apps/api/src/main.js·内监听 $HOST:$APP_PORT）后台"
 ( cd "$APP_DIR" && exec node dist/apps/api/src/main.js ) >/var/log/demo/app.log 2>&1 &
 
@@ -110,9 +127,10 @@ done
 echo "[demo] 启动登录门反代（宿主 :$GATE_PORT → 上游 :$APP_PORT）后台"
 GATE_PORT="$GATE_PORT" UPSTREAM_HOST=127.0.0.1 UPSTREAM_PORT="$APP_PORT" ODOO_LOGIN_URL="$ODOO_LOGIN_URL" \
   WEB_BASE=/app WEB_DIST=/opt/web/dist \
+  ODOO_RPC_BASE=/odoo-rpc ODOO_RPC_DIST=/opt/odoo-rpc/dist \
   node /opt/demo/login-gate.mjs >/var/log/demo/gate.log 2>&1 &
 
-echo "[demo] all-in-one 就绪：SaaS 登录门 http://localhost:7009/  ·  Web 应用 http://localhost:7009/app/  ·  API http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（先登录门→再点「使用 SaaS 登录」）"
+echo "[demo] all-in-one 就绪：SaaS 登录门 http://localhost:7009/  ·  Web 应用 http://localhost:7009/app/  ·  Odoo 数据演示 http://localhost:7009/odoo-rpc/  ·  API http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（先登录门→再点「使用 SaaS 登录」）"
 
 # 保持前台：任一后台进程退出即容器结束（便于 docker run --rm 演示生命周期）
 wait -n
