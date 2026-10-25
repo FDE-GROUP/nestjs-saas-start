@@ -54,6 +54,8 @@ COPY odoo/saas-addons /mnt/extra-addons
 # demo 支撑文件
 COPY docker/demo/odoo.conf /etc/odoo.conf
 COPY docker/demo/seed_oauth_provider.py /opt/demo/seed_oauth_provider.py
+COPY docker/demo/seed_odoo_users.py /opt/demo/seed_odoo_users.py
+COPY docker/demo/login-gate.mjs /opt/demo/login-gate.mjs
 COPY docker/demo/entrypoint.sh /usr/local/bin/demo-entrypoint.sh
 RUN chmod +x /usr/local/bin/demo-entrypoint.sh \
  && mkdir -p /var/lib/demo-pg /var/log/demo /var/run/postgresql \

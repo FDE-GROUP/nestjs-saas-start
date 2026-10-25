@@ -17,8 +17,13 @@ TSX_BIN="$(ls "$APP_DIR"/node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs 
 
 # ---- demo 运行期 env（假密钥·非真实凭证·不入任何 .env 版本库）----
 export NODE_ENV="${NODE_ENV:-development}"
-export HOST=0.0.0.0
-export PORT="${PORT:-7009}"
+# 切片 F：Nest 应用改内监听回环 :7011（不对宿主发布）；宿主 :7009 由登录门反代对外暴露
+#   （同源承载「SaaS 登录门」+ 透传 /api/*），使浏览器能建立 :7009 会话→点 Odoo SSO 按钮不再 401。
+export HOST="${HOST:-127.0.0.1}"
+export APP_PORT="${APP_PORT:-7011}"
+export GATE_PORT="${GATE_PORT:-7009}"
+export ODOO_LOGIN_URL="${ODOO_LOGIN_URL:-http://localhost:8069/web/login}"
+export PORT="${APP_PORT}"
 export DATABASE_URL="${DATABASE_URL:-postgres://postgres@127.0.0.1:5432/nestjs_practice}"
 export JWT_SECRET="${JWT_SECRET:-demo-only-insecure-jwt-secret-change-not-prod}"
 export JWT_REFRESH_SECRET="${JWT_REFRESH_SECRET:-demo-only-insecure-refresh-secret-change-not-prod}"
@@ -74,6 +79,13 @@ if [ ! -f "$MARKER" ]; then
   su odoo -s /bin/bash -c "odoo shell -c /etc/odoo.conf -d odoo-demo --no-http < /opt/demo/seed_oauth_provider.py" \
     >>/var/log/demo/odoo-init.log 2>&1 || { echo '[demo] provider 预置失败:'; tail -40 /var/log/demo/odoo-init.log; exit 1; }
 
+  # 预配 Odoo 内部用户并绑定 SaaS SSO（承方案 ⓑ「预配优先」）：避开 Odoo 内置 admin 邮箱撞车 + portal 模板用户两个 JIT 阻塞。
+  echo "[demo] 预配 Odoo 内部用户并绑定 SSO"
+  su postgres -c "$PG_BIN/psql -U postgres -d nestjs_practice -At -F'|' -c 'SELECT \"id\",\"email\",\"name\" FROM \"user\" ORDER BY \"createdAt\"'" > /tmp/saas_users.txt
+  chmod 644 /tmp/saas_users.txt
+  su odoo -s /bin/bash -c "odoo shell -c /etc/odoo.conf -d odoo-demo --no-http < /opt/demo/seed_odoo_users.py" \
+    >>/var/log/demo/odoo-init.log 2>&1 || { echo '[demo] Odoo 用户预配失败:'; tail -40 /var/log/demo/odoo-init.log; exit 1; }
+
   touch "$MARKER"
   echo "[demo] bake 完成"
 else
@@ -82,7 +94,7 @@ else
 fi
 
 # ---- 2. 拉起应用 + Odoo（PG 已后台留存）----
-echo "[demo] 启动 SaaS 应用（node dist/apps/api/src/main.js）后台"
+echo "[demo] 启动 SaaS 应用（node dist/apps/api/src/main.js·内监听 $HOST:$APP_PORT）后台"
 ( cd "$APP_DIR" && exec node dist/apps/api/src/main.js ) >/var/log/demo/app.log 2>&1 &
 
 echo "[demo] 启动 Odoo HTTP（user odoo）后台"
@@ -94,7 +106,12 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-echo "[demo] all-in-one 就绪：SaaS http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（点「使用 SaaS 登录」）"
+# 切片 F：应用就绪后再起登录门反代（宿主 :7009 → 上游 :$APP_PORT），避免门先起把 /api 打空回 502。
+echo "[demo] 启动登录门反代（宿主 :$GATE_PORT → 上游 :$APP_PORT）后台"
+GATE_PORT="$GATE_PORT" UPSTREAM_HOST=127.0.0.1 UPSTREAM_PORT="$APP_PORT" ODOO_LOGIN_URL="$ODOO_LOGIN_URL" \
+  node /opt/demo/login-gate.mjs >/var/log/demo/gate.log 2>&1 &
+
+echo "[demo] all-in-one 就绪：SaaS 登录门 http://localhost:7009/  ·  API http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（先登录门→再点「使用 SaaS 登录」）"
 
 # 保持前台：任一后台进程退出即容器结束（便于 docker run --rm 演示生命周期）
 wait -n
