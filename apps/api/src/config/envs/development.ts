@@ -26,6 +26,9 @@ export default {
     origin: parseCorsOrigins(process.env.ALLOWED_ORIGINS, [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
+      // 私有叠加层演示前端 odoo-rpc dev 端口（module-odoo-rpc-frontend 切片 C·:5174）。
+      'http://localhost:5174',
+      'http://127.0.0.1:5174',
       'http://localhost:7009',
     ]),
     credentials: true,
