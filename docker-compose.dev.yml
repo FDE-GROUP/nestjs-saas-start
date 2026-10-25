@@ -1,4 +1,13 @@
-version: '3.8'
+# 应用 dev 栈 + 本仓内置 Odoo 20 CE 联调栈 —— 合并为一份编排·全仓仅一个 PostgreSQL。
+#
+# 合并沿革（人令 2026-10-25·数据可重建）：
+#   - 反悔 module-local-odoo20-ce 裁点 ⓑ（专用独立 docker-compose.odoo.yml）+ ⓒ（Odoo 专属独立 postgres）
+#     及非目标「不并入 docker-compose.dev.yml」：现三服务同处 nestjs-network-dev，Odoo 直连共享 postgres。
+#   - 单一 PG：postgres 服务同时喂本 SaaS 应用（nestjs_practice）与 Odoo（Odoo 首启用 DB 管理器建自己业务库·同实例不同库名）。
+#   - Odoo 角色：Odoo 20 硬拒 postgres 超户（实跑坐实），故经 /docker-entrypoint-initdb.d 首次初始化建非超户 odoo（LOGIN+CREATEDB）。
+#   - 回收：docker compose -f docker-compose.dev.yml down -v 会连应用数据卷一起焚（数据可重建·已认可）。
+#
+# 服务与端口：postgres :5432 · pgadmin UI :5050 · odoo :8069（首次无库落 /web/database/selector）。
 
 services:
   postgres:
@@ -13,6 +22,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data-dev:/var/lib/postgresql/data
+      # 首次初始化（空数据卷）时建 Odoo 非超户角色；已有数据卷不重复执行。
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
       - nestjs-network-dev
     healthcheck:
@@ -43,6 +54,36 @@ services:
       postgres:
         condition: service_healthy
 
+  # Odoo 20 社区版联调目标自持（承 docs/plans/module-local-odoo20-ce.md·SSO 联调用·opt-in 但随 dev 栈常驻）。
+  # 插件落点 ./odoo/saas-addons → 容器 /mnt/extra-addons（官方镜像默认识别·可 -i 安装）。
+  odoo:
+    container_name: odoo20-ce
+    image: odoo:20
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./odoo/saas-addons:/mnt/extra-addons
+    environment:
+      - HOST=postgres
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo
+    networks:
+      - nestjs-network-dev
+    healthcheck:
+      # 官方 odoo 镜像内含 python3（无 curl/wget·探针只用镜像内实存能力·tooling §4.10）；
+      # 首启建库耗时·给足 start_period。
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',8069),3).close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
 networks:
   nestjs-network-dev:
     driver: bridge
@@ -51,4 +92,6 @@ volumes:
   postgres-data-dev:
     driver: local
   pgadmin-data-dev:
+    driver: local
+  odoo-web-data:
     driver: local
