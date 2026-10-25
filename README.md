@@ -163,6 +163,21 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 - 生产镜像：多阶段 `Dockerfile`；完整部署说明见 [Docker 部署指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/docker-deployment.md)。
 - 生产回归防线：`pnpm run verify:prod-boot`（构建后真实起服并校验 `/api/v1/health`）。
 
+### 一体化演示镜像（拉取即用 · 面向非开发者试用）
+
+除上述生产部署外，项目提供一个 **all-in-one 演示镜像**：单容器内置 PostgreSQL + Nest SaaS 应用 + 官方 Odoo 20 CE，首启自动烘焙演示数据，供非开发者“拉取即用”体验（**仅演示/试用 · 数据 ephemeral · 非生产**）。
+
+```bash
+docker run --rm -p 7009:7009 -p 8069:8069 arligle/odoocn-saas-start:alpha
+# 首启 bake 约数分钟，就绪后：
+#   SaaS 登录门  http://localhost:7009/      （admin@example.com / admin123）
+#   SaaS 前端    http://localhost:7009/app/  （与 API 同源 · 门登录后免二次登录）
+#   Odoo 后台    http://localhost:8069/odoo  （在 Odoo 登录页点「使用 SaaS 登录」经 SSO 一键进入）
+```
+
+- **同源一次登录、处处已登**：登录门与 API、SaaS 前端同在 `:7009` 同源共享会话（Cookie 不分端口），门登录一次即可免二次登录进 `apps/web`，并经 SSO 单向登录 Odoo（三处背后是同一 SaaS 身份）。
+- 完整步骤与真跑对拍见 [一体化演示镜像快速上手](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/odoo-allinone-demo-quickstart.md)。
+
 ## 文档
 
 **规格**（`docs/specs/`·约束性规范）
@@ -181,6 +196,7 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 - [MikroORM 迁移指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/mikro-migration-guide.md)
 - [邮件模块指南（英文）](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/mailer-en.md)
 - [OAuth 认证指南（英文）](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/oauth-guide-en.md)
+- [一体化演示镜像快速上手](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/odoo-allinone-demo-quickstart.md)（all-in-one demo：SaaS + Odoo SSO 单向登录 + 前端同域免二次登录）
 - **公共 API 参考（TypeDoc）**：本地 `pnpm run docs:api` 生成（读根 `typedoc.json`·纳 `@saas/contracts` + `@core/saas-kit` + `apps/api` 各 module 对外接口·`excludeNotDocumented` 只文档化已注释件）→ 产 `api-docs/`（生成物·不入库）
 
 **设计方案与调研**（`docs/plans/`、`docs/research/`·技术方案与参考资料）
