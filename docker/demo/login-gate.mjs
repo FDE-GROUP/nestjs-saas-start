@@ -18,13 +18,19 @@
 //
 // 仅用 node 内置模块，不新增依赖、不装 apt 组件。
 // ============================================================================
+import fs from 'node:fs';
 import http from 'node:http';
+import path from 'node:path';
 
 const GATE_PORT = Number(process.env.GATE_PORT || 7009);
 const UP_HOST = process.env.UPSTREAM_HOST || '127.0.0.1';
 const UP_PORT = Number(process.env.UPSTREAM_PORT || 7011);
 // 登录成功后回跳的 Odoo 登录页（用户在此点「使用 SaaS 登录」，此时 :7009 会话已就位）。
 const ODOO_LOGIN_URL = process.env.ODOO_LOGIN_URL || 'http://localhost:8069/web/login';
+// 切片 G：同源子路径服务 apps/web 静态产物（与 API/门同源→会话 cookie 天然共享·免二次登录）。
+// WEB_BASE 不带尾斜杠（挂载前缀）；需与镜像构建时 apps/web 的 vite base（`/app/`带尾斜杠）对齐。
+const WEB_BASE = (process.env.WEB_BASE || '/app').replace(/\/+$/, '');
+const WEB_DIST = process.env.WEB_DIST || '/opt/web/dist';
 
 const LOGIN_HTML = `<!doctype html>
 <html lang="zh-CN">
@@ -48,6 +54,7 @@ const LOGIN_HTML = `<!doctype html>
     button { width:100%; margin-top:22px; padding:11px; border:0; border-radius:8px;
       background:#38bdf8; color:#031018; font-size:15px; font-weight:600; cursor:pointer; }
     button:disabled { opacity:.6; cursor:default; }
+    p.alt { text-align:center; font-size:12px; color:#94a3b8; margin:14px 0 0; }
     #msg { margin-top:16px; font-size:13px; min-height:18px; white-space:pre-wrap; }
     #msg.err { color:#fca5a5; } #msg.ok { color:#86efac; }
     footer { margin-top:20px; font-size:11px; color:#64748b; }
@@ -63,6 +70,7 @@ const LOGIN_HTML = `<!doctype html>
     <label>密码</label>
     <input name="password" type="password" autocomplete="current-password" value="admin123" required>
     <button id="b" type="submit">登录并前往 Odoo</button>
+    <p class="alt">或 <a href="${WEB_BASE}/">直接进入 Web 应用（apps/web）→</a>·登录后同一会话免二次登录</p>
     <div id="msg"></div>
     <footer>演示账号：<code>admin@example.com</code> / <code>admin123</code>（或 <code>user1@example.com</code> / <code>user123</code>）·数据 ephemeral·仅 demo。</footer>
   </form>
@@ -109,6 +117,82 @@ function serveLogin(res) {
   res.end(LOGIN_HTML);
 }
 
+// ---- 切片 G：apps/web 静态服务（仅 node 内置 fs/path·零依赖）----
+const WEB_MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+function sendFile(res, absPath) {
+  const ext = path.extname(absPath).toLowerCase();
+  const type = WEB_MIME[ext] || 'application/octet-stream';
+  // 带 hash 的构建产物长缓存；index.html（入口/回退）不缓存。
+  const cache = ext === '.html' ? 'no-store' : 'public, max-age=31536000, immutable';
+  res.writeHead(200, { 'content-type': type, 'cache-control': cache });
+  fs.createReadStream(absPath).pipe(res);
+}
+
+function serveWeb(res, urlPath) {
+  const root = path.resolve(WEB_DIST);
+  if (!fs.existsSync(root)) {
+    res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Web 应用尚未构建（demo 镜像缺 ' + WEB_DIST + '）');
+    return;
+  }
+  // 去 base 前缀 → dist 相对路径（`/app/assets/x.js`→`/assets/x.js`；`/app/`→`/`）。
+  let rel = decodeURIComponent(urlPath.slice(WEB_BASE.length).split('?')[0] || '/');
+  let abs = path.normalize(path.join(root, rel));
+  if (!abs.startsWith(root)) {
+    res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('forbidden');
+    return;
+  }
+  let st = null;
+  try {
+    st = fs.statSync(abs);
+  } catch (_) {}
+  if (st && st.isDirectory()) {
+    abs = path.join(abs, 'index.html');
+    try {
+      st = fs.statSync(abs);
+    } catch (_) {
+      st = null;
+    }
+  }
+  if (st && st.isFile()) {
+    sendFile(res, abs);
+    return;
+  }
+  // SPA fallback：无扩展名的前端路由回 index.html；带扩展名的缺失资源直接 404。
+  if (path.extname(rel)) {
+    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('not found');
+    return;
+  }
+  const indexAbs = path.join(root, 'index.html');
+  if (fs.existsSync(indexAbs)) {
+    sendFile(res, indexAbs);
+    return;
+  }
+  res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+  res.end('not found');
+}
+
 // 透传到内部 Nest：保留原始 Host/Origin/Cookie/Authorization 等全部请求头，
 // 原样回传状态码与响应头（含 302 Location 的 fragment、Set-Cookie）。
 function proxyToApp(req, res) {
@@ -136,13 +220,28 @@ const isGatePath = (rawUrl) => {
 };
 
 const server = http.createServer((req, res) => {
-  if (req.method === 'GET' && isGatePath(req.url)) {
-    serveLogin(res);
-    return;
+  const p = (req.url || '/').split('?')[0];
+  if (req.method === 'GET') {
+    // 切片 G：/app 前缀走 apps/web 静态（先于 /api 与门页判定）。
+    if (p === WEB_BASE) {
+      res.writeHead(302, { location: WEB_BASE + '/' });
+      res.end();
+      return;
+    }
+    if (p === WEB_BASE + '/' || p.startsWith(WEB_BASE + '/')) {
+      serveWeb(res, p);
+      return;
+    }
+    if (isGatePath(req.url)) {
+      serveLogin(res);
+      return;
+    }
   }
   proxyToApp(req, res);
 });
 
 server.listen(GATE_PORT, '0.0.0.0', () => {
-  console.log(`[gate] 登录门反代 :${GATE_PORT} → 上游 ${UP_HOST}:${UP_PORT} · 前往页 ${ODOO_LOGIN_URL}`);
+  console.log(
+    `[gate] 登录门反代 :${GATE_PORT} → 上游 ${UP_HOST}:${UP_PORT} · 前往页 ${ODOO_LOGIN_URL} · Web ${WEB_BASE}/ (dist ${WEB_DIST})`,
+  );
 });

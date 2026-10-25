@@ -21,10 +21,16 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY libs/core/package.json ./libs/core/
+COPY libs/contracts/package.json ./libs/contracts/
+COPY libs/ba-mikro-adapter/package.json ./libs/ba-mikro-adapter/
+COPY packages/api-client/package.json ./packages/api-client/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm run build
+# 先建 libs+client+nest（API 面），再建 apps/web（依赖 @saas/contracts + @saas/api-client 的 dist）。
+# WEB_BASE=/app/ 使 vite base 与登录门挂载前缀对齐（切片 G·同源子路径服务）。
+RUN pnpm run build && WEB_BASE=/app/ pnpm run build:web
 # demo 运行期需再跑迁移/seed（依赖 tsx + TS 源 + devDep）→ 保留 node_modules 与源整树（体积大·demo-only 已知取舍）
 
 # ---- 2) 运行时：odoo 基础镜像（自带 python3/odoo/wkhtmltopdf/pg 客户端）+ PG server + node ----
@@ -47,6 +53,9 @@ COPY --from=appbuilder /usr/local/bin/node /usr/local/bin/node
 
 # SaaS 应用整树（dist + node_modules + 源·供首启 seed）
 COPY --from=appbuilder /app /saas-app
+
+# 切片 G：apps/web 静态产物→登录门在 :7009/app/ 同源服务（会话 cookie 天然共享·免二次登录）
+COPY --from=appbuilder /app/apps/web/dist /opt/web/dist
 
 # Odoo 插件落点（saas-addons 现为空模板·保持通道）
 COPY odoo/saas-addons /mnt/extra-addons

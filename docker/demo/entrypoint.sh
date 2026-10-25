@@ -109,9 +109,10 @@ done
 # 切片 F：应用就绪后再起登录门反代（宿主 :7009 → 上游 :$APP_PORT），避免门先起把 /api 打空回 502。
 echo "[demo] 启动登录门反代（宿主 :$GATE_PORT → 上游 :$APP_PORT）后台"
 GATE_PORT="$GATE_PORT" UPSTREAM_HOST=127.0.0.1 UPSTREAM_PORT="$APP_PORT" ODOO_LOGIN_URL="$ODOO_LOGIN_URL" \
+  WEB_BASE=/app WEB_DIST=/opt/web/dist \
   node /opt/demo/login-gate.mjs >/var/log/demo/gate.log 2>&1 &
 
-echo "[demo] all-in-one 就绪：SaaS 登录门 http://localhost:7009/  ·  API http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（先登录门→再点「使用 SaaS 登录」）"
+echo "[demo] all-in-one 就绪：SaaS 登录门 http://localhost:7009/  ·  Web 应用 http://localhost:7009/app/  ·  API http://localhost:7009/api/v1  ·  Odoo http://localhost:8069/web/login（先登录门→再点「使用 SaaS 登录」）"
 
 # 保持前台：任一后台进程退出即容器结束（便于 docker run --rm 演示生命周期）
 wait -n
