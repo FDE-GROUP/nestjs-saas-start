@@ -49,6 +49,9 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   'apps/api/src/modules/subscriptions/subscription-replay-truth.e2e.test.ts',
   'apps/api/src/modules/workspaces/workspace-owner-rbac.e2e.test.ts',
+  // 私有叠加层条目（module-odoo-rpc-frontend §4-3·高危#3 经人签核 2026-10-25）：登记随真源
+  // 「在场即必须登记」，缺席态由下方 overlayAbsent 豁免判据放行——恒等闸两态全绿。
+  'apps/api/src/features/odoo-rpc-api/api/odoo-rpc-live.e2e.test.ts',
 ];
 
 // Ryuk 禁用（见头注）；容器清理走 finally stop + 启动前遗留清扫。
@@ -68,7 +71,14 @@ const GATED_EXEMPT = [
  */
 function verifyGatedListIdentity(): void {
   const rel = (abs: string) => abs.replace(/^\.\//, '');
-  const stale = GATED_E2E_FILES.filter((p) => !existsSync(p));
+  // 叠加层缺席豁免（通用规则·非逐模块特判）：`apps/api/src/features/<name>/…` 条目在整个
+  // 叠加层目录不存在时不算 stale——私有机器在场则照常参与双向恒等（机制同 check:features
+  // 三态：缺席 OK / 在场须同步 / 漂移 fail-loud）。
+  const overlayAbsent = (p: string): boolean => {
+    if (!p.startsWith('apps/api/src/features/')) return false;
+    return !existsSync(p.split('/').slice(0, 5).join('/'));
+  };
+  const stale = GATED_E2E_FILES.filter((p) => !existsSync(p) && !overlayAbsent(p));
   if (stale.length > 0) {
     throw new Error(
       `[ci-fullstack] GATED_E2E_FILES 引用不存在路径（漂移·迁居/stale）：\n  ${stale.join('\n  ')}`,
