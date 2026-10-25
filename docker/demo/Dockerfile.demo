@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1
+# ============================================================================
+# all-in-one DEMO 镜像：PostgreSQL + Nest SaaS 应用 + 官方 Odoo 20 CE 同容器
+#   定位=演示/试用（非开发者"拉容器即用"）·非生产·数据 ephemeral。
+#   与 prod `Dockerfile` 完全分离；不改 prod/dev compose。
+#   承方案 docs/plans/module-odoo-allinone-demo.md（门 A 愿景已落·门 B 本制品）。
+#
+#   构建：docker build -f docker/demo/Dockerfile.demo -t arligle/odoocn-saas-start:0.1.0-alpha .
+#   运行：docker run -p 7009:7009 -p 8069:8069 arligle/odoocn-saas-start:0.1.0-alpha
+#         首次启动 bake golden 库（约数分钟）→ 就绪后访问两端。
+#   发布纪律：项目处 alpha 期，同时发移动标签 `:alpha` 与钉版 `:0.1.0-alpha`，**不发 `:latest`**（留待 GA）。
+# ============================================================================
+
+# ---- 1) SaaS 应用构建（复用与 prod 同构的 build 链·境内源）----
+ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-slim
+FROM ${NODE_IMAGE} AS appbuilder
+WORKDIR /app
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY libs/core/package.json ./libs/core/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm run build
+# demo 运行期需再跑迁移/seed（依赖 tsx + TS 源 + devDep）→ 保留 node_modules 与源整树（体积大·demo-only 已知取舍）
+
+# ---- 2) 运行时：odoo 基础镜像（自带 python3/odoo/wkhtmltopdf/pg 客户端）+ PG server + node ----
+FROM odoo:20 AS runner
+USER root
+
+# PG server 装入 odoo 基础镜像（Ubuntu noble 基座·官方 odoo 镜像仅含 pg 客户端且已删 PGDG repo 文件）。
+# 预装 postgresql-client-common 293.pgdg 与 Ubuntu 自带 postgresql(→16) 版本打架，故补回 PGDG 源、
+# 直接装与已存 client-18 同版本的 postgresql-18（走境内可达的阿里云 PGDG 镜像）。
+RUN set -eux; \
+    echo "deb [trusted=yes] https://mirrors.aliyun.com/postgresql/repos/apt noble-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends postgresql-18; \
+    rm -rf /var/lib/apt/lists/*
+# 稳定引用 PG bin（版本目录不定·构建期解析后 symlink 到固定路径供 entrypoint 用）
+RUN ln -s "$(ls -d /usr/lib/postgresql/*/bin | head -1)" /usr/local/pg-bin
+
+# node 运行时从 appbuilder 取（同为 Debian bookworm·glibc 兼容·省 NodeSource 网络往返）
+COPY --from=appbuilder /usr/local/bin/node /usr/local/bin/node
+
+# SaaS 应用整树（dist + node_modules + 源·供首启 seed）
+COPY --from=appbuilder /app /saas-app
+
+# Odoo 插件落点（saas-addons 现为空模板·保持通道）
+COPY odoo/saas-addons /mnt/extra-addons
+
+# demo 支撑文件
+COPY docker/demo/odoo.conf /etc/odoo.conf
+COPY docker/demo/seed_oauth_provider.py /opt/demo/seed_oauth_provider.py
+COPY docker/demo/entrypoint.sh /usr/local/bin/demo-entrypoint.sh
+RUN chmod +x /usr/local/bin/demo-entrypoint.sh \
+ && mkdir -p /var/lib/demo-pg /var/log/demo /var/run/postgresql \
+ && chown -R postgres:postgres /var/lib/demo-pg /var/run/postgresql
+
+EXPOSE 7009 8069
+
+# 健康探针：只用镜像内实存能力（python3 urllib·slim 无 curl/wget·tooling §4.10）。
+# 首启 bake 耗时·start-period/retries 放宽，避免初始化期误判 unhealthy。
+HEALTHCHECK --interval=30s --timeout=6s --start-period=180s --retries=8 \
+  CMD python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:7009/api/v1/health',timeout=5).status==200 else 1)"
+
+ENTRYPOINT ["/usr/local/bin/demo-entrypoint.sh"]
