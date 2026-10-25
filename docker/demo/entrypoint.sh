@@ -71,8 +71,8 @@ if [ ! -f "$MARKER" ]; then
   echo "[demo] 演示用户置 emailVerified=true（SSO userinfo 硬门所需）"
   su postgres -c "$PG_BIN/psql -U postgres -d nestjs_practice -v ON_ERROR_STOP=1 -c 'UPDATE \"user\" SET \"emailVerified\" = true;'"
 
-  echo "[demo] Odoo 库建 + 装模块（base/web/auth_oauth/auth_signup·demo 数据开）"
-  su odoo -s /bin/bash -c "odoo -c /etc/odoo.conf -d odoo-demo -i base,web,auth_oauth,auth_signup --without-demo=False --stop-after-init --no-http" \
+  echo "[demo] Odoo 库建 + 装模块（base/web/auth_oauth/auth_signup + 核心业务 app sale/stock/crm·demo 数据开）"
+  su odoo -s /bin/bash -c "odoo -c /etc/odoo.conf -d odoo-demo -i base,web,auth_oauth,auth_signup,sale,stock,crm --without-demo=False --stop-after-init --no-http" \
     >/var/log/demo/odoo-init.log 2>&1 || { echo '[demo] Odoo 建库失败:'; tail -40 /var/log/demo/odoo-init.log; exit 1; }
 
   echo "[demo] 预置 SSO OAuth provider + 系统参数（odoo shell）"

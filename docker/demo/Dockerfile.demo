@@ -64,8 +64,9 @@ RUN chmod +x /usr/local/bin/demo-entrypoint.sh \
 EXPOSE 7009 8069
 
 # 健康探针：只用镜像内实存能力（python3 urllib·slim 无 curl/wget·tooling §4.10）。
-# 首启 bake 耗时·start-period/retries 放宽，避免初始化期误判 unhealthy。
-HEALTHCHECK --interval=30s --timeout=6s --start-period=180s --retries=8 \
+# 首启 bake 耗时（含 Odoo 装 base/web/auth_oauth/auth_signup + sale/stock/crm 及 demo 数据）——
+# 应用+登录门均在 bake 完成后才起，故 start-period 需覆盖整段 bake，放宽至 600s。
+HEALTHCHECK --interval=30s --timeout=6s --start-period=600s --retries=8 \
   CMD python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:7009/api/v1/health',timeout=5).status==200 else 1)"
 
 ENTRYPOINT ["/usr/local/bin/demo-entrypoint.sh"]

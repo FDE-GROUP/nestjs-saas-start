@@ -21,7 +21,12 @@ if not provider:
     print("[seed_odoo_users] 未找到 client_id=saas-demo 的 provider，跳过（应在其之后执行）")
 else:
     Users = env["res.users"].sudo()
-    g_user = env.ref("base.group_user").id
+    # 授 admin 等权组（而非仅 base.group_user）：浏览器实采发现只给 group_user 时，
+    #   各业务 app 的 ACL/菜单需其专属组（如 CRM 需 sales_team 组）→ load_menus 按权限过滤后为空、
+    #   进 app 报 Access Error。镜像内置 admin（base.user_admin）装 app 时已自动拿到各 app 管理员组，
+    #   直接复用其组集 = 演示一进去即见完整 ERP 内容（demo 专用·库 ephemeral·假数据）。
+    admin = env.ref("base.user_admin")
+    admin_group_ids = admin.group_ids.ids
     path = "/tmp/saas_users.txt"
     if not os.path.exists(path):
         print("[seed_odoo_users] 缺少 %s，跳过" % path)
@@ -56,7 +61,7 @@ else:
                         "oauth_provider_id": provider.id,
                         "oauth_uid": sub,
                         "active": True,
-                        "group_ids": [(6, 0, [g_user])],  # 内部用户 → 可进 /web 后台
+                        "group_ids": [(6, 0, admin_group_ids)],  # 复用内置 admin 的组集→app 菜单/ACL 全可见
                     }
                 )
                 created += 1
