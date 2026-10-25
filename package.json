@@ -1,7 +1,7 @@
 {
   "name": "nestjs-saas-start",
-  "version": "1.1.0",
-  "description": "NestJS project structure template with best practices using Fastify, MikroORM, PostgreSQL, and Node/pnpm",
+  "version": "0.1.0-alpha",
+  "description": "NestJS SaaS starter with best practices using Fastify, MikroORM, PostgreSQL, and Node/pnpm",
   "type": "module",
   "main": "dist/main.js",
   "workspaces": [
