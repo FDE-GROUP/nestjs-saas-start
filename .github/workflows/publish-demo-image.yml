@@ -1,0 +1,76 @@
+# ────────────────────────────────────────────────────────────────────────────
+# 门 C · all-in-one demo 镜像发布（Docker Hub）——【草案 · 供审 · 未启用】
+#
+# 状态：本文件当前**未提交**（untracked）。GitHub 只执行「已提交到默认分支」的
+#       workflow，故此刻在远端**不会触发**，纯供人审阅。放行前须由人签核。
+#
+# 前置（须你自备·本仓不落任何凭证）：
+#   - Repository secrets：DOCKERHUB_USERNAME=arligle 、DOCKERHUB_TOKEN=<Docker Hub access token>
+#   - FDE-GROUP/odoo-saas-start 为**公共仓**，跨仓检出无需额外 token；若转私有需配 PAT。
+#
+# 关键·构建上下文：Dockerfile.demo 会 `COPY odoo/saas-addons`（在父仓被 .gitignore
+#   忽略·属兄弟独立仓），因此必须把 odoo-saas-start 单独检出到该路径，否则 addons 为空、
+#   构建必炸。这是本 workflow 与普通「单仓检出」不同的核心点。
+#
+# 触发：默认只 workflow_dispatch（手动·安全）。tag 触发样例已注释，避免与应用发布 tag 纠缠。
+# ────────────────────────────────────────────────────────────────────────────
+name: Publish all-in-one Demo Image (Docker Hub)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 钉版标签（同时刷新移动标签 alpha）
+        required: false
+        default: 0.1.0-alpha
+  # push:
+  #   tags:
+  #     - 'demo-v*'
+
+# 最小权限：构建不需写仓库内容
+permissions:
+  contents: read
+
+# 同镜像串行：避免并发 push 覆盖同 tag；首启 bake 较重，不中途取消
+concurrency:
+  group: publish-demo-image
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout 应用仓 (nestjs-saas-start)
+        uses: actions/checkout@v7
+
+      # 组装统一构建上下文：addon 源在兄弟仓 odoo-saas-start
+      - name: Checkout addon 仓 → odoo/saas-addons
+        uses: actions/checkout@v7
+        with:
+          repository: FDE-GROUP/odoo-saas-start
+          path: odoo/saas-addons
+          fetch-depth: 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 钉版 + 移动标签双发（alpha 期不发 latest · 与 package.json/Dockerfile.demo 纪律一致）
+      - name: Build & push demo image（:0.1.0-alpha + :alpha）
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/demo/Dockerfile.demo
+          push: true
+          provenance: false
+          tags: |
+            arligle/odoocn-saas-start:${{ github.event.inputs.image_tag || '0.1.0-alpha' }}
+            arligle/odoocn-saas-start:alpha
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
