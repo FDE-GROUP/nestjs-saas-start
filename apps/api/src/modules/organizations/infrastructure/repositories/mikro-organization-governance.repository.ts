@@ -12,14 +12,21 @@ import {
   ORGANIZATION_STATUS,
   type OrganizationStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import {
+  ORGANIZATION_ODOO_BINDING_STATUS,
+  type OrganizationOdooBindingStatus,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
+import type { OrganizationOdooBindingRow } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
+  BindOdooCompanyOutcome,
   ExportedOrganizationMember,
   OrganizationDataExport,
   OrganizationDiagnostics,
   OrganizationGovernanceRepository,
+  OrganizationOdooBindingRecord,
   PlatformOrganizationPage,
   PlatformOrganizationRow,
 } from '../../domain/repositories/organization-governance.repository';
@@ -214,5 +221,71 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
     const em = await this.mikro.fork();
     const affected = await em.nativeDelete(Organization, { id: organizationId } as never);
     return affected > 0;
+  }
+
+  async bindOdooCompany(
+    organizationId: string,
+    input: { odooCompanyId: number; odooCompanyName: string },
+  ): Promise<BindOdooCompanyOutcome> {
+    const em = await this.mikro.fork();
+    const org = await em.findOne(Organization, { id: organizationId } as never);
+    if (!org) return { kind: 'not-found' };
+    // 占用预检查（友好冲突前置）：公司已被**其它**租户占用 → conflict；同租户重复绑定同公司
+    // 走覆盖快照（幂等）。本 port 不验公司在 Odoo 侧存在性（跨库弱引用·正向核验归 doctor·切片 C）。
+    const occupier = await em.findOne(Organization, {
+      odooCompanyId: input.odooCompanyId,
+      id: { $ne: organizationId },
+    } as never);
+    if (occupier) return { kind: 'conflict' };
+    try {
+      await em.nativeUpdate(
+        Organization,
+        { id: organizationId } as never,
+        {
+          odooCompanyId: input.odooCompanyId,
+          // bind-existing 系人工确认动作：直落 ready，无 provisioning 中间态（切片 A 口径）。
+          odooBindingStatus: ORGANIZATION_ODOO_BINDING_STATUS.READY,
+          odooCompanyName: input.odooCompanyName,
+          odooBoundAt: new Date(),
+          odooFailureReason: null,
+        } as never,
+      );
+    } catch (err) {
+      // 并发竞争终防线：`odooCompanyId` unique 违例折叠为 conflict（应用层预检查存在 TOCTOU 窗）。
+      if (err instanceof Error && /unique|duplicate/i.test(err.message))
+        return { kind: 'conflict' };
+      throw err;
+    }
+    // nativeUpdate 绕开 ORM 写面，先前 findOne 的行仍驻身份图——clear 后回读才是终态（否则拿旧像 NULL）。
+    em.clear();
+    const bound = await em.findOne(Organization, { id: organizationId } as never);
+    if (!bound) return { kind: 'not-found' };
+    const binding: OrganizationOdooBindingRecord = {
+      organizationId: bound.id,
+      odooCompanyId: bound.odooCompanyId as number,
+      odooBindingStatus:
+        bound.odooBindingStatus as OrganizationOdooBindingRecord['odooBindingStatus'],
+      odooCompanyName: bound.odooCompanyName ?? null,
+      odooBoundAt: bound.odooBoundAt ? new Date(bound.odooBoundAt) : null,
+    };
+    return { kind: 'bound', binding };
+  }
+
+  /**
+   * 绑定读取面（module-org-odoo-company-mapping 切片 B·`ORGANIZATION_ODOO_BINDING_READER` 实现）：
+   * 单行读携治理态，裁决语义零加工（归 `canUseOdoo` 单源）。
+   */
+  async read(organizationId: string): Promise<OrganizationOdooBindingRow | null> {
+    const em = await this.mikro.fork();
+    const org = await em.findOne(Organization, { id: organizationId } as never);
+    if (!org) return null;
+    return {
+      organizationId: org.id,
+      odooCompanyId: org.odooCompanyId ?? null,
+      odooBindingStatus: (org.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
+      odooCompanyName: org.odooCompanyName ?? null,
+      odooBoundAt: org.odooBoundAt ? new Date(org.odooBoundAt) : null,
+      organizationStatus: org.status as OrganizationStatus,
+    };
   }
 }

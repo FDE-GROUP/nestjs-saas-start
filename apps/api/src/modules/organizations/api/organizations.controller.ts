@@ -19,9 +19,12 @@ import { SerializeOptions } from '@nestjs/common/serializer/index.js';
 import { CommandBus } from '@nestjs/cqrs';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  type BindOdooCompany,
+  bindOdooCompanySchema,
   type CreateOrganizationApplication,
   createOrganizationApplicationSchema,
   organizationApplicationViewSchema,
+  organizationOdooBindingViewSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -30,11 +33,14 @@ import {
   apiError,
 } from '../../../common/contracts/api-contracts';
 import { ApproveOrganizationCommand } from '../application/commands/approve-organization.command';
+import { BindOrganizationOdooCompanyCommand } from '../application/commands/bind-organization-odoo-company.command';
 import { RejectOrganizationCommand } from '../application/commands/reject-organization.command';
 import { SubmitOrganizationApplicationCommand } from '../application/commands/submit-organization-application.command';
 import type { OrganizationApplicationReadModel } from '../application/read-models/organization-application.read-model';
+import type { OrganizationOdooBindingReadModel } from '../application/read-models/organization-odoo-binding.read-model';
 import { mapBaError } from './ba-error.mapping';
 import { OrganizationApplicationResponse } from './response/organization-application.response';
+import { OrganizationOdooBindingResponse } from './response/organization-odoo-binding.response';
 
 /**
  * 租户申请/审批参考切片端点（global-tenancy S4 · FR-1/FR-11/FR-12）。
@@ -51,7 +57,12 @@ import { OrganizationApplicationResponse } from './response/organization-applica
  * routes fail closed until an operator approves it (S4 middleware deny-list).
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, OrganizationApplicationResponse)
+@ApiExtraModels(
+  ApiEnvelope,
+  ApiErrorResponse,
+  OrganizationApplicationResponse,
+  OrganizationOdooBindingResponse,
+)
 @ApiTags('organizations')
 // S11 复合全局：建租申请（此刻无 active 租·鸡生蛋）+ approve/reject（跨租平台治理）皆合法无租户 → 类级豁免租户墙。
 @TenantIsolationExempt()
@@ -155,5 +166,45 @@ export class OrganizationsController {
       throw new NotFoundException('Organization application not found', {
         errorCode: ERROR_CODES.ORG_PROVISIONING_NOT_FOUND,
       });
+  }
+
+  /**
+   * 平台运营者 bind-existing 回填：把 Odoo 侧现存公司绑定给 active 租户（切片 A 通道）。
+   * @param id - 租户 id。
+   * @param user - 会话用户（操作者）。
+   * @param dto - 公司 id + 名称快照。
+   * @returns 绑定回执；查无抛 `NotFoundException`；占用/非 active 由 handler 抛 409。
+   *
+   * @throws {NotFoundException} 租户不存在时。
+   */
+  @Post(':id/odoo-binding')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(PlatformOperatorGuard)
+  @SerializeOptions({ schema: organizationOdooBindingViewSchema })
+  @ApiOperation({
+    summary: 'Bind an existing Odoo company to an active organization (platform operator)',
+  })
+  @ApiResponse(
+    apiEnvelopeShape(OrganizationOdooBindingResponse, {
+      description: 'Odoo company bound (binding lands ready).',
+    }),
+  )
+  @ApiResponse(apiError(403, 'Not a platform operator.'))
+  @ApiResponse(apiError(404, 'Organization not found.'))
+  @ApiResponse(apiError(409, 'Odoo company already bound to another organization.'))
+  async bindOdooCompany(
+    @Param('id') id: string,
+    @CurrentUser() user: SessionUser,
+    @Body({ schema: bindOdooCompanySchema }) dto: BindOdooCompany,
+  ): Promise<OrganizationOdooBindingReadModel> {
+    const result = await this.commandBus.execute<
+      BindOrganizationOdooCompanyCommand,
+      OrganizationOdooBindingReadModel | null
+    >(new BindOrganizationOdooCompanyCommand(id, dto.odooCompanyId, dto.odooCompanyName, user.id));
+    if (!result)
+      throw new NotFoundException('Organization not found', {
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+      });
+    return result;
   }
 }

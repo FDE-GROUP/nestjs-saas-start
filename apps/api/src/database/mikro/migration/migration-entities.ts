@@ -1,4 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
   ORGANIZATION_ROLE_AUDIT_META,
@@ -154,12 +155,30 @@ export const Organization = defineEntity({
     // global-governance-lifecycle-consolidation 切片 B：租户治理生命周期态归 organization 真列
     //（原 `tenant` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·堵 O1）。
     status: p.text().default(ORGANIZATION_STATUS.ACTIVE),
+    // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A）：与运行时 `ba-org.entities.ts`
+    // 同列集同式（本集不导入运行时实体，双写漂移由 generate 非空 diff + gated e2e 库语义测捕获）。
+    // 公司 id 为跨库弱引用列（无 FK）；unique=一租户一公司双射的库级兜底。
+    odooCompanyId: p.integer().nullable().unique(),
+    odooBindingStatus: p.text().nullable(),
+    odooCompanyName: p.text().nullable(),
+    odooBoundAt: p.datetime().columnType('timestamp').nullable(),
+    odooFailureReason: p.text().nullable(),
   },
-  // 值域自 `ORGANIZATION_STATUS` 单源生成·与运行时 ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
+  uniques: [{ name: 'organization_odooCompanyId_unique', properties: ['odooCompanyId'] }],
+  // 值域自 `ORGANIZATION_STATUS`/`ORGANIZATION_ODOO_BINDING_STATUS` 单源生成·与运行时
+  // ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
   checks: [
     {
       name: 'organization_status_check',
       expression: `status IN (${Object.values(ORGANIZATION_STATUS)
+        .map((v) => `'${v}'`)
+        .join(', ')})`,
+    },
+    {
+      name: 'organization_odoo_binding_status_check',
+      // 列名必引号：驼峰列经 EntityCaseNamingStrategy 实存为 "odooBindingStatus"，裸写会被 PG
+      // 折叠小写致 apply 时 errorMissingColumn（沿基线 `"tenant_status_check"` 引号先例）。
+      expression: `"odooBindingStatus" IN (${Object.values(ORGANIZATION_ODOO_BINDING_STATUS)
         .map((v) => `'${v}'`)
         .join(', ')})`,
     },

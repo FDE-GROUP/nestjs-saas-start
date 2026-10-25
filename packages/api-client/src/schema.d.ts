@@ -452,6 +452,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{id}/odoo-binding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bind an existing Odoo company to an active organization (platform operator) */
+        post: operations["OrganizationsController_bindOdooCompany_v1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/members": {
         parameters: {
             query?: never;
@@ -1020,6 +1037,24 @@ export interface components {
             limit: number;
             /** @description 回显偏移。 */
             offset: number;
+        };
+        OrganizationOdooBindingResponse: {
+            /** @description organization 主键。 */
+            organizationId: string;
+            /** @description 绑定的 Odoo 公司 id（res.company 主键·跨库弱引用）。 */
+            odooCompanyId: number;
+            /**
+             * @description 绑定生命周期态。
+             * @enum {string}
+             */
+            odooBindingStatus: "pending" | "provisioning" | "ready" | "failed";
+            /** @description 公司名快照（denormalize）。 */
+            odooCompanyName: string | null;
+            /**
+             * Format: date-time
+             * @description 绑定确立时间。
+             */
+            odooBoundAt: string | null;
         };
         SubscriptionResponse: {
             /** @description 是否已有生效订阅。 */
@@ -2478,6 +2513,64 @@ export interface operations {
             };
             /** @description Organization not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_bindOdooCompany_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    odooCompanyId: number;
+                    odooCompanyName: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Odoo company bound (binding lands ready). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["OrganizationOdooBindingResponse"];
+                    };
+                };
+            };
+            /** @description Not a platform operator. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Organization not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Odoo company already bound to another organization. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,4 +1,5 @@
 import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
 /** 平台租户治理仓储端口的 DI 注入 token。 @public */
@@ -196,4 +197,47 @@ export interface OrganizationGovernanceRepository {
    * @returns 实删时为 `true`，行不存在为 `false`。
    */
   destroy(organizationId: string): Promise<boolean>;
+  /**
+   * bind-existing 回填（module-org-odoo-company-mapping 切片 A）：把现存 Odoo 公司绑定到组织，
+   * 绑定态直落 `ready`（回填系人工确认动作，无 provisioning 中间态）。
+   *
+   * @remarks
+   * 一公司只归一租户：应用层预检查（占用人查存）+ `odooCompanyId` 库级 unique 双防线；
+   * 本 port 不验公司在 Odoo 侧存在性（跨库弱引用·正向核验归 doctor，切片 C）。
+   * @param organizationId - 目标租户 id。
+   * @param input - 公司 id + 名称快照。
+   * @returns `not-found`（租户查无）/ `conflict`（公司已被其它租户占用）/ `bound`（回执档案）。
+   */
+  bindOdooCompany(
+    organizationId: string,
+    input: { odooCompanyId: number; odooCompanyName: string },
+  ): Promise<BindOdooCompanyOutcome>;
 }
+
+/**
+ * 租户↔Odoo 公司绑定档案（映射行读面·双库平行映射的 SaaS 侧 SSOT）。
+ * @public
+ */
+export interface OrganizationOdooBindingRecord {
+  /** 所属租户 id。 */
+  organizationId: string;
+  /** 绑定的 Odoo 公司 id（跨库弱引用，无 FK）。 */
+  odooCompanyId: number;
+  /** 绑定生命周期态。 */
+  odooBindingStatus: OrganizationOdooBindingStatus;
+  /** 公司名快照（denormalize）。 */
+  odooCompanyName: string | null;
+  /** 绑定确立时间。 */
+  odooBoundAt: Date | null;
+  /** 租户治理态（可选携·供 `@core` reader 端口转形与 `canUseOdoo` 裁决；bind 回执不填）。 */
+  organizationStatus?: OrganizationStatus;
+}
+
+/**
+ * bind-existing 三分支结局（判别子联合·禁布尔糊合 not-found 与 conflict）。
+ * @public
+ */
+export type BindOdooCompanyOutcome =
+  | { kind: 'not-found' }
+  | { kind: 'conflict' }
+  | { kind: 'bound'; binding: OrganizationOdooBindingRecord };

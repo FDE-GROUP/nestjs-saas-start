@@ -4,10 +4,12 @@ import {
   AUTHORIZATION_SUBJECT_VALUES,
 } from '@core/saas-kit/authorization/authorization-rules';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { ORGANIZATION_PLANS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import {
   AUTHORIZATION_ACTION_VALUES as CONTRACT_ACTION_VALUES,
   AUTHORIZATION_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
+  ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
   ORGANIZATION_STATUS_VALUES,
   PAYMENT_PROVIDER_VALUES,
   TENANT_PLAN_IDS,
@@ -37,6 +39,14 @@ describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
 
   it('租户生命周期状态与 @core ORGANIZATION_STATUS 值域逐字一致', () => {
     expect(asSet(ORGANIZATION_STATUS_VALUES)).toEqual(asSet(Object.values(ORGANIZATION_STATUS)));
+  });
+
+  // module-org-odoo-company-mapping 切片 A：绑定态 wire 内联与 core 词汇同锁（另含声明序一致——
+  // 迁移工件 CHECK 表达式按声明序生成，顺序漂移虽不违 SQL 语义但破坏「对拍即恒等」口径）。
+  it('Odoo 绑定态与 @core ORGANIZATION_ODOO_BINDING_STATUS 值域逐字一致', () => {
+    expect([...ORGANIZATION_ODOO_BINDING_STATUS_VALUES]).toEqual(
+      Object.values(ORGANIZATION_ODOO_BINDING_STATUS),
+    );
   });
 
   // 支付通道词汇：`PaymentProviderId` 是类型联合（无运行时值域可取），故用编译期双向赋值锁

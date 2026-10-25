@@ -4,7 +4,8 @@ import { AUDIT_LOG_STORE, type AuditLogStore } from '../shared-kernel/audit/audi
 import { currentRequestId } from '../shared-kernel/context/request-context';
 
 /**
- * 平台级治理动作（FR-6 · S4/S5）：审批/驳回 + 暂停/恢复/删除。
+ * 平台级治理动作（FR-6 · S4/S5）：审批/驳回 + 暂停/恢复/删除 + 存量回填绑定（bind-existing·
+ * module-org-odoo-company-mapping 切片 A）。
  *
  * @public
  */
@@ -14,7 +15,8 @@ export type PlatformOrganizationAction =
   | 'suspend'
   | 'resume'
   | 'delete'
-  | 'hard_delete';
+  | 'hard_delete'
+  | 'bind_odoo';
 
 /**
  * 平台级用户治理动作（FR-6/FR-10 · S6）：暂停/恢复/删除平台用户。

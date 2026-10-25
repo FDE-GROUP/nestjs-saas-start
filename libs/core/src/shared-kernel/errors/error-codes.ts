@@ -34,6 +34,10 @@ export const ERROR_CODES = {
   ORG_NOT_DELETED_TERMINAL: 'ORG:NOT_DELETED_TERMINAL',
   ORG_NOT_FOUND: 'ORG:NOT_FOUND',
   ORG_PROVISIONING_NOT_FOUND: 'ORG:PROVISIONING_NOT_FOUND',
+  // bind-existing/预检查与库级 unique 共用的公司双射冲突码（一公司只归一租户·module-org-odoo-company-mapping 切片 A）。
+  ORG_ODOO_BINDING_CONFLICT: 'ORG:ODOO_BINDING_CONFLICT',
+  // RPC/SSO 三点门禁的拒答码：无绑定/非 ready/非 active 均此码（fail-closed·切片 B）。
+  ORG_ODOO_BINDING_NOT_READY: 'ORG:ODOO_BINDING_NOT_READY',
   // BA 服务端数据事实拒绝的泛用兜底码（4xx·`mapBaError` 出口统一附·细分仍据 HTTP status，
   // 因 BA APIError 仅回不透明 message+status，门面无法可靠辨具体业务语义，不逐态猜码）。
   ORG_PROVISIONING_REJECTED: 'ORG:PROVISIONING_REJECTED',

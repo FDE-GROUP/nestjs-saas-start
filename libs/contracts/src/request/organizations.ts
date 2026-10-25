@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 import { reqStringMax } from '../helpers';
 import { strictObject } from '../strict';
 
@@ -82,3 +82,20 @@ export const setActiveOrganizationSchema = strictObject({
   organizationId: reqStringMax('validate.organizationId.required', 128),
 });
 export type SetActiveOrganization = z.infer<typeof setActiveOrganizationSchema>;
+
+/**
+ * bind-existing 入参（module-org-odoo-company-mapping 切片 A·平台回填通道）：
+ * 把**现存** Odoo 公司绑定到指定组织（存量/演示解堵·与 provisioning 自动建司互斥入口）。
+ *
+ * @remarks
+ * `odooCompanyId` 为跨库弱引用（SaaS 库与 Odoo 库物理隔离·平行映射）——本契约不验公司在
+ * Odoo 侧存在性，存在性核验归 handler（RPC 正向核验入切片 C 的 doctor 链）；
+ * `odooCompanyName` 为平台侧手填快照（denormalize·不做实时跨库拼装）。
+ *
+ * @public
+ */
+export const bindOdooCompanySchema = strictObject({
+  odooCompanyId: z.number({ error: 'validate.odooCompanyId.required' }).int().positive(),
+  odooCompanyName: reqStringMax('validate.odooCompanyName.required', 256),
+});
+export type BindOdooCompany = z.infer<typeof bindOdooCompanySchema>;

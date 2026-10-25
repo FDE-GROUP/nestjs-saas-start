@@ -1318,6 +1318,69 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Reject a pending organization (platform operator · hard-delete)
       tags: *ref_10
+  /api/v1/organizations/{id}/odoo-binding:
+    post:
+      operationId: OrganizationsController_bindOdooCompany_v1
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                odooCompanyId:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  maximum: 9007199254740991
+                odooCompanyName:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+              required:
+                - odooCompanyId
+                - odooCompanyName
+              additionalProperties: false
+      responses:
+        '200':
+          description: Odoo company bound (binding lands ready).
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OrganizationOdooBindingResponse'
+        '403':
+          description: Not a platform operator.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Organization not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Odoo company already bound to another organization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: >-
+        Bind an existing Odoo company to an active organization (platform
+        operator)
+      tags: *ref_10
   /api/v1/organizations/members:
     get:
       operationId: OrganizationsOrgAdminController_listMembers_v1
@@ -2572,6 +2635,40 @@ components:
         - total
         - limit
         - offset
+    OrganizationOdooBindingResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          description: organization 主键。
+        odooCompanyId:
+          type: number
+          description: 绑定的 Odoo 公司 id（res.company 主键·跨库弱引用）。
+        odooBindingStatus:
+          type: string
+          enum:
+            - pending
+            - provisioning
+            - ready
+            - failed
+          description: 绑定生命周期态。
+        odooCompanyName:
+          type:
+            - string
+            - 'null'
+          description: 公司名快照（denormalize）。
+        odooBoundAt:
+          format: date-time
+          type:
+            - string
+            - 'null'
+          description: 绑定确立时间。
+      required:
+        - organizationId
+        - odooCompanyId
+        - odooBindingStatus
+        - odooCompanyName
+        - odooBoundAt
     SubscriptionResponse:
       type: object
       properties:

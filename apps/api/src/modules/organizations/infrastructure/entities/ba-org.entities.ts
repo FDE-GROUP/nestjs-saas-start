@@ -1,4 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 
 /**
@@ -21,6 +22,13 @@ const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(ORGANIZATION_STATUS)
   .map((v) => `'${v}'`)
   .join(', ')})`;
 
+/** 绑定态值域 = `ORGANIZATION_ODOO_BINDING_STATUS` 声明序单源（同上漂移闸；NULL=未绑定，CHECK 对 NULL 恒通过·不越「列缺席」语义）。列名必引号：驼峰列实存带引号，裸写会被 PG 折叠小写（errorMissingColumn）。 */
+const BINDING_STATUS_CHECK_EXPRESSION = `"odooBindingStatus" IN (${Object.values(
+  ORGANIZATION_ODOO_BINDING_STATUS,
+)
+  .map((v) => `'${v}'`)
+  .join(', ')})`;
+
 export const Organization = defineEntity({
   name: 'Organization',
   tableName: 'organization',
@@ -34,10 +42,24 @@ export const Organization = defineEntity({
     // NOT NULL DEFAULT 'active'——缺席态消失（堵 O1 fail-open），BA 系统动作直建 org（seed/内部）落 'active'，
     // 自助建租经 provisioning.submit 显式覆写 'pending_approval'（S4 审批制）。
     status: p.string().default(ORGANIZATION_STATUS.ACTIVE),
+    // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A·自撰域列·同 `status` 受列律 L1/L2 约束）：
+    // 双库物理隔离下的平行映射载体（vision v0.10.0 §4.8/§6）；`odooCompanyId` 唯一=一租户一公司
+    // 双射的库级兜底（应用层预检查前置，本约束是并发竞争终防线）；公司 id 为跨库弱引用列，无 FK。
+    odooCompanyId: p.integer().nullable().unique(),
+    // 值域词汇仅在应用层持型（`p.string()` 不支持泛型参数·同 `status` 列裸 text 先例），
+    // CHECK 约束守住库级值域。
+    odooBindingStatus: p.string().nullable(),
+    /** 公司名快照（denormalize·provisioning/doctor 刷新·不做实时跨库拼装）。 */
+    odooCompanyName: p.string().nullable(),
+    odooBoundAt: p.datetime().nullable(),
+    odooFailureReason: p.string().nullable(),
     createdAt: p.datetime(),
     updatedAt: p.datetime().nullable(),
   },
-  checks: [{ name: 'organization_status_check', expression: STATUS_CHECK_EXPRESSION }],
+  checks: [
+    { name: 'organization_status_check', expression: STATUS_CHECK_EXPRESSION },
+    { name: 'organization_odoo_binding_status_check', expression: BINDING_STATUS_CHECK_EXPRESSION },
+  ],
 });
 
 export const Member = defineEntity({

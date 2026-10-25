@@ -1,3 +1,4 @@
+import { ORGANIZATION_ODOO_BINDING_READER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
@@ -9,6 +10,7 @@ import { OrganizationsController } from './api/organizations.controller';
 import { OrganizationsOrgAdminController } from './api/organizations-org-admin.controller';
 import { OrganizationsSelfController } from './api/organizations-self.controller';
 import { ApproveOrganizationCommandHandler } from './application/commands/handlers/approve-organization.command-handler';
+import { BindOrganizationOdooCompanyCommandHandler } from './application/commands/handlers/bind-organization-odoo-company.command-handler';
 import { DeleteOrganizationCommandHandler } from './application/commands/handlers/delete-organization.command-handler';
 import { DeleteOrganizationPermanentlyCommandHandler } from './application/commands/handlers/delete-organization-permanently.command-handler';
 import { RejectOrganizationCommandHandler } from './application/commands/handlers/reject-organization.command-handler';
@@ -40,6 +42,8 @@ const CommandHandlers = [
   ResumeOrganizationCommandHandler,
   DeleteOrganizationCommandHandler,
   DeleteOrganizationPermanentlyCommandHandler,
+  // module-org-odoo-company-mapping 切片 A：bind-existing 回填（平台级·治理审计单点）。
+  BindOrganizationOdooCompanyCommandHandler,
   SuspendUserCommandHandler,
   ResumeUserCommandHandler,
 ];
@@ -89,6 +93,11 @@ const QueryHandlers = [
       provide: ORGANIZATION_GOVERNANCE_REPOSITORY,
       useClass: MikroOrganizationGovernanceRepository,
     },
+    // 切片 B published port：features/odoo-rpc-api 经 @core 端口读绑定（双向隔离不破·
+    // 沿 AUDIT_LOG_STORE 同法 @Global 导出供跨上下文解析）。
+    // useExisting 指向同一治理仓储实例（类仅以 symbol token 注册·无类 token provider）：
+    // MikroOrganizationGovernanceRepository 同时实现 reader 的 `read()`，别名即复用同一体。
+    { provide: ORGANIZATION_ODOO_BINDING_READER, useExisting: ORGANIZATION_GOVERNANCE_REPOSITORY },
     // S6 user governance: platform-level cross-user read model (no tenant filter)。
     { provide: USER_GOVERNANCE_REPOSITORY, useClass: MikroUserGovernanceRepository },
     // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenantIsolationModule 归位本上下文。
@@ -113,6 +122,7 @@ const QueryHandlers = [
     ORGANIZATION_STATUS_STORE,
     USER_STATUS_STORE,
     AUDIT_LOG_STORE,
+    ORGANIZATION_ODOO_BINDING_READER,
   ],
 })
 export class OrganizationsModule {}

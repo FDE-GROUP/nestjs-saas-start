@@ -42,6 +42,11 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/organizations/organization-hard-delete.e2e.test.ts',
   'apps/api/src/modules/users/user-hard-delete.e2e.test.ts',
   'apps/api/src/modules/organizations/organization-table.e2e.test.ts',
+  // module-org-odoo-company-mapping 切片 A：绑定列组（unique 双射/CHECK/bind-existing 端口）库语义。
+  'apps/api/src/modules/organizations/organization-odoo-binding.e2e.test.ts',
+  // module-org-odoo-company-mapping 切片 B：绑定读取端口（published port）按租户解析绑定 + canUseOdoo
+  // 裁决矩阵（泄露矩阵的 DB 真相半·喂 RPC 域注入的绑定事实）。
+  'apps/api/src/modules/organizations/organization-odoo-binding-reader.e2e.test.ts',
   'apps/api/src/tenant-isolation/tenant-isolation.e2e.test.ts',
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',
   'apps/api/src/modules/auth/oauth-sso.e2e.test.ts',
