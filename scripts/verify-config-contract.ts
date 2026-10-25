@@ -31,6 +31,8 @@ const CODE_DIRS = ['apps', 'libs', 'scripts'];
  * 四个 verify/ci 脚本与 ci-fullstack 均不装载 dotenv，写进样例即制造 F3 同型「声明有、实现无持有」。
  * 同口径亦涵盖**前端 dev-only 覆盖键**（如 `WEB_PROXY_TARGET`·vite dev 反代目标·带硬编码兜底
  * `http://localhost:7009`·从不需为启动而设·非部署契约）——纳管见 module-config-web-dev-proxy-key。
+ * `WEB_BASE` = demo 镜像将 apps/web 挂同源子路径时的 vite base 覆盖键（all-in-one 切片 G·
+ * 带兜底 `/`·仅构建期读、app 从不读、非部署契约——与 WEB_PROXY_TARGET 同类）。
  * `E2E_*` 六键 = 部署态黄金流编排器（`scripts/e2e-web.ts`·global-playwright-browser-e2e 切片 B）的
  * 端口/种子凭据/跳构建覆盖旋钮：同样从不装载 dotenv、app 从不读、非部署契约——与 VERIFY_PORT 同类
  * （用户令「同意」高危#3 门禁面签核登记）。 */
@@ -40,6 +42,7 @@ const WHITELIST = new Set([
   'VERIFY_TIMEOUT_MS',
   'TESTCONTAINERS_RYUK_DISABLED',
   'WEB_PROXY_TARGET',
+  'WEB_BASE',
   'E2E_API_PORT',
   'E2E_WEB_PORT',
   'E2E_ADMIN_EMAIL',
