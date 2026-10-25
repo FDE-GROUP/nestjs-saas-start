@@ -38,6 +38,7 @@
     "verify:type-escape": "node scripts/verify-type-escape-ratchet.ts",
     "verify:type-escape:update": "node scripts/verify-type-escape-ratchet.ts --update",
     "verify:domain-layout": "node scripts/verify-domain-layout.ts",
+    "verify:feature-isolation": "node scripts/verify-feature-isolation.ts",
     "sync:features": "node scripts/sync-features.ts",
     "check:features": "node scripts/sync-features.ts --check",
     "verify:stories-drift": "node scripts/verify-stories-drift.ts",
