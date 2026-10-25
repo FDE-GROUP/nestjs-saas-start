@@ -46,6 +46,14 @@ const createSchemaForEnv = (_isProd: boolean) => {
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     STRIPE_API_VERSION: z.string().optional(),
     PAYMENT_PROVIDER: z.enum(['stripe', 'alipay', 'wechat_pay']).default('stripe'),
+    // odoo-rpc feature 私有叠加层接入参数（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md
+    // 切片 A）：叠加层同步在场时由 feature 代码经 ConfigService 消费；optional⇒非必填、
+    // 不上 compose 必填闸（verify:config-contract 判据③），缺席态零负担。凭证（API key）只走
+    // env、永不入库——样例仅注释态占位，真值指引见私有仓 runbook。
+    ODOO_BASE_URL: z.string().url().optional(),
+    ODOO_DB: z.string().optional(),
+    ODOO_LOGIN: z.string().optional(),
+    ODOO_API_KEY: z.string().optional(),
     // ES 发布通道三模开关（module-es-outbox-transactional · 裁点乙·高危#6 随审计门签）：
     // 取代旧 EVENT_STORE_ENABLED 布尔；未置即缺省 inproc（envs 层兜底）。
     EVENT_PUBLISH_MODE: z.enum(['inproc', 'shadow', 'outbox']).optional(),

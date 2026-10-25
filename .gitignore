@@ -71,3 +71,9 @@ odoo/saas-addons/
 # ./docs 为指向 odoo/saas-addons/docs（私有仓 checkout）的软链：单一真源·本地 CI 恒等闸（读 docs/）经软链解析·开发不受影响。
 # 全新 clone 本仓将无 docs/（需自行 clone 私有仓到 odoo/saas-addons）。
 /docs
+
+# Feature 私有叠加层同步副本（承 odoo-saas-start docs/plans/module-odoo-rpc-frontend.md
+# 切片 A）：真源在私有仓 server/features/，经 pnpm run sync:features 同步至此供编译——
+# 未追踪副本，本防线结构性防私有源码误提交公共仓（非仅纪律）。装配桩 feature-loader.ts 相反
+# 须追踪（公共仓常驻·缺席态展开为空）。逐叠加层显式登记，新 feature 同步时同处补行。
+apps/api/src/features/odoo-rpc-api/
