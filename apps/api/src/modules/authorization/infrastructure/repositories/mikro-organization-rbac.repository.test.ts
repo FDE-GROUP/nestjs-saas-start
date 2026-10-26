@@ -10,7 +10,7 @@ import { MikroTenantRbacRepository } from './mikro-organization-rbac.repository'
 
 /**
  * RBAC 仓储适配单测（module-rbac-dynamic-roles S1·fake `em` 镜像断言·治理仓储测试同法）。
- * rehierarchy 切片 C 换轴：角色升租级——寻址锚 `tenantId`（主轴）·写路径双盖章 `organizationId`。
+ * rehierarchy 片三 K5：角色塌纯租级——寻址锚 `tenantId`（主轴）·`organizationId` 仅存续于审计行盖章（角色行不再含）。
  * 锁四类行为：① ensure 幂等与 seed 展开行数；② 策略闸拒形（invalidKey/invalidConditions）；
  * ③ is_system 应屏（rename/delete 保护）；④ 每次变更同通道落审计行（甲裁留痕）。
  */
@@ -51,7 +51,7 @@ function makeHarness() {
 
 const roleRow = (over: Record<string, unknown> = {}) => ({
   id: 'role-1',
-  organizationId: 'orgA',
+  tenantId: 'tenantA',
   key: 'editor',
   name: 'Editor',
   isSystem: false,
@@ -66,7 +66,7 @@ describe('MikroTenantRbacRepository', () => {
   describe('ensureSystemRoles（幂等 seed·§2.3）', () => {
     it('空租户 → 落 3 系统角色 + 40 授权行（19+18+3 与 seed 展开逐行等）', async () => {
       const h = makeHarness();
-      await h.repo.ensureSystemRoles('tenantA', 'orgA');
+      await h.repo.ensureSystemRoles('tenantA');
       expect(h.createdOf(TenantRole)).toHaveLength(3);
       expect(h.createdOf(TenantRoleGrant)).toHaveLength(40);
       expect(h.createdOf(TenantRole).map((c) => c.row.key)).toEqual(['owner', 'admin', 'member']);
@@ -82,7 +82,7 @@ describe('MikroTenantRbacRepository', () => {
       h.spies.find.mockResolvedValueOnce(
         ['owner', 'admin', 'member'].map((key) => roleRow({ key, isSystem: true })),
       );
-      await h.repo.ensureSystemRoles('tenantA', 'orgA');
+      await h.repo.ensureSystemRoles('tenantA');
       expect(h.created).toHaveLength(0);
       expect(h.spies.flush).not.toHaveBeenCalled();
     });
@@ -90,7 +90,7 @@ describe('MikroTenantRbacRepository', () => {
     it('部分缺失 → 只补种缺的角色（owner 在、补 admin+member）', async () => {
       const h = makeHarness();
       h.spies.find.mockResolvedValueOnce([roleRow({ key: 'owner', isSystem: true })]);
-      await h.repo.ensureSystemRoles('tenantA', 'orgA');
+      await h.repo.ensureSystemRoles('tenantA');
       expect(h.createdOf(TenantRole).map((c) => c.row.key)).toEqual(['admin', 'member']);
     });
   });
@@ -149,7 +149,6 @@ describe('MikroTenantRbacRepository', () => {
       const role = h.createdOf(TenantRole)[0].row;
       expect(role).toMatchObject({
         tenantId: 'tenantA',
-        organizationId: 'orgA',
         key: 'editor',
         isSystem: false,
       });

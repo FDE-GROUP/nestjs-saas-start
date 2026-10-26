@@ -2197,31 +2197,14 @@
           "enumItems": [],
           "mappedType": "text"
         },
-        "organizationId": {
-          "name": "organizationId",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": true,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
         "tenantId": {
           "name": "tenantId",
           "type": "text",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": true,
-          "unique": false,
+          "nullable": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -2251,34 +2234,26 @@
       },
       "indexes": [
         {
-          "columnNames": ["organizationId", "key"],
-          "composite": true,
-          "constraint": true,
-          "keyName": "tenant_role_org_key_idx",
-          "primary": false,
-          "unique": true,
-          "expression": "CREATE UNIQUE INDEX tenant_role_org_key_idx ON public.tenant_role USING btree (\"organizationId\", key)"
-        },
-        {
           "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "tenant_role_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": ["tenantId", "key"],
+          "composite": true,
+          "constraint": true,
+          "keyName": "tenant_role_tenant_key_idx",
+          "primary": false,
+          "unique": true,
+          "expression": "CREATE UNIQUE INDEX tenant_role_tenant_key_idx ON public.tenant_role USING btree (\"tenantId\", key)"
         }
       ],
       "checks": [],
       "triggers": [],
       "foreignKeys": {
-        "tenant_role_organizationId_foreign": {
-          "columnNames": ["organizationId"],
-          "constraintName": "tenant_role_organizationId_foreign",
-          "localTableName": "public.tenant_role",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.organization",
-          "deleteRule": "cascade"
-        },
         "tenant_role_tenantId_foreign": {
           "columnNames": ["tenantId"],
           "constraintName": "tenant_role_tenantId_foreign",

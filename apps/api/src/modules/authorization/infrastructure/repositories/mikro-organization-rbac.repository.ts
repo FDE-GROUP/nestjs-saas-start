@@ -36,23 +36,22 @@ import type {
  * 每操作 `fork()` 独立 em（V4 串租户教训·同治理仓储纪律）；实体为运行时扁平形
  * （`rbac-tables.ts` companion·FK 裸值列，关系约束由 DB 物理层强制）。
  *
- * 换轴（global-tenant-organization-rehierarchy 切片 C·人裁假设②）：角色升租级——寻址/查询
- * 锚 `{ tenantId, key }`；写路径双盖章 `tenantId + organizationId`（expand 段 organizationId 列仍
- * NOT NULL·活动组织缺位则拒写 fail-closed·编排层 `unique(org,key)` 对租级行集仍保租内 key 唯一：
- * 同租内后续组织不再重复 seed，首盖章行即全租共享角色本体）。
+ * 换轴（global-tenant-organization-rehierarchy 片三 K5 收口）：角色身份塌纯租级——寻址/查询
+ * 锚 `{ tenantId, key }`；`tenant_role` 已去 `organizationId` 列·`unique(tenantId,key)`·tenantId NOT NULL。
+ * CRUD 入参 `organizationId` 仅透传 `tenant_role_audit` 归属盖章（活动组织缺位仍 fail-closed 拒写·
+ * seed 面不再需 org）。同租内 key 唯一性由 `unique(tenantId,key)` 物理兜底。
  *
  * 写路径先过 domain 策略闸（key 词法 / conditions 白名单·闸外即拒 fail-closed），落行同通道
  * 追加 `tenant_role_audit` 行（甲裁：每次变更一留痕·before/after 快照 JSON 规范化存储）。
  * 同格多条件行（OR 并集·甲裁表形）下的去重/撤除以 `canonicalConditions` 等值口径应用层比对
  * （DB 不建 unique(role,subject,action)——多条件行是正当形态，偏差留痕登 plan §4.1）。
- * `ensureSystemRoles` 幂等 = 「查缺补种」；并发窗口下 unique(org,key) 兜底抛错上闻（消费侧重载，不静默）。
+ * `ensureSystemRoles` 幂等 = 「查缺补种」；并发窗口下 unique(tenantId,key) 兜底抛错上闻（消费侧重载，不静默）。
  */
 @Injectable()
 export class MikroTenantRbacRepository implements TenantRbacRepository {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
-  async ensureSystemRoles(tenantId: string, organizationId?: string): Promise<void> {
-    if (!organizationId) return; // fail-closed：无活动组织可盖→不懒建租级行（expand 段 org 列 NOT NULL）
+  async ensureSystemRoles(tenantId: string): Promise<void> {
     const em = await this.mikro.fork();
     const existing = await em.find(TenantRole, { tenantId });
     const existingKeys = new Set(existing.map((r) => r.key));
@@ -68,7 +67,6 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
       roleRows.push({
         id,
         tenantId,
-        organizationId,
         key: seed.key,
         name: seed.name,
         isSystem: true,
@@ -137,7 +135,6 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     const role = em.create(TenantRole, {
       id: randomUUID(),
       tenantId,
-      organizationId,
       key,
       name,
       isSystem: false,

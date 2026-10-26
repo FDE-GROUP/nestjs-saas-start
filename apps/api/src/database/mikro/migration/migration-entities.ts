@@ -272,8 +272,8 @@ export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META,
 export const Event = buildMigrationEntity(EVENT_META, { User, Organization });
 
 // module-rbac-dynamic-roles S1（甲裁三表）：授权事实 SSOT 入 DB·同元数据双变体派生（纯 additive）。
+// rehierarchy 片三 K5：角色塌纯租级·去 Organization FK 依赖（仅剩 Tenant）。
 export const TenantRole = buildMigrationEntity(TENANT_ROLE_META, {
-  Organization,
   Tenant,
 });
 export const TenantRoleGrant = buildMigrationEntity(TENANT_ROLE_GRANT_META, {

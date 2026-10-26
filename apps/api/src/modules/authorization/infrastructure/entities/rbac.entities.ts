@@ -28,11 +28,9 @@ export const TENANT_ROLE_META: TableMeta = {
   tableName: 'tenant_role',
   columns: [
     ['id', { k: 'text', primary: true }],
-    // 角色升租级（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable）：同租内跨组织
-    // 互见的自然配套——授予键从 organizationId 换 tenantId（切片 C 换轴消费本列）。片二 K4 仅复原命名，
-    // tenantId 维持 nullable（角色身份塌缩至纯租级——去 org 列·unique→(tenantId,key)——另案 K5）。
-    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
-    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
+    // 角色身份塌缩至纯租级（rehierarchy 片三 K5）：去 `organizationId` 盖章列·tenantId 收紧 NOT NULL·
+    // unique `(organizationId,key)→(tenantId,key)`（组织维仅存续于 `tenant_role_audit`·见审计表）。
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade' }],
     ['key', { k: 'text' }],
     ['name', { k: 'text' }],
     ['isSystem', { k: 'boolean', default: false }],
@@ -40,7 +38,7 @@ export const TENANT_ROLE_META: TableMeta = {
     // 与 organization 表同口径：updatedAt 可空（建后未改的行不伪造时间）。
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
-  uniques: [{ name: 'tenant_role_org_key_idx', properties: ['organizationId', 'key'] }],
+  uniques: [{ name: 'tenant_role_tenant_key_idx', properties: ['tenantId', 'key'] }],
 };
 
 export const TENANT_ROLE_GRANT_META: TableMeta = {
@@ -86,9 +84,8 @@ export const TENANT_ROLE_AUDIT_META: TableMeta = {
 
 export interface TenantRoleRow {
   id: string;
-  /** 归属租户（expand 段可空·角色租级化后仓储锚本列）。 */
-  tenantId?: string | null;
-  organizationId: string;
+  /** 归属租户（片三 K5 塌缩至纯租级·NOT NULL·仓储寻址主轴）。 */
+  tenantId: string;
   key: string;
   name: string;
   isSystem: boolean;

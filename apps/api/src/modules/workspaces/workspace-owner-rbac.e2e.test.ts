@@ -108,12 +108,12 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
       await em.nativeDelete(Workspace, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(TenantRoleGrant, {
         roleId: {
-          $in: (await em.find(TenantRole, { organizationId: { $in: createdOrgIds } } as never)).map(
+          $in: (await em.find(TenantRole, { tenantId: { $in: createdOrgIds } } as never)).map(
             (r) => (r as TenantRoleRow).id,
           ),
         },
       } as never);
-      await em.nativeDelete(TenantRole, { organizationId: { $in: createdOrgIds } } as never);
+      await em.nativeDelete(TenantRole, { tenantId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
     }
@@ -230,7 +230,6 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     em.create(TenantRole, {
       id: roleId,
       tenantId: orgId,
-      organizationId: orgId,
       key: 'limited',
       name: 'Limited',
       isSystem: false,

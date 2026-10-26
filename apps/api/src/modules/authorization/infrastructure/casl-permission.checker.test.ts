@@ -70,7 +70,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     await expect(
       checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
-    expect(ensureSystemRoles).toHaveBeenCalledWith('orgA', 'orgA-active');
+    expect(ensureSystemRoles).toHaveBeenCalledWith('orgA');
     expect(findGrants).toHaveBeenCalledWith('orgA', 'member');
   });
 

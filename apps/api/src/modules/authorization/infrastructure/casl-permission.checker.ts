@@ -50,9 +50,9 @@ function resolveConditions(
  * `PermissionChecker` 的 CASL 适配（module-rbac-casl §2.2 · module-rbac-dynamic-roles §2.3·S2 落形）。
  *
  * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `TENANT_RBAC_REPOSITORY` 端口读
- * per-租户角色规则集（rehierarchy 切片 C·角色升租级：分区键从 organizationId 换隔离主轴
- * tenantId，同租内跨组织互见），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
- *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色·首现行盖活动组织归属）再 `findGrants`；
+ * per-租户角色规则集（rehierarchy 片三 K5·角色塌纯租级：分区键=隔离主轴
+ * tenantId·unique(tenantId,key)，同租内跨组织互见），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
+ *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色·纯租级无归属盖章）再 `findGrants`；
  *  - **fail-closed**：无租户/无角色/查无角色（null）/零授权（[]）/加载抛错 → 恒 deny，绝不视同放行；
  *  - **进程内版本缓存**：同 (tenant,key) 记忆 ability（含在途 Promise 防并发重入），守卫热路径不逐请求查库；
  *    `invalidate` 为热改生效面（S3 门面在 grant/revoke/create/delete 后调用）。
@@ -161,8 +161,8 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
   }
 
   private async buildEntry(tenantId: string, roleKey: string): Promise<CachedEntry> {
-    // lazy-ensure 写路径需归属盖章：ALS 活动组织（可缺——缺则适配器不懒建，findGrants 查无→ deny）。
-    await this.rbac.ensureSystemRoles(tenantId, this.ctx.organizationId);
+    // lazy-ensure 纯租级（片三 K5）：角色无归属组织可盖·不再传活动组织（缺活动组织仍能懒建租级行）。
+    await this.rbac.ensureSystemRoles(tenantId);
     // 查无角色（null）与零授权（[]）同归空 grants → 类型级/实例级投影皆落空 → 全拒（fail-closed 双保险）。
     const grants = (await this.rbac.findGrants(tenantId, roleKey)) ?? [];
     // 类型级投影：over-grant 防线——conditions 行（conditions≠null）不入类型级 ability。

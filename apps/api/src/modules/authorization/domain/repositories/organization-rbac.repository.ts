@@ -73,20 +73,20 @@ export type TenantRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProtected'
  * 返回码用字面量 union（不借 HTTP 异常表达领域事实·应用层负责转译）；conditions 形状
  * 校验在 domain 策略纯函数（`policies/rbac.policy.ts`），适配器写前必过闸。
  *
- * 换轴注记（global-tenant-organization-rehierarchy 切片 C·人裁假设②）：角色升**租级**——
- * 主轴参一律 `tenantId`（同租内跨组织互见的自然配套）；`organizationId` 为写路径归属盖章
- * （expand 段列仍 NOT NULL·活动组织缺位时适配器 fail-closed 拒写）。片二 K4 已将表名复原重命名
- * `organization_role*→tenant_role*`（保数据 RENAME·角色身份塌缩至纯租级另案 K5）。
+ * 换轴注记（global-tenant-organization-rehierarchy 片三 K5 收口）：角色身份塌缩至**纯租级**——
+ * 主轴 `{tenantId, key}`·`tenant_role` 已去 `organizationId` 列（unique `(tenantId,key)`·tenantId NOT NULL）；
+ * CRUD 的 `organizationId` 参**仅存续于 `tenant_role_audit` 归属盖章**（活动组织缺位仍 fail-closed 拒写·
+ * 保「谁在哪个组织下改了角色」留痕）。片二 K4 曾保数据 RENAME `organization_role*→tenant_role*`。
  * @public
  */
 export interface TenantRbacRepository {
   /**
    * 幂等 seed：缺哪个系统角色 key 补哪个（lazy-ensure · §2.3）；grants 按 seed 死数据展开。
-   * @param tenantId - 目标租户 id（租级角色主轴）。
-   * @param organizationId - 活动组织 id（首现角色的归属盖章；缺位则拒写 fail-closed）。
+   * 片三 K5：角色塌纯租级·本方法不再需活动组织（角色无 org 列·不写审计）。
+   * @param tenantId - 目标租户 id（租级角色唯一主轴·NOT NULL）。
    * @returns 落行完成的 Promise（无返回量）。
    */
-  ensureSystemRoles(tenantId: string, organizationId?: string): Promise<void>;
+  ensureSystemRoles(tenantId: string): Promise<void>;
   /**
    * 按 key 取角色（null = 查无 → 消费侧 fail-closed）。
    * @param tenantId - 目标租户 id。
@@ -116,7 +116,7 @@ export interface TenantRbacRepository {
   /**
    * 创建自定义角色（写前过词法闸·同通道落审计行）。
    * @param tenantId - 目标租户 id。
-   * @param organizationId - 活动组织 id（归属盖章·缺位拒写）。
+   * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param key - 角色 key（租内唯一）。
    * @param name - 人面可读名。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
