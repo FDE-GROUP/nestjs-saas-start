@@ -10,7 +10,7 @@ import { GetSubscriptionQuery } from '../get-current-subscription.query';
  *
  * @remarks
  * 限额/用量装配单点走 `QuotaService.snapshot`（禁散点），
- * 租户从 ALS 上下文取（`requireActiveOrganizationId` fail-closed）。
+ * 租户从 ALS 上下文取（`requireActiveTenantId` fail-closed·rehierarchy 切片 D 计费轴上移）。
  *
  * @public
  */
@@ -29,6 +29,6 @@ export class GetSubscriptionQueryHandler implements IQueryHandler<GetSubscriptio
    */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(_query: GetSubscriptionQuery): Promise<OrganizationSubscriptionView> {
-    return this.quota.snapshot(this.tenant.requireActiveOrganizationId());
+    return this.quota.snapshot(this.tenant.requireActiveTenantId());
   }
 }

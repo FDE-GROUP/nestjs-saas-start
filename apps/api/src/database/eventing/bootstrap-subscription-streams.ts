@@ -2,13 +2,13 @@ import { SubscriptionBootstrappedEvent } from '@core/saas-kit/modules/subscripti
 import { DOMAIN_EVENTS } from '@core/saas-kit/shared-kernel/domain/domain-event-names';
 import { type EntityManager, QueryOrder } from '@mikro-orm/core';
 import { subscriptionBootstrappedPayloadSchema } from '@saas/contracts/index';
-import { OrganizationSubscription } from '../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TenantSubscription } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Event } from './entities/event.entity';
 
 /**
  * ES R4b —— subscription 存量治理行「成流」bootstrap 核心（module-es-r4-second-context-subscriptions §3-R4b · 裁ⓐ甲）。
  *
- * 对 `organization_subscription` 表每行产 `subscription.bootstrapped` v1 落该聚合流，使「回放即真相」读侧自
+ * 对 `tenant_subscription` 表每行产 `subscription.bootstrapped` v1 落该聚合流，使「回放即真相」读侧自
  * 存量数据起可成立。**镜像 R1b `bootstrapTenantStreams` 全部 seam**，三条案文定死的律：
  *  - **裁ⓐ甲 per-行一流**：`aggregateType='subscription'`·`aggregateId=订阅行 id`（一租户可多行分期→每行独立流）。
  *  - **version 续位**：从流现有 max+1 续（既有事件之后）——不重排历史；fold 侧「最后快照重启」语义对接。
@@ -46,7 +46,7 @@ export async function bootstrapSubscriptionStreams(
   options: BootstrapSubscriptionStreamsOptions = {},
 ): Promise<BootstrapSubscriptionStreamsResult> {
   const subscriptions = await em.find(
-    OrganizationSubscription,
+    TenantSubscription,
     options.onlyIds ? { id: { $in: [...options.onlyIds] } } : {},
     { orderBy: { id: QueryOrder.ASC } },
   );

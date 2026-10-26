@@ -12,8 +12,8 @@ import { MikroEventStore } from '../../database/eventing/mikro-event-store';
 import { MikroUnitOfWork } from '../../database/eventing/mikro-unit-of-work';
 import { TransactionScope } from '../../database/eventing/transaction-scope';
 import { MikroOrmService } from '../../database/mikro/mikro-orm.service';
-import { Organization } from '../organizations/infrastructure/entities/ba-org.entities';
-import { OrganizationSubscription } from './infrastructure/entities/organization-subscription.entity';
+import { Tenant } from '../organizations/infrastructure/entities/tenant.entity';
+import { TenantSubscription } from './infrastructure/entities/tenant-subscription.entity';
 import { MikroSubscriptionLifecycle } from './infrastructure/mikro-subscription.lifecycle';
 
 /**
@@ -28,7 +28,7 @@ import { MikroSubscriptionLifecycle } from './infrastructure/mikro-subscription.
  *  3. **幂等律**：重跑零新增，每流恰含 1 条 bootstrapped。
  *
  * 夹具经 `onlyIds` 收窄（并行 gated 文件同库互不干扰·时间戳唯一键）；afterAll 清净（event/
- * organization_subscription/organization 三面）运行幂等。写切换/乐观锁段（②③④）见下方 R4c 独立 describe。
+ * tenant_subscription/tenant 三面）运行幂等。写切换/乐观锁段（②③④）见下方 R4c 独立 describe。
  */
 const E2E_DB = process.env.E2E_DATABASE_URL;
 const gated = E2E_DB ? describe : describe.skip;
@@ -57,12 +57,13 @@ gated('subscription 回放即真相·存量 bootstrap 对拍（ES R4b · §3-R4b
     store = new MikroEventStore(mikro);
 
     const em = await mikro.fork();
-    await em.insert(Organization, {
+    // rehierarchy 切片 D：bootstrap/converge 现读 `TenantSubscription`（tenant 锚），夹具同构换形：
+    // 建 `Tenant`（id=旧 orgId·1:1 骨架）+ `TenantSubscription`（tenantId 指向它）。
+    await em.insert(Tenant, {
       id: orgId,
-      name: `r4b org ${stamp}`,
+      name: `r4b tenant ${stamp}`,
       slug: `${orgId}-slug`,
-      logo: null,
-      metadata: null,
+      status: 'active',
       createdAt: new Date(),
       updatedAt: null,
     } as never);
@@ -72,9 +73,9 @@ gated('subscription 回放即真相·存量 bootstrap 对拍（ES R4b · §3-R4b
       [freshId, 'suspended'],
       [legacyId, 'cancelled'],
     ] as const) {
-      await em.insert(OrganizationSubscription, {
+      await em.insert(TenantSubscription, {
         id,
-        organizationId: orgId,
+        tenantId: orgId,
         plan: 'pro',
         status,
         seatsLimit: 5,
@@ -99,8 +100,8 @@ gated('subscription 回放即真相·存量 bootstrap 对拍（ES R4b · §3-R4b
       aggregateType: 'subscription',
       aggregateId: { $in: ids },
     } as never);
-    await em.nativeDelete(OrganizationSubscription, { id: { $in: ids } } as never);
-    await em.nativeDelete(Organization, { id: orgId } as never);
+    await em.nativeDelete(TenantSubscription, { id: { $in: ids } } as never);
+    await em.nativeDelete(Tenant, { id: orgId } as never);
     await mikro.onModuleDestroy();
   });
 
@@ -127,8 +128,7 @@ gated('subscription 回放即真相·存量 bootstrap 对拍（ES R4b · §3-R4b
     const legacyState = replaySubscriptionLifecycle(await store.load('subscription', legacyId));
     expect(legacyState).toMatchObject({ subscriptionId: legacyId, status: 'cancelled' });
     expect(legacyState?.status).toBe(
-      (await (await mikro.fork()).findOne(OrganizationSubscription, { id: legacyId } as never))
-        ?.status,
+      (await (await mikro.fork()).findOne(TenantSubscription, { id: legacyId } as never))?.status,
     );
   });
 
@@ -155,7 +155,7 @@ gated('subscription 回放即真相·存量 bootstrap 对拍（ES R4b · §3-R4b
  *  ④ 乐观锁护栏：stale `expectedVersion` → fail-loud 不追加/不覆盖。
  *
  * 总线派发（publishDurable 的同步/异步通道）属 `DefaultDomainEventPublisher` 单测面，本测以最小发布体
- * 直委托真 `store.append`（只校 DB 语义）。`convergeStatus` 按 organizationId 选最新 `from` 态行（一租户一行足够）。
+ * 直委托真 `store.append`（只校 DB 语义）。`convergeStatus` 按 tenantId 选最新 `from` 态行（一租户一行足够）。
  */
 gated('subscription 回放即真相·写切换（ES R4c · §3-R4c 段②③④ · env-gated）', () => {
   let mikro: MikroOrmService;
@@ -201,19 +201,18 @@ gated('subscription 回放即真相·写切换（ES R4c · §3-R4c 段②③④ 
       [crashOrg, crashSub],
       [lockOrg, lockSub],
     ] as const) {
-      await em.insert(Organization, {
+      await em.insert(Tenant, {
         id: orgId,
         name: `r4c ${orgId}`,
         slug: `${orgId}-slug`,
-        logo: null,
-        metadata: null,
+        status: 'active',
         createdAt: new Date(),
         updatedAt: null,
       } as never);
       // 起态 active（真相源下先经 bootstrap 成 v1 快照，写切换在 contiguous 流上续位）。
-      await em.insert(OrganizationSubscription, {
+      await em.insert(TenantSubscription, {
         id: subId,
-        organizationId: orgId,
+        tenantId: orgId,
         plan: 'pro',
         status: 'active',
         seatsLimit: 5,
@@ -230,8 +229,8 @@ gated('subscription 回放即真相·写切换（ES R4c · §3-R4c 段②③④ 
       aggregateType: 'subscription',
       aggregateId: { $in: subIds },
     } as never);
-    await em.nativeDelete(OrganizationSubscription, { id: { $in: subIds } } as never);
-    await em.nativeDelete(Organization, { id: { $in: orgIds } } as never);
+    await em.nativeDelete(TenantSubscription, { id: { $in: subIds } } as never);
+    await em.nativeDelete(Tenant, { id: { $in: orgIds } } as never);
     await mikro.onModuleDestroy();
   });
 
@@ -250,7 +249,7 @@ gated('subscription 回放即真相·写切换（ES R4c · §3-R4c 段②③④ 
 
     // 逐字段对拍：回放 fold 终态 == 投影表行 status。
     const state = replaySubscriptionLifecycle(await store.load('subscription', foldSub));
-    const subRow = await (await mikro.fork()).findOne(OrganizationSubscription, {
+    const subRow = await (await mikro.fork()).findOne(TenantSubscription, {
       id: foldSub,
     } as never);
     expect(state?.status).toBe('suspended');
@@ -269,7 +268,7 @@ gated('subscription 回放即真相·写切换（ES R4c · §3-R4c 段②③④ 
     // 回滚后流仍只 v1（v2 append 未提交）；投影行仍 active（upsert 未提交）。
     const rows = await readStream(crashSub);
     expect(rows.map((r) => r.version)).toEqual([1]);
-    const subRow = await (await mikro.fork()).findOne(OrganizationSubscription, {
+    const subRow = await (await mikro.fork()).findOne(TenantSubscription, {
       id: crashSub,
     } as never);
     expect(subRow?.status).toBe('active');

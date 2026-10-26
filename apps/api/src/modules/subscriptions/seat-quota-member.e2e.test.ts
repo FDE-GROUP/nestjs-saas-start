@@ -14,6 +14,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -70,6 +71,7 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
   const stamp = Date.now();
   const createdUserIds: string[] = [];
   const createdOrgIds: string[] = [];
+  const createdTenantIds: string[] = [];
 
   const authApi = () => app.get<InjectAuthInstance>(AuthInstanceInjectKey).get().api;
 
@@ -100,6 +102,9 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
       await em.nativeDelete(Invitation, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
+    }
+    if (createdTenantIds.length) {
+      await em.nativeDelete(Tenant, { id: { $in: createdTenantIds } } as never);
     }
     if (createdUserIds.length) {
       await em.nativeDelete(Session, { userId: { $in: createdUserIds } } as never);
@@ -166,6 +171,22 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     const orgId = String((created as { id?: unknown }).id);
     if (!orgId || orgId === 'undefined') throw new Error(`createOrganization 无 id`);
     createdOrgIds.push(orgId);
+
+    // rehierarchy 切片 D：席位按租户聚合（经 `organization.tenantId` 派生·见 seats hook +
+    // mikro-quota.store.countMembers）。BA 原生 createOrganization 不盖 tenantId·此处沿生产
+    // 换轴写链（provisioning/seed）补建专属租户行并盖 organization.tenantId（1:1·tenant.id=org.id），
+    // 否则 hook 解析不到目标租户→放行→本文件 402 断言永不触发。
+    const stampEm = await mikro.fork();
+    await stampEm.insert(Tenant, {
+      id: orgId,
+      name: `E2E Seats Tenant ${stamp}`,
+      slug: `e2e-seats-${stamp}`,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await stampEm.nativeUpdate(Organization, { id: orgId } as never, { tenantId: orgId } as never);
+    createdTenantIds.push(orgId);
 
     // creator 已占 1 席；免费档限额 = FREE_PLAN.seatsLimit
     const limit = FREE_PLAN.seatsLimit.value; // S2：OrganizationPlan.seatsLimit 已 Quota VO 化

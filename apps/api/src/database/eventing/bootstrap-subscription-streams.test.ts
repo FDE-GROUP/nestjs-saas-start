@@ -1,6 +1,6 @@
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OrganizationSubscription } from '../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TenantSubscription } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { bootstrapSubscriptionStreams } from './bootstrap-subscription-streams';
 
 /**
@@ -28,7 +28,7 @@ function makeFakeEm(subs: FakeRow[], events: FakeEventRow[]) {
   const inserts: FakeEventRow[] = [];
   const find = vi.fn(
     async (entity: unknown, filter: Record<string, unknown>, options?: Record<string, unknown>) => {
-      if (entity === OrganizationSubscription) {
+      if (entity === TenantSubscription) {
         const idFilter = filter.id as { $in?: string[] } | undefined;
         return idFilter?.$in ? subs.filter((s) => idFilter.$in?.includes(s.id)) : [...subs];
       }

@@ -42,7 +42,10 @@ export interface SeatQuotaSnapshot {
  *
  * @remarks
  * 缺行回落 `FREE_PLAN`（带限额·裁②非 fail-open）。用量维度 = 成员数
- * （`COUNT(member where organizationId)`·实时算·不建 usage 表）。
+ * （`COUNT(member where tenantId)`·实时算·不建 usage 表）。
+ *
+ * global-tenant-organization-rehierarchy 切片 D（计费单位上移）：入参轴从 `organizationId` 升 **`tenantId`**——
+ * 一租多组织后席位/配额按租户总量聚合才是正当语义（生效订阅读 `tenant_subscription`·member 按 tenantId 计数）。
  *
  * 架构精度修宪 S2：**裁决不再抛 HTTP**（原 `assertSeats` 402 已删）——本服务属 kit 的
  * 领域/应用面，402 翻译归适配器角色消费点（`QuotaGuard` / auth `seats-quota.hook`），
@@ -59,45 +62,45 @@ export class QuotaService {
   /**
    * 当前生效订阅（最新 active 行 by periodStart desc），无 → null。
    *
-   * @param organizationId - 目标租户 id
+   * @param tenantId - 目标租户 id
    * @returns 生效订阅视图；无 active 行返回 `null`
    */
-  async currentSubscription(organizationId: string): Promise<ActiveSubscriptionView | null> {
-    return this.store.currentActiveSubscription(organizationId);
+  async currentSubscription(tenantId: string): Promise<ActiveSubscriptionView | null> {
+    return this.store.currentActiveSubscription(tenantId);
   }
 
   /**
    * 生效座位限额（P2 · Quota VO）：有 active 订阅 → 摄入其 seatsLimit；无 → FREE_PLAN 档。
    *
-   * @param organizationId - 目标租户 id
+   * @param tenantId - 目标租户 id
    * @returns 承载不变量的 `Quota` 限额
    */
-  async effectiveSeatsLimit(organizationId: string): Promise<Quota> {
-    const sub = await this.currentSubscription(organizationId);
+  async effectiveSeatsLimit(tenantId: string): Promise<Quota> {
+    const sub = await this.currentSubscription(tenantId);
     return sub ? Quota.of(sub.seatsLimit) : FREE_PLAN.seatsLimit;
   }
 
   /**
    * 当前用量 = 该租户成员数。
    *
-   * @param organizationId - 目标租户 id
+   * @param tenantId - 目标租户 id
    * @returns 成员数量
    */
-  async currentSeats(organizationId: string): Promise<number> {
-    return this.store.countMembers(organizationId);
+  async currentSeats(tenantId: string): Promise<number> {
+    return this.store.countMembers(tenantId);
   }
 
   /**
    * 纯裁决（不抛·P1 result-union）：used + adding 是否仍在限额内。
    *
-   * @param organizationId - 目标租户 id
+   * @param tenantId - 目标租户 id
    * @param adding - 本次预计新增成员数（默认 1）
    * @returns 座位配额裁决结果（ok/used/limit）
    */
-  async checkSeats(organizationId: string, adding = 1): Promise<SeatQuotaVerdict> {
+  async checkSeats(tenantId: string, adding = 1): Promise<SeatQuotaVerdict> {
     const [limit, used] = await Promise.all([
-      this.effectiveSeatsLimit(organizationId),
-      this.currentSeats(organizationId),
+      this.effectiveSeatsLimit(tenantId),
+      this.currentSeats(tenantId),
     ]);
     return { ok: used + adding <= limit.value, used, limit: limit.value };
   }
@@ -108,13 +111,13 @@ export class QuotaService {
    * @remarks
    * 复用 `currentSubscription`/`currentSeats`·限额逻辑不另起炉灶（禁散点）。
    *
-   * @param organizationId - 目标租户 id
+   * @param tenantId - 目标租户 id
    * @returns 生效档位/用量/映射的读侧快照
    */
-  async snapshot(organizationId: string): Promise<SeatQuotaSnapshot> {
-    const sub = await this.currentSubscription(organizationId);
+  async snapshot(tenantId: string): Promise<SeatQuotaSnapshot> {
+    const sub = await this.currentSubscription(tenantId);
     const limit = sub ? Quota.of(sub.seatsLimit) : FREE_PLAN.seatsLimit;
-    const used = await this.currentSeats(organizationId);
+    const used = await this.currentSeats(tenantId);
     return {
       hasSubscription: sub !== null,
       plan: sub?.plan ?? FREE_PLAN.plan,

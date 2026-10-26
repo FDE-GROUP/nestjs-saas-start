@@ -18,6 +18,7 @@ import {
   createUsers,
   enforceSeedPasswordPolicy,
   ensureActiveOrganizationContext,
+  ensureCompanionOrgInTenant,
   ensureLoginableUser,
   runSeed,
 } from './seed';
@@ -265,6 +266,82 @@ describe('seed createPosts (S-d6)', () => {
     await createPosts(em, { includeTestData: false, userCount: 0, postCount: 3 });
     expect(spies.find).not.toHaveBeenCalled();
     expect(spies.insert).not.toHaveBeenCalled();
+  });
+
+  it('主轴换轴+一 tenant 多 org（rehierarchy D）：每 post 双盖 tenantId·跨该租户两组织轮询（同租户互见）', async () => {
+    const { em, spies } = makeEm();
+    // 1st find(Organization,{},{limit:1}) → primary（带 tenantId）；2nd find(Organization,{tenantId}) → 同租户两 org。
+    spies.find
+      .mockResolvedValueOnce([{ id: 'org-1', tenantId: 'tenant-A' }])
+      .mockResolvedValueOnce([{ id: 'org-1' }, { id: 'org-2' }]);
+
+    await createPosts(em, { includeTestData: true, userCount: 0, postCount: 4 });
+
+    const [batch] = insertsFor(spies.insert, PostEntity) as [
+      (Record<string, unknown> & { tenantId: string; organizationId: string })[],
+    ];
+    expect(batch).toHaveLength(4);
+    expect(batch.every((p) => p.tenantId === 'tenant-A')).toBe(true);
+    // 跨组织轮询：两 org 各有贴（互见）
+    expect([...new Set(batch.map((p) => p.organizationId))].sort()).toEqual(['org-1', 'org-2']);
+  });
+
+  it('同租户仅一 org（无 companion 命中）→ 回落单组织撒 post·仍盖 tenantId（回落 org.id）', async () => {
+    const { em, spies } = makeEm();
+    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]); // 1st：primary 无 tenantId→回落 org.id；2nd 走默认 []
+
+    await createPosts(em, { includeTestData: true, userCount: 0, postCount: 2 });
+
+    const [batch] = insertsFor(spies.insert, PostEntity) as [
+      (Record<string, unknown> & { tenantId: string; organizationId: string })[],
+    ];
+    expect(batch.every((p) => p.tenantId === 'org-1' && p.organizationId === 'org-1')).toBe(true);
+  });
+});
+
+describe('seed ensureCompanionOrgInTenant（一 tenant 多 org·rehierarchy D §35）', () => {
+  it('无同 slug org → createOrganization·盖 organization.tenantId=既有租户·不新建租户行·返 created', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find
+      .mockResolvedValueOnce([]) // 顶部按 slug 查 → 空
+      .mockResolvedValueOnce([{ id: 'org-2' }]); // create 后回查 → 新 org
+    spies.findOne.mockResolvedValueOnce({ id: 'tenant-A' }); // findOne(Tenant,{id:tenant-A}) 存在→不新建
+
+    const result = await ensureCompanionOrgInTenant(em, auth, {
+      slug: 'seed-acme-b',
+      name: 'Acme Ops (Seed)',
+      ownerUserId: 'u1',
+      tenantId: 'tenant-A',
+    });
+
+    expect(result).toBe('created');
+    expect(as.createOrganization).toHaveBeenCalledTimes(1);
+    expect(insertsFor(spies.insert, Tenant)).toHaveLength(0); // 共用既有租户·不新建
+    expect(spies.nativeUpdate).toHaveBeenCalledWith(
+      Organization,
+      { id: 'org-2' },
+      { tenantId: 'tenant-A' },
+    );
+  });
+
+  it('同 slug org 已在该租户且有 owner member → 幂等·不 createOrganization·不重盖·返 exists', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find.mockResolvedValueOnce([{ id: 'org-2', tenantId: 'tenant-A' }]);
+    spies.findOne.mockResolvedValueOnce({ id: 'm1', role: 'owner' });
+
+    const result = await ensureCompanionOrgInTenant(em, auth, {
+      slug: 'seed-acme-b',
+      name: 'Acme Ops (Seed)',
+      ownerUserId: 'u1',
+      tenantId: 'tenant-A',
+    });
+
+    expect(result).toBe('exists');
+    expect(as.createOrganization).not.toHaveBeenCalled();
+    expect(spies.nativeUpdate).not.toHaveBeenCalled();
+    expect(insertsFor(spies.insert, Member)).toHaveLength(0);
   });
 });
 

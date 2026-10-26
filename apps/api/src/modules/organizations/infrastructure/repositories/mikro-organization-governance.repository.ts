@@ -6,7 +6,7 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
-import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
   ORGANIZATION_STATUS,
@@ -188,8 +188,10 @@ export class MikroOrganizationGovernanceRepository
       updatedAt: w.updatedAt,
     }));
 
-    const subscriptionEntities = await em.find(OrganizationSubscription, {
-      organizationId,
+    // rehierarchy 切片 D（计费单位上移）：订阅行住 `tenant_subscription`·按本体租户锥取
+    // （expand 段存量未盖 tenantId 时回落 organizationId·同 1:1 骨架）。
+    const subscriptionEntities = await em.find(TenantSubscription, {
+      tenantId: (org as { tenantId?: string | null }).tenantId ?? organizationId,
     } as never);
     const subscriptions = subscriptionEntities.map((s) => ({
       id: s.id,
@@ -204,7 +206,8 @@ export class MikroOrganizationGovernanceRepository
       providerCustomerId: s.providerCustomerId ?? null,
       providerSubscriptionId: s.providerSubscriptionId ?? null,
       createdAt: s.createdAt,
-      updatedAt: s.updatedAt,
+      // TenantSubscription.updatedAt L2 可空：导出面回落 createdAt（建后未改即 NULL·同 1:1 骨架语义）。
+      updatedAt: s.updatedAt ?? s.createdAt,
     }));
 
     const postEntities = await em.find(PostEntity, { organizationId } as never);

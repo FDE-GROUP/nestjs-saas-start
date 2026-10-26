@@ -1,5 +1,5 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { SubscriptionBootstrappedEvent } from '@core/saas-kit/modules/subscriptions/domain/events/subscription-bootstrapped.event';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
@@ -29,7 +29,7 @@ describe('MikroSubscriptionLifecycle（系统面·终态收敛）', () => {
     vi.restoreAllMocks();
   });
 
-  it('存在 from 态行：只收敛最新一条（limit 1·显式 organizationId+status 谓词·盖 updatedAt）', async () => {
+  it('存在 from 态行：只收敛最新一条（limit 1·显式 tenantId+status 谓词·盖 updatedAt）', async () => {
     const { lifecycle, find, nativeUpdate } = makeLifecycle([{ id: 'sub-1' }]);
     const changed = await lifecycle.convergeStatus(
       'org-9',
@@ -38,12 +38,12 @@ describe('MikroSubscriptionLifecycle（系统面·终态收敛）', () => {
     );
     expect(changed).toBe(true);
     expect(find).toHaveBeenCalledWith(
-      OrganizationSubscription,
-      { organizationId: 'org-9', status: SUBSCRIPTION_STATUS.ACTIVE },
+      TenantSubscription,
+      { tenantId: 'org-9', status: SUBSCRIPTION_STATUS.ACTIVE },
       expect.objectContaining({ limit: 1 }),
     );
     expect(nativeUpdate).toHaveBeenCalledWith(
-      OrganizationSubscription,
+      TenantSubscription,
       { id: 'sub-1' },
       expect.objectContaining({
         status: SUBSCRIPTION_STATUS.SUSPENDED,
@@ -123,7 +123,7 @@ describe('MikroSubscriptionLifecycle.convergeStatus 真相源写切换（ES R4c 
     });
     // 投影 = fold 结果（非手推 to）。
     expect(nativeUpdate).toHaveBeenCalledWith(
-      OrganizationSubscription,
+      TenantSubscription,
       { id: 'sub-1' },
       expect.objectContaining({ status: SUBSCRIPTION_STATUS.SUSPENDED }),
     );
@@ -188,7 +188,7 @@ describe('MikroSubscriptionLifecycle.rebuildProjection（ES R4c · 单流重建�
     const status = await lifecycle.rebuildProjection('sub-1');
     expect(status).toBe('suspended');
     expect(nativeUpdate).toHaveBeenCalledWith(
-      OrganizationSubscription,
+      TenantSubscription,
       { id: 'sub-1' },
       expect.objectContaining({ status: 'suspended' }),
     );

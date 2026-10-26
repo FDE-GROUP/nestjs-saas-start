@@ -29,7 +29,7 @@ function makeDeps() {
   const customers = { provisionCustomer } as unknown as CustomerProvisioner;
   const snapshot = vi.fn().mockResolvedValue(VIEW);
   const quota = { snapshot } as unknown as QuotaService;
-  const tenant = { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService;
+  const tenant = { requireActiveTenantId: () => 'tenantA' } as unknown as TenantIsolationService;
   return {
     handler: new CreateSubscriptionCommandHandler(subscriptions, customers, quota, tenant),
     create,
@@ -70,7 +70,7 @@ describe('CreateSubscriptionCommandHandler (S7 · FR-8 tenant↔customer 映射)
         provisionCustomer: vi.fn().mockRejectedValue(new Error('no provider')),
       } as unknown as CustomerProvisioner,
       { snapshot: vi.fn() } as unknown as QuotaService,
-      { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService,
+      { requireActiveTenantId: () => 'tenantA' } as unknown as TenantIsolationService,
     );
     await expect(
       failing.execute({ plan: 'free', customerEmail: 'a@b.com' } as never),
@@ -88,13 +88,13 @@ describe('CreateSubscriptionCommandHandler (S7 · FR-8 tenant↔customer 映射)
 function makeTruthDeps(streamLen = 0) {
   const create = vi
     .fn()
-    .mockResolvedValue({ id: 'sub1', organizationId: 'orgA', plan: 'pro', status: 'active' });
+    .mockResolvedValue({ id: 'sub1', tenantId: 'tenantA', plan: 'pro', status: 'active' });
   const subscriptions = { create } as unknown as SubscriptionRepository;
   const provisionCustomer = vi.fn().mockResolvedValue({ id: 'cus_1', providerId: 'stripe' });
   const customers = { provisionCustomer } as unknown as CustomerProvisioner;
   const snapshot = vi.fn().mockResolvedValue(VIEW);
   const quota = { snapshot } as unknown as QuotaService;
-  const tenant = { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService;
+  const tenant = { requireActiveTenantId: () => 'tenantA' } as unknown as TenantIsolationService;
   const durable: Array<{ events: readonly DomainEvent[]; version: number }> = [];
   const events = {
     publishAll: vi.fn(async () => {
@@ -137,21 +137,21 @@ describe('CreateSubscriptionCommandHandler.execute 真相源写切换（ES R4c �
       aggregateId: 'sub1',
       payload: { plan: 'pro', status: 'active' },
     });
-    expect(snapshot).toHaveBeenCalledWith('orgA');
+    expect(snapshot).toHaveBeenCalledWith('tenantA');
     expect(view).toBe(VIEW);
   });
 
   it('publishDurable 未实现时 fail-loud（零插行·拒静默降级）', async () => {
     const create = vi
       .fn()
-      .mockResolvedValue({ id: 'sub1', organizationId: 'orgA', plan: 'pro', status: 'active' });
+      .mockResolvedValue({ id: 'sub1', tenantId: 'tenantA', plan: 'pro', status: 'active' });
     const handler = new CreateSubscriptionCommandHandler(
       { create } as unknown as SubscriptionRepository,
       {
         provisionCustomer: vi.fn().mockResolvedValue({ id: 'cus_1', providerId: 'stripe' }),
       } as unknown as CustomerProvisioner,
       { snapshot: vi.fn() } as unknown as QuotaService,
-      { requireActiveOrganizationId: () => 'orgA' } as unknown as TenantIsolationService,
+      { requireActiveTenantId: () => 'tenantA' } as unknown as TenantIsolationService,
       { publishAll: vi.fn() } as unknown as DomainEventPublisher,
       { run: <T>(fn: () => Promise<T>) => fn() } as unknown as UnitOfWork,
       { load: vi.fn(async () => []) } as unknown as EventStore,

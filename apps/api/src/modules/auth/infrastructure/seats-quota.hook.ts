@@ -17,7 +17,10 @@
  */
 
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { Invitation } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import {
+  Invitation,
+  Organization,
+} from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import type { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
@@ -32,8 +35,8 @@ export interface SeatsQuotaHookDeps {
   readonly mikro: Pick<MikroOrmService, 'fork'>;
 }
 
-/** 解析本次增量事件的目标租户；无法判定时返回 null（放行·交由 BA 自身校验拒绝畸形请求）。 */
-async function resolveTargetOrg(
+/** 解析本次增量事件的目标**租户**（计费主轴）；无法判定时返回 null（放行·交由 BA 自身校验拒绝畸形请求）。 */
+async function resolveTargetTenant(
   ctx: MiddlewareCtx,
   deps: SeatsQuotaHookDeps,
 ): Promise<string | null> {
@@ -48,10 +51,15 @@ async function resolveTargetOrg(
     });
     // 邀请不存在/已消费：放行让 BA 走自身错误路径（404/400），配额层不越权裁决
     if (!row || row.status !== 'pending') return null;
-    return row.organizationId;
+    // 目标租户经 `organization.tenantId` 派生（换轴写链已盖·运行时可靠）·**不取** invitation.tenantId
+    // （BA 原生建邀请只写 organizationId·该列新运行态不盖）。组织无租户归属→ null（放行）。
+    const org = await em.findOne(Organization, { id: row.organizationId } as never, {
+      fields: ['tenantId'],
+    });
+    return (org as { tenantId?: string | null } | null)?.tenantId ?? null;
   }
-  // 防御预留通道（现网无 HTTP 路由·仅取 body.organizationId）
-  return (ctx.body as { organizationId?: string } | undefined)?.organizationId ?? null;
+  // 防御预留通道（现网无 HTTP 路由·仅取 body.tenantId）
+  return (ctx.body as { tenantId?: string } | undefined)?.tenantId ?? null;
 }
 
 /** hook handler 的最小结构类型（BA MiddlewareInputContext 运行时实含 path/body，类型面未暴露）。 */
@@ -74,9 +82,9 @@ export function createSeatsQuotaPlugin(deps: SeatsQuotaHookDeps): BetterAuthPlug
         {
           matcher: (context) => MEMBERSHIP_INCREMENT_PATHS.test(context.path ?? ''),
           handler: createAuthMiddleware(async (ctx) => {
-            const organizationId = await resolveTargetOrg(ctx as MiddlewareCtx, deps);
-            if (!organizationId) return;
-            const verdict = await deps.quota.checkSeats(organizationId, 1);
+            const tenantId = await resolveTargetTenant(ctx as MiddlewareCtx, deps);
+            if (!tenantId) return;
+            const verdict = await deps.quota.checkSeats(tenantId, 1);
             if (!verdict.ok) {
               throw new APIError(402, {
                 message: `Seat quota exceeded: ${verdict.used}+1 > ${verdict.limit}`,

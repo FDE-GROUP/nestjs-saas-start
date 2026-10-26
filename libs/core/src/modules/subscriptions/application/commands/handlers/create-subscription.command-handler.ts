@@ -34,7 +34,7 @@ import { CreateSubscriptionCommand } from '../create-subscription.command';
  * 流程：从 ALS 取活跃租户 → 解析档位限额 → **经 `CustomerProvisioner`
  * 端口建立 tenant↔customer 映射**（§9.5.4①B/④·具体 `PaymentService` 适配留应用侧、无可用通道时适配抛 503）
  * → 追加 active 订阅行（tenant 由仓储盖章·FR-5）→ 返回 `QuotaService.snapshot`。
- * 命令/处理器不命名 organizationId（port/adapter 从 ALS 注入·禁散点）。
+ * 命令/处理器不命名 tenantId（port/adapter 从 ALS 注入·禁散点·rehierarchy 切片 D 计费轴上移）。
  *
  * @public
  */
@@ -63,7 +63,7 @@ export class CreateSubscriptionCommandHandler
    * @returns 生效档位/用量/映射的读侧快照
    */
   async execute(command: CreateSubscriptionCommand): Promise<OrganizationSubscriptionView> {
-    const organizationId = this.tenant.requireActiveOrganizationId();
+    const tenantId = this.tenant.requireActiveTenantId();
     const planDef = resolvePlanDef(command.plan);
     // FR-8: materialize the provider-side customer (via the port) and map it onto the subscription row.
     const customer = await this.customers.provisionCustomer(command.customerEmail);
@@ -80,7 +80,7 @@ export class CreateSubscriptionCommandHandler
     // —— 原路径（缺省·旋钮关·逐字节不变：仅 CRUD 插行·零事件）——
     if (!this.truthSource) {
       await this.subscriptions.create(draft);
-      return this.quota.snapshot(organizationId);
+      return this.quota.snapshot(tenantId);
     }
 
     // —— ES R4c 真相源写路径（新建即流起点 `subscription.created`·投影 insert + append 同事务）——
@@ -112,6 +112,6 @@ export class CreateSubscriptionCommandHandler
       await publishDurable([event], stream.length + 1);
       return rec;
     });
-    return this.quota.snapshot(record.organizationId);
+    return this.quota.snapshot(record.tenantId);
   }
 }

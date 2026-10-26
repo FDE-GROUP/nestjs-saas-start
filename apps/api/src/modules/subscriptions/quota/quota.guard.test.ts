@@ -26,8 +26,8 @@ function quotaService(over = false) {
   } as unknown as QuotaService;
 }
 
-function isolationContext(organizationId?: string) {
-  return { organizationId: organizationId } as unknown as TenantIsolationService;
+function isolationContext(tenantId?: string) {
+  return { tenantId: tenantId } as unknown as TenantIsolationService;
 }
 
 describe('QuotaGuard (S7 · FR-7 opt-in 逐路由·S2 后 402 翻译归本守卫)', () => {

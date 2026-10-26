@@ -52,14 +52,14 @@ export class QuotaGuard implements CanActivate {
     // 未声明配额需求 → 非本守卫关注点，放行。
     if (!requirement) return true;
 
-    const organizationId = this.tenantContext.organizationId;
-    if (!organizationId)
-      throw new ForbiddenException('No active organization context', {
+    const tenantId = this.tenantContext.tenantId;
+    if (!tenantId)
+      throw new ForbiddenException('No active tenant context', {
         errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
 
     const delta = requirement.seats ?? 1;
-    const verdict = await this.quota.checkSeats(organizationId, delta);
+    const verdict = await this.quota.checkSeats(tenantId, delta);
     if (!verdict.ok) {
       // 402 = Payment Required（语义=需升级档位）；errorCode 供前端/客户端分支。
       throw new HttpException(

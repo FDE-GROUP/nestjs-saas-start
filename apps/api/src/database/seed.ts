@@ -286,19 +286,22 @@ export async function ensureActiveOrganizationContext(
 }
 
 /**
- * 换轴写链（rehierarchy C）：为组织 ensure 专属租户行并盖 `organization.tenantId`——1:1 骨架沿
- * 回填迁移同式（`tenant.id = org.id`）·幂等（存在即跳过）。缺此环则 seed/新建 org 无主轴归属，
- * 隔离闸 fail-closed 全量 403。
+ * 换轴写链（rehierarchy C/D）：为组织 ensure 归属租户行并盖 `organization.tenantId`。
+ * - `tenantId` 缺省 = `organizationId`（**1:1 骨架**，沿回填迁移同式·幂等·租户行存在即跳过）；
+ *   传既有租户 id 则**不新建租户**、只把新组织挂到该租户下（**一 tenant 多 org**·rehierarchy
+ *   切片 D §35 demo 形态——companion 组织共用运营者专属租户）。
+ * 缺此环则 seed/新建 org 无主轴归属，隔离闸 fail-closed 全量 403。
  */
 async function stampOrgTenant(
   em: EntityManager,
   organizationId: string,
   spec: { slug: string; name: string },
+  tenantId: string = organizationId,
 ): Promise<void> {
-  const tenant = await em.findOne(Tenant, { id: organizationId } as never);
+  const tenant = await em.findOne(Tenant, { id: tenantId } as never);
   if (!tenant) {
     await em.insert(Tenant, {
-      id: organizationId,
+      id: tenantId,
       name: spec.name,
       slug: spec.slug,
       status: 'active',
@@ -310,9 +313,51 @@ async function stampOrgTenant(
     Organization,
     { id: organizationId } as never,
     {
-      tenantId: organizationId,
+      tenantId,
     } as never,
   );
+}
+
+/**
+ * 一 tenant 多 org（rehierarchy 切片 D §35）：在**既有租户**下幂等预建一个 companion 组织并
+ * 把 owner 置首名成员——与 `ensureActiveOrganizationContext` 同构，差别是**不新建专属租户**、
+ * 而将新组织 `organization.tenantId` 指向传入的既有租户。供 seed 造「同一租户挂两组织」形态，
+ * 让同租户跨组织互见语义在 demo 里可见。
+ */
+export async function ensureCompanionOrgInTenant(
+  em: EntityManager,
+  auth: LoginableAuth,
+  spec: { slug: string; name: string; ownerUserId: string; tenantId: string },
+): Promise<'created' | 'exists'> {
+  const orgs = await em.find(Organization, { slug: spec.slug } as never);
+  const org = (orgs as { id: string; tenantId?: string | null }[])[0];
+  if (org) {
+    if (org.tenantId !== spec.tenantId) {
+      await stampOrgTenant(em, org.id, spec, spec.tenantId);
+    }
+    const member = await em.findOne(Member, {
+      organizationId: org.id,
+      userId: spec.ownerUserId,
+    } as never);
+    if (!member) {
+      await em.insert(Member, {
+        id: uuidv7(),
+        organizationId: org.id,
+        userId: spec.ownerUserId,
+        role: 'owner',
+        createdAt: new Date(),
+      } as never);
+    }
+    return 'exists';
+  }
+  await auth.api.createOrganization({
+    body: { name: spec.name, slug: spec.slug, userId: spec.ownerUserId },
+  });
+  const created = (await em.find(Organization, { slug: spec.slug } as never)) as {
+    id: string;
+  }[];
+  if (created[0]) await stampOrgTenant(em, created[0].id, spec, spec.tenantId);
+  return 'created';
 }
 
 /** 按 email 回查 user id（供 `createOrganization.body.userId`·零改 `ensureLoginableUser` 返回契约）。 */
@@ -359,6 +404,29 @@ export async function ensureSeedOrganizations(
     });
     console.log(`🏢 Seeded active tenant (${result}): ${p.slug} · owner=${p.email}`);
   }
+
+  // 一 tenant 多 org（rehierarchy 切片 D §35）：给运营者专属租户挂一个 companion 组织，
+  // 让同租户跨组织互见语义在 demo 里可见（仅 includeTestData）。companion 不新建租户、
+  // 共用运营者 primary 组织的租户归属。
+  if (options.includeTestData) {
+    const operatorUserId = await resolveUserId(em, operatorEmail);
+    const primaryOrgs = (await em.find(Organization, { slug: 'seed-acme' } as never)) as {
+      id: string;
+      tenantId?: string | null;
+    }[];
+    const tenantId = primaryOrgs[0]?.tenantId ?? primaryOrgs[0]?.id;
+    if (operatorUserId && tenantId) {
+      const result = await ensureCompanionOrgInTenant(em, auth, {
+        slug: 'seed-acme-b',
+        name: 'Acme Ops (Seed)',
+        ownerUserId: operatorUserId,
+        tenantId,
+      });
+      console.log(
+        `🏢 Seeded companion org in shared tenant (${result}): seed-acme-b · tenant=${tenantId}`,
+      );
+    }
+  }
 }
 
 export async function createPosts(em: EntityManager, options: SeedOptions): Promise<void> {
@@ -376,9 +444,16 @@ export async function createPosts(em: EntityManager, options: SeedOptions): Prom
     return;
   }
 
-  console.log(`📝 Creating sample posts (org=${org.id})...`);
+  // 主轴换轴（rehierarchy C/D）：post 读谓词已改 `{ tenantId }`——seed 必须双盖 `tenantId`
+  // （回落 org.id），否则换轴后租户作用域读不到 demo 贴。
+  const tenantId = (org as { tenantId?: string | null }).tenantId ?? (org as { id: string }).id;
+  // 一 tenant 多 org：撒向该租户下全部组织（含 companion）·跨组织轮询·同租户互见（§35）。
+  const tenantOrgs = (await em.find(Organization, { tenantId } as never, { limit: 2 })) as {
+    id: string;
+  }[];
+  const targets = tenantOrgs.length > 0 ? tenantOrgs : [org as { id: string }];
 
-  const orgId = org.id;
+  console.log(`📝 Creating sample posts (tenant=${tenantId}·orgs=${targets.length})...`);
 
   const samplePosts: PostData[] = [
     {
@@ -414,9 +489,10 @@ export async function createPosts(em: EntityManager, options: SeedOptions): Prom
     try {
       await em.insert(
         PostEntity,
-        postsToCreate.map((p) => ({
+        postsToCreate.map((p, idx) => ({
           id: uuidv7(),
-          organizationId: orgId,
+          tenantId,
+          organizationId: targets[idx % targets.length].id,
           updatedAt: new Date(),
           ...p,
         })) as never,
