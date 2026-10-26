@@ -35,7 +35,9 @@ export const Organization = defineEntity({
   properties: {
     id: p.string().primary(),
     // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·自撰域列受列律约束，
-    // BA 契约列零触碰）：新层级 Tenant ⊃ Organization 的边；回填后全量有值，NOT NULL 收紧留 contract 段。
+    // BA 契约列零触碰）：新层级 Tenant ⊃ Organization 的边。片二 K3 收口：**维持 nullable**（§54 回退坐实）——
+    // BA `createOrganization` 先建 org 行（tenantId NULL）·后由 provisioning 同流 `nativeUpdate` 盖章，
+    // NOT NULL 约束会在 BA 插入语句即时违列（非 deferrable·两段不同事务）·故本列只能应用层强制、不库级收紧。
     tenantId: p.string().nullable(),
     name: p.string(),
     slug: p.string(),
@@ -70,8 +72,6 @@ export const Member = defineEntity({
   tableName: 'member',
   properties: {
     id: p.string().primary(),
-    // 租级归属冗余列（同上·切片 C 换轴后仓储读谓词锚本列）。
-    tenantId: p.string().nullable(),
     organizationId: p.string(),
     userId: p.string(),
     role: p.string(),
@@ -84,7 +84,6 @@ export const Invitation = defineEntity({
   tableName: 'invitation',
   properties: {
     id: p.string().primary(),
-    tenantId: p.string().nullable(),
     organizationId: p.string(),
     email: p.string(),
     role: p.string(),

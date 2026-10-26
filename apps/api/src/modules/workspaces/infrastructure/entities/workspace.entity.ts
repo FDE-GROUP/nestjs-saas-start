@@ -18,7 +18,8 @@ export const WORKSPACE_META: TableMeta = {
   columns: [
     ['id', { k: 'text', primary: true }],
     // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·FK cascade 给租户级联删除
-    // 留 NFR-6 血脉；切片 C 换轴后读谓词锚本列）。
+    // 留 NFR-6 血脉；切片 C 换轴后读谓词锚本列。片二 K3 复裁：维持 nullable·写路径 ALS 全量盖章·
+    // 隔离由仓储 `requireActiveTenantId` 谓词 + gated e2e 结构卡控，不库级收紧（与 organization/post 同口径）。
     ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
     ['name', { k: 'text' }],
@@ -36,7 +37,7 @@ export const WORKSPACE_META: TableMeta = {
 
 export interface Workspace {
   id: string;
-  /** 归属租户（expand 段可空·回填后全量有值·NOT NULL 收紧留 contract 段）。 */
+  /** 归属租户（expand 段可空·片二 K3 复裁维持 nullable·写路径 ALS 全量盖章·不库级收紧）。 */
   tenantId?: string | null;
   organizationId: string;
   name: string;

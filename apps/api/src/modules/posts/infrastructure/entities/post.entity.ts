@@ -35,7 +35,9 @@ export interface PostEntity {
   // 仓储 `toDomain` 统一 `?? null` 归一为领域实体的复原入参。
   content?: string | null;
   published: boolean;
-  // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·切片 C 换轴后读谓词锚本列）。
+  // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·切片 C 换轴后读谓词锚本列。
+  // 片二 K3 复裁：维持 nullable——本列系适配器写侧盖章（不入域 `PostState`·见 `post-mapping.ts` 投影同构锁），
+  // 升 NOT NULL 会迫使写侧列入域镜射，与投影镜射教义相左；隔离由 `requireActiveTenantId` 谓词 + gated e2e 卡控。
   tenantId?: string | null;
   organizationId: string;
   workspaceId?: string | null;

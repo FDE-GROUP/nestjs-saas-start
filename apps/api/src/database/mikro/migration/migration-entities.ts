@@ -197,8 +197,7 @@ export const Member = defineEntity({
   tableName: 'member',
   properties: {
     id: p.text().primary(),
-    // 租级归属冗余列（与 organization.tenantId 同批回填·expand 段 nullable）。
-    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
+    // 片二 K3 收口：expand 段冗余 `tenantId` 列已退役 DROP（租级归属读经 organization.tenantId 派生）。
     organizationId: p.manyToOne(Organization).mapToPk().deleteRule('cascade'),
     userId: p.manyToOne(User).mapToPk().deleteRule('cascade'),
     role: p.text().default('member'),
@@ -212,7 +211,7 @@ export const Invitation = defineEntity({
   tableName: 'invitation',
   properties: {
     id: p.text().primary(),
-    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
+    // 片二 K3 收口：expand 段冗余 `tenantId` 列已退役 DROP（同 member·目标租户经 organization.tenantId 派生）。
     organizationId: p.manyToOne(Organization).mapToPk().deleteRule('cascade'),
     email: p.text(),
     role: p.text(),

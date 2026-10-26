@@ -1078,23 +1078,6 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "text"
-        },
-        "tenantId": {
-          "name": "tenantId",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
         }
       },
       "indexes": [
@@ -1132,14 +1115,6 @@
           "localTableName": "public.invitation",
           "referencedColumnNames": ["id"],
           "referencedTableName": "public.organization",
-          "deleteRule": "cascade"
-        },
-        "invitation_tenantId_foreign": {
-          "columnNames": ["tenantId"],
-          "constraintName": "invitation_tenantId_foreign",
-          "localTableName": "public.invitation",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.tenant",
           "deleteRule": "cascade"
         }
       },
@@ -1217,23 +1192,6 @@
           "enumItems": [],
           "mappedType": "text"
         },
-        "tenantId": {
-          "name": "tenantId",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
         "userId": {
           "name": "userId",
           "type": "text",
@@ -1279,14 +1237,6 @@
           "localTableName": "public.member",
           "referencedColumnNames": ["id"],
           "referencedTableName": "public.organization",
-          "deleteRule": "cascade"
-        },
-        "member_tenantId_foreign": {
-          "columnNames": ["tenantId"],
-          "constraintName": "member_tenantId_foreign",
-          "localTableName": "public.member",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.tenant",
           "deleteRule": "cascade"
         },
         "member_userId_foreign": {
