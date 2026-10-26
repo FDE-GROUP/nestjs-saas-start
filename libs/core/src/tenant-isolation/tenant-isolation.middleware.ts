@@ -73,6 +73,7 @@ export class TenantIsolationMiddleware implements NestMiddleware {
           boundOrganizationId: string | undefined,
           boundUserId?: string,
           boundTenantId?: string,
+          boundOrgVisibility?: string,
         ): void => {
           const ctx: TenantIsolationScope = {
             // 主轴（隔离硬边界）：无封禁组织才解析得出租户；封禁/失能路径下一并清空。
@@ -82,6 +83,8 @@ export class TenantIsolationMiddleware implements NestMiddleware {
             userId: boundUserId,
             // 无租户则无角色：封禁/失能路径下 role 一并清空（与「既不绑租户也不绑身份」同构）。
             role: boundOrganizationId ? role : undefined,
+            // 租内跨组织可见性策略（第三次复裁切片 3）：仅随主轴租户一同绑定；封禁/无租户路径下留空。
+            orgVisibility: boundTenantId ? boundOrgVisibility : undefined,
           };
           tenantIsolationStorage.run(ctx, next);
         };
@@ -106,13 +109,13 @@ export class TenantIsolationMiddleware implements NestMiddleware {
             return;
           }
           return this.tenantScope
-            .resolveTenantIdOf(organizationId)
-            .then((tenantId) => {
+            .resolveTenantScopeOf(organizationId)
+            .then((scope) => {
               // 解析不出租户归属：保留组织轴供归属面消费、主轴留空（guard 仍 fail-closed 403）。
-              if (!tenantId) return bind(organizationId, userId);
-              return this.tenantStatus.isBlocked(tenantId).then((blocked) => {
+              if (!scope) return bind(organizationId, userId);
+              return this.tenantStatus.isBlocked(scope.tenantId).then((blocked) => {
                 if (blocked) return bind(undefined, userId);
-                return bind(organizationId, userId, tenantId);
+                return bind(organizationId, userId, scope.tenantId, scope.orgVisibility);
               });
             })
             .catch(() => bind(undefined, userId)); // fail-closed: 解析/状态不可得 → 不绑租户

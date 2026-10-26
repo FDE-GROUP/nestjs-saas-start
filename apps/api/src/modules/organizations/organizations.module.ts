@@ -18,6 +18,7 @@ import { DeleteOrganizationPermanentlyCommandHandler } from './application/comma
 import { RejectOrganizationCommandHandler } from './application/commands/handlers/reject-organization.command-handler';
 import { ResumeOrganizationCommandHandler } from './application/commands/handlers/resume-organization.command-handler';
 import { ResumeUserCommandHandler } from './application/commands/handlers/resume-user.command-handler';
+import { SetTenantOrgVisibilityCommandHandler } from './application/commands/handlers/set-tenant-org-visibility.command-handler';
 import { SubmitOrganizationApplicationCommandHandler } from './application/commands/handlers/submit-organization-application.command-handler';
 import { SuspendOrganizationCommandHandler } from './application/commands/handlers/suspend-organization.command-handler';
 import { SuspendUserCommandHandler } from './application/commands/handlers/suspend-user.command-handler';
@@ -48,6 +49,8 @@ const CommandHandlers = [
   DeleteOrganizationPermanentlyCommandHandler,
   // module-org-odoo-company-mapping 切片 A：bind-existing 回填（平台级·治理审计单点）。
   BindOrganizationOdooCompanyCommandHandler,
+  // 第三次复裁切片 3：租内跨组织可见性策略设置（平台级·每租户机密维开关）。
+  SetTenantOrgVisibilityCommandHandler,
   SuspendUserCommandHandler,
   ResumeUserCommandHandler,
 ];

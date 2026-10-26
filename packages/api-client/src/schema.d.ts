@@ -211,6 +211,23 @@ export interface paths {
         patch: operations["PlatformTenantsController_resume_v1"];
         trace?: never;
     };
+    "/api/v1/platform/tenants/{tenantId}/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the tenant's intra-tenant organization visibility policy (shared ⇄ isolated) */
+        patch: operations["PlatformTenantsController_setVisibility_v1"];
+        trace?: never;
+    };
     "/api/v1/platform/tenants/{tenantId}/permanent": {
         parameters: {
             query?: never;
@@ -1043,6 +1060,15 @@ export interface components {
             purgedOrgs: number;
             /** @description 本次清除的 lifecycle 事件数（供审计核对）。 */
             purgedEvents: number;
+        };
+        TenantOrgVisibilityResultResponse: {
+            /** @description 目标 tenant 主键。 */
+            tenantId: string;
+            /**
+             * @description 设置后的租内跨组织可见性策略（shared 互见·isolated 互不可见）。
+             * @enum {string}
+             */
+            orgVisibility: "shared" | "isolated";
         };
         PlatformUserRowResponse: {
             /** @description 用户主键。 */
@@ -2004,6 +2030,46 @@ export interface operations {
             };
             /** @description Illegal transition for the current status. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PlatformTenantsController_setVisibility_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    orgVisibility: "shared" | "isolated";
+                };
+            };
+        };
+        responses: {
+            /** @description Tenant orgVisibility updated (shared=互见 · isolated=租内跨组织互不可见). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["TenantOrgVisibilityResultResponse"];
+                    };
+                };
+            };
+            /** @description Tenant not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -2,6 +2,7 @@ import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecyc
 import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
+import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ApiProperty } from '@nestjs/swagger';
 import type {
@@ -15,11 +16,13 @@ import type {
   tenantHardDeleteResultSchema,
   userGovernanceResultSchema,
 } from '@saas/contracts/index';
+import { ORG_VISIBILITY_VALUES } from '@saas/contracts/index';
 import type { z } from 'zod';
 import type { UserGovernanceResult } from '../../../organizations/application/read-models/platform-user.read-model';
 import type {
   TenantGovernanceResult,
   TenantHardDeleteResult,
+  TenantOrgVisibilityResult,
 } from '../../../organizations/application/read-models/tenant-governance.read-model';
 import type {
   OrganizationDiagnostics,
@@ -257,6 +260,28 @@ const _tgrf: TenantGovernanceResultResponse = {} as TenantGovernanceResult;
 const _tgrb: TenantGovernanceResult = {} as TenantGovernanceResultResponse;
 void _tgrf;
 void _tgrb;
+
+/**
+ * 租内跨组织可见性策略设置响应契约（第三次复裁切片 3·设置后的 `tenant.orgVisibility`）。
+ * @public
+ */
+export class TenantOrgVisibilityResultResponse {
+  /** 目标租户 id。 */
+  @ApiProperty({ description: '目标 tenant 主键。' })
+  tenantId!: string;
+
+  /** 设置后的租内可见性策略。 */
+  @ApiProperty({
+    enum: ORG_VISIBILITY_VALUES,
+    description: '设置后的租内跨组织可见性策略（shared 互见·isolated 互不可见）。',
+  })
+  orgVisibility!: OrgVisibility;
+}
+
+const _tovf: TenantOrgVisibilityResultResponse = {} as TenantOrgVisibilityResult;
+const _tovb: TenantOrgVisibilityResult = {} as TenantOrgVisibilityResultResponse;
+void _tovf;
+void _tovb;
 
 /**
  * 租户硬删连带结果响应契约（含本次连带消灭的组织行数与清除事件数供审计核对）。

@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { ORGANIZATION_ODOO_BINDING_STATUS_VALUES, TENANCY_STATUS_VALUES } from './organizations';
+import {
+  ORG_VISIBILITY_VALUES,
+  ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
+  TENANCY_STATUS_VALUES,
+} from './organizations';
 import { offsetPageSchema } from './page';
 
 /**
@@ -103,6 +107,19 @@ export const tenantGovernanceResultSchema = z.object({
   status: z.enum(TENANCY_STATUS_VALUES),
 });
 export type TenantGovernanceResultView = z.infer<typeof tenantGovernanceResultSchema>;
+
+/**
+ * 租内跨组织可见性策略设置回执（第三次复裁切片 3·tenant 主键）。
+ *
+ * @public
+ */
+export const tenantOrgVisibilityResultSchema = z.object({
+  /** 目标租户 id。 */
+  tenantId: z.string(),
+  /** 设置后的租内可见性策略。 */
+  orgVisibility: z.enum(ORG_VISIBILITY_VALUES),
+});
+export type TenantOrgVisibilityResultView = z.infer<typeof tenantOrgVisibilityResultSchema>;
 
 /**
  * 租户硬删除结果（连带清除该租户名下所有组织·供审计核对）。

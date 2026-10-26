@@ -16,7 +16,7 @@
   "apps/api/src/modules/auth/infrastructure/session-reclaim.service.ts": 1,
   "apps/api/src/modules/auth/infrastructure/session-store.adapter.ts": 1,
   "apps/api/src/modules/organizations/infrastructure/mikro-tenant-status.store.ts": 3,
-  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-governance.repository.ts": 37,
+  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-governance.repository.ts": 39,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-provisioning.repository.ts": 3,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-tenant-directory.repository.ts": 7,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-user-governance.repository.ts": 2,
@@ -30,7 +30,7 @@
   "apps/api/src/modules/users/application/queries/handlers/export-user-data.query-handler.ts": 4,
   "apps/api/src/modules/users/infrastructure/repositories/mikro-user.repository.ts": 2,
   "apps/api/src/modules/workspaces/infrastructure/repositories/mikro-workspace.repository.ts": 5,
-  "apps/api/src/tenant-isolation/infrastructure/mikro-tenant-scope.resolver.ts": 2,
+  "apps/api/src/tenant-isolation/infrastructure/mikro-tenant-scope.resolver.ts": 4,
   "libs/ba-mikro-adapter/src/mikro-auth-adapter.ts": 5,
   "libs/core/src/authorization/instance-predicate.ts": 1,
   "libs/core/src/tenant-isolation/tenant-isolation.middleware.ts": 1

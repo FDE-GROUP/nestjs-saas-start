@@ -25,6 +25,12 @@ export interface TenantIsolationScope {
   userId?: string;
   /** 当前租户内成员角色（租级）。 */
   role?: TenantRole;
+  /**
+   * 活动租户的租内跨组织可见性策略（第三次复裁切片 3·`tenant.orgVisibility`）：中间件经
+   * `TENANT_SCOPE_RESOLVER`「顺带读回」注入·供切片 1 全局 filter 消费（`isolated` 时追加组织收窄）。
+   * 缺省 undefined 视同 `shared`（forward-compatible·跨租硬地板不受本字段影响）。
+   */
+  orgVisibility?: string;
 }
 
 /**

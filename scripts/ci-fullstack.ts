@@ -61,6 +61,8 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/workspaces/workspace-owner-rbac.e2e.test.ts',
   // 第三次层级复裁 切片 2（D1）·grant 组织收窄真库 e2e：org-scoped grant 只在本 org 生效·租级通配跨 org·跨租恒不可见。
   'apps/api/src/modules/authorization/org-scoped-grant.e2e.test.ts',
+  // 第三次层级复裁 切片 3（D2）·租内跨组织可见性策略真库 e2e：shared 互见·isolated 互不可见·跨租恒不可见·scoped:false 豁免。
+  'apps/api/src/tenant-isolation/org-visibility-isolation.e2e.test.ts',
   // 私有叠加层条目（module-odoo-rpc-frontend §4-3·高危#3 经人签核 2026-10-25）：登记随真源
   // 「在场即必须登记」，缺席态由下方 overlayAbsent 豁免判据放行——恒等闸两态全绿。
   'apps/api/src/features/odoo-rpc-api/api/odoo-rpc-live.e2e.test.ts',

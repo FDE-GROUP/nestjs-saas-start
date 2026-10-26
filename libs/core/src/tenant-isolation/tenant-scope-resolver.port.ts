@@ -14,8 +14,22 @@
  */
 export const TENANT_SCOPE_RESOLVER = Symbol('TENANT_SCOPE_RESOLVER');
 
+/**
+ * 活动组织 → 租户作用域解析结果（第三次复裁切片 3·「顺带读回」租内可见性策略）。
+ * @public
+ */
+export interface TenantScopeResolution {
+  /** 活动组织所属租户 id（隔离主轴）。 */
+  tenantId: string;
+  /** 该租户的租内跨组织可见性策略（`tenant.orgVisibility`）；读不回时 undefined（视同 shared）。 */
+  orgVisibility?: string;
+}
+
 /** @public */
 export interface TenantScopeResolver {
-  /** 解析活动组织的所属租户 id（`organization.tenantId`）；无归属/本体缺失 → `undefined`。 */
-  resolveTenantIdOf(organizationId: string): Promise<string | undefined>;
+  /**
+   * 解析活动组织的所属租户作用域（主轴 `tenantId` + 租内可见性 `orgVisibility` 顺带读回）；
+   * 无归属/本体缺失 → `undefined`（fail-closed·与旧 `resolveTenantIdOf` 同契约）。
+   */
+  resolveTenantScopeOf(organizationId: string): Promise<TenantScopeResolution | undefined>;
 }

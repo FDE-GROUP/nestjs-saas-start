@@ -705,6 +705,52 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Resume a suspended tenant (suspended → active)
       tags: *ref_5
+  /api/v1/platform/tenants/{tenantId}/visibility:
+    patch:
+      operationId: PlatformTenantsController_setVisibility_v1
+      parameters:
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orgVisibility:
+                  type: string
+                  enum:
+                    - shared
+                    - isolated
+              required:
+                - orgVisibility
+              additionalProperties: false
+      responses:
+        '200':
+          description: Tenant orgVisibility updated (shared=互见 · isolated=租内跨组织互不可见).
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TenantOrgVisibilityResultResponse'
+        '404':
+          description: Tenant not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: >-
+        Set the tenant's intra-tenant organization visibility policy (shared ⇄
+        isolated)
+      tags: *ref_5
   /api/v1/platform/tenants/{tenantId}/permanent:
     delete:
       operationId: PlatformTenantsController_permanentRemove_v1
@@ -2646,6 +2692,21 @@ components:
         - tenantId
         - purgedOrgs
         - purgedEvents
+    TenantOrgVisibilityResultResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: 目标 tenant 主键。
+        orgVisibility:
+          type: string
+          enum:
+            - shared
+            - isolated
+          description: 设置后的租内跨组织可见性策略（shared 互见·isolated 互不可见）。
+      required:
+        - tenantId
+        - orgVisibility
     PlatformUserRowResponse:
       type: object
       properties:

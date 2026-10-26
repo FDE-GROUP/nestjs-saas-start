@@ -16,6 +16,17 @@ export const TENANCY_STATUS_VALUES = [
 ] as const;
 
 /**
+ * 租内跨组织可见性策略 wire 值集（**传输层内联单源**·第三次复裁切片 3）。
+ *
+ * @remarks
+ * ⚠ 值域 SSOT 在 `@core` ORG_VISIBILITY·此处内联字面量由 contracts-vocab-parity 对拍锁漂移（沿
+ * `TENANCY_STATUS_VALUES` 同法）。`shared`=同租内跨组织默认互见（缺省·零行为变更）·`isolated`=租内互不可见。
+ *
+ * @public
+ */
+export const ORG_VISIBILITY_VALUES = ['shared', 'isolated'] as const;
+
+/**
  * 租户申请/生命周期视图（S7b·真相源 = `OrganizationApplicationReadModel`·
  * 复用于 tenants apply/approve + platform suspend/resume/delete）。
  *

@@ -5,10 +5,12 @@ import {
 } from '@core/saas-kit/authorization/authorization-rules';
 import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
+import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import { ORGANIZATION_PLANS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import {
   AUTHORIZATION_ACTION_VALUES as CONTRACT_ACTION_VALUES,
   AUTHORIZATION_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
+  ORG_VISIBILITY_VALUES,
   ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
   PAYMENT_PROVIDER_VALUES,
   TENANCY_STATUS_VALUES,
@@ -39,6 +41,11 @@ describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
 
   it('租户生命周期状态与 @core TENANCY_STATUS 值域逐字一致', () => {
     expect(asSet(TENANCY_STATUS_VALUES)).toEqual(asSet(Object.values(TENANCY_STATUS)));
+  });
+
+  // 第三次复裁切片 3：租内可见性 wire 与 core 词汇同锁（沿声明序一致——迁移 CHECK 按声明序生成）。
+  it('租内跨组织可见性与 @core ORG_VISIBILITY 值域逐字一致', () => {
+    expect([...ORG_VISIBILITY_VALUES]).toEqual(Object.values(ORG_VISIBILITY));
   });
 
   // module-org-odoo-company-mapping 切片 A：绑定态 wire 内联与 core 词汇同锁（另含声明序一致——

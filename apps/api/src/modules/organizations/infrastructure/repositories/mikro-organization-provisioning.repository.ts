@@ -4,6 +4,7 @@ import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   OrganizationProvisioningReceipt,
@@ -62,6 +63,8 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
         name,
         slug,
         status: TENANCY_STATUS.PENDING,
+        // 新建专属租户骨架取缺省可见性策略 shared（零行为变更·租内跨组织互见·切片 3 D2）。
+        orgVisibility: ORG_VISIBILITY.SHARED,
         createdAt: new Date(),
         updatedAt: null,
       });

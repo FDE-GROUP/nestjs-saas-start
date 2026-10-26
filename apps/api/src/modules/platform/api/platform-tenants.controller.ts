@@ -3,6 +3,7 @@ import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { DeleteOrganizationCommand } from '@app/modules/organizations/application/commands/delete-organization.command';
 import { DeleteOrganizationPermanentlyCommand } from '@app/modules/organizations/application/commands/delete-organization-permanently.command';
 import { ResumeOrganizationCommand } from '@app/modules/organizations/application/commands/resume-organization.command';
+import { SetTenantOrgVisibilityCommand } from '@app/modules/organizations/application/commands/set-tenant-org-visibility.command';
 import { SuspendOrganizationCommand } from '@app/modules/organizations/application/commands/suspend-organization.command';
 import { ExportOrganizationDataQuery } from '@app/modules/organizations/application/queries/export-organization-data.query';
 import { GetOrganizationDiagnosticsQuery } from '@app/modules/organizations/application/queries/get-organization-diagnostics.query';
@@ -17,11 +18,14 @@ import type {
 import type {
   TenantGovernanceResult,
   TenantHardDeleteResult,
+  TenantOrgVisibilityResult,
 } from '@app/modules/organizations/application/read-models/tenant-governance.read-model';
+import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -43,8 +47,11 @@ import {
   organizationDiagnosticsSchema,
   platformTenantDetailSchema,
   platformTenantPageSchema,
+  type SetTenantOrgVisibility,
+  setTenantOrgVisibilitySchema,
   tenantGovernanceResultSchema,
   tenantHardDeleteResultSchema,
+  tenantOrgVisibilityResultSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -59,6 +66,7 @@ import {
   PlatformTenantPageResponse,
   TenantGovernanceResultResponse,
   TenantHardDeleteResultResponse,
+  TenantOrgVisibilityResultResponse,
 } from './response/governance.response';
 
 /**
@@ -87,6 +95,7 @@ import {
   OrganizationDiagnosticsResponse,
   TenantGovernanceResultResponse,
   TenantHardDeleteResultResponse,
+  TenantOrgVisibilityResultResponse,
 )
 @ApiTags('platform')
 // S11 复合全局：跨租平台治理（列表/详情/诊断/suspend·resume·delete）无关单一租户上下文 → 类级豁免租户墙。
@@ -201,6 +210,43 @@ export class PlatformTenantsController {
       ResumeOrganizationCommand,
       TenantGovernanceResult | null
     >(new ResumeOrganizationCommand(tenantId, user.id));
+    if (!result)
+      throw new NotFoundException('Tenant not found', {
+        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+      });
+    return result;
+  }
+
+  /**
+   * 设置该租户租内跨组织可见性策略（第三次复裁切片 3·D2·`platform` 治理面）。
+   * @param tenantId - 租户主键。
+   * @param dto - 目标可见性策略（shared/isolated）。
+   * @param user - 当前操作员会话。
+   * @returns 设置后的租户可见性回执；未命中 404。
+   *
+   * @throws {NotFoundException} 租户不存在时。
+   */
+  @Patch(':tenantId/visibility')
+  @HttpCode(HttpStatus.OK)
+  @SerializeOptions({ schema: tenantOrgVisibilityResultSchema })
+  @ApiOperation({
+    summary: "Set the tenant's intra-tenant organization visibility policy (shared ⇄ isolated)",
+  })
+  @ApiResponse(
+    apiEnvelopeShape(TenantOrgVisibilityResultResponse, {
+      description: 'Tenant orgVisibility updated (shared=互见 · isolated=租内跨组织互不可见).',
+    }),
+  )
+  @ApiResponse(apiError(404, 'Tenant not found.'))
+  async setVisibility(
+    @Param('tenantId') tenantId: string,
+    @Body({ schema: setTenantOrgVisibilitySchema }) dto: SetTenantOrgVisibility,
+    @CurrentUser() user: SessionUser,
+  ): Promise<TenantOrgVisibilityResult> {
+    const result = await this.commandBus.execute<
+      SetTenantOrgVisibilityCommand,
+      TenantOrgVisibilityResult | null
+    >(new SetTenantOrgVisibilityCommand(tenantId, dto.orgVisibility as OrgVisibility, user.id));
     if (!result)
       throw new NotFoundException('Tenant not found', {
         errorCode: ERROR_CODES.ORG_NOT_FOUND,

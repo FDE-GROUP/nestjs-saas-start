@@ -1,5 +1,6 @@
 import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
+import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
 /**
@@ -244,6 +245,20 @@ export interface OrganizationGovernanceRepository {
    * @returns `purgedOrgs`＝本次连带消灭的组织行数（0 表示租户本体不存在·调用方转 404 幂等）。
    */
   destroyTenant(tenantId: string): Promise<{ purgedOrgs: number }>;
+  /**
+   * 设置租户租内跨组织可见性策略（第三次复裁切片 3·D2）：写 `tenant.orgVisibility`∈{shared,isolated}。
+   *
+   * @remarks
+   * 跨租硬地板 `tenantId` 不受影响；本 port 为平台级治理写点（经 `PlatformOperatorGuard` 裁决），
+   * 不验租户存在以外的业务门槛。租户本体不存在 → `null`（控制层转 404）。
+   * @param tenantId - 目标租户 id。
+   * @param orgVisibility - 目标可见性策略。
+   * @returns 设置后的 `{tenantId, orgVisibility}`；租户查无时为 `null`。
+   */
+  setOrgVisibility(
+    tenantId: string,
+    orgVisibility: OrgVisibility,
+  ): Promise<{ tenantId: string; orgVisibility: OrgVisibility } | null>;
   /**
    * 组织准入态读取（bind 门槛用·rehierarchy 片一修读侧叠加键）：经 `organization.tenantId ?? id` 解析所属
    * 租户的 `tenant.status`（准入态权威归位·companion org 正确取租户态·非恒 active）；组织不存在 → null（控制层 404）。

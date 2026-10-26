@@ -70,10 +70,16 @@ function configStub(email = 'admin@x.com') {
 
 /**
  * rehierarchy 切片 C：中间件新增 `TENANT_SCOPE_RESOLVER` 依赖（活动组织 → 主轴 tenantId）。
- * 测试桩纯读不触库（真适配 MikroTenantScopeResolver 由 AppModule ⑤ 整树坐实）。
+ * 第三次复裁切片 3：解析形改 `{ tenantId, orgVisibility }` 作用域（本桩缺省 shared）。测试桩纯读不触库
+ * （真适配 MikroTenantScopeResolver 由 AppModule ⑤ 整树坐实）。
  */
-function tenantScopeStub(tenantId: string | undefined = 'tenant_1'): TenantScopeResolver {
-  return { resolveTenantIdOf: async () => tenantId } as unknown as TenantScopeResolver;
+function tenantScopeStub(
+  tenantId: string | undefined = 'tenant_1',
+  orgVisibility?: string,
+): TenantScopeResolver {
+  return {
+    resolveTenantScopeOf: async () => (tenantId ? { tenantId, orgVisibility } : undefined),
+  } as unknown as TenantScopeResolver;
 }
 
 /** 在 ALS 作用域内驱动真实中间件，回传 next() 执行期间的观测值。 */

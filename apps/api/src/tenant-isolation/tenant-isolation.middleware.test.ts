@@ -23,6 +23,8 @@ function makeMiddleware(opts: {
   noSession?: boolean;
   /** 派生租主轴返回值（默认为活动组织加前缀）；传 `null` 模拟未归属 → 不绑主轴。 */
   resolvedTenantId?: string | null;
+  /** 派生作用域顺带读回的租内可见性策略（切片 3·默认 undefined=shared）。 */
+  resolvedOrgVisibility?: string;
 }) {
   const read = vi
     .fn()
@@ -43,18 +45,21 @@ function makeMiddleware(opts: {
   const userStatus = { isBlocked: userIsBlocked } as unknown as UserStatusService;
 
   // 主轴派生桩：默认「活动组织 → tenant-<org>」；`resolvedTenantId:null` → undefined（未归属）。
-  const resolveTenantIdOf = vi.fn(async () =>
-    opts.resolvedTenantId === null
-      ? undefined
-      : (opts.resolvedTenantId ?? `tenant-${opts.activeOrganizationId}`),
-  );
-  const tenantScope = { resolveTenantIdOf } as unknown as TenantScopeResolver;
+  // 切片 3：返回 `{ tenantId, orgVisibility }` 作用域解析形（供中间件顺带绑定可见性）。
+  const resolveTenantScopeOf = vi.fn(async () => {
+    const tenantId =
+      opts.resolvedTenantId === null
+        ? undefined
+        : (opts.resolvedTenantId ?? `tenant-${opts.activeOrganizationId}`);
+    return tenantId ? { tenantId, orgVisibility: opts.resolvedOrgVisibility } : undefined;
+  });
+  const tenantScope = { resolveTenantScopeOf } as unknown as TenantScopeResolver;
 
   return {
     mw: new TenantIsolationMiddleware(session, status, userStatus, tenantScope),
     isBlocked,
     userIsBlocked,
-    resolveTenantIdOf,
+    resolveTenantScopeOf,
     read,
   };
 }
@@ -95,13 +100,13 @@ describe('TenantIsolationMiddleware · S4 approval fail-closed (deny-list)', () 
   });
 
   it('换轴 fail-closed：活动组织未归属租户 → 不绑主轴（guard 下游 403）但保留组织轴', async () => {
-    const { mw, resolveTenantIdOf } = makeMiddleware({
+    const { mw, resolveTenantScopeOf } = makeMiddleware({
       activeOrganizationId: 'orgA',
       blocked: false,
       resolvedTenantId: null,
     });
     const store = await run(mw, reqWith());
-    expect(resolveTenantIdOf).toHaveBeenCalledWith('orgA');
+    expect(resolveTenantScopeOf).toHaveBeenCalledWith('orgA');
     expect(store?.organizationId).toBe('orgA');
     expect(store?.tenantId).toBeUndefined();
   });

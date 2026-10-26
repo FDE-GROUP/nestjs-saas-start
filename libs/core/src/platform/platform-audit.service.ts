@@ -16,7 +16,8 @@ export type PlatformOrganizationAction =
   | 'resume'
   | 'delete'
   | 'hard_delete'
-  | 'bind_odoo';
+  | 'bind_odoo'
+  | 'set_visibility';
 
 /**
  * 平台级用户治理动作（FR-6/FR-10 · S6）：暂停/恢复/删除平台用户。

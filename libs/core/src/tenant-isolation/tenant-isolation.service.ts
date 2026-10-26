@@ -61,6 +61,14 @@ export class TenantIsolationService {
   }
 
   /**
+   * 活动租户的租内跨组织可见性策略（第三次复裁切片 3·`tenant.orgVisibility`·ALS 预注入）。
+   * undefined = 无活动租户/未读回——缺省视同 `shared`（互见），`isolated` 时切片 1 全局 filter 追加组织收窄。
+   */
+  get orgVisibility(): string | undefined {
+    return tenantIsolationStorage.getStore()?.orgVisibility;
+  }
+
+  /**
    * 在给定租户上下文内运行 `fn`（供中间件 / 测试使用）。
    *
    * @param ctx - 待绑定的租户作用域

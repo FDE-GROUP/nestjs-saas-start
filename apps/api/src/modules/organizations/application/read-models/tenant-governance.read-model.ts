@@ -1,4 +1,5 @@
 import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 
 /**
  * 租户生命周期治理返回形状（CQRS 读侧·rehierarchy 片一 治理台改锚 tenant）。
@@ -12,6 +13,17 @@ export interface TenantGovernanceResult {
   tenantId: string;
   /** 迁移后的租户准入态。 */
   status: TenancyStatus;
+}
+
+/**
+ * 租内跨组织可见性策略设置回执（第三次复裁切片 3·CQRS 写侧·tenant 主键）。
+ * @public
+ */
+export interface TenantOrgVisibilityResult {
+  /** 目标租户 id。 */
+  tenantId: string;
+  /** 设置后的租内可见性策略。 */
+  orgVisibility: OrgVisibility;
 }
 
 /**

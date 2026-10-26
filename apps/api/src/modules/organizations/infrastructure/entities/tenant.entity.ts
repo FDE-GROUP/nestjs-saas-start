@@ -1,4 +1,5 @@
 import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
 
@@ -21,6 +22,15 @@ const TENANT_STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANCY_STATU
   .map((v) => `'${v}'`)
   .join(', ')})`;
 
+/**
+ * 值域 = `ORG_VISIBILITY` 声明序单源（第三次复裁切片 3·租内跨组织可见性策略·默认 shared 零行为变更）。
+ * ⚠ 列名须带双引号：`orgVisibility` 为 camelCase 物理列（建列时加引号保留大小写），CHECK 表达式若不引号
+ * 会被 PG 折叠为小写 `orgvisibility` 而 `column does not exist`（沿 column-meta「expression 须用物理列名」律）。
+ */
+const TENANT_ORG_VISIBILITY_CHECK_EXPRESSION = `"orgVisibility" IN (${Object.values(ORG_VISIBILITY)
+  .map((v) => `'${v}'`)
+  .join(', ')})`;
+
 export const TENANT_META: TableMeta = {
   name: 'Tenant',
   tableName: 'tenant',
@@ -31,12 +41,18 @@ export const TENANT_META: TableMeta = {
     // 租户治理生命周期态（准入闸·切片 D provisioning.submit 申请对象改本列）：NOT NULL DEFAULT 'active'，
     // 回填期存量经 1:1 骨架自 organization.status 搬入（backfill 工件语义等价律注）。
     ['status', { k: 'text', default: TENANCY_STATUS.ACTIVE }],
+    // 租内跨组织可见性策略（第三次复裁切片 3·D2）：NOT NULL DEFAULT 'shared'——存量逐字节等价（互见），
+    // isolated 为显式 opt-in 经全局 filter 追加组织收窄（切片 1 消费）；跨租硬地板 tenantId 不受本列影响。
+    ['orgVisibility', { k: 'text', default: ORG_VISIBILITY.SHARED }],
     ['createdAt', { k: 'datetime', defaultNow: true }],
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
   // slug 唯一性不在 expand 段预支：存量 organization.slug 无库级全局 unique（BA 仅租内核验），
   // 1:1 骨架回填碰 duplicate 即炸——收紧（unique + 清洗）留 contract 段随 NOT NULL 一并裁。
-  checks: [{ name: 'tenant_status_check', expression: TENANT_STATUS_CHECK_EXPRESSION }],
+  checks: [
+    { name: 'tenant_status_check', expression: TENANT_STATUS_CHECK_EXPRESSION },
+    { name: 'tenant_org_visibility_check', expression: TENANT_ORG_VISIBILITY_CHECK_EXPRESSION },
+  ],
 };
 
 export interface Tenant {
@@ -44,6 +60,7 @@ export interface Tenant {
   name: string;
   slug: string;
   status: string;
+  orgVisibility: string;
   createdAt: Date;
   updatedAt: Date | null;
 }

@@ -22,6 +22,7 @@ import type {
   OrganizationOdooBindingWriter,
   OrganizationOdooReadyPatch,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
+import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
@@ -318,6 +319,24 @@ export class MikroOrganizationGovernanceRepository
       : 0;
     await em.nativeDelete(Tenant, { id: tenantId } as never);
     return { purgedOrgs };
+  }
+
+  async setOrgVisibility(
+    tenantId: string,
+    orgVisibility: OrgVisibility,
+  ): Promise<{ tenantId: string; orgVisibility: OrgVisibility } | null> {
+    // 平台级治理写点（无租户 ALS 上下文·纯 SQL UPDATE 不触隔离 filter）：仅改 tenant.orgVisibility；
+    // nativeUpdate 回影行数=0 → 租户本体不存在（调用方转 404）。
+    const em = await this.mikro.fork();
+    const affected = await em.nativeUpdate(
+      Tenant,
+      { id: tenantId } as never,
+      {
+        orgVisibility,
+      } as never,
+    );
+    if (!affected) return null;
+    return { tenantId, orgVisibility };
   }
 
   /**
