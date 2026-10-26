@@ -12,22 +12,22 @@
 <li><a href="" aria-current="page">DeleteOrganizationPermanentlyCommand</a></li></ul>
 <h1>Class DeleteOrganizationPermanentlyCommand</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>平台级动作（FR-11①·FR-6·NFR-6 删除半）：经营者对<strong>已 deleted 终态</strong>租户执行不可逆消灭。</p>
+<div class="tsd-comment tsd-typography"><p>平台级动作（FR-11①·FR-6·NFR-6 删除半）：经营者对<strong>已 deleted 终态</strong>租户执行不可逆连带消灭。</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>先补删 tenant lifecycle 事件、后删 organization 主行（五张子表 FK cascade 自动消灭），
-任意一步失败均可整请求重试不留不可达残迹（plan §3.1 顺序论证）。
-非 deleted 态 → 409（前置闸·两段式先软后硬）；不存在/已被硬删 → null（404 幂等）。</p>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>治理台改锚 tenant（rehierarchy 片一）：硬删作用于<strong>租户</strong>——先补删该租户 + 其名下每组织的 lifecycle 事件、
+后连带清除该租户名下所有组织行（各子表 FK cascade 自动消灭）+ 名下订阅行 + 租户本体（plan §3.1 顺序论证：
+任意一步失败均可整请求重试不留不可达残迹）。非 deleted 态 → 409（前置闸·两段式先软后硬）；不存在/已被硬删 → null（404 幂等）。</p>
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="2625">
+<section class="tsd-panel tsd-hierarchy" data-refl="2685">
 <h4>Hierarchy (<a href="../hierarchy.html#apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
-<li class="tsd-hierarchy-item"><a href="libs_core_src_shared-kernel_cqrs_types.BaseCommand.html" class="tsd-signature-type tsd-kind-class">BaseCommand</a><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.OrganizationHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">OrganizationHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span>
+<li class="tsd-hierarchy-item"><a href="libs_core_src_shared-kernel_cqrs_types.BaseCommand.html" class="tsd-signature-type tsd-kind-class">BaseCommand</a><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">TenantHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">DeleteOrganizationPermanentlyCommand</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts#L23">apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts:23</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts#L13">apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts:13</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

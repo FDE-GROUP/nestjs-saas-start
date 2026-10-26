@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>PlatformOrganizationPage | 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</title><meta name="description" content="Documentation for 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><link rel="stylesheet" href="../assets/rhineai-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>GetPlatformTenantQuery | 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</title><meta name="description" content="Documentation for 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><link rel="stylesheet" href="../assets/rhineai-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container"><a href="../index.html" class="title">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
@@ -8,15 +8,20 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
-<li><a href="../modules/apps_api_src_modules_organizations_domain_repositories_organization-governance.repository.html">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository</a></li>
-<li><a href="" aria-current="page">PlatformOrganizationPage</a></li></ul>
-<h1>Type Alias PlatformOrganizationPage</h1></div>
-<div class="tsd-signature"><span class="tsd-kind-type-alias">PlatformOrganizationPage</span><span class="tsd-signature-symbol">:</span> <a href="../interfaces/libs_core_src_shared-kernel_domain_pagination.Page.html" class="tsd-signature-type tsd-kind-interface">Page</a><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_domain_repositories_organization-governance.repository.PlatformOrganizationRow.html" class="tsd-signature-type tsd-kind-interface">PlatformOrganizationRow</a><span class="tsd-signature-symbol">&gt;</span></div>
-<div class="tsd-comment tsd-typography"><p>分页形状收敛到 shared-kernel 泛型契约（module-common-pagination-contract · 乙裁：
-旧名留作别名，消费方 import 面不动，随重构自然淘汰）。</p>
-</div><aside class="tsd-sources">
+<li><a href="../modules/apps_api_src_modules_organizations_application_queries_get-platform-tenant.query.html">apps/api/src/modules/organizations/application/queries/get-platform-tenant.query</a></li>
+<li><a href="" aria-current="page">GetPlatformTenantQuery</a></li></ul>
+<h1>Class GetPlatformTenantQuery</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>租户详情查询（FR-6·平台级读侧·治理台改锚 tenant）：不存在 → null（控制层转 404）。</p>
+</div></section>
+<section class="tsd-panel tsd-hierarchy" data-refl="2925">
+<h4>Hierarchy (<a href="../hierarchy.html#apps/api/src/modules/organizations/application/queries/get-platform-tenant.query.GetPlatformTenantQuery">View Summary</a>)</h4>
+<ul class="tsd-hierarchy">
+<li class="tsd-hierarchy-item"><a href="libs_core_src_shared-kernel_cqrs_types.BaseQuery.html" class="tsd-signature-type tsd-kind-class">BaseQuery</a><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_domain_repositories_organization-governance.repository.PlatformTenantDetail.html" class="tsd-signature-type tsd-kind-interface">PlatformTenantDetail</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span>
+<ul class="tsd-hierarchy">
+<li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">GetPlatformTenantQuery</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L30">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:30</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/queries/get-platform-tenant.query.ts#L8">apps/api/src/modules/organizations/application/queries/get-platform-tenant.query.ts:8</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

@@ -523,9 +523,9 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Revoke a grant (conditions null = whole-subject row; object = exact row)
       tags: *ref_4
-  /api/v1/platform/organizations:
+  /api/v1/platform/tenants:
     get:
-      operationId: PlatformOrganizationsController_list_v1
+      operationId: PlatformTenantsController_list_v1
       parameters:
         - name: limit
           required: false
@@ -551,7 +551,7 @@ paths:
             maxLength: 200
       responses:
         '200':
-          description: A page of organizations with lifecycle status.
+          description: A page of tenants with admission status and org counts.
           content:
             application/json:
               schema:
@@ -560,28 +560,28 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/PlatformOrganizationPageResponse'
+                        $ref: '#/components/schemas/PlatformTenantPageResponse'
         '403':
           description: Not the platform operator.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List all organizations across the platform (operator only)
+      summary: List all tenants across the platform (operator only)
       tags: &ref_5
         - platform
-  /api/v1/platform/organizations/{id}:
+  /api/v1/platform/tenants/{tenantId}:
     get:
-      operationId: PlatformOrganizationsController_detail_v1
+      operationId: PlatformTenantsController_detail_v1
       parameters:
-        - name: id
+        - name: tenantId
           required: true
           in: path
           schema:
             type: string
       responses:
         '200':
-          description: Organization row.
+          description: Tenant detail.
           content:
             application/json:
               schema:
@@ -590,26 +590,26 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/PlatformOrganizationRowResponse'
+                        $ref: '#/components/schemas/PlatformTenantDetailResponse'
         '404':
-          description: Organization not found.
+          description: Tenant not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Get one organization (operator only)
+      summary: Get one tenant with its organization roster (operator only)
       tags: *ref_5
     delete:
-      operationId: PlatformOrganizationsController_remove_v1
+      operationId: PlatformTenantsController_remove_v1
       parameters:
-        - name: id
+        - name: tenantId
           required: true
           in: path
           schema:
             type: string
       responses:
         '200':
-          description: Organization marked deleted.
+          description: Tenant marked deleted.
           content:
             application/json:
               schema:
@@ -618,9 +618,9 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/OrganizationApplicationResponse'
+                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
         '404':
-          description: Organization not found.
+          description: Tenant not found.
           content:
             application/json:
               schema:
@@ -631,13 +631,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Soft-delete an organization (→ deleted terminal · row kept for export)
+      summary: >-
+        Soft-delete a tenant (→ deleted terminal · blocks the whole tenant · row
+        kept for export)
       tags: *ref_5
-  /api/v1/platform/organizations/{id}/diagnostics:
-    get:
-      operationId: PlatformOrganizationsController_diagnostics_v1
+  /api/v1/platform/tenants/{tenantId}/suspend:
+    patch:
+      operationId: PlatformTenantsController_suspend_v1
       parameters:
-        - name: id
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tenant suspended.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
+        '404':
+          description: Tenant not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Illegal transition for the current status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: Suspend an active tenant (active → suspended · blocks the whole tenant)
+      tags: *ref_5
+  /api/v1/platform/tenants/{tenantId}/resume:
+    patch:
+      operationId: PlatformTenantsController_resume_v1
+      parameters:
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tenant resumed.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
+        '404':
+          description: Tenant not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Illegal transition for the current status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: Resume a suspended tenant (suspended → active)
+      tags: *ref_5
+  /api/v1/platform/tenants/{tenantId}/permanent:
+    delete:
+      operationId: PlatformTenantsController_permanentRemove_v1
+      parameters:
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: >-
+            Tenant rows purged; payload carries purgedOrgs/purgedEvents for
+            audit核对.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TenantHardDeleteResultResponse'
+        '404':
+          description: Tenant not found (or already hard-deleted · idempotent).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Not in deleted terminal state — soft-delete first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: >-
+        Hard-delete a deleted-terminal tenant (irreversible · cascade purge of
+        all its orgs + event purge · NFR-6)
+      tags: *ref_5
+  /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/diagnostics:
+    get:
+      operationId: PlatformTenantsController_diagnostics_v1
+      parameters:
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: orgId
           required: true
           in: path
           schema:
@@ -660,13 +776,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: 'Per-organization diagnostics: member/invitation/workspace/post counts'
+      summary: >-
+        Per-organization diagnostics: member/invitation/workspace/post counts
+        (drill-down)
       tags: *ref_5
-  /api/v1/platform/organizations/{id}/export:
+  /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/export:
     get:
-      operationId: PlatformOrganizationsController_exportData_v1
+      operationId: PlatformTenantsController_exportData_v1
       parameters:
-        - name: id
+        - name: tenantId
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: orgId
           required: true
           in: path
           schema:
@@ -692,114 +815,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Export all organization-owned data as a single JSON payload (NFR-6)
-      tags: *ref_5
-  /api/v1/platform/organizations/{id}/suspend:
-    patch:
-      operationId: PlatformOrganizationsController_suspend_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Organization suspended.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationApplicationResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Suspend an active organization (active → suspended · fail-closed失能)
-      tags: *ref_5
-  /api/v1/platform/organizations/{id}/resume:
-    patch:
-      operationId: PlatformOrganizationsController_resume_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Organization resumed.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationApplicationResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Resume a suspended organization (suspended → active)
-      tags: *ref_5
-  /api/v1/platform/organizations/{id}/permanent:
-    delete:
-      operationId: PlatformOrganizationsController_permanentRemove_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Organization rows purged; payload carries purgedEvents for audit核对.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationHardDeleteResultResponse'
-        '404':
-          description: Organization not found (or already hard-deleted · idempotent).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Not in deleted terminal state — soft-delete first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
       summary: >-
-        Hard-delete a deleted-terminal organization (irreversible · FK cascade +
-        event purge · NFR-6)
+        Export all organization-owned data as a single JSON payload (NFR-6 ·
+        drill-down)
       tags: *ref_5
   /api/v1/platform/users:
     get:
@@ -2434,12 +2452,12 @@ components:
         - subject
         - action
         - conditions
-    PlatformOrganizationRowResponse:
+    PlatformTenantRowResponse:
       type: object
       properties:
-        organizationId:
+        tenantId:
           type: string
-          description: organization 主键。
+          description: tenant 主键。
         name:
           type: string
         slug:
@@ -2451,23 +2469,27 @@ components:
             - active
             - suspended
             - deleted
-          description: 生命周期状态（无记录视同 active）。
+          description: 准入态（无记录视同 active）。
+        organizationCount:
+          type: number
+          description: 名下组织数量（一租多组织可见）。
         createdAt:
           format: date-time
           type: string
       required:
-        - organizationId
+        - tenantId
         - name
         - slug
         - status
+        - organizationCount
         - createdAt
-    PlatformOrganizationPageResponse:
+    PlatformTenantPageResponse:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/PlatformOrganizationRowResponse'
+            $ref: '#/components/schemas/PlatformTenantRowResponse'
         total:
           type: number
           description: 全量行数。
@@ -2482,13 +2504,101 @@ components:
         - total
         - limit
         - offset
+    PlatformTenantOrganizationResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          description: organization 主键。
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: *ref_16
+          description: 组织自有态。
+        odooCompanyId:
+          type:
+            - object
+            - 'null'
+          description: 绑定的 Odoo 公司 id（未绑定为 null）。
+        odooBindingStatus:
+          type:
+            - object
+            - 'null'
+          description: Odoo 绑定态（未绑定为 null）。
+        odooCompanyName:
+          type:
+            - object
+            - 'null'
+          description: Odoo 公司名快照（未绑定为 null）。
+      required:
+        - organizationId
+        - name
+        - slug
+        - status
+        - odooCompanyId
+        - odooBindingStatus
+        - odooCompanyName
+    PlatformTenantDetailResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: tenant 主键。
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: *ref_16
+          description: 准入态（无记录视同 active）。
+        createdAt:
+          format: date-time
+          type: string
+        organizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformTenantOrganizationResponse'
+      required:
+        - tenantId
+        - name
+        - slug
+        - status
+        - createdAt
+        - organizations
+    PlatformOrganizationDrillRowResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          description: organization 主键。
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: *ref_16
+          description: 组织态（无记录视同 active）。
+        createdAt:
+          format: date-time
+          type: string
+      required:
+        - organizationId
+        - name
+        - slug
+        - status
+        - createdAt
     OrganizationDiagnosticsResponse:
       type: object
       properties:
         organization:
-          description: 组织行。
+          description: 组织下钻行。
           allOf:
-            - $ref: '#/components/schemas/PlatformOrganizationRowResponse'
+            - $ref: '#/components/schemas/PlatformOrganizationDrillRowResponse'
         memberCount:
           type: number
           description: 成员数。
@@ -2507,35 +2617,35 @@ components:
         - invitationCount
         - workspaceCount
         - postCount
-    OrganizationHardDeleteResultResponse:
+    TenantGovernanceResultResponse:
       type: object
       properties:
-        organizationId:
+        tenantId:
           type: string
-          description: 被硬删的 organization 主键。
+          description: 目标 tenant 主键。
+        status:
+          type: string
+          enum: *ref_16
+          description: 迁移后的准入态。
+      required:
+        - tenantId
+        - status
+    TenantHardDeleteResultResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: 被硬删的 tenant 主键。
+        purgedOrgs:
+          type: number
+          description: 本次连带消灭的组织行数（一租多组织）。
         purgedEvents:
           type: number
           description: 本次清除的 lifecycle 事件数（供审计核对）。
       required:
-        - organizationId
+        - tenantId
+        - purgedOrgs
         - purgedEvents
-    OrganizationApplicationResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: organization 主键。
-        status:
-          type: string
-          enum: &ref_17
-            - pending_approval
-            - active
-            - suspended
-            - deleted
-          description: 生命周期状态。
-      required:
-        - organizationId
-        - status
     PlatformUserRowResponse:
       type: object
       properties:
@@ -2698,6 +2808,23 @@ components:
         - total
         - limit
         - offset
+    OrganizationApplicationResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          description: organization 主键。
+        status:
+          type: string
+          enum: &ref_17
+            - pending_approval
+            - active
+            - suspended
+            - deleted
+          description: 生命周期状态。
+      required:
+        - organizationId
+        - status
     OrganizationOdooBindingResponse:
       type: object
       properties:

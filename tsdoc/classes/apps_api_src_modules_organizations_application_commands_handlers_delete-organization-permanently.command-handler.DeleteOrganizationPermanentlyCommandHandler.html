@@ -12,24 +12,25 @@
 <li><a href="" aria-current="page">DeleteOrganizationPermanentlyCommandHandler</a></li></ul>
 <h1>Class DeleteOrganizationPermanentlyCommandHandler</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>硬删租户 handler（NFR-6 删除半·FR-6·平台级）：前置闸仅 <code>deleted</code> 终态可消灭，先补删事件后删主行。</p>
+<div class="tsd-comment tsd-typography"><p>硬删租户 handler（NFR-6 删除半·FR-6·平台级）：前置闸仅 <code>tenant.status=deleted</code> 终态可消灭，
+先补删事件后连带清除该租户名下所有组织 + 租户本体。</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>前置闸（甲裁·两段式
-先软后硬，误删 active 无回退路径）；<strong>先补删 tenant 事件、后删主行</strong>（顺序理由见
-command 注释）。#2 甲档收口（module-p0-async-boundary-correctness 切片 D）：①补删与 ②删主行
-<strong>包单一 <code>uow.run</code></strong> 同事务原子——二者适配器均 <code>mikro.fork()</code>（ALS 感知·事务内复用同一事务 em），
-故 ②失败/中途抛错 → ①事件删除一并回滚，闭死「主行已没、事件残留」的孤儿事件窗口（PIPL 不留残迹）；
-回滚后 org 仍在可整请求重试。EVENT_STORE 直注不受 EVENT_PUBLISH_MODE 开关控制——表在就要清
-（同 user 硬删先例·S9 教训「显式 <code>@Inject</code> + 值导入」）。审计落 pino（库外幸存·乙裁）。</p>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>治理台改锚 tenant（rehierarchy 片一）：作用对象从单组织升为<strong>租户</strong>——<code>findTenantDetail</code> 一次取准入态（前置闸）
+与名下组织名册（事件双维补删：<code>tenant</code> 聚合下 tenantId + 每 orgId·沿假设④）。前置闸（甲裁·两段式
+先软后硬，误删 active 无回退路径）；<strong>先补删事件、后连带删主行</strong>（顺序理由见 command 注释）。#2 甲档收口
+（module-p0-async-boundary-correctness 切片 D）：①补删与 ②连带删包单一 <code>uow.run</code> 同事务原子——二者适配器均
+<code>mikro.fork()</code>（ALS 感知·事务内复用同一事务 em），故 ②失败/中途抛错 → ①事件删除一并回滚，闭死「主行已没、
+事件残留」的孤儿事件窗口（PIPL 不留残迹）；回滚后仍在可整请求重试。EVENT_STORE 直注不受 EVENT_PUBLISH_MODE
+开关控制——表在就要清（同 user 硬删先例·S9 教训「显式 <code>@Inject</code> + 值导入」）。审计落 pino（库外幸存·乙裁）。</p>
 </div></div></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">ICommandHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationPermanentlyCommand</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts#L36">apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts:36</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts#L35">apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts:35</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -46,9 +47,10 @@ command 注释）。#2 甲档收口（module-p0-async-boundary-correctness 切�
 <h3 class="tsd-anchor-link" id="execute"><span>execute</span><a href="#execute" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationPermanentlyCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.OrganizationHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">OrganizationHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationPermanentlyCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">TenantHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>执行硬删：非 deleted 终态 → 409；同事务补删事件 + 删主行；并发已没/查无 → null（404 幂等）。</p>
+<div class="tsd-comment tsd-typography"><p>执行租户硬删连带：非 deleted 终态 → 409；同事务补删事件（租户 + 其下每组织）+ 连带删主行；
+并发已没/查无 → null（404 幂等）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -56,7 +58,7 @@ command 注释）。#2 甲档收口（module-p0-async-boundary-correctness 切�
 <li><span><span class="tsd-kind-parameter">command</span>: <a href="apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationPermanentlyCommand</a></span>
 <div class="tsd-comment tsd-typography"><p>携带租户 id 与操作者的命令。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_commands_delete-organization-permanently.command.OrganizationHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">OrganizationHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>硬删结果（组 id + 补删事件数）；行不存在为 <code>null</code>。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">TenantHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>硬删结果（租户 id + 连带组织数 + 补删事件数）；行不存在为 <code>null</code>。</p>
 
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-throws">
@@ -64,7 +66,7 @@ command 注释）。#2 甲档收口（module-p0-async-boundary-correctness 切�
 </div></div><aside class="tsd-sources">
 <p>Implementation of ICommandHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts#L54">apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts:54</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts#L54">apps/api/src/modules/organizations/application/commands/handlers/delete-organization-permanently.command-handler.ts:54</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

@@ -16,17 +16,17 @@
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>经 <code>TenantStatusService.transition</code>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>治理台改锚 tenant（rehierarchy 片一）：经 <code>TenantStatusService.transition(tenantId)</code>
 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），准入态归位后 <code>tenant.status</code> 真列单点写回；
-中间件 deny-list 使该租户业务面即时失能。成败均落结构化审计（FR-6）。
-架构精度修宪 S4：三分支样板收敛至 <code>governedOrganizationTransition</code> 共用用例（薄壳）。</p>
+中间件 deny-list 使该租户（其下所有组织）业务面即时失能。成败均落结构化审计（FR-6）。
+样板收敛至 <code>governedTenantTransition</code> 共用用例（薄壳）。</p>
 </div></div></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">ICommandHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="apps_api_src_modules_organizations_application_commands_suspend-organization.command.SuspendOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">SuspendOrganizationCommand</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts#L21">apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts:21</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts#L21">apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts:21</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -43,9 +43,9 @@
 <h3 class="tsd-anchor-link" id="execute"><span>execute</span><a href="#execute" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_suspend-organization.command.SuspendOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">SuspendOrganizationCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_organization-application.read-model.OrganizationApplicationReadModel.html" class="tsd-signature-type tsd-kind-interface">OrganizationApplicationReadModel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_suspend-organization.command.SuspendOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">SuspendOrganizationCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantGovernanceResult.html" class="tsd-signature-type tsd-kind-interface">TenantGovernanceResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>执行暂停迁移（委派共用治理用例）。</p>
+<div class="tsd-comment tsd-typography"><p>执行暂停迁移（委派共用租户治理用例）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -53,11 +53,11 @@
 <li><span><span class="tsd-kind-parameter">command</span>: <a href="apps_api_src_modules_organizations_application_commands_suspend-organization.command.SuspendOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">SuspendOrganizationCommand</a></span>
 <div class="tsd-comment tsd-typography"><p>携带租户 id 与操作者的命令。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_organization-application.read-model.OrganizationApplicationReadModel.html" class="tsd-signature-type tsd-kind-interface">OrganizationApplicationReadModel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>迁移后读模型；租户查无为 <code>null</code>。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantGovernanceResult.html" class="tsd-signature-type tsd-kind-interface">TenantGovernanceResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>迁移后租户治理回执；租户查无为 <code>null</code>。</p>
 <aside class="tsd-sources">
 <p>Implementation of ICommandHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts#L34">apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts:34</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts#L34">apps/api/src/modules/organizations/application/commands/handlers/suspend-organization.command-handler.ts:34</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

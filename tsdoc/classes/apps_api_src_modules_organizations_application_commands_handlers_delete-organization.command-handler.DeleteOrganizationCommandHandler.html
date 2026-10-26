@@ -12,18 +12,19 @@
 <li><a href="" aria-current="page">DeleteOrganizationCommandHandler</a></li></ul>
 <h1>Class DeleteOrganizationCommandHandler</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>软删租户 handler（FR-6·NFR-6·平台级）：迁至 <code>deleted</code> 终态（§9.4），经 <code>TenantStatusService.transition</code> 写回 <code>tenant.status</code>（rehierarchy E-F 治理换轴归位）。</p>
+<div class="tsd-comment tsd-typography"><p>软删租户 handler（FR-6·NFR-6·平台级）：迁至 <code>deleted</code> 终态（§9.4），经 <code>TenantStatusService.transition(tenantId)</code> 写回 <code>tenant.status</code>（rehierarchy E-F 治理换轴归位）。</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>中间件 deny-list 即时失能。已 deleted 再删 → 非法迁移 409；不存在 → null（404）。落结构化审计。</p>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>治理台改锚 tenant（rehierarchy 片一）：软删作用于<strong>租户准入态</strong>——封禁整个租户（其下所有组织随中间件 deny-list 失能）。
+中间件 deny-list 即时失能。已 deleted 再删 → 非法迁移 409；不存在 → null（404）。落结构化审计。</p>
 </div></div></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">ICommandHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="apps_api_src_modules_organizations_application_commands_delete-organization.command.DeleteOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationCommand</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts#L18">apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts:18</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts#L19">apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts:19</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -40,7 +41,7 @@
 <h3 class="tsd-anchor-link" id="execute"><span>execute</span><a href="#execute" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_delete-organization.command.DeleteOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_organization-application.read-model.OrganizationApplicationReadModel.html" class="tsd-signature-type tsd-kind-interface">OrganizationApplicationReadModel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="execute-1"><span class="tsd-kind-call-signature">execute</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">command</span><span class="tsd-signature-symbol">:</span> <a href="apps_api_src_modules_organizations_application_commands_delete-organization.command.DeleteOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationCommand</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantGovernanceResult.html" class="tsd-signature-type tsd-kind-interface">TenantGovernanceResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#execute-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>执行软删迁移；非法（已 deleted）→ 409；查无 → null；成败均落审计。</p>
 </div>
@@ -50,7 +51,7 @@
 <li><span><span class="tsd-kind-parameter">command</span>: <a href="apps_api_src_modules_organizations_application_commands_delete-organization.command.DeleteOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">DeleteOrganizationCommand</a></span>
 <div class="tsd-comment tsd-typography"><p>携带租户 id 与操作者的命令。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_organization-application.read-model.OrganizationApplicationReadModel.html" class="tsd-signature-type tsd-kind-interface">OrganizationApplicationReadModel</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>迁移后读模型；租户查无为 <code>null</code>。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantGovernanceResult.html" class="tsd-signature-type tsd-kind-interface">TenantGovernanceResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>迁移后租户治理回执；租户查无为 <code>null</code>。</p>
 
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-throws">
@@ -58,7 +59,7 @@
 </div></div><aside class="tsd-sources">
 <p>Implementation of ICommandHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts#L33">apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts:33</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts#L34">apps/api/src/modules/organizations/application/commands/handlers/delete-organization.command-handler.ts:34</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
