@@ -1,8 +1,8 @@
 import type {
-  OrganizationRbacRepository,
-  OrganizationRoleGrantView,
+  TenantRbacRepository,
+  TenantRoleGrantView,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
-import { ORGANIZATION_RBAC_REPOSITORY } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
+import { TENANT_RBAC_REPOSITORY } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import {
   mergePredicatesWithOr,
   toMikroPredicate,
@@ -20,7 +20,7 @@ import { buildScopedAbility, type CaslScopedAbility } from './casl-ability.facto
 
 /** 缓存条目：per-(tenant,key) 的授权事实源（grants）+ 派生的类型级 ability（守卫热路径复用·免重建）。 */
 interface CachedEntry {
-  readonly grants: readonly OrganizationRoleGrantView[];
+  readonly grants: readonly TenantRoleGrantView[];
   readonly typeLevel: CaslScopedAbility;
 }
 
@@ -49,7 +49,7 @@ function resolveConditions(
 /**
  * `PermissionChecker` 的 CASL 适配（module-rbac-casl §2.2 · module-rbac-dynamic-roles §2.3·S2 落形）。
  *
- * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `ORGANIZATION_RBAC_REPOSITORY` 端口读
+ * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `TENANT_RBAC_REPOSITORY` 端口读
  * per-租户角色规则集（rehierarchy 切片 C·角色升租级：分区键从 organizationId 换隔离主轴
  * tenantId，同租内跨组织互见），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
  *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色·首现行盖活动组织归属）再 `findGrants`；
@@ -69,7 +69,7 @@ function resolveConditions(
 @Injectable()
 export class CaslPermissionChecker implements PermissionChecker, PermissionInvalidator {
   constructor(
-    @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
+    @Inject(TENANT_RBAC_REPOSITORY) private readonly rbac: TenantRbacRepository,
     @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
   ) {}
 

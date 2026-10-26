@@ -4,9 +4,9 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RolesView } from './settings.roles';
 
-type OrganizationRoleView = components['schemas']['OrganizationRoleViewResponse'];
+type TenantRoleView = components['schemas']['TenantRoleViewResponse'];
 
-const roles: OrganizationRoleView[] = [
+const roles: TenantRoleView[] = [
   { id: 'r1', key: 'owner', name: 'Owner', isSystem: true },
   { id: 'r2', key: 'editor', name: 'Editor', isSystem: false },
 ];

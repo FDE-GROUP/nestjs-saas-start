@@ -22,12 +22,12 @@ import {
   deleteRoleSchema,
   type GrantRolePermission,
   grantRolePermissionSchema,
-  organizationRoleGrantViewSchema,
-  organizationRoleViewSchema,
   type RenameRole,
   type RevokeRolePermission,
   renameRoleSchema,
   revokeRolePermissionSchema,
+  tenantRoleGrantViewSchema,
+  tenantRoleViewSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
@@ -36,22 +36,19 @@ import {
   apiError,
   apiOkArray,
 } from '../../../common/contracts/api-contracts';
-import { OrganizationRbacAdminService } from '../application/organization-rbac-admin.service';
+import { TenantRbacAdminService } from '../application/organization-rbac-admin.service';
 import type {
-  OrganizationRoleGrantView,
-  OrganizationRoleView,
+  TenantRoleGrantView,
+  TenantRoleView,
 } from '../domain/repositories/organization-rbac.repository';
-import {
-  OrganizationRoleGrantViewResponse,
-  OrganizationRoleViewResponse,
-} from './response/role.response';
+import { TenantRoleGrantViewResponse, TenantRoleViewResponse } from './response/role.response';
 
 /**
  * 角色/授权**管理门面**端点（module-rbac-dynamic-roles §2.5·S3·甲裁自建角色 + 丁裁随片授权面）。
  *
  * @remarks
  * 授权在我·数据在 DB：每端点声明 `@Can(<动作>, 'Role'|'RoleGrant')`，由 `AuthorizationGuard`
- * 携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 `OrganizationRbacAdminService`
+ * 携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 `TenantRbacAdminService`
  * 落库（写侧过 domain 策略闸 + 同通道审计行 + 写后失效投影缓存）。BA 内置 create-role/roles 端点
  * 维持封堵（甲裁不代建→本片自建），本门面是租户差异化授权策略的唯一入口。
  *
@@ -59,19 +56,12 @@ import {
  * (create/read/delete)，member 无 → 非管理员请求由守卫 403（fail-closed）。
  * @public
  */
-@ApiExtraModels(
-  ApiEnvelope,
-  ApiErrorResponse,
-  OrganizationRoleViewResponse,
-  OrganizationRoleGrantViewResponse,
-)
+@ApiExtraModels(ApiEnvelope, ApiErrorResponse, TenantRoleViewResponse, TenantRoleGrantViewResponse)
 @ApiTags('organizations')
 @Controller('organizations/roles')
 @UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class AuthorizationAdminController {
-  constructor(
-    @Inject(OrganizationRbacAdminService) private readonly rbac: OrganizationRbacAdminService,
-  ) {}
+  constructor(@Inject(TenantRbacAdminService) private readonly rbac: TenantRbacAdminService) {}
 
   /**
    * 列出活动租户全部角色（系统 + 自定义）。
@@ -79,11 +69,11 @@ export class AuthorizationAdminController {
    */
   @Get()
   @Can('read', 'Role')
-  @SerializeOptions({ schema: organizationRoleViewSchema })
+  @SerializeOptions({ schema: tenantRoleViewSchema })
   @ApiOperation({ summary: 'List roles of the active organization (system + custom)' })
-  @ApiResponse(apiOkArray(OrganizationRoleViewResponse, 'Role views.'))
+  @ApiResponse(apiOkArray(TenantRoleViewResponse, 'Role views.'))
   @ApiResponse(apiError(403, 'CASL deny (no Role read).'))
-  listRoles(): Promise<OrganizationRoleView[]> {
+  listRoles(): Promise<TenantRoleView[]> {
     return this.rbac.listRoles();
   }
 
@@ -95,14 +85,12 @@ export class AuthorizationAdminController {
   @Post()
   @Can('create', 'Role')
   @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: organizationRoleViewSchema })
+  @SerializeOptions({ schema: tenantRoleViewSchema })
   @ApiOperation({ summary: 'Create a custom role (owner/admin)' })
-  @ApiResponse(
-    apiEnvelopeShape(OrganizationRoleViewResponse, { description: 'Created role view.' }),
-  )
+  @ApiResponse(apiEnvelopeShape(TenantRoleViewResponse, { description: 'Created role view.' }))
   @ApiResponse(apiError(400, 'Invalid/reserved role key.'))
   @ApiResponse(apiError(409, 'Role key already exists.'))
-  createRole(@Body({ schema: createRoleSchema }) dto: CreateRole): Promise<OrganizationRoleView> {
+  createRole(@Body({ schema: createRoleSchema }) dto: CreateRole): Promise<TenantRoleView> {
     return this.rbac.createRole(dto.key, dto.name);
   }
 
@@ -145,13 +133,11 @@ export class AuthorizationAdminController {
    */
   @Get('grants')
   @Can('read', 'RoleGrant')
-  @SerializeOptions({ schema: organizationRoleGrantViewSchema })
+  @SerializeOptions({ schema: tenantRoleGrantViewSchema })
   @ApiOperation({ summary: 'List grant rows of a role (echo checked state)' })
-  @ApiResponse(
-    apiOkArray(OrganizationRoleGrantViewResponse, 'Grant views (subject/action/conditions).'),
-  )
+  @ApiResponse(apiOkArray(TenantRoleGrantViewResponse, 'Grant views (subject/action/conditions).'))
   @ApiResponse(apiError(404, 'Role not found.'))
-  listGrants(@Query('roleKey') roleKey?: string): Promise<OrganizationRoleGrantView[]> {
+  listGrants(@Query('roleKey') roleKey?: string): Promise<TenantRoleGrantView[]> {
     if (!roleKey) {
       throw new BadRequestException('roleKey query param is required');
     }

@@ -2,7 +2,7 @@
  * Tenant-level RBAC 词汇表（global-tenancy §9.5.4①B · module-rbac-dynamic-roles §2.1 宪章改写）。
  *
  * 新宪（人裁 2026-10-17·丙《全 DB 化删代码表》）：授权规则矩阵已从代码**整表删净**——
- * **DB 是授权事实 SSOT**（`organization_role`/`organization_role_grant`·行式 grant·热改生效），
+ * **DB 是授权事实 SSOT**（`tenant_role`/`tenant_role_grant`·行式 grant·热改生效），
  * **代码词汇表是语言 SSOT**（subject/action 编译期保留·`@Can` 类型域·新资源随代码发布入表），
  * **CASL rules 是运行时投影**（app 侧 checker 按租户从 DB grant 行投影）。
  * 旧 `TENANT_RULES` 矩阵已删、内容迁为静态 seed 死数据（app 侧 `constants/system-role-seed.ts`·
@@ -24,7 +24,7 @@
  *
  * @public
  */
-export type OrganizationRole = string;
+export type TenantRole = string;
 
 /**
  * 内置系统角色 key（seed 数据输入·is_system=true 不可改不可删；非自定义角色的存在性域）。

@@ -1,12 +1,12 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import {
-  OrganizationRole,
-  OrganizationRoleAudit,
-  OrganizationRoleGrant,
+  TenantRole,
+  TenantRoleAudit,
+  TenantRoleGrant,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MikroOrganizationRbacRepository } from './mikro-organization-rbac.repository';
+import { MikroTenantRbacRepository } from './mikro-organization-rbac.repository';
 
 /**
  * RBAC 仓储适配单测（module-rbac-dynamic-roles S1·fake `em` 镜像断言·治理仓储测试同法）。
@@ -42,7 +42,7 @@ function makeHarness() {
   const mikro = { fork: vi.fn().mockResolvedValue(em) } as unknown as MikroOrmService;
   const createdOf = (entity: unknown) => created.filter((c) => c.entity === entity);
   return {
-    repo: new MikroOrganizationRbacRepository(mikro),
+    repo: new MikroTenantRbacRepository(mikro),
     created,
     createdOf,
     spies: { find, findOne, create, assign, persist, flush, nativeDelete },
@@ -60,25 +60,21 @@ const roleRow = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-describe('MikroOrganizationRbacRepository', () => {
+describe('MikroTenantRbacRepository', () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe('ensureSystemRoles（幂等 seed·§2.3）', () => {
     it('空租户 → 落 3 系统角色 + 40 授权行（19+18+3 与 seed 展开逐行等）', async () => {
       const h = makeHarness();
       await h.repo.ensureSystemRoles('tenantA', 'orgA');
-      expect(h.createdOf(OrganizationRole)).toHaveLength(3);
-      expect(h.createdOf(OrganizationRoleGrant)).toHaveLength(40);
-      expect(h.createdOf(OrganizationRole).map((c) => c.row.key)).toEqual([
-        'owner',
-        'admin',
-        'member',
-      ]);
+      expect(h.createdOf(TenantRole)).toHaveLength(3);
+      expect(h.createdOf(TenantRoleGrant)).toHaveLength(40);
+      expect(h.createdOf(TenantRole).map((c) => c.row.key)).toEqual(['owner', 'admin', 'member']);
       expect(h.created.every((c) => c.row.isSystem !== false)).toBe(true);
       // 两段 flush（module-workspace-owner-column 真库实跑自捕后修形）：角色行先落库再补授权行，
       // 扁平实体无 relation 依赖序·同批会 grant FK 抢跑；grant 行另不再显传 id=0（identity map 坍缩）。
       expect(h.spies.flush).toHaveBeenCalledTimes(2);
-      expect(h.createdOf(OrganizationRoleGrant).every((c) => !('id' in c.row))).toBe(true);
+      expect(h.createdOf(TenantRoleGrant).every((c) => !('id' in c.row))).toBe(true);
     });
 
     it('三角色已在 → 零写入零 flush（幂等）', async () => {
@@ -95,7 +91,7 @@ describe('MikroOrganizationRbacRepository', () => {
       const h = makeHarness();
       h.spies.find.mockResolvedValueOnce([roleRow({ key: 'owner', isSystem: true })]);
       await h.repo.ensureSystemRoles('tenantA', 'orgA');
-      expect(h.createdOf(OrganizationRole).map((c) => c.row.key)).toEqual(['admin', 'member']);
+      expect(h.createdOf(TenantRole).map((c) => c.row.key)).toEqual(['admin', 'member']);
     });
   });
 
@@ -150,14 +146,14 @@ describe('MikroOrganizationRbacRepository', () => {
       await expect(h.repo.createRole('tenantA', 'orgA', 'editor', 'Editor', 'u1')).resolves.toBe(
         'created',
       );
-      const role = h.createdOf(OrganizationRole)[0].row;
+      const role = h.createdOf(TenantRole)[0].row;
       expect(role).toMatchObject({
         tenantId: 'tenantA',
         organizationId: 'orgA',
         key: 'editor',
         isSystem: false,
       });
-      const audit = h.createdOf(OrganizationRoleAudit)[0].row;
+      const audit = h.createdOf(TenantRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'create', roleKey: 'editor', actorId: 'u1' });
       expect(audit.before).toBeNull();
       expect(audit.after).toMatchObject({ key: 'editor', isSystem: false });
@@ -188,7 +184,7 @@ describe('MikroOrganizationRbacRepository', () => {
         name: 'Editors',
         updatedAt: expect.any(Date),
       });
-      const audit = h.createdOf(OrganizationRoleAudit)[0].row;
+      const audit = h.createdOf(TenantRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'update', roleKey: 'editor' });
       expect(audit.before).toEqual({ name: 'Editor' });
       expect(audit.after).toEqual({ name: 'Editors' });
@@ -198,8 +194,8 @@ describe('MikroOrganizationRbacRepository', () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValueOnce(roleRow());
       await expect(h.repo.deleteRole('tenantA', 'orgA', 'editor', 'u1')).resolves.toBe('ok');
-      expect(h.spies.nativeDelete).toHaveBeenCalledWith(OrganizationRole, { id: 'role-1' });
-      const audit = h.createdOf(OrganizationRoleAudit)[0].row;
+      expect(h.spies.nativeDelete).toHaveBeenCalledWith(TenantRole, { id: 'role-1' });
+      const audit = h.createdOf(TenantRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'delete', roleKey: 'editor', after: null });
       expect(audit.before).toMatchObject({ key: 'editor', isSystem: false });
     });
@@ -263,9 +259,9 @@ describe('MikroOrganizationRbacRepository', () => {
           'u1',
         ),
       ).resolves.toBe('granted');
-      const grant = h.createdOf(OrganizationRoleGrant)[0].row;
+      const grant = h.createdOf(TenantRoleGrant)[0].row;
       expect(grant).toMatchObject({ roleId: 'role-1', subject: 'Member', action: 'read' });
-      expect(h.createdOf(OrganizationRoleAudit)[0].row).toMatchObject({
+      expect(h.createdOf(TenantRoleAudit)[0].row).toMatchObject({
         action: 'grant',
         roleKey: 'editor',
       });
@@ -290,7 +286,7 @@ describe('MikroOrganizationRbacRepository', () => {
         ),
       ).resolves.toBe('revoked');
       expect(h.spies.nativeDelete).toHaveBeenCalledTimes(1);
-      const audit = h.createdOf(OrganizationRoleAudit)[0].row;
+      const audit = h.createdOf(TenantRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'revoke', after: null });
       expect(audit.before).toEqual({
         subject: 'Workspace',

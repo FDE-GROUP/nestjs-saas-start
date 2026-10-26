@@ -5,7 +5,7 @@ import type {
 } from '@core/saas-kit/authorization/authorization-rules';
 
 /**
- * grant 行（DB `organization_role_grant` / seed 死数据同形）→ CASL ability 的**纯投影**
+ * grant 行（DB `tenant_role_grant` / seed 死数据同形）→ CASL ability 的**纯投影**
  * （module-rbac-casl §2.2 换形 · module-rbac-dynamic-roles §2.3）。
  *
  * 本文件不含任何独立权限知识：输入即授权事实（旧 `TENANT_RULES[role]` 静态表输入已随
@@ -16,7 +16,7 @@ import type {
  */
 export type CaslScopedAbility = MongoAbility<[AuthorizationAction, AuthorizationSubject]>;
 
-/** 投影输入行：与 `organization_role_grant` 行、seed grant 皆同构（subject×action×conditions）。 */
+/** 投影输入行：与 `tenant_role_grant` 行、seed grant 皆同构（subject×action×conditions）。 */
 export interface ScopedAbilityGrant {
   readonly subject: AuthorizationSubject;
   readonly action: AuthorizationAction;

@@ -121,7 +121,7 @@ const QueryHandlers = [
     // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本适配（唯一写面·属主 tenants）。
     //  core `PlatformAuditService`（PlatformModule @Global）经本端口消费·@Global 保跨模块可见。
     { provide: AUDIT_LOG_STORE, useClass: MikroAuditLogStore },
-    // 领域细化重构 A3：RBAC 仓储绑定与 OrganizationRbacAdminService 已迁 AuthorizationModule
+    // 领域细化重构 A3：RBAC 仓储绑定与 TenantRbacAdminService 已迁 AuthorizationModule
     // （tenants 经全局 ROLE_ASSIGNABILITY_READER published port 消费角色可挂载判定）。
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
     // handlers·闸门/审计单点由 PlatformModule @Global 供给）；命令/查询 handlers 与读模型

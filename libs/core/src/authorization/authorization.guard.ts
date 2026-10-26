@@ -22,7 +22,7 @@ import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
  * route additionally requires the ALS-preset member role (丙裁·会话解析点预注入) — missing
  * role denies. The allow/deny decision itself is delegated to the core-owned
  * `PermissionChecker` port, whose reference-app adapter projects the tenant's DB grant
- * rows (organization_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
+ * rows (tenant_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
  * auth / CASL impl (§9.5.4①B).
  *
  * 换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚

@@ -6,7 +6,7 @@ import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/c
  * 人裁 2026-10-23·约束③「审计另立显式 `audit_log` 表·不复用事件流」）。
  *
  * 治理生命周期（approve/reject/suspend/resume/soft-delete + user suspend/resume/delete）的
- * **耐久审计账本**：对拍 `organization_role_audit` 既有审计先例（同 append-only·同 actorId FK→User
+ * **耐久审计账本**：对拍 `tenant_role_audit` 既有审计先例（同 append-only·同 actorId FK→User
  * `set null` 令留痕不因操作者消亡而丢）。`table-ownership.ts` 判 `auditLog→tenants`（§3 裁点③
  * 属主=tenants 起步），故本实体居 `modules/organizations/**`，唯一写通道 = `MikroAuditLogStore`（经
  * core `AUDIT_LOG_STORE` 端口·由治理审计单点 `PlatformAuditService` 消费）。
@@ -31,7 +31,7 @@ export const AUDIT_LOG_META: TableMeta = {
     ['action', { k: 'text' }],
     ['fromStatus', { k: 'text', nullable: true }],
     ['toStatus', { k: 'text', nullable: true }],
-    // 操作者可删：set null 留账行本体（留痕不因 actor 消亡而丢·沿 organization_role_audit）。
+    // 操作者可删：set null 留账行本体（留痕不因 actor 消亡而丢·沿 tenant_role_audit）。
     ['actorId', { k: 'fk', target: 'User', onDelete: 'set null', nullable: true }],
     ['reason', { k: 'text', nullable: true }],
     ['correlationId', { k: 'text', nullable: true }],

@@ -3,8 +3,8 @@ import { AppModule } from '@app/app.module';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import {
-  ORGANIZATION_RBAC_REPOSITORY,
-  type OrganizationRbacRepository,
+  TENANT_RBAC_REPOSITORY,
+  type TenantRbacRepository,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import { CaslPermissionChecker } from '@app/modules/authorization/infrastructure/casl-permission.checker';
 import { ConfigPlatformSettings } from '@app/modules/platform/infrastructure/config-platform.settings';
@@ -126,13 +126,13 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           // §9.5.4①B · P1b：守卫/中间件经会话/裁决端口消费·此处用真实适配类坐实 DI 解析（依赖全局 AuthInstanceInjectKey）。
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: PERMISSION_CHECKER, useClass: CaslPermissionChecker },
-          // S2：checker 现依赖 ORGANIZATION_RBAC_REPOSITORY 投影源——此处桩住（不触库），坐实注入可解析。
+          // S2：checker 现依赖 TENANT_RBAC_REPOSITORY 投影源——此处桩住（不触库），坐实注入可解析。
           {
-            provide: ORGANIZATION_RBAC_REPOSITORY,
+            provide: TENANT_RBAC_REPOSITORY,
             useValue: {
               ensureSystemRoles: async () => {},
               findGrants: async () => null,
-            } as unknown as OrganizationRbacRepository,
+            } as unknown as TenantRbacRepository,
           },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
           // 治理换轴（E-F）：中间件失能卡点改注入 TenantStatusService（读 tenant.status）。

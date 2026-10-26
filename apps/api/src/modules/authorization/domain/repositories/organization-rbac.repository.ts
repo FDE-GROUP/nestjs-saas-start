@@ -4,13 +4,13 @@ import type {
 } from '@core/saas-kit/authorization/authorization-rules';
 
 /** 租户 RBAC 仓储端口的 DI 注入 token。 @public */
-export const ORGANIZATION_RBAC_REPOSITORY = Symbol('ORGANIZATION_RBAC_REPOSITORY');
+export const TENANT_RBAC_REPOSITORY = Symbol('TENANT_RBAC_REPOSITORY');
 
 /**
- * 角色最小读模型（companion `OrganizationRoleRow` 的端口视形·不泄实体）。
+ * 角色最小读模型（companion `TenantRoleRow` 的端口视形·不泄实体）。
  * @public
  */
-export interface OrganizationRoleView {
+export interface TenantRoleView {
   /** 角色行 id。 */
   readonly id: string;
   /** 唯一 key（角色/存储对象）。 */
@@ -25,7 +25,7 @@ export interface OrganizationRoleView {
  * 授权行读模型：与 app 侧 CASL 投影输入（`ScopedAbilityGrant`）同构。
  * @public
  */
-export interface OrganizationRoleGrantView {
+export interface TenantRoleGrantView {
   /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
   /** 授权动作（CASL can 第一元组参）。 */
@@ -38,34 +38,30 @@ export interface OrganizationRoleGrantView {
  * 审计动作词汇（留痕面·与 HTTP 动作词分离，改词不碰端点）。
  * @public
  */
-export type OrganizationRoleAuditAction = 'create' | 'update' | 'delete' | 'grant' | 'revoke';
+export type TenantRoleAuditAction = 'create' | 'update' | 'delete' | 'grant' | 'revoke';
 
 /**
  * grant 写入结果：`duplicate` = 同 (role,subject,action,conditions) 等值行已存在（应用层去重闸）。
  * @public
  */
-export type OrganizationRoleGrantResult =
-  | 'granted'
-  | 'roleNotFound'
-  | 'duplicate'
-  | 'invalidConditions';
+export type TenantRoleGrantResult = 'granted' | 'roleNotFound' | 'duplicate' | 'invalidConditions';
 
 /**
  * revoke 结果：`notFound` = 无匹配行（conditions 等值口径见适配器注）。
  * @public
  */
-export type OrganizationRoleRevokeResult = 'revoked' | 'roleNotFound' | 'notFound';
+export type TenantRoleRevokeResult = 'revoked' | 'roleNotFound' | 'notFound';
 
 /**
  * 角色 CRUD 结果：`duplicate` = unique(org,key) 撞行；`invalidKey` = 词法/保留 key 拒。
  * @public
  */
-export type OrganizationRoleCreateResult = 'created' | 'duplicate' | 'invalidKey';
+export type TenantRoleCreateResult = 'created' | 'duplicate' | 'invalidKey';
 /**
  * 角色改名/删除结果：`systemRoleProtected` = is_system 应屏。
  * @public
  */
-export type OrganizationRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProtected';
+export type TenantRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProtected';
 
 /**
  * 租户 RBAC 仓储端口（domain-owned · module-rbac-dynamic-roles §2.2/§2.3）。
@@ -79,11 +75,11 @@ export type OrganizationRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProt
  *
  * 换轴注记（global-tenant-organization-rehierarchy 切片 C·人裁假设②）：角色升**租级**——
  * 主轴参一律 `tenantId`（同租内跨组织互见的自然配套）；`organizationId` 为写路径归属盖章
- * （expand 段列仍 NOT NULL·活动组织缺位时适配器 fail-closed 拒写）。表名暂留 organization_*
- * （rename 留后续清理片·避免迁移面爆炸）。
+ * （expand 段列仍 NOT NULL·活动组织缺位时适配器 fail-closed 拒写）。片二 K4 已将表名复原重命名
+ * `organization_role*→tenant_role*`（保数据 RENAME·角色身份塌缩至纯租级另案 K5）。
  * @public
  */
-export interface OrganizationRbacRepository {
+export interface TenantRbacRepository {
   /**
    * 幂等 seed：缺哪个系统角色 key 补哪个（lazy-ensure · §2.3）；grants 按 seed 死数据展开。
    * @param tenantId - 目标租户 id（租级角色主轴）。
@@ -97,7 +93,7 @@ export interface OrganizationRbacRepository {
    * @param key - 角色 key。
    * @returns 角色读模型；查无时为 `null`。
    */
-  findRole(tenantId: string, key: string): Promise<OrganizationRoleView | null>;
+  findRole(tenantId: string, key: string): Promise<TenantRoleView | null>;
   /**
    * 本租户全部角色 key（存在性校验面 · S3）。
    * @param tenantId - 目标租户 id。
@@ -109,14 +105,14 @@ export interface OrganizationRbacRepository {
    * @param tenantId - 目标租户 id。
    * @returns 角色读模型列表。
    */
-  listRoles(tenantId: string): Promise<OrganizationRoleView[]>;
+  listRoles(tenantId: string): Promise<TenantRoleView[]>;
   /**
    * 角色的授权行（null = 查无角色；空数组 = 有角色零授权，两者消费侧皆 deny，但语义供缓存/门面区分）。
    * @param tenantId - 目标租户 id。
    * @param roleKey - 角色 key。
    * @returns 授权行读模型列表；查无角色时为 `null`。
    */
-  findGrants(tenantId: string, roleKey: string): Promise<OrganizationRoleGrantView[] | null>;
+  findGrants(tenantId: string, roleKey: string): Promise<TenantRoleGrantView[] | null>;
   /**
    * 创建自定义角色（写前过词法闸·同通道落审计行）。
    * @param tenantId - 目标租户 id。
@@ -132,7 +128,7 @@ export interface OrganizationRbacRepository {
     key: string,
     name: string,
     actorId: string | null,
-  ): Promise<OrganizationRoleCreateResult>;
+  ): Promise<TenantRoleCreateResult>;
   /**
    * 角色改名（系统角色屏）。
    * @param tenantId - 目标租户 id。
@@ -148,7 +144,7 @@ export interface OrganizationRbacRepository {
     key: string,
     name: string,
     actorId: string | null,
-  ): Promise<OrganizationRoleMutationResult>;
+  ): Promise<TenantRoleMutationResult>;
   /**
    * 硬删角色行（grant 行由 FK cascade 消灭·审计留 before 快照）。
    * @param tenantId - 目标租户 id。
@@ -162,7 +158,7 @@ export interface OrganizationRbacRepository {
     organizationId: string | undefined,
     key: string,
     actorId: string | null,
-  ): Promise<OrganizationRoleMutationResult>;
+  ): Promise<TenantRoleMutationResult>;
   /**
    * 新增授权行（conditions 形状写前过 domain 策略闸）。
    * @param tenantId - 目标租户 id。
@@ -176,9 +172,9 @@ export interface OrganizationRbacRepository {
     tenantId: string,
     organizationId: string | undefined,
     roleKey: string,
-    entry: OrganizationRoleGrantView,
+    entry: TenantRoleGrantView,
     actorId: string | null,
-  ): Promise<OrganizationRoleGrantResult>;
+  ): Promise<TenantRoleGrantResult>;
   /**
    * 撤权：`conditions` 传 null = 撤整 subject 级行；传对象 = 按 JSON 等值精确撤单条件行
    * （同格多条件行的 OR 并集形态下，撤销必须指明撤哪行·甲裁表形配套语义）。
@@ -199,5 +195,5 @@ export interface OrganizationRbacRepository {
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
-  ): Promise<OrganizationRoleRevokeResult>;
+  ): Promise<TenantRoleRevokeResult>;
 }

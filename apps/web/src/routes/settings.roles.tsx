@@ -15,8 +15,7 @@ import { requireSession } from '../lib/session';
  * 列表（系统 + 自定义）+ 新建/改名/删除；行内链至权限矩阵页 `/settings/roles/$roleKey`。
  * 系统角色（isSystem）改名/删除按钮 disable（前端防御 + 后端 409 兜底双保险）。
  */
-type OrganizationRoleView =
-  import('@saas/api-client').components['schemas']['OrganizationRoleViewResponse'];
+type TenantRoleView = import('@saas/api-client').components['schemas']['TenantRoleViewResponse'];
 
 export const Route = createFileRoute('/settings/roles')({
   loader: async () => {
@@ -90,7 +89,7 @@ function RolesPage() {
 }
 
 /** 单角色的改名/删除操作（系统角色保护）。 */
-function RoleRow({ role }: { role: OrganizationRoleView }) {
+function RoleRow({ role }: { role: TenantRoleView }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(role.name);
   const rename = useAction();
@@ -175,7 +174,7 @@ function RoleRow({ role }: { role: OrganizationRoleView }) {
 }
 
 /** 纯展示（收 typed 角色数组·可脱离 router 组件测：typed 渲染 / 空态 / 系统标记）。 */
-export function RolesView({ roles }: { roles?: OrganizationRoleView[] }) {
+export function RolesView({ roles }: { roles?: TenantRoleView[] }) {
   const list = roles ?? [];
   return (
     <section className="flex flex-col gap-4">

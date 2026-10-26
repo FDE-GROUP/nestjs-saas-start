@@ -1,7 +1,7 @@
 import {
-  ORGANIZATION_ROLE_AUDIT_META,
-  ORGANIZATION_ROLE_GRANT_META,
-  ORGANIZATION_ROLE_META,
+  TENANT_ROLE_AUDIT_META,
+  TENANT_ROLE_GRANT_META,
+  TENANT_ROLE_META,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '@app/modules/organizations/infrastructure/entities/audit-log.entity';
 import { TENANT_META } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
@@ -64,9 +64,9 @@ const POST_FACTS: SelfTableFacts = {
 const SELF_TABLES: SelfTableFacts[] = [
   metaFacts(WORKSPACE_META),
   metaFacts(EVENT_META),
-  metaFacts(ORGANIZATION_ROLE_META),
-  metaFacts(ORGANIZATION_ROLE_GRANT_META),
-  metaFacts(ORGANIZATION_ROLE_AUDIT_META),
+  metaFacts(TENANT_ROLE_META),
+  metaFacts(TENANT_ROLE_GRANT_META),
+  metaFacts(TENANT_ROLE_AUDIT_META),
   metaFacts(AUDIT_LOG_META),
   // global-tenant-organization-rehierarchy 切片 B：新层根表 + 计费上移新表（均 L2 合规 nullable·不入豁免账）
   metaFacts(TENANT_META),

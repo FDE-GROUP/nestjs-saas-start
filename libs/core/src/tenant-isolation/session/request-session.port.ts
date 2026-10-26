@@ -1,4 +1,4 @@
-import type { OrganizationRole } from '../../authorization/authorization-rules';
+import type { TenantRole } from '../../authorization/authorization-rules';
 
 /**
  * 请求会话读取端口（global-tenancy §9.5.4①B · P1b 会话端口倒置）。
@@ -47,7 +47,7 @@ export interface SessionView {
    * 预注入）。来自 BA membership **数据面**（认证域事实）；词汇外/无活动租户 → undefined，
    * 消费侧（AuthorizationGuard）据此 fail-closed。裁决不在本层。
    */
-  readonly role?: OrganizationRole;
+  readonly role?: TenantRole;
 }
 
 /**

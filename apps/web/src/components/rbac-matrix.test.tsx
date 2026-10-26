@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cellKey, type OrganizationRoleGrantView, RbacMatrix } from './rbac-matrix';
+import { cellKey, RbacMatrix, type TenantRoleGrantView } from './rbac-matrix';
 
 afterEach(cleanup);
 
-const whole = (subject: string, action: string): OrganizationRoleGrantView => ({
-  subject: subject as OrganizationRoleGrantView['subject'],
-  action: action as OrganizationRoleGrantView['action'],
+const whole = (subject: string, action: string): TenantRoleGrantView => ({
+  subject: subject as TenantRoleGrantView['subject'],
+  action: action as TenantRoleGrantView['action'],
   conditions: null,
 });
 

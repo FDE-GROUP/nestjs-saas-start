@@ -5,11 +5,11 @@ import {
 } from '../request/authorization';
 
 /**
- * 组织角色视图（S7b·真相源 = `AuthorizationAdminController` 返回类型）。
+ * 租户角色视图（S7b·真相源 = `AuthorizationAdminController` 返回类型·片二 K4 复原命名 `organization*→tenant*`）。
  *
  * @public
  */
-export const organizationRoleViewSchema = z.object({
+export const tenantRoleViewSchema = z.object({
   id: z.string(),
   /** 角色 key（组织内唯一）。 */
   key: z.string(),
@@ -27,7 +27,7 @@ export const organizationRoleViewSchema = z.object({
  *
  * @public
  */
-export const organizationRoleGrantViewSchema = z.object({
+export const tenantRoleGrantViewSchema = z.object({
   subject: z.enum(AUTHORIZATION_SUBJECT_VALUES),
   action: z.enum(AUTHORIZATION_ACTION_VALUES),
   /** CASL 条件（白名单字段）；null = 无约束。值面自由透传（strip 只作用于本层键）。 */

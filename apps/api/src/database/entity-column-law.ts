@@ -8,7 +8,7 @@
  *  - **L1 存在性**：每张表必须有 `createdAt`；可变表必须另有 `updatedAt`；
  *    不可变表/外部契约表须显式登记在下方清单（隐式缺失即闸红）。
  *  - **L2 口径**（人裁 (a)）：新表 `updatedAt` 一律 `nullable()`——建后未改即 NULL，
- *    不伪造「最后修改」时间（沿 `organization_role`/BA 面既有原则）；存量 NOT NULL 盖章表
+ *    不伪造「最后修改」时间（沿 `tenant_role`/BA 面既有原则）；存量 NOT NULL 盖章表
  *    入 `UPDATED_AT_NULLABLE_EXEMPT` 棘轮豁免，**不迁移、只减不增**。
  *
  * **统一的层次立场**：本律统一落在「语义 + 规则治理」层；**拒绝结构继承层**
@@ -26,8 +26,8 @@
 /** 不可变表（append-only 语义：只插不改不删·无 `updatedAt` 是设计而非缺失）。 */
 export const IMMUTABLE_TABLES: readonly string[] = [
   'event', // ES 事件流：版本化追加，投递状态列亦由 relay 单向推进（dispatchedAt 非「修改」语义·留痕）
-  'organization_role_grant', // 一权限格一行：变更=增删行（OR 并集语义），不原地改
-  'organization_role_audit', // 变更留痕：只插不改不删（甲裁）
+  'tenant_role_grant', // 一权限格一行：变更=增删行（OR 并集语义），不原地改
+  'tenant_role_audit', // 变更留痕：只插不改不删（甲裁）
   'audit_log', // 治理审计耐久账本：append-only（global-governance-lifecycle-consolidation 切片 E）
 ];
 

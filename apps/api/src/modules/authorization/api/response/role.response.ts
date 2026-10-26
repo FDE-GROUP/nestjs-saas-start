@@ -5,14 +5,11 @@ import {
   type AuthorizationSubject,
 } from '@core/saas-kit/authorization/authorization-rules';
 import { ApiProperty } from '@nestjs/swagger';
-import type {
-  organizationRoleGrantViewSchema,
-  organizationRoleViewSchema,
-} from '@saas/contracts/index';
+import type { tenantRoleGrantViewSchema, tenantRoleViewSchema } from '@saas/contracts/index';
 import type { z } from 'zod';
 import type {
-  OrganizationRoleGrantView,
-  OrganizationRoleView,
+  TenantRoleGrantView,
+  TenantRoleView,
 } from '../../domain/repositories/organization-rbac.repository';
 
 /**
@@ -23,7 +20,7 @@ import type {
  * subject/action 词汇复用 `@core` CASL 单源数组（conditions 为白名单自由对象）。
  * @public
  */
-export class OrganizationRoleViewResponse {
+export class TenantRoleViewResponse {
   /** 角色行 id。 */
   @ApiProperty({ description: 'UUIDv7。' })
   id!: string;
@@ -41,16 +38,16 @@ export class OrganizationRoleViewResponse {
   isSystem!: boolean;
 }
 
-const _trvf: OrganizationRoleViewResponse = {} as OrganizationRoleView;
-const _trvb: OrganizationRoleView = {} as OrganizationRoleViewResponse;
+const _trvf: TenantRoleViewResponse = {} as TenantRoleView;
+const _trvb: TenantRoleView = {} as TenantRoleViewResponse;
 void _trvf;
 void _trvb;
 
 /**
- * 授权行响应契约（与域内 `OrganizationRoleGrantView` 同形·编译期锁防漂移）。
+ * 授权行响应契约（与域内 `TenantRoleGrantView` 同形·编译期锁防漂移）。
  * @public
  */
-export class OrganizationRoleGrantViewResponse {
+export class TenantRoleGrantViewResponse {
   /** 被授权资源主体。 */
   @ApiProperty({ enum: [...AUTHORIZATION_SUBJECT_VALUES], description: '授权主体词汇。' })
   subject!: AuthorizationSubject;
@@ -69,16 +66,16 @@ export class OrganizationRoleGrantViewResponse {
   conditions!: Record<string, unknown> | null;
 }
 
-const _trgf: OrganizationRoleGrantViewResponse = {} as OrganizationRoleGrantView;
-const _trgb: OrganizationRoleGrantView = {} as OrganizationRoleGrantViewResponse;
+const _trgf: TenantRoleGrantViewResponse = {} as TenantRoleGrantView;
+const _trgb: TenantRoleGrantView = {} as TenantRoleGrantViewResponse;
 void _trgf;
 void _trgb;
 
 // —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源。——
-const _arv1: z.infer<typeof organizationRoleViewSchema> = {} as OrganizationRoleView;
-const _arv2: OrganizationRoleView = {} as z.infer<typeof organizationRoleViewSchema>;
-const _agv1: z.infer<typeof organizationRoleGrantViewSchema> = {} as OrganizationRoleGrantView;
-const _agv2: OrganizationRoleGrantView = {} as z.infer<typeof organizationRoleGrantViewSchema>;
+const _arv1: z.infer<typeof tenantRoleViewSchema> = {} as TenantRoleView;
+const _arv2: TenantRoleView = {} as z.infer<typeof tenantRoleViewSchema>;
+const _agv1: z.infer<typeof tenantRoleGrantViewSchema> = {} as TenantRoleGrantView;
+const _agv2: TenantRoleGrantView = {} as z.infer<typeof tenantRoleGrantViewSchema>;
 void _arv1;
 void _arv2;
 void _agv1;

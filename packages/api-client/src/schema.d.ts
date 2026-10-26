@@ -921,7 +921,7 @@ export interface components {
             /** @description 字段级结构化明细。 */
             errors?: components["schemas"]["ApiErrorDetail"][];
         };
-        OrganizationRoleViewResponse: {
+        TenantRoleViewResponse: {
             /** @description UUIDv7。 */
             id: string;
             /** @description 角色 key（组织内唯一）。 */
@@ -931,7 +931,7 @@ export interface components {
             /** @description 系统内置角色（不可改名/删除）。 */
             isSystem: boolean;
         };
-        OrganizationRoleGrantViewResponse: {
+        TenantRoleGrantViewResponse: {
             /**
              * @description 授权主体词汇。
              * @enum {string}
@@ -1541,7 +1541,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationRoleViewResponse"][];
+                        data?: components["schemas"]["TenantRoleViewResponse"][];
                     };
                 };
             };
@@ -1579,7 +1579,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationRoleViewResponse"];
+                        data?: components["schemas"]["TenantRoleViewResponse"];
                     };
                 };
             };
@@ -1706,7 +1706,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationRoleGrantViewResponse"][];
+                        data?: components["schemas"]["TenantRoleGrantViewResponse"][];
                     };
                 };
             };

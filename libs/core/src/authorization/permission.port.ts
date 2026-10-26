@@ -1,15 +1,11 @@
-import type {
-  AuthorizationAction,
-  AuthorizationSubject,
-  OrganizationRole,
-} from './authorization-rules';
+import type { AuthorizationAction, AuthorizationSubject, TenantRole } from './authorization-rules';
 
 /**
  * 租户级权限裁决端口（global-tenancy §9.5.4①B · module-rbac-casl §2.2 换形 ·
  * module-rbac-dynamic-roles §2.3 契约修订·丁裁②）。
  *
  * `AuthorizationGuard` 声明所需授权（`@Can`），把「是否允许」的**实际裁决**委派给
- * 本端口——参考应用侧的 CASL 适配器从**租户的 DB grant 行**（`organization_role_grant`·授权事实
+ * 本端口——参考应用侧的 CASL 适配器从**租户的 DB grant 行**（`tenant_role_grant`·授权事实
  * SSOT·丙裁）投影建 ability 并判定。新宪（人裁 2026-10-17）：授权裁决归 CASL，Better Auth
  * 只管认证；角色由会话解析点预注入 ALS（丙裁），core 不 import 认证/CASL/仓储实现。
  *
@@ -45,7 +41,7 @@ export interface PermissionCheckInput {
   /** ALS 活动租户（隔离主轴·规则分区键；rehierarchy 切片 C 换轴）；undefined = 无租户上下文（适配侧必拒）。 */
   readonly tenantId?: string;
   /** ALS 预注入的活动租户成员角色 key（系统三 key 或自定义 key）；undefined = 无/封禁/非法值。 */
-  readonly role?: OrganizationRole;
+  readonly role?: TenantRole;
   /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
   /** 被授权资源主体。 */
@@ -69,7 +65,7 @@ export interface PermissionListPredicateRequest {
   /** ALS 活动租户（隔离主轴·规则分区键）；undefined = 无租户上下文（适配侧必归 none）。 */
   readonly tenantId?: string;
   /** ALS 预注入的活动租户成员角色 key；undefined = 无/封禁/非法值（必归 none）。 */
-  readonly role?: OrganizationRole;
+  readonly role?: TenantRole;
   /** 授权动作（CASL can 第一元组参）。 */
   readonly action: AuthorizationAction;
   /** 被授权资源主体。 */

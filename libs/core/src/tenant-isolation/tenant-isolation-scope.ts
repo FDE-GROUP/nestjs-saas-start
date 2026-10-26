@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { OrganizationRole } from '../authorization/authorization-rules';
+import type { TenantRole } from '../authorization/authorization-rules';
 
 /**
  * 每请求租户作用域（global-tenancy §9.3 / FR-2）。
@@ -24,7 +24,7 @@ export interface TenantIsolationScope {
   /** 用户 id。 */
   userId?: string;
   /** 当前租户内成员角色（租级）。 */
-  role?: OrganizationRole;
+  role?: TenantRole;
 }
 
 /**

@@ -2,9 +2,9 @@ import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecy
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
-  ORGANIZATION_ROLE_AUDIT_META,
-  ORGANIZATION_ROLE_GRANT_META,
-  ORGANIZATION_ROLE_META,
+  TENANT_ROLE_AUDIT_META,
+  TENANT_ROLE_GRANT_META,
+  TENANT_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '../../../modules/organizations/infrastructure/entities/audit-log.entity';
 import { TENANT_META } from '../../../modules/organizations/infrastructure/entities/tenant.entity';
@@ -272,14 +272,14 @@ export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META,
 export const Event = buildMigrationEntity(EVENT_META, { User, Organization });
 
 // module-rbac-dynamic-roles S1（甲裁三表）：授权事实 SSOT 入 DB·同元数据双变体派生（纯 additive）。
-export const OrganizationRole = buildMigrationEntity(ORGANIZATION_ROLE_META, {
+export const TenantRole = buildMigrationEntity(TENANT_ROLE_META, {
   Organization,
   Tenant,
 });
-export const OrganizationRoleGrant = buildMigrationEntity(ORGANIZATION_ROLE_GRANT_META, {
-  OrganizationRole,
+export const TenantRoleGrant = buildMigrationEntity(TENANT_ROLE_GRANT_META, {
+  TenantRole,
 });
-export const OrganizationRoleAudit = buildMigrationEntity(ORGANIZATION_ROLE_AUDIT_META, {
+export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   Organization,
   Tenant,
   User,
@@ -303,8 +303,8 @@ export const MIKRO_MIGRATION_ENTITIES = [
   Post,
   TenantSubscription,
   Event,
-  OrganizationRole,
-  OrganizationRoleGrant,
-  OrganizationRoleAudit,
+  TenantRole,
+  TenantRoleGrant,
+  TenantRoleAudit,
   AuditLog,
 ];

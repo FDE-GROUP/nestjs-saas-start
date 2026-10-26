@@ -1,6 +1,6 @@
 import type {
-  OrganizationRbacRepository,
-  OrganizationRoleGrantView,
+  TenantRbacRepository,
+  TenantRoleGrantView,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
 import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
@@ -21,20 +21,18 @@ const grant = (
   subject: string,
   action: string,
   conditions: Record<string, unknown> | null = null,
-) => ({ subject, action, conditions }) as unknown as OrganizationRoleGrantView;
+) => ({ subject, action, conditions }) as unknown as TenantRoleGrantView;
 
 // 活动组织（写路径归属盖章）·从 ALS 读——镜测以固定租户轴桩提供（与分区键 tenantId 解耦）。
 const activeOrg = (): TenantIsolationService =>
   ({ organizationId: 'orgA-active' }) as unknown as TenantIsolationService;
 
-function makeChecker(
-  grantsFor: (tenant: string, key: string) => OrganizationRoleGrantView[] | null,
-) {
+function makeChecker(grantsFor: (tenant: string, key: string) => TenantRoleGrantView[] | null) {
   const ensureSystemRoles = vi.fn().mockResolvedValue(undefined);
   const findGrants = vi.fn(async (tenant: string, key: string) =>
     grantsFor(tenant, key),
   ) as unknown as ReturnType<typeof vi.fn>;
-  const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
+  const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
   return {
     checker: new CaslPermissionChecker(rbac, activeOrg()),
     ensureSystemRoles,
@@ -180,7 +178,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     const findGrants = vi
       .fn()
       .mockResolvedValue([grant('Member', 'read')]) as unknown as ReturnType<typeof vi.fn>;
-    const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
+    const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
     const checker = new CaslPermissionChecker(rbac, activeOrg());
     await expect(
       checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
@@ -363,7 +361,7 @@ describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B�
     const rbac = {
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants: vi.fn().mockRejectedValue(new Error('db down')),
-    } as unknown as OrganizationRbacRepository;
+    } as unknown as TenantRbacRepository;
     await expect(new CaslPermissionChecker(rbac, activeOrg()).listPredicate(base)).resolves.toEqual(
       {
         kind: 'none',
