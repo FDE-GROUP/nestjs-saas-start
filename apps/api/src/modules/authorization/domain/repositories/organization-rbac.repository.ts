@@ -32,6 +32,12 @@ export interface TenantRoleGrantView {
   readonly action: AuthorizationAction;
   /** 授权条件（ABAC 谓词·平铺等值/$in）。 */
   readonly conditions: Record<string, unknown> | null;
+  /**
+   * 组织收窄 scope（第三次复裁切片 2·D1）：仅**写侧** `grant` 入参携此字段指定行归属——
+   * `undefined`/`null` = 租级通配（跨 org 生效·存量默认·零行为变更），字符串 = 仅该 org 生效。
+   * 读投影（`findGrants` 回形）不带此字段（已按活动 org 过滤为适用集·checker 无须逐行 org）。
+   */
+  readonly organizationId?: string | null;
 }
 
 /**
@@ -73,10 +79,11 @@ export type TenantRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProtected'
  * 返回码用字面量 union（不借 HTTP 异常表达领域事实·应用层负责转译）；conditions 形状
  * 校验在 domain 策略纯函数（`policies/rbac.policy.ts`），适配器写前必过闸。
  *
- * 换轴注记（global-tenant-organization-rehierarchy 片三 K5 收口）：角色身份塌缩至**纯租级**——
- * 主轴 `{tenantId, key}`·`tenant_role` 已去 `organizationId` 列（unique `(tenantId,key)`·tenantId NOT NULL）；
- * CRUD 的 `organizationId` 参**仅存续于 `tenant_role_audit` 归属盖章**（活动组织缺位仍 fail-closed 拒写·
- * 保「谁在哪个组织下改了角色」留痕）。片二 K4 曾保数据 RENAME `organization_role*→tenant_role*`。
+ * 换轴注记（global-tenant-organization-rehierarchy 片三 K5·第三次复裁切片 2 追平）：角色**目录**仍
+ * 塌缩至租级——主轴 `{tenantId, key}`·`tenant_role` 无 `organizationId` 列（unique `(tenantId,key)`·tenantId NOT NULL）；
+ * 但授权 **grant 行可依组织收窄**（`tenant_role_grant.organizationId`·NULL=租级通配跨 org·非 NULL=仅该 org 生效·
+ * D1）——本端口 `findGrants` 按活动 org 取「NULL ∪ 本 org」适用集·`grant` 写侧携可选 org scope。CRUD 的
+ * `organizationId` 参仍兼 `tenant_role_audit` 归属盖章（活动组织缺位仍 fail-closed 拒写）。片二 K4 曾保数据 RENAME `organization_role*→tenant_role*`。
  * @public
  */
 export interface TenantRbacRepository {
@@ -108,11 +115,18 @@ export interface TenantRbacRepository {
   listRoles(tenantId: string): Promise<TenantRoleView[]>;
   /**
    * 角色的授权行（null = 查无角色；空数组 = 有角色零授权，两者消费侧皆 deny，但语义供缓存/门面区分）。
+   * 第三次复裁切片 2（D1）：传 `activeOrgId` 时取「租级通配（org IS NULL）∪ 本 org 收窄（org = activeOrgId）」
+   * 适用集；不传（租级操作·无活动 org）时仅取通配行（org-scoped 行 fail-closed 不参与无 org 上下文裁决）。
    * @param tenantId - 目标租户 id。
    * @param roleKey - 角色 key。
+   * @param activeOrgId - 活动组织 id（可选·决定 org-scoped grant 是否纳入）。
    * @returns 授权行读模型列表；查无角色时为 `null`。
    */
-  findGrants(tenantId: string, roleKey: string): Promise<TenantRoleGrantView[] | null>;
+  findGrants(
+    tenantId: string,
+    roleKey: string,
+    activeOrgId?: string,
+  ): Promise<TenantRoleGrantView[] | null>;
   /**
    * 创建自定义角色（写前过词法闸·同通道落审计行）。
    * @param tenantId - 目标租户 id。
@@ -160,7 +174,8 @@ export interface TenantRbacRepository {
     actorId: string | null,
   ): Promise<TenantRoleMutationResult>;
   /**
-   * 新增授权行（conditions 形状写前过 domain 策略闸）。
+   * 新增授权行（conditions 形状写前过 domain 策略闸）。`entry.organizationId`（可选·第三次复裁切片 2·D1）
+   * 指定行组织 scope：缺省/`null`=租级通配（跨 org 生效），字符串=仅该 org 生效。
    * @param tenantId - 目标租户 id。
    * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param roleKey - 目标角色 key。
@@ -185,6 +200,7 @@ export interface TenantRbacRepository {
    * @param action - 授权动作。
    * @param conditions - 等值匹配条件；`null` = 整 subject 级行。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
+   * @param scopeOrgId - 目标 grant 行的组织 scope（第三次复裁切片 2·D1）：缺省/`null` = 租级通配行。
    * @returns 领域结果码（`revoked`/`roleNotFound`/`notFound`）。
    */
   revoke(
@@ -195,5 +211,6 @@ export interface TenantRbacRepository {
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
+    scopeOrgId?: string | null,
   ): Promise<TenantRoleRevokeResult>;
 }

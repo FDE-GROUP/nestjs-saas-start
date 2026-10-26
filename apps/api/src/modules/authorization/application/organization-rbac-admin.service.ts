@@ -222,7 +222,10 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
     return this.ctx.requireActiveTenantId();
   }
 
-  /** 写路径归属盖章（二级轴·expand 段 tenant_role* 的 organizationId 列仍 NOT NULL）。 */
+  /**
+   * 写路径审计归属盖章（二级轴·活动组织）：角色目录无 org 列（K5 塌租级）·本值仅供 `tenant_role_audit`
+   * 盖章（缺位 fail-closed 拒写）；grant 行的组织 scope 另由 `entry.organizationId`（切片 2·D1）显式指定。
+   */
   private orgId(): string {
     return this.ctx.requireActiveOrganizationId();
   }

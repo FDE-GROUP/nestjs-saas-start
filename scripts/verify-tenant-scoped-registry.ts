@@ -53,8 +53,10 @@ export const TENANT_SCOPED_TABLES: readonly string[] = [
   'organization',
   // 订阅面（rehierarchy 片二 K2：旧 `organization_subscription` 整表 DROP·仅余租级新表在册）。
   'tenant_subscription',
-  // RBAC 三表之二（role/audit 持租级列；grant 经 roleId 传递、无自列不入判）。片二 K4 复原命名 `organization_role*→tenant_role*`。
+  // RBAC 三表：role 持租级列·audit 持 org 列·grant 经第三次复裁切片 2（D1）重引入 `organizationId` 收窄列
+  // （NULL=租级通配）故入判在册。片二 K4 复原命名 `organization_role*→tenant_role*`。
   'tenant_role',
+  'tenant_role_grant',
   'tenant_role_audit',
   // BA 组织容器族：读面仍 org 轴锚定（BA 机器不盖租级列·C 片自裁不换）·消费界内无裸跨租面。
   'member',

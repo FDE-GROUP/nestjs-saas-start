@@ -36,10 +36,13 @@ import type {
  * 每操作 `fork()` 独立 em（V4 串租户教训·同治理仓储纪律）；实体为运行时扁平形
  * （`rbac-tables.ts` companion·FK 裸值列，关系约束由 DB 物理层强制）。
  *
- * 换轴（global-tenant-organization-rehierarchy 片三 K5 收口）：角色身份塌纯租级——寻址/查询
- * 锚 `{ tenantId, key }`；`tenant_role` 已去 `organizationId` 列·`unique(tenantId,key)`·tenantId NOT NULL。
- * CRUD 入参 `organizationId` 仅透传 `tenant_role_audit` 归属盖章（活动组织缺位仍 fail-closed 拒写·
- * seed 面不再需 org）。同租内 key 唯一性由 `unique(tenantId,key)` 物理兜底。
+ * 换轴（global-tenant-organization-rehierarchy 片三 K5·第三次复裁切片 2 追平）：角色**目录**寻址/查询
+ * 锚 `{ tenantId, key }`；`tenant_role` 无 `organizationId` 列·`unique(tenantId,key)`·tenantId NOT NULL。
+ * 授权 **grant 行可依组织收窄**（D1）：`tenant_role_grant.organizationId` NULL=租级通配·非 NULL=仅该 org 生效；
+ * `findGrants` 按活动 org 取「NULL ∪ 本 org」适用集（存量行皆 NULL→零行为变更）。CRUD 入参 `organizationId`
+ * 仍透传 `tenant_role_audit` 归属盖章（活动组织缺位仍 fail-closed 拒写·seed 面不再需 org）。
+ * 同租内 key 唯一性由 `unique(tenantId,key)` 物理兜底；grant scope 与同格 (subject,action,conditions)
+ * 的重复判定按 `organizationId` 维度隔离（不同 org 的同格行系正当并存形态）。
  *
  * 写路径先过 domain 策略闸（key 词法 / conditions 白名单·闸外即拒 fail-closed），落行同通道
  * 追加 `tenant_role_audit` 行（甲裁：每次变更一留痕·before/after 快照 JSON 规范化存储）。
@@ -112,11 +115,20 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     return rows.map(toView);
   }
 
-  async findGrants(tenantId: string, roleKey: string): Promise<TenantRoleGrantView[] | null> {
+  async findGrants(
+    tenantId: string,
+    roleKey: string,
+    activeOrgId?: string,
+  ): Promise<TenantRoleGrantView[] | null> {
     const em = await this.mikro.fork();
     const role = await em.findOne(TenantRole, { tenantId, key: roleKey });
     if (!role) return null;
-    const rows = await em.find(TenantRoleGrant, { roleId: role.id });
+    // D1：租级通配（org IS NULL）恒纳入；有活动 org 时追加本 org 收窄行（`$or`·不做包含校验·越界即空）。
+    // 无活动 org（租级操作）仅取通配行——org-scoped 行 fail-closed 不参与无 org 上下文裁决。存量行皆 NULL→与原全量同解。
+    const where = activeOrgId
+      ? { roleId: role.id, $or: [{ organizationId: null }, { organizationId: activeOrgId }] }
+      : { roleId: role.id, organizationId: null };
+    const rows = await em.find(TenantRoleGrant, where);
     return rows.map(toGrantView);
   }
 
@@ -128,7 +140,7 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     actorId: string | null,
   ): Promise<TenantRoleCreateResult> {
     if (!isValidRoleKey(key)) return 'invalidKey';
-    if (!organizationId) return 'invalidKey'; // fail-closed：无活动组织可盖审计归属（K5 后角色本体租级·org 仅存续于审计）
+    if (!organizationId) return 'invalidKey'; // fail-closed：无活动组织可盖审计归属（角色**目录**本体租级·本方法的 org 入参仅供 `tenant_role_audit` 盖章·grant 行的 org scope 另由 `entry.organizationId` 承载）
     const em = await this.mikro.fork();
     if (await em.findOne(TenantRole, { tenantId, key })) return 'duplicate';
     const now = new Date();
@@ -219,8 +231,12 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     const em = await this.mikro.fork();
     const role = await em.findOne(TenantRole, { tenantId, key: roleKey });
     if (!role) return 'roleNotFound';
+    // D1：grant 行组织 scope——`entry.organizationId` 缺省/null = 租级通配（存量默认·跨 org 生效），
+    // 字符串 = 仅该 org 生效。去重按同 scope 维度隔离（不同 org 的同格行可并存）。
+    const grantOrg = entry.organizationId ?? null;
     const siblings = await em.find(TenantRoleGrant, {
       roleId: role.id,
+      organizationId: grantOrg,
       subject: entry.subject,
       action: entry.action,
     });
@@ -230,6 +246,7 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     }
     em.create(TenantRoleGrant, {
       roleId: role.id,
+      organizationId: grantOrg,
       subject: entry.subject,
       action: entry.action,
       conditions: entry.conditions,
@@ -258,12 +275,19 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
+    scopeOrgId?: string | null,
   ): Promise<TenantRoleRevokeResult> {
     if (!organizationId) return 'roleNotFound'; // fail-closed：无归属可盖审计行
     const em = await this.mikro.fork();
     const role = await em.findOne(TenantRole, { tenantId, key: roleKey });
     if (!role) return 'roleNotFound';
-    const siblings = await em.find(TenantRoleGrant, { roleId: role.id, subject, action });
+    // D1：撤权按组织 scope 精确定位（`scopeOrgId` 缺省/null = 租级通配行·存量默认）。
+    const siblings = await em.find(TenantRoleGrant, {
+      roleId: role.id,
+      organizationId: scopeOrgId ?? null,
+      subject,
+      action,
+    });
     const target = canonicalConditions(conditions);
     const hit = siblings.find((r) => canonicalConditions(r.conditions ?? null) === target);
     if (!hit) return 'notFound';

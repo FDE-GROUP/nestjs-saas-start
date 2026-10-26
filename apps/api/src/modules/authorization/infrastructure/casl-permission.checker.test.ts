@@ -510,3 +510,128 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
     ).resolves.toBe(true);
   });
 });
+
+describe('CaslPermissionChecker（第三次复裁 切片 2·D1·org-scoped grant 轴）', () => {
+  it('check.organizationId 存在 → findGrants 携活动 org 第三参；缺省则不传（向后兼容两参契约）', async () => {
+    const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
+    await checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' });
+    expect(findGrants).toHaveBeenCalledWith('orgA', 'member'); // 无 org → 仅两参
+    await checker.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org1',
+    });
+    expect(findGrants).toHaveBeenCalledWith('orgA', 'member', 'org1'); // 有 org → 三参
+  });
+
+  it('同 (tenant,role) 不同活动 org → 各自独立缓存条目（各查一次·D1 缓存键加 org 轴）', async () => {
+    const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
+    await checker.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org1',
+    });
+    await checker.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org2',
+    });
+    expect(findGrants).toHaveBeenCalledTimes(2); // org1/org2 各自 miss
+  });
+
+  it('invalidate(tenant) 清该租户全部活动 org 缓存（前缀仍盖 org 轴）', async () => {
+    const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
+    const c = checker as CaslPermissionChecker;
+    await c.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org1',
+    });
+    expect(findGrants).toHaveBeenCalledTimes(1);
+    await c.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org1',
+    }); // 命中缓存
+    expect(findGrants).toHaveBeenCalledTimes(1);
+    c.invalidate('orgA');
+    await c.can({
+      tenantId: 'orgA',
+      role: 'member',
+      action: 'read',
+      subject: 'Member',
+      organizationId: 'org1',
+    });
+    expect(findGrants).toHaveBeenCalledTimes(2);
+  });
+
+  it('实例判定解 {{organizationId}} 为活动 org 实值（命中 allow·失配 deny）', async () => {
+    const findGrants = vi.fn().mockResolvedValue([
+      {
+        subject: 'Workspace',
+        action: 'update',
+        conditions: { organizationId: '{{organizationId}}' },
+      },
+    ]);
+    const rbac = {
+      ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
+      findGrants,
+    } as unknown as TenantRbacRepository;
+    const orgScoped = new CaslPermissionChecker(rbac, activeOrg());
+    // grants 回形带 conditions={{organizationId}}·checker 按活动 org 解析后交 CASL mongo 匹配 resource。
+    await expect(
+      orgScoped.can({
+        tenantId: 'orgA',
+        role: 'editor',
+        action: 'update',
+        subject: 'Workspace',
+        resource: { organizationId: 'orgX' },
+        userId: 'u1',
+        organizationId: 'orgX',
+      }),
+    ).resolves.toBe(true);
+    await expect(
+      orgScoped.can({
+        tenantId: 'orgA',
+        role: 'editor',
+        action: 'update',
+        subject: 'Workspace',
+        resource: { organizationId: 'orgY' },
+        userId: 'u1',
+        organizationId: 'orgX',
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it('列表面解 {{organizationId}} 为活动 org 实值（受限行 → where）', async () => {
+    const { checker } = makeChecker(
+      () =>
+        [
+          {
+            subject: 'Workspace',
+            action: 'read',
+            conditions: { organizationId: '{{organizationId}}' },
+          },
+        ] as unknown as TenantRoleGrantView[],
+    );
+    await expect(
+      checker.listPredicate({
+        tenantId: 'orgA',
+        role: 'editor',
+        action: 'read',
+        subject: 'Workspace',
+        organizationId: 'orgZ',
+      }),
+    ).resolves.toEqual({ kind: 'where', where: { organizationId: 'orgZ' } });
+  });
+});

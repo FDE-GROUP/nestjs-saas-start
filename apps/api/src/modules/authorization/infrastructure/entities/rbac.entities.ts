@@ -47,13 +47,21 @@ export const TENANT_ROLE_GRANT_META: TableMeta = {
   columns: [
     ['id', { k: 'bigintAutoPk' }],
     ['roleId', { k: 'fk', target: 'TenantRole', onDelete: 'cascade' }],
+    // 组织收窄 scope（第三次复裁切片 2·D1）：grant 行可依组织收窄——NULL=**租级通配**（跨 org 生效·
+    // 存量 seed/旧行回填皆 NULL→零行为变更），非 NULL=仅在该 org 生效（子公司管理员）。角色目录仍
+    // 租级 `unique(tenantId,key)`（见 `TENANT_ROLE_META`·K5 塌缩不动），org 维**唯一落本 grant 列**。
+    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade', nullable: true }],
     ['subject', { k: 'text' }],
     ['action', { k: 'text' }],
     // CASL mongo conditions 形（{ ownerId: '{{userId}}' } 模板·S4 解析）；NULL = 整 subject 级。
     ['conditions', { k: 'json', nullable: true }],
     ['createdAt', { k: 'datetime', defaultNow: true }],
   ],
-  indexes: [{ name: 'tenant_role_grant_role_subject_idx', properties: ['roleId', 'subject'] }],
+  indexes: [
+    { name: 'tenant_role_grant_role_subject_idx', properties: ['roleId', 'subject'] },
+    // org-scope 读侧索引（findGrants 按 `(roleId, organizationId)` 过滤·NULL 通配 ∪ 本 org 收窄）。
+    { name: 'tenant_role_grant_org_idx', properties: ['roleId', 'organizationId'] },
+  ],
 };
 
 export const TENANT_ROLE_AUDIT_META: TableMeta = {
@@ -99,6 +107,8 @@ export const TenantRole: EntitySchema<TenantRoleRow> = buildRuntimeEntity(
 export interface TenantRoleGrantRow {
   id: number;
   roleId: string;
+  /** 组织收窄 scope（第三次复裁切片 2·D1）：NULL=租级通配（跨 org 生效），非 NULL=仅该 org 生效。 */
+  organizationId?: string | null;
   subject: AuthorizationSubject;
   action: AuthorizationAction;
   conditions?: Record<string, unknown> | null;

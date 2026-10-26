@@ -272,12 +272,15 @@ export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META,
 export const Event = buildMigrationEntity(EVENT_META, { User, Organization });
 
 // module-rbac-dynamic-roles S1（甲裁三表）：授权事实 SSOT 入 DB·同元数据双变体派生（纯 additive）。
-// rehierarchy 片三 K5：角色塌纯租级·去 Organization FK 依赖（仅剩 Tenant）。
+// rehierarchy 片三 K5：角色**目录**塌纯租级·tenant_role 去 Organization FK 依赖（仅剩 Tenant）。
+// 第三次复裁切片 2（D1）：grant 行重引入 `organizationId` 收窄列（FK→Organization cascade·nullable），
+// 故本表迁移目标重回 Organization；角色目录 `tenant_role` 仍纯租级不动（org 维唯一落 grant 列）。
 export const TenantRole = buildMigrationEntity(TENANT_ROLE_META, {
   Tenant,
 });
 export const TenantRoleGrant = buildMigrationEntity(TENANT_ROLE_GRANT_META, {
   TenantRole,
+  Organization,
 });
 export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   Organization,

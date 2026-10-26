@@ -26,7 +26,8 @@ import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
  * auth / CASL impl (§9.5.4①B).
  *
  * 换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚
- * 隔离**主轴** `tenantId`（同租跨组织互见·角色租级），缺租户上下文仍 403 同族错误码。
+ * 隔离**主轴** `tenantId`（角色目录租级），缺租户上下文仍 403 同族错误码。第三次复裁切片 2（D1）：
+ * 守卫另透传 ALS 活动 `organizationId` 供适配侧裁 org-scoped grant（租级通配 ∪ 本 org）是否生效。
  *
  * @public
  */
@@ -65,7 +66,13 @@ export class AuthorizationGuard implements CanActivate {
     const role = this.tenantContext.role;
     // S2（module-rbac-dynamic-roles）：规则源 = 租户 DB grant 行，裁决异步（适配内版本缓存·
     // 热路径命中不查库）。rehierarchy 切片 C：tenantId 为规则分区键（租级角色），同 key 角色跨租互不串形。
-    const allowed = await this.checker.can({ tenantId, role, ...requirement });
+    // 第三次复裁切片 2（D1）：透传活动 org——决定 org-scoped grant 是否纳入（租级通配 ∪ 本 org）。
+    const allowed = await this.checker.can({
+      tenantId,
+      role,
+      organizationId: this.tenantContext.organizationId,
+      ...requirement,
+    });
     if (!allowed) {
       throw new ForbiddenException(
         `Missing permission: ${requirement.action} ${requirement.subject}`,

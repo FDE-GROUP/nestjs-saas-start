@@ -28,6 +28,25 @@ describe('toMikroPredicate（受限转换器·人裁①含 $in）', () => {
     expect(toMikroPredicate({ ownerId: '{{userId}}' })).toEqual({ ownerId: '{{userId}}' });
   });
 
+  it('{{organizationId}} 模板（第三次复裁 切片 2·D1）：按活动 org 解析·缺值留字面', () => {
+    // 标量解析为活动 org 实值
+    expect(toMikroPredicate({ organizationId: '{{organizationId}}' }, undefined, 'orgZ')).toEqual({
+      organizationId: 'orgZ',
+    });
+    // userId 与 organizationId 同格双模板各解各的
+    expect(
+      toMikroPredicate({ ownerId: '{{userId}}', org: '{{organizationId}}' }, 'u9', 'orgZ'),
+    ).toEqual({ ownerId: 'u9', org: 'orgZ' });
+    // 缺 organizationId（无活动 org）⇒ 留字面（DB 落空 deny）
+    expect(toMikroPredicate({ organizationId: '{{organizationId}}' }, 'u9')).toEqual({
+      organizationId: '{{organizationId}}',
+    });
+    // $in 元素内的 {{organizationId}} 也逐一解析
+    expect(
+      toMikroPredicate({ orgs: { $in: ['{{organizationId}}', 'x'] } }, undefined, 'orgZ'),
+    ).toEqual({ orgs: { $in: ['orgZ', 'x'] } });
+  });
+
   it('$in 多值：非空原始量数组译为 Mikro 同名操作符', () => {
     expect(toMikroPredicate({ role: { $in: ['a', 'b'] } })).toEqual({ role: { $in: ['a', 'b'] } });
     expect(toMikroPredicate({ n: { $in: [1, 2, 3] } })).toEqual({ n: { $in: [1, 2, 3] } });

@@ -11,10 +11,16 @@ import type { AuthorizationAction, AuthorizationSubject, TenantRole } from './au
  *
  * 形状修订注记（dynamic-roles S2）：
  *  - 分区键入参——规则是 per-租户事实，同 key 角色在不同租户投影可不同；
- *    （global-tenant-organization-rehierarchy 切片 C·人裁假设②：角色升租级，分区键从
- *    `organizationId` 换 `tenantId`——同租内跨组织互见的自然配套）；
+ *    （global-tenant-organization-rehierarchy 切片 C·人裁假设②：角色**目录**升租级，分区键从
+ *    `organizationId` 换 `tenantId`）；
  *  - `can` 异步——规则源为 DB（miss 时懒加载 + ensure 系统角色；命中走进程内版本缓存，
  *    守卫热路径不逐请求查库）。
+ *
+ * 形状扩展注记（第三次复裁 切片 2·D1·组织权限维复活）：
+ *  - `organizationId` 可选（入 `can` / `listPredicate` 两入参）——ALS 活动组织：决定 org-scoped grant
+ *    是否纳入（租级通配 grant `org IS NULL` ∪ 本 org 收窄 grant），并绑定 grant conditions 里的
+ *    `{{organizationId}}` 模板为实值；缺省 = 无活动 org（仅通配 grant 生效·模板留字面）。角色目录仍租级
+ *    `unique(tenantId,key)` 不动·org 权限维唯一落 grant 行（见 grant.organizationId）。
  *
  * 形状扩展注记（dynamic-roles S4·乙裁「仅 check 级」·丁裁②契约）：
  *  - `resource` 可选——实例级判定的**逃生舱**：不带 = 类型级裁决（守卫路径）；带上 = 交出「先取资源再判」的应用层，适配侧纳入 conditions 行并按
@@ -54,6 +60,11 @@ export interface PermissionCheckInput {
   readonly resource?: Record<string, unknown>;
   /** 绑定 grant conditions 中 `{{userId}}` 模板的当前操作者 id（实例级判定所需；缺省则模板不可解析 → 保守 deny）。 */
   readonly userId?: string;
+  /**
+   * ALS 活动组织（第三次复裁切片 2·D1）：决定 org-scoped grant 是否纳入（租级通配 ∪ 本 org）·
+   * 并绑定 grant conditions 中 `{{organizationId}}` 模板为实值；缺省 = 无活动 org（仅通配 grant 生效·模板留字面）。
+   */
+  readonly organizationId?: string;
 }
 
 /**
@@ -72,6 +83,11 @@ export interface PermissionListPredicateRequest {
   readonly subject: AuthorizationSubject;
   /** 绑定 grant conditions 中 `{{userId}}` 模板的当前操作者 id（缺省则模板不可解析 → 该谓词落空）。 */
   readonly userId?: string;
+  /**
+   * ALS 活动组织（第三次复裁切片 2·D1）：决定纳入「租级通配 ∪ 本 org」grant 适用集·并解
+   * conditions 中 `{{organizationId}}` 模板；缺省 = 无活动 org（仅通配 grant 参与·模板留字面落空）。
+   */
+  readonly organizationId?: string;
 }
 
 /**

@@ -12,8 +12,9 @@
  * grammar（与写侧 `isValidGrantConditions` 白名单**逐字同形**·防两侧漂移；见 plan §4 人裁①）：
  *  - 顶层：非空对象，字段名为普通词（不含 `$` 前缀）；
  *  - 每个值 ∈ ① 原始量（string/number/boolean/null·等值）② `{ $in: [原始量, ...] }`（非空数组）；
- *  - `{{userId}}` 模板：标量与 `$in` 元素皆解析为当前操作者实值（复用 S4 `resolveConditions` 语义）。
- *  - **缺 userId ⇒ 留字面模板**：DB 层 `ownerId = '{{userId}}'` / `$in` 含字面模板必落空 = 匹配空集
+ *  - `{{userId}}` / `{{organizationId}}` 模板：标量与 `$in` 元素皆解析为当前上下文实值（复用 S4 `resolveConditions` 语义·
+ *    第三次复裁切片 2 补 org 轴，与 checker `resolveConditions` 共享同一 grammar）。
+ *  - **缺对应实值 ⇒ 留字面模板**：DB 层 `ownerId = '{{userId}}'` / `organizationId = '{{organizationId}}'` / `$in` 含字面模板必落空 = 匹配空集
  *    （保守 deny·与 check 级「等值落空 deny」同向，绝不回退全量）。
  *  - **grammar 外即 throw**（不静默放行）：其它 `$` 运算符（`$gt/$regex` 等）/ 直接数组值 / 空 `$in`
  *    / 非-$in 嵌套对象 / 值面函数·undefined——交调用点（checker `listPredicate`）catch 后归空集谓词。
@@ -21,6 +22,7 @@
  */
 
 const USER_TEMPLATE = '{{userId}}';
+const ORG_TEMPLATE = '{{organizationId}}';
 const IN_OPERATOR = '$in';
 
 /** 原始量：mongo 等值 / $in 元素允许的唯一值形（与写侧闸同判）。 */
@@ -33,19 +35,34 @@ function isPrimitive(value: unknown): value is string | number | boolean | null 
   );
 }
 
-/** 解析标量里的 `{{userId}}` 模板；非字符串原样返回，缺 userId 留字面模板（→ DB 落空 deny）。 */
-function resolveScalar(value: string, userId?: string): string {
-  if (!value.includes(USER_TEMPLATE)) return value;
-  return userId === undefined ? value : value.split(USER_TEMPLATE).join(userId);
+/**
+ * 解析标量里的 `{{userId}}` / `{{organizationId}}` 模板；非字符串原样返回，缺对应实值留字面模板（→ DB 落空 deny）。
+ */
+function resolveScalar(value: string, userId?: string, organizationId?: string): string {
+  let out = value;
+  if (out.includes(USER_TEMPLATE) && userId !== undefined) {
+    out = out.split(USER_TEMPLATE).join(userId);
+  }
+  if (out.includes(ORG_TEMPLATE) && organizationId !== undefined) {
+    out = out.split(ORG_TEMPLATE).join(organizationId);
+  }
+  return out;
 }
 
 /**
  * 单值译词：原始量 → 等值；`{ $in: [原始量...] }`（非空）→ Mikro 同名 `$in` 操作符。
  * grammar 外抛错（调用点按 fail-closed 处置）。
  */
-function translateValue(field: string, value: unknown, userId?: string): Record<string, unknown> {
+function translateValue(
+  field: string,
+  value: unknown,
+  userId?: string,
+  organizationId?: string,
+): Record<string, unknown> {
   if (isPrimitive(value)) {
-    return { [field]: typeof value === 'string' ? resolveScalar(value, userId) : value };
+    return {
+      [field]: typeof value === 'string' ? resolveScalar(value, userId, organizationId) : value,
+    };
   }
   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
     const keys = Object.keys(value);
@@ -55,7 +72,7 @@ function translateValue(field: string, value: unknown, userId?: string): Record<
         return {
           [field]: {
             [IN_OPERATOR]: raw.map((el) =>
-              typeof el === 'string' ? resolveScalar(el, userId) : el,
+              typeof el === 'string' ? resolveScalar(el, userId, organizationId) : el,
             ),
           },
         };
@@ -75,12 +92,14 @@ function translateValue(field: string, value: unknown, userId?: string): Record<
  *
  * @param conditions - 单条 grant 行的 conditions（写侧闸已放行的形）
  * @param userId - 当前操作者 id（解 `{{userId}}` 模板·缺省留字面模板落空 deny）
+ * @param organizationId - 活动组织 id（解 `{{organizationId}}` 模板·缺省留字面模板落空 deny）
  * @returns Mikro where 片段（字段间 AND）
  * @public
  */
 export function toMikroPredicate(
   conditions: Record<string, unknown>,
   userId?: string,
+  organizationId?: string,
 ): Record<string, unknown> {
   const entries = Object.entries(conditions);
   if (entries.length === 0) {
@@ -88,7 +107,7 @@ export function toMikroPredicate(
   }
   const out: Record<string, unknown> = {};
   for (const [field, value] of entries) {
-    Object.assign(out, translateValue(field, value, userId));
+    Object.assign(out, translateValue(field, value, userId, organizationId));
   }
   return out;
 }

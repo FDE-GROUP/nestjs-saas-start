@@ -9,10 +9,11 @@ import { ListWorkspacesQueryHandler } from './list-workspaces.query-handler';
 
 /**
  * workspaces 列表 query handler 锁测（module-rbac-query-level-filtering 切片 C·人裁③⑤）：
- * 锁定 handler 携 ALS `{tenantId, role, userId}` 取 `listPredicate({action:'read', subject:'Workspace'})`
+ * 锁定 handler 携 ALS `{tenantId, role, userId, organizationId}` 取 `listPredicate({action:'read', subject:'Workspace'})`
  * 后的三分支——`all`→透传 (request, undefined)（现状不变）/ `where`→下推实例谓词 /
  * `none`→短路空页**不触 port**（fail-closed·绝不回退全量）。
  * rehierarchy 切片 C 换轴：谓词入参主轴从 organizationId 升 tenantId（租级角色）。
+ * 第三次复裁 切片 2（D1）：ALS 活动 organizationId 一并透传供 org-scoped grant 适用集裁决。
  */
 
 const ctx = { tenantId: 'tenantA', organizationId: 'orgA', userId: 'u1', role: 'editor' };
@@ -42,6 +43,7 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
       tenantId: 'tenantA',
       role: 'editor',
       userId: 'u1',
+      organizationId: 'orgA',
       action: 'read',
       subject: 'Workspace',
     });
@@ -67,7 +69,7 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
     expect(result).toEqual({ items: [], total: 0, limit: 7, offset: 3 });
   });
 
-  it('无租户上下文（ALS 空）→ 谓词入参 tenantId/role/userId 皆 undefined，归 none 即空页', async () => {
+  it('无租户上下文（ALS 空）→ 谓词入参 tenantId/role/userId/organizationId 皆 undefined，归 none 即空页', async () => {
     const { handler, list, listPredicate } = makeHandler({ kind: 'none' });
 
     const result = await handler.execute(new ListWorkspacesQuery(request));
@@ -76,6 +78,7 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
       tenantId: undefined,
       role: undefined,
       userId: undefined,
+      organizationId: undefined,
       action: 'read',
       subject: 'Workspace',
     });

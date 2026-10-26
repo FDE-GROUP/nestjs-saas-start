@@ -10,7 +10,9 @@ import { MikroTenantRbacRepository } from './mikro-organization-rbac.repository'
 
 /**
  * RBAC 仓储适配单测（module-rbac-dynamic-roles S1·fake `em` 镜像断言·治理仓储测试同法）。
- * rehierarchy 片三 K5：角色塌纯租级——寻址锚 `tenantId`（主轴）·`organizationId` 仅存续于审计行盖章（角色行不再含）。
+ * rehierarchy 片三 K5·第三次复裁 切片 2 追平：角色**目录**塌租级——寻址锚 `tenantId`（主轴）；
+ * 授权 grant 行可依组织收窄（`tenant_role_grant.organizationId`·NULL=租级通配·非 NULL=仅该 org·D1）；
+ * `tenant_role_audit` 仍携 `organizationId` 归属盖章。
  * 锁四类行为：① ensure 幂等与 seed 展开行数；② 策略闸拒形（invalidKey/invalidConditions）；
  * ③ is_system 应屏（rename/delete 保护）；④ 每次变更同通道落审计行（甲裁留痕）。
  */
@@ -112,6 +114,28 @@ describe('MikroTenantRbacRepository', () => {
         { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
         { subject: 'Member', action: 'read', conditions: null },
       ]);
+    });
+
+    it('findGrants 无活动 org ⇒ 仅取租级通配行（organizationId:null·D1 fail-closed）', async () => {
+      const h = makeHarness();
+      h.spies.findOne.mockResolvedValueOnce(roleRow());
+      h.spies.find.mockResolvedValueOnce([]);
+      await h.repo.findGrants('tenantA', 'editor');
+      expect(h.spies.find).toHaveBeenCalledWith(TenantRoleGrant, {
+        roleId: 'role-1',
+        organizationId: null,
+      });
+    });
+
+    it('findGrants 携活动 org ⇒ 取「租级通配 ∪ 本 org」（$or·D1）', async () => {
+      const h = makeHarness();
+      h.spies.findOne.mockResolvedValueOnce(roleRow());
+      h.spies.find.mockResolvedValueOnce([]);
+      await h.repo.findGrants('tenantA', 'editor', 'orgA');
+      expect(h.spies.find).toHaveBeenCalledWith(TenantRoleGrant, {
+        roleId: 'role-1',
+        $or: [{ organizationId: null }, { organizationId: 'orgA' }],
+      });
     });
 
     it('listRoleKeys 返回本租户全部 key', async () => {
@@ -264,6 +288,30 @@ describe('MikroTenantRbacRepository', () => {
         action: 'grant',
         roleKey: 'editor',
       });
+    });
+
+    it('granted（entry.organizationId 组 scope）→ 新行携 organizationId·去重按同 org 域（D1）', async () => {
+      const h = makeHarness();
+      h.spies.findOne.mockResolvedValueOnce(roleRow());
+      h.spies.find.mockResolvedValueOnce([]);
+      await expect(
+        h.repo.grant(
+          'tenantA',
+          'orgA',
+          'editor',
+          { subject: 'Member', action: 'read', conditions: null, organizationId: 'orgX' },
+          'u1',
+        ),
+      ).resolves.toBe('granted');
+      // 去重查询限定在本 org scope（非通配）
+      expect(h.spies.find).toHaveBeenCalledWith(TenantRoleGrant, {
+        roleId: 'role-1',
+        organizationId: 'orgX',
+        subject: 'Member',
+        action: 'read',
+      });
+      const grant = h.createdOf(TenantRoleGrant)[0].row;
+      expect(grant).toMatchObject({ roleId: 'role-1', organizationId: 'orgX' });
     });
 
     it('revoke 按 canonical 精确命中条件行 → nativeDelete + revoke 审计带 before', async () => {
