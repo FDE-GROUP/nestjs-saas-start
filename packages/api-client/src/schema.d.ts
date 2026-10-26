@@ -924,7 +924,7 @@ export interface components {
         TenantRoleViewResponse: {
             /** @description UUIDv7。 */
             id: string;
-            /** @description 角色 key（组织内唯一）。 */
+            /** @description 角色 key（租户内唯一）。 */
             key: string;
             /** @description 人面可读名。 */
             name: string;

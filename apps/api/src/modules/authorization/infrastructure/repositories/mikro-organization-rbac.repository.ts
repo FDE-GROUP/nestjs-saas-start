@@ -128,7 +128,7 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
     actorId: string | null,
   ): Promise<TenantRoleCreateResult> {
     if (!isValidRoleKey(key)) return 'invalidKey';
-    if (!organizationId) return 'invalidKey'; // fail-closed：无归属可盖（expand 段 org 列 NOT NULL）
+    if (!organizationId) return 'invalidKey'; // fail-closed：无活动组织可盖审计归属（K5 后角色本体租级·org 仅存续于审计）
     const em = await this.mikro.fork();
     if (await em.findOne(TenantRole, { tenantId, key })) return 'duplicate';
     const now = new Date();

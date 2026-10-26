@@ -26,7 +26,7 @@ export class TenantRoleViewResponse {
   id!: string;
 
   /** 唯一 key（角色/存储对象）。 */
-  @ApiProperty({ description: '角色 key（组织内唯一）。' })
+  @ApiProperty({ description: '角色 key（租户内唯一）。' })
   key!: string;
 
   /** 角色显示名。 */

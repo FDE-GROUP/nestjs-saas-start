@@ -75,7 +75,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
 
   /**
    * 创建自定义角色（领域码转 HTTP：`invalidKey`→400、`duplicate`→409），成功后失效投影缓存。
-   * @param key - 角色 key（组织内唯一）。
+   * @param key - 角色 key（租户内唯一）。
    * @param name - 人面可读名。
    * @returns 创建后的角色读模型。
    *

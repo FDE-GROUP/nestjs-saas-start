@@ -11,7 +11,7 @@ import {
  */
 export const tenantRoleViewSchema = z.object({
   id: z.string(),
-  /** 角色 key（组织内唯一）。 */
+  /** 角色 key（租户内唯一）。 */
   key: z.string(),
   /** 人面可读名。 */
   name: z.string(),
