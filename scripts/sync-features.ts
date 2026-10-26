@@ -18,7 +18,7 @@ const DST_ROOT = join(REPO_ROOT, 'apps/api/src/features');
 const MANIFEST = '.overlay-manifest.json';
 
 // 与 apps/api/src/features/feature-loader.ts 的 OVERLAYS 登记表同源（新增叠加层两处同补）。
-const OVERLAY_NAMES = ['odoo-rpc-api'];
+const OVERLAY_NAMES = ['odoo-rpc-api', 'odoo-provisioning'];
 
 /** 递归收集「相对路径 → sha256」；排除清单外的所有文件（manifest 自身不参与对拍）。 */
 function hashTree(root: string): Record<string, string> {

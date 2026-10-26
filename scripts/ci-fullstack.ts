@@ -47,6 +47,9 @@ const GATED_E2E_FILES = [
   // module-org-odoo-company-mapping 切片 B：绑定读取端口（published port）按租户解析绑定 + canUseOdoo
   // 裁决矩阵（泄露矩阵的 DB 真相半·喂 RPC 域注入的绑定事实）。
   'apps/api/src/modules/organizations/organization-odoo-binding-reader.e2e.test.ts',
+  // module-org-odoo-company-mapping 切片 C：绑定推进端口（published port）provisioning→ready/failed
+  // 状态机库语义（saga 赖以推进的写面·与 feature 侧 stub 编排单测合锁「先落意图→回写/失败」全链）。
+  'apps/api/src/modules/organizations/organization-odoo-binding-writer.e2e.test.ts',
   'apps/api/src/tenant-isolation/tenant-isolation.e2e.test.ts',
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',
   'apps/api/src/modules/auth/oauth-sso.e2e.test.ts',
@@ -57,6 +60,9 @@ const GATED_E2E_FILES = [
   // 私有叠加层条目（module-odoo-rpc-frontend §4-3·高危#3 经人签核 2026-10-25）：登记随真源
   // 「在场即必须登记」，缺席态由下方 overlayAbsent 豁免判据放行——恒等闸两态全绿。
   'apps/api/src/features/odoo-rpc-api/api/odoo-rpc-live.e2e.test.ts',
+  // 私有叠加层条目（module-org-odoo-company-mapping 切片 C）：建司回找活体链（门 ODOO_E2E_BASE_URL·
+  // 无联调栈整体 skip）——同 overlayAbsent 豁免两态恒等。
+  'apps/api/src/features/odoo-provisioning/api/odoo-provisioning-live.e2e.test.ts',
 ];
 
 // Ryuk 禁用（见头注）；容器清理走 finally stop + 启动前遗留清扫。

@@ -17,6 +17,10 @@ import {
   type OrganizationOdooBindingStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { OrganizationOdooBindingRow } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
+import type {
+  OrganizationOdooBindingWriter,
+  OrganizationOdooReadyPatch,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
@@ -57,7 +61,9 @@ function effectiveStatus(status: OrganizationStatus | undefined): OrganizationSt
  * LEFT JOIN（无关系对象）以「批量取 + 内存拼接」折叠·未知租户先 `findOne` 短路 null 不触他表。
  */
 @Injectable()
-export class MikroOrganizationGovernanceRepository implements OrganizationGovernanceRepository {
+export class MikroOrganizationGovernanceRepository
+  implements OrganizationGovernanceRepository, OrganizationOdooBindingWriter
+{
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   // entities.ts 的 `defineEntity` 结果只有值、无 companion interface，实例类型经 `InferEntity` 提取。
@@ -287,5 +293,58 @@ export class MikroOrganizationGovernanceRepository implements OrganizationGovern
       odooBoundAt: org.odooBoundAt ? new Date(org.odooBoundAt) : null,
       organizationStatus: org.status as OrganizationStatus,
     };
+  }
+
+  // —— 绑定状态推进写面（module-org-odoo-company-mapping 切片 C·`ORGANIZATION_ODOO_BINDING_WRITER` 实现）：
+  // saga 专用·每步 nativeUpdate 各自耐久（`odooCompanyId` 列由 bind/markReady 写·此处不校 Odoo 侧存在性）。
+  // 失败原因截断上限（列长兜底·防异常消息过长按库报错）。
+  private static readonly FAILURE_REASON_MAX = 500;
+
+  /**
+   * 落「建司意图」：绑定态置 `provisioning`（幂等于目标态·nativeUpdate 绕身份图直落真列）。
+   */
+  async beginProvisioning(organizationId: string): Promise<void> {
+    const em = await this.mikro.fork();
+    await em.nativeUpdate(
+      Organization,
+      { id: organizationId } as never,
+      { odooBindingStatus: ORGANIZATION_ODOO_BINDING_STATUS.PROVISIONING } as never,
+    );
+  }
+
+  /**
+   * 回写就绪：绑定态置 `ready` + 公司 id/名快照 + `boundAt=now`，清失败原因。
+   */
+  async markReady(organizationId: string, patch: OrganizationOdooReadyPatch): Promise<void> {
+    const em = await this.mikro.fork();
+    await em.nativeUpdate(
+      Organization,
+      { id: organizationId } as never,
+      {
+        odooCompanyId: patch.odooCompanyId,
+        odooBindingStatus: ORGANIZATION_ODOO_BINDING_STATUS.READY,
+        odooCompanyName: patch.odooCompanyName,
+        odooBoundAt: new Date(),
+        odooFailureReason: null,
+      } as never,
+    );
+  }
+
+  /**
+   * 置失败：绑定态置 `failed` + 携截断后的失败原因（保留既有公司 id·供 doctor/重试 定位）。
+   */
+  async markFailed(organizationId: string, reason: string): Promise<void> {
+    const em = await this.mikro.fork();
+    await em.nativeUpdate(
+      Organization,
+      { id: organizationId } as never,
+      {
+        odooBindingStatus: ORGANIZATION_ODOO_BINDING_STATUS.FAILED,
+        odooFailureReason: reason.slice(
+          0,
+          MikroOrganizationGovernanceRepository.FAILURE_REASON_MAX,
+        ),
+      } as never,
+    );
   }
 }

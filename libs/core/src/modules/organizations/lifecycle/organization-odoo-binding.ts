@@ -75,3 +75,25 @@ export function canUseOdoo(input: OdooUsabilityInput): boolean {
     typeof input.odooCompanyId === 'number'
   );
 }
+
+/**
+ * 开通建司的确定性公司名**前缀**（saga 建司与 doctor 反向对拍共用的命名口径单源）。
+ *
+ * @remarks
+ * 确定性命名 = `前缀 + 租户 id`（仅由租户 id 派生·可复现），是「命名回找」幂等的前提：
+ * saga 崩溃/重投据此在 Odoo 侧回找已建公司不重建；doctor 据此前缀筛「本方开通的」公司在册集
+ * （Odoo 自身种子/演示公司不入集·免误报孤儿）。改前缀即改命名契约——saga/doctor 必须同址（本常量）。
+ *
+ * @public
+ */
+export const EXPECTED_ODOO_COMPANY_PREFIX = 'SAAS-';
+
+/**
+ * 由租户 id 复算确定性 Odoo 公司名（{@link EXPECTED_ODOO_COMPANY_PREFIX} + 租户 id）。
+ * @param organizationId - 目标租户 id。
+ * @returns 可复现的公司名（建司/回找/对拍同式）。
+ * @public
+ */
+export function expectedOdooCompanyName(organizationId: string): string {
+  return `${EXPECTED_ODOO_COMPANY_PREFIX}${organizationId}`;
+}

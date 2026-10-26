@@ -27,6 +27,11 @@ interface FeatureOverlay {
 /** 叠加层登记表：新增私有 feature = 此处登记一行（声明式，不逐模块特判）。 */
 const OVERLAYS: readonly FeatureOverlay[] = [
   { dir: 'odoo-rpc-api', moduleFile: 'odoo-rpc-api.module', exportName: 'OdooRpcApiModule' },
+  {
+    dir: 'odoo-provisioning',
+    moduleFile: 'odoo-provisioning.module',
+    exportName: 'OdooProvisioningModule',
+  },
 ];
 
 async function resolveOverlay(overlay: FeatureOverlay): Promise<Type<unknown>[]> {

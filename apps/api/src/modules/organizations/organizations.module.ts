@@ -1,4 +1,5 @@
 import { ORGANIZATION_ODOO_BINDING_READER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
+import { ORGANIZATION_ODOO_BINDING_WRITER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
 import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
@@ -98,6 +99,9 @@ const QueryHandlers = [
     // useExisting 指向同一治理仓储实例（类仅以 symbol token 注册·无类 token provider）：
     // MikroOrganizationGovernanceRepository 同时实现 reader 的 `read()`，别名即复用同一体。
     { provide: ORGANIZATION_ODOO_BINDING_READER, useExisting: ORGANIZATION_GOVERNANCE_REPOSITORY },
+    // 切片 C published port：features/odoo-provisioning 经 @core 端口推进绑定态（先落意图→ready/failed）。
+    // 同一体（MikroOrganizationGovernanceRepository 兼实现 writer 三面）·@Global 导出供跨上下文解析。
+    { provide: ORGANIZATION_ODOO_BINDING_WRITER, useExisting: ORGANIZATION_GOVERNANCE_REPOSITORY },
     // S6 user governance: platform-level cross-user read model (no tenant filter)。
     { provide: USER_GOVERNANCE_REPOSITORY, useClass: MikroUserGovernanceRepository },
     // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenantIsolationModule 归位本上下文。
@@ -123,6 +127,7 @@ const QueryHandlers = [
     USER_STATUS_STORE,
     AUDIT_LOG_STORE,
     ORGANIZATION_ODOO_BINDING_READER,
+    ORGANIZATION_ODOO_BINDING_WRITER,
   ],
 })
 export class OrganizationsModule {}

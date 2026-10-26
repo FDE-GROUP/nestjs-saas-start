@@ -77,3 +77,4 @@ odoo/saas-addons/
 # 未追踪副本，本防线结构性防私有源码误提交公共仓（非仅纪律）。装配桩 feature-loader.ts 相反
 # 须追踪（公共仓常驻·缺席态展开为空）。逐叠加层显式登记，新 feature 同步时同处补行。
 apps/api/src/features/odoo-rpc-api/
+apps/api/src/features/odoo-provisioning/
