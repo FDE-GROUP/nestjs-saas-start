@@ -17,7 +17,7 @@ import { MikroTenantScopeResolver } from './infrastructure/mikro-tenant-scope.re
  * choke-point, 禁散点).
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：deny-list 状态机
- * （`OrganizationStatusService`/`UserStatusService` + `TENANT/USER_STATUS_STORE` 适配）已归位
+ * （`TenantStatusService`/`UserStatusService` + `TENANT/USER_STATUS_STORE` 适配）已归位
  * `OrganizationsModule`（租户治理域策略），席位配额（`QuotaService`/`QuotaGuard` + `QUOTA_STORE`）
  * 已归位 `SubscriptionsModule`（订阅域策略·FR-7）——两模块沿 Authorization/Platform 先例升 @Global
  * 保持原可见性语义（本模块 `TenantIsolationMiddleware` 的 deny-list 消费与 auth/platform 注入面零行为变更）。

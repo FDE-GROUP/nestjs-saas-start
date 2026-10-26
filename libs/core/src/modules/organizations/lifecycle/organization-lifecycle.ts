@@ -5,7 +5,7 @@
  * 状态存 **`organization.status` 真列**（BA 共享表 additive 自撰域列·global-governance-lifecycle-
  * consolidation 切片 B·人裁 2026-10-23：原 global-tenant-entity-reclamation 切片 B（人签 2026-10-20）
  * 定自有 `tenant` 旁表真列、更早寄居 `organization.metadata` jsonb 的 S4 存储裁定均已修订——BA 缩回
- * 宪法「纯认证与成员数据源」定位·旁表随本案 DROP）。持久化原语经 `OrganizationStatusStore` 端口倒置，本文件只留纯态判定。
+ * 宪法「纯认证与成员数据源」定位·旁表随本案 DROP）。持久化原语经状态存储端口倒置（治理侧 `TenantStatusStore`·本文件只留纯态判定）。
  * S4 落地 `pending_approval → active`（审批制准入）；`suspended`/`deleted` 迁移由 S5/S6
  * （经营者治理·fail-closed 暂停）驱动，此处先行定义。
  *

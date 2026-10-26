@@ -3,40 +3,33 @@ import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../../app.module';
 
 /**
- * `organization.status` 治理真列 · env-gated 真库 e2e（global-governance-lifecycle-consolidation 切片 B·
- * 原 `tenant` 旁表已 DROP）：本测是归列后 **DB 级语义**的唯一实据面——单测全 mock，证不了列默认值/
- * CHECK 约束/迁移写入三件事（方案 §5 验收判据「列约束负向测」在此落账）。
- *
- * 坠实三件：
- *  1. 默认入册：BA/本测直插 `organization` 行（不携 status）→ DB 默认 'active' 落地（缺席态消失·O1 已堵）；
- *     `transition` 对存量 org 生效——前置态取 'active'（非 undefined）、直写 `organization.status`；
+ * `organization.status` 列 · env-gated 真库 e2e（rehierarchy 片二 K1 语义收口）：本测是
+ * `organization.status` 归为**组织自有轻量态**后的 **DB 级语义**唯一实据面——单测全 mock，证不了
+ * 列默认值/CHECK 约束两件事。治理生命周期权威态已随片一「上移归位 `tenant.status`」（生命周期读写
+ * 卡点是 `TenantStatusService`·`OrganizationStatusService` 死服务退役），本测因此**去服务耦合**、
+ * 仅以 `em` 直插/直更坐实列层契约：
+ *  1. 默认入册：直插 `organization` 行（不携 status）→ DB 默认 'active' 落地（缺席态消失·O1 已堵）；
  *  2. DB CHECK 负向：直写非法 status → `organization_status_check` 违例红（值域防线在 DB 层）；
- *  3. deny-list 读语义：`read` 对新建 org 返 'active'（非 undefined）·不拦；本体硬删 → not-found。
+ *  3. metadata 零寄居：自有态走真列·`metadata` 不携 status 键（BA 面零我方寄居键）。
  *
  * **默认跳过**：仅当 `E2E_DATABASE_URL` 存在时运行（开关），不破默认 CI 的 DB-free 不变量。
- * 夹具时间戳后缀唯一键，afterAll 显式清净，运行幂等。B1 隔离：节掉 outbox 后台 轮询
- * （沿 `organization-hard-delete.e2e.test.ts` 同文件先例）。
- *
- * 治理面 ES 覆盖层已随切片 D 退役（租户态不再「回放即真相」），本测无旋钮分支口径。
+ * 夹具时间戳后缀唯一键，afterAll 显式清净，运行幂等。
  */
 const E2E_DB = process.env.E2E_DATABASE_URL;
 const gated = E2E_DB ? describe : describe.skip;
 
-gated('organization.status 治理真列库语义（归列切片 B · env-gated）', () => {
+gated('organization.status 自有态真列库语义（片二 K1 · env-gated）', () => {
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
-  let statusService: OrganizationStatusService;
 
   const stamp = Date.now();
   const orgId = `e2e-tt-org-${stamp}`;
-  const bareOrgId = `e2e-tt-bare-${stamp}`;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
@@ -53,7 +46,6 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     await app.init();
     mikro = app.get(MikroOrmService);
-    statusService = app.get(OrganizationStatusService);
 
     // 直插 organization（不携 status）——验证列 DB 默认 'active' 落地（缺席态消失·O1 已堵）。
     const em = await mikro.fork();
@@ -63,33 +55,20 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
       slug: `tt-${stamp}`,
       metadata: {},
     } as never);
-    await em.insert(Organization, {
-      id: bareOrgId,
-      name: `TT bare ${stamp}`,
-      slug: `tt-bare-${stamp}`,
-      metadata: {},
-    } as never);
   }, 120000);
 
   afterAll(async () => {
     const em = await mikro.fork();
-    await em.nativeDelete(Organization, { id: { $in: [orgId, bareOrgId] } } as never);
+    await em.nativeDelete(Organization, { id: { $in: [orgId] } } as never);
     await app.close();
   });
 
-  it('①默认入册：新 org status 默认 active；transition 前置态取 active（非 undefined）·直写 organization.status', async () => {
-    const result = await statusService.transition(orgId, ORGANIZATION_STATUS.SUSPENDED);
-    expect(result).toEqual({
-      kind: 'ok',
-      previous: ORGANIZATION_STATUS.ACTIVE,
-      status: ORGANIZATION_STATUS.SUSPENDED,
-    });
+  it('①默认入册：新 org status 默认 active（列缺省兑底·metadata 零我方寄居键）', async () => {
     const em = await mikro.fork();
     const org = await em.findOne(Organization, { id: orgId } as never);
-    expect(org?.status).toBe(ORGANIZATION_STATUS.SUSPENDED);
-    // 归列实证：生命周期态在 organization.status 真列·metadata 不携 status（BA 面零我方寄居键）
+    expect(org?.status).toBe(ORGANIZATION_STATUS.ACTIVE);
+    // 自有态在 organization.status 真列·metadata 不携 status（BA 面零我方寄居键）
     expect((org?.metadata ?? {}) as Record<string, unknown>).not.toHaveProperty('status');
-    expect(await statusService.isBlocked(orgId)).toBe(true);
   });
 
   it('②DB CHECK 负向：直写非法 status 即红（值域防线在 DB 层·organization_status_check）', async () => {
@@ -99,19 +78,16 @@ gated('organization.status 治理真列库语义（归列切片 B · env-gated�
     ).rejects.toThrow(/organization_status_check/);
   });
 
-  it('③deny-list 读语义：新建 org read 返 active（非 undefined）·不拦', async () => {
-    expect(await statusService.read(bareOrgId)).toBe(ORGANIZATION_STATUS.ACTIVE);
-    expect(await statusService.isBlocked(bareOrgId)).toBe(false);
-  });
-
-  it('④本体硬删 → not-found（归列后判据即本体行存在性·旁表已消）', async () => {
+  it('③自有态可直写合法值（active↔suspended 皆过 CHECK·治理权威态另见 tenant.status）', async () => {
     const em = await mikro.fork();
-    const affected = await em.nativeDelete(Organization, { id: orgId } as never);
-    expect(affected).toBe(1);
-    expect(await em.findOne(Organization, { id: orgId } as never)).toBeNull();
-    // not-found 判据随本体消灭
-    expect(await statusService.transition(orgId, ORGANIZATION_STATUS.ACTIVE)).toEqual({
-      kind: 'not-found',
-    });
+    await em.nativeUpdate(
+      Organization,
+      { id: orgId } as never,
+      {
+        status: ORGANIZATION_STATUS.SUSPENDED,
+      } as never,
+    );
+    const org = await em.findOne(Organization, { id: orgId } as never);
+    expect(org?.status).toBe(ORGANIZATION_STATUS.SUSPENDED);
   });
 });

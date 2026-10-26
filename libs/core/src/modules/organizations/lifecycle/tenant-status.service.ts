@@ -14,7 +14,7 @@ import {
 import { TENANT_STATUS_STORE, type TenantStatusStore } from './tenant-status.store';
 
 /**
- * 租户治理迁移结果结合（对拍 `OrganizationTransitionResult`）：ok 携 previous 供审计；
+ * 租户治理迁移结果结合：ok 携 previous 供审计；
  * not-found/illegal 由调用方转 404/409。
  * @public
  */
@@ -44,8 +44,8 @@ export interface TenantTransitionOptions {
  * `aggregateType=tenant` 早已按租户命名·aggregateId=tenantId·消费侧 Odoo saga + 订阅联动据此驱动）。
  * 关键段（写回 + 发布）包入 `UNIT_OF_WORK`（outbox 下域行与事件行同事务原子）。not-found/illegal 零分支绝不发事件。
  *
- * 与 `OrganizationStatusService`（管组织自有态·`canUseOdoo` 读 org.status）正交：治理走本服务、
- * 组织自有态走旧服务，两不相混。
+ * `organization.status` 经片二 K1 语义收口为组织自有轻量态（`canUseOdoo` 读·无独立读写服务），治理
+ * 生命周期权威态走本服务（`TenantStatusService`），两不相混。
  * @public
  */
 @Injectable()

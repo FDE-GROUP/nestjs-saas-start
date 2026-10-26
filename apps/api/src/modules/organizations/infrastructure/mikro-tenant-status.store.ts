@@ -9,7 +9,7 @@ import { Inject, Injectable } from '@nestjs/common';
  * global-tenant-organization-rehierarchy 切片 E-F 治理换轴：治理准入态从 `organization.status`
  * 上移归位 `tenant.status` 真列——`tenant` 为组织之父行·表属主=organizations）。
  *
- * 三原语对拍端口语义（沿 `MikroOrganizationStatusStore` 形制·仅锚定表换 tenant）：
+ * 三原语端口语义（锚定表为 tenant）：
  *  - `readStatus`：`tenant.status` NOT NULL 真列，本体存在即有值；本体行不存在 → `undefined`；
  *  - `tenantExists`：`tenant` 行存在性单查——`transition` 的 not-found(404) 判据；
  *  - `upsert`：治理迁移即变更——`nativeUpdate` 直写 `tenant.status` 并盖 `updatedAt`（不经 Identity Map）。

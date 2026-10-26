@@ -50,7 +50,7 @@ export interface SeatQuotaSnapshot {
  * 架构精度修宪 S2：**裁决不再抛 HTTP**（原 `assertSeats` 402 已删）——本服务属 kit 的
  * 领域/应用面，402 翻译归适配器角色消费点（`QuotaGuard` / auth `seats-quota.hook`），
  * 由其消费 `checkSeats` 判别结果后自行抛（P1 result-union 范式）。限额经 `Quota` VO
- * 摄入（存储/档位两源统一 fail-loud 防护，P2）。与 `UserStatusService`/`OrganizationStatusService`
+ * 摄入（存储/档位两源统一 fail-loud 防护，P2）。与 `UserStatusService`/`TenantStatusService`
  * 同层，禁散点。
  *
  * @public

@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * 治理换轴（rehierarchy 切片 E-F）新单元 `TenantStatusService` 单测：租户准入态权威读写卡点·
- * 锚 `tenant.status`（对拍 `OrganizationStatusService` 形制·判存原语换 `tenantExists`）。
+ * 锚 `tenant.status`（status 导向三原语形制·判存原语为 `tenantExists`）。
  * 锁三件事：① §9.4 严格迁移单点（ok/not-found/illegal）；② 合法迁移产出 faithful
  * `tenant.status.transitioned`（aggregateType=tenant·aggregateId=tenantId）；③ fail-closed
  * 读侧（isActive/isBlocked）+ 发布失败 loud（宁缺勿错发）。

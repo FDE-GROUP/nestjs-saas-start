@@ -26,7 +26,7 @@ export interface OrganizationProvisioningReceipt {
  * `owner` member（FR-12·天然满足），本 port 不另写成员。
  *
  * `remove` 供驳回：硬删 pending 组织行（FK 级联清 member/invitation·pending 期零业务数据）。
- * 状态迁移（approve）不在此 port——由 `OrganizationStatusService` 统一写回 `organization.status` 真列（禁散点）。
+ * 状态迁移（approve）不在此 port——治理换轴归位后由 `TenantStatusService` 统一写回准入态 `tenant.status`（禁散点）。
  * @public
  */
 export interface OrganizationProvisioningRepository {

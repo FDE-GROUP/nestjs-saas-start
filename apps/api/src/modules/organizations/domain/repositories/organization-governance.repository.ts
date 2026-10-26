@@ -131,8 +131,8 @@ export interface ExportedOrganizationMember {
  * 按租户导出 payload（六段聚合·SSOT = organizationId 归属可导表）。
  *
  * @remarks
- * `organization` 为本体全列 + 治理态 `status`（consolidation 切片 B：态在 `organization.status`
- * 真列·原 `tenant` 旁表已 DROP·`metadata` 全列透传零我方键）；deleted 终态租户亦可导出
+ * `organization` 为本体全列 + 组织自有态 `status`（片二 K1 收口：治理生命周期权威态已上移归位
+ * `tenant.status`·`organization.status` 降为租内轻量态·原 `tenant` 旁表已 DROP·`metadata` 全列透传零我方键）；deleted 终态租户亦可导出
  *（S5 软删「保留行供按租户导出/硬删」的取证用途·查询面刻意不按 status 过滤）。
  * @public
  */
@@ -143,7 +143,7 @@ export interface OrganizationDataExport {
     name: string;
     slug: string;
     logo: string | null;
-    /** 生命周期态（`organization.status` 真列·列缺省兑底 active·与列表行同口径）。 */
+    /** 组织自有态（`organization.status` 真列·列缺省兑底 active·与列表行同口径）。 */
     status: OrganizationStatus;
     metadata: unknown;
     createdAt: Date;

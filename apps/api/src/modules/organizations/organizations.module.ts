@@ -1,7 +1,5 @@
 import { ORGANIZATION_ODOO_BINDING_READER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import { ORGANIZATION_ODOO_BINDING_WRITER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
-import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
 import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
@@ -33,7 +31,6 @@ import { ORGANIZATION_PROVISIONING_REPOSITORY } from './domain/repositories/orga
 import { TENANT_DIRECTORY_REPOSITORY } from './domain/repositories/tenant-directory.repository';
 import { USER_GOVERNANCE_REPOSITORY } from './domain/repositories/user-governance.repository';
 import { MikroAuditLogStore } from './infrastructure/mikro-audit-log.store';
-import { MikroOrganizationStatusStore } from './infrastructure/mikro-organization-status.store';
 import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
 import { MikroOrganizationGovernanceRepository } from './infrastructure/repositories/mikro-organization-governance.repository';
@@ -69,7 +66,7 @@ const QueryHandlers = [
  * resolved without extra imports.
  *
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：deny-list 状态机
- * （`OrganizationStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenantIsolationModule 归位
+ * （`TenantStatusService`/`UserStatusService` + 两 store 的 Mikro 适配）由 TenantIsolationModule 归位
  * 本上下文（租户/用户状态机是租户治理域策略·借用机制的域策略还家）；沿 Authorization/Platform
  * 先例升 `@Global` 保持原可见性语义（tenancy 中间件 deny-list 消费、auth 会话墙/platform 闸门注入零行为变更）。
  */
@@ -115,12 +112,10 @@ const QueryHandlers = [
     { provide: TENANT_DIRECTORY_REPOSITORY, useClass: MikroTenantDirectoryRepository },
     // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenantIsolationModule 归位本上下文。
     // §9.5.4①B 端口倒置：core 服务经端口消费持久化，适配由本（参考）应用装配。
-    OrganizationStatusService,
-    // 治理换轴归位（rehierarchy 切片 E-F）：审批/暂停/恢复/驳回/删除的权威态上移 `tenant.status`，
-    // 由本服务作唯一读写卡点（与 OrganizationStatusService 管的组织自有态正交）。
+    // 治理换轴归位（rehierarchy 切片 E-F · 片二 K1）：审批/暂停/恢复/驳回/删除的权威态上移
+    // 归位 `tenant.status`·由 `TenantStatusService` 作唯一读写卡点（`OrganizationStatusService` 死服务已退场）。
     TenantStatusService,
     UserStatusService,
-    { provide: ORGANIZATION_STATUS_STORE, useClass: MikroOrganizationStatusStore },
     { provide: TENANT_STATUS_STORE, useClass: MikroTenantStatusStore },
     { provide: USER_STATUS_STORE, useClass: MikroUserStatusStore },
     // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本适配（唯一写面·属主 tenants）。
@@ -134,11 +129,9 @@ const QueryHandlers = [
   ],
   exports: [
     // 随 @Global 导出：跨上下文消费面（tenancy 中间件 deny-list·auth 会话墙·platform 闸门）保形。
-    OrganizationStatusService,
     TenantStatusService,
     TENANT_STATUS_STORE,
     UserStatusService,
-    ORGANIZATION_STATUS_STORE,
     USER_STATUS_STORE,
     AUDIT_LOG_STORE,
     ORGANIZATION_ODOO_BINDING_READER,

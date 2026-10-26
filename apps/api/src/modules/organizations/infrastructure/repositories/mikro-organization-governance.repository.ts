@@ -39,9 +39,9 @@ import type {
 } from '../../domain/repositories/organization-governance.repository';
 
 /**
- * 兼容兼底（defense-in-depth）：`organization.status` 经列化后为 NOT NULL 真列（本体存在即有值），
+ * 兼容兼底（defense-in-depth）：`organization.status` 列（片二 K1 语义收口为组织自有轻量态）经列化后为 NOT NULL 真列（本体存在即有值），
  * 本兑底仅在极端读不到列值时生效——与 `canTransition` 缺省/middleware deny-list 同口径
- * （global-governance-lifecycle-consolidation 切片 B：态从 `tenant` 旁表归位 `organization.status` 真列）。
+ *（治理生命周期权威态已上移归位 `tenant.status`）。
  */
 function effectiveStatus(status: OrganizationStatus | undefined): OrganizationStatus {
   return status ?? ORGANIZATION_STATUS.ACTIVE;

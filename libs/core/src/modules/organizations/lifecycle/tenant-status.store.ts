@@ -2,14 +2,14 @@ import type { OrganizationStatus } from './organization-lifecycle';
 
 /**
  * 租户状态存储端口的 DI 注入 token（global-tenant-organization-rehierarchy 切片 E-F · 治理换轴·
- * `TenantStatusService` 唯一写卡点·对拍 `ORGANIZATION_STATUS_STORE` 端口形制）。
+ * `TenantStatusService` 唯一写卡点·status 导向三原语形制）。
  *
  * @remarks
  * 复裁定（人裁 2026-10-26「一租户多组织 · 一组织一公司」）将**治理准入态**从 `organization.status`
  * **上移归位 `tenant.status`**（Tenant = 隔离与计费边界·审批只管租户准入）。Organization 保留轻量
  * 自有态（`canUseOdoo` 仍读 org.status active），但审批/暂停/恢复/驳回/删除的**权威态**是本端口。
  *
- * 语义约定（对拍 `OrganizationStatusStore`·仅锚定表从 organization 换 tenant）：
+ * 语义约定（仅锚定表为 tenant）：
  *  - `readStatus`：`tenant.status` NOT NULL 真列，本体存在即有值；本体行不存在 → `undefined`；
  *  - `tenantExists`：`tenant` 行命中与否——`transition` 的 not-found（404）判据；
  *  - `upsert`：治理迁移即变更——直写 `tenant.status` 并盖 `updatedAt`。
