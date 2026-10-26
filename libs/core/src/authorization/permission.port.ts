@@ -14,7 +14,9 @@ import type {
  * 只管认证；角色由会话解析点预注入 ALS（丙裁），core 不 import 认证/CASL/仓储实现。
  *
  * 形状修订注记（dynamic-roles S2）：
- *  - `organizationId` 入参——规则是 per-tenant 事实，同 key 角色在不同租户投影可不同；
+ *  - 分区键入参——规则是 per-租户事实，同 key 角色在不同租户投影可不同；
+ *    （global-tenant-organization-rehierarchy 切片 C·人裁假设②：角色升租级，分区键从
+ *    `organizationId` 换 `tenantId`——同租内跨组织互见的自然配套）；
  *  - `can` 异步——规则源为 DB（miss 时懒加载 + ensure 系统角色；命中走进程内版本缓存，
  *    守卫热路径不逐请求查库）。
  *
@@ -40,8 +42,8 @@ export const PERMISSION_CHECKER = Symbol('PERMISSION_CHECKER');
  * @public
  */
 export interface PermissionCheckInput {
-  /** ALS 活动租户（规则分区键）；undefined = 无租户上下文（适配侧必拒）。 */
-  readonly organizationId?: string;
+  /** ALS 活动租户（隔离主轴·规则分区键；rehierarchy 切片 C 换轴）；undefined = 无租户上下文（适配侧必拒）。 */
+  readonly tenantId?: string;
   /** ALS 预注入的活动租户成员角色 key（系统三 key 或自定义 key）；undefined = 无/封禁/非法值。 */
   readonly role?: OrganizationRole;
   /** 授权动作（CASL can 第一元组参）。 */
@@ -64,8 +66,8 @@ export interface PermissionCheckInput {
  * @public
  */
 export interface PermissionListPredicateRequest {
-  /** ALS 活动租户（规则分区键）；undefined = 无租户上下文（适配侧必归 none）。 */
-  readonly organizationId?: string;
+  /** ALS 活动租户（隔离主轴·规则分区键）；undefined = 无租户上下文（适配侧必归 none）。 */
+  readonly tenantId?: string;
   /** ALS 预注入的活动租户成员角色 key；undefined = 无/封禁/非法值（必归 none）。 */
   readonly role?: OrganizationRole;
   /** 授权动作（CASL can 第一元组参）。 */
@@ -143,7 +145,7 @@ export interface PermissionInvalidator {
   /**
    * 失效某租户的全部角色 ability 投影（同步·幂等·无对应缓存条目时为空操作）。
    *
-   * @param organizationId - 待失效投影的租户 id
+   * @param tenantId - 待失效投影的租户 id（rehierarchy 切片 C：租级角色·分区键换轴）
    */
-  invalidate(organizationId: string): void;
+  invalidate(tenantId: string): void;
 }

@@ -1,0 +1,21 @@
+/**
+ * 租户派生解析端口（global-tenant-organization-rehierarchy 切片 C · 换轴派生链）。
+ *
+ * @remarks
+ * tenancy core 需把「活动组织」升为「活动租户」作隔离主轴，但**不得**感知 ORM/实体——解析细节
+ * （`organization.tenantId` 真列读取）由参考应用侧 Mikro 适配提供，沿 `SESSION_READER` 端口倒置
+ * 同构（§9.5.4①B · P1b）。BA `activeOrganizationId` 会话机制**不动**（人裁假设①：租户经活动组织
+ * 派生，规避 BA schema 手术）。
+ *
+ * fail-closed 契约：组织不存在 / 未归属租户（expand 段未盖章增量）/ 解析异常 → `undefined`，
+ * 下游 `TenantIsolationGuard` 一律 403——**绝不**回退用 organizationId 冒充租户轴（轴混淆即泄露面）。
+ *
+ * @public
+ */
+export const TENANT_SCOPE_RESOLVER = Symbol('TENANT_SCOPE_RESOLVER');
+
+/** @public */
+export interface TenantScopeResolver {
+  /** 解析活动组织的所属租户 id（`organization.tenantId`）；无归属/本体缺失 → `undefined`。 */
+  resolveTenantIdOf(organizationId: string): Promise<string | undefined>;
+}

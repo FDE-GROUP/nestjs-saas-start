@@ -6,11 +6,13 @@ import {
   type TenantIsolationScope,
   tenantIsolationStorage,
 } from '@core/saas-kit/tenant-isolation/tenant-isolation-scope';
+import type { TenantScopeResolver } from '@core/saas-kit/tenant-isolation/tenant-scope-resolver.port';
 import { describe, expect, it, vi } from 'vitest';
 
 /**
  * §9.5.4①B · P1b：中间件经 `RequestSessionReader` 端口消费会话（不再打桩 Better Auth 实例）。
  * 会话解析（cookie / 旁路 / getSession）细节改由 `AuthSessionReader` 适配单测覆盖。
+ * rehierarchy 切片 C：封禁通过后另经 `TenantScopeResolver` 把活动组织升为主轴 `tenantId`。
  */
 function makeMiddleware(opts: {
   activeOrganizationId?: string;
@@ -18,6 +20,8 @@ function makeMiddleware(opts: {
   blocked?: boolean | 'throw';
   userBlocked?: boolean;
   noSession?: boolean;
+  /** 派生租主轴返回值（默认为活动组织加前缀）；传 `null` 模拟未归属 → 不绑主轴。 */
+  resolvedTenantId?: string | null;
 }) {
   const read = vi
     .fn()
@@ -37,10 +41,19 @@ function makeMiddleware(opts: {
   const userIsBlocked = vi.fn().mockResolvedValue(opts.userBlocked ?? false);
   const userStatus = { isBlocked: userIsBlocked } as unknown as UserStatusService;
 
+  // 主轴派生桩：默认「活动组织 → tenant-<org>」；`resolvedTenantId:null` → undefined（未归属）。
+  const resolveTenantIdOf = vi.fn(async () =>
+    opts.resolvedTenantId === null
+      ? undefined
+      : (opts.resolvedTenantId ?? `tenant-${opts.activeOrganizationId}`),
+  );
+  const tenantScope = { resolveTenantIdOf } as unknown as TenantScopeResolver;
+
   return {
-    mw: new TenantIsolationMiddleware(session, status, userStatus),
+    mw: new TenantIsolationMiddleware(session, status, userStatus, tenantScope),
     isBlocked,
     userIsBlocked,
+    resolveTenantIdOf,
     read,
   };
 }
@@ -76,6 +89,19 @@ describe('TenantIsolationMiddleware · S4 approval fail-closed (deny-list)', () 
     const { mw } = makeMiddleware({ activeOrganizationId: 'orgA', blocked: false });
     const store = await run(mw, reqWith());
     expect(store?.organizationId).toBe('orgA');
+    expect(store?.tenantId).toBe('tenant-orgA'); // 主轴经活动组织派生
+  });
+
+  it('换轴 fail-closed：活动组织未归属租户 → 不绑主轴（guard 下游 403）但保留组织轴', async () => {
+    const { mw, resolveTenantIdOf } = makeMiddleware({
+      activeOrganizationId: 'orgA',
+      blocked: false,
+      resolvedTenantId: null,
+    });
+    const store = await run(mw, reqWith());
+    expect(resolveTenantIdOf).toHaveBeenCalledWith('orgA');
+    expect(store?.organizationId).toBe('orgA');
+    expect(store?.tenantId).toBeUndefined();
   });
 
   it('fails closed when the status lookup throws', async () => {

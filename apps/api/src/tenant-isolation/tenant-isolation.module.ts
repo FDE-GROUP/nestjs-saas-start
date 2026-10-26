@@ -2,9 +2,11 @@ import { SESSION_READER } from '@core/saas-kit/tenant-isolation/session/request-
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import { TenantIsolationMiddleware } from '@core/saas-kit/tenant-isolation/tenant-isolation.middleware';
 import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
+import { TENANT_SCOPE_RESOLVER } from '@core/saas-kit/tenant-isolation/tenant-scope-resolver.port';
 import { Global, type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthSessionReader } from './infrastructure/auth-session.reader';
+import { MikroTenantScopeResolver } from './infrastructure/mikro-tenant-scope.resolver';
 
 /**
  * Multi-tenancy能力模块（global-tenancy S0/S1/S2/S3/S4 · 混合复用骨架）。
@@ -46,6 +48,9 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
     TenantIsolationGuard,
     // §9.5.4①B · P1b 会话端口倒置：core 经端口消费会话/RBAC，Better Auth 实例适配由参考应用装配。
     { provide: SESSION_READER, useClass: AuthSessionReader },
+    // global-tenant-organization-rehierarchy 切片 C：租户主轴派生端口倒置——core 中间件经本端口
+    // 把活动组织升 tenantId（organization.tenantId 真列纯读），不感知 ORM/实体。
+    { provide: TENANT_SCOPE_RESOLVER, useClass: MikroTenantScopeResolver },
     // S11 · 高危#4 复合全局：全局租户墙（deny-by-default）。TenantIsolationGuard 已在本模块 provide，
     // 其依赖（TenantIsolationService 本地 · Reflector 由 Nest core 自动提供）均可解析；useExisting 复用同实例。
     // @Public/@TenantIsolationExempt 路由经 Reflector 旁路。注册于 AuthModule 会话墙之后（AppModule import 顺序）。
@@ -55,8 +60,9 @@ import { AuthSessionReader } from './infrastructure/auth-session.reader';
     TenantIsolationService,
     TenantIsolationGuard,
     // 端口 token 随 @Global 一并导出：守卫/服务在消费模块（如 OrganizationsModule）就地实例化时
-    // 也能解析到应用侧会话适配（对齐原 `原数据库服务` 经 @Global DatabaseModule 全局可见）。
+    // 也能解析到应用侧会话/租户适配（对齐原 `原数据库服务` 经 @Global DatabaseModule 全局可见）。
     SESSION_READER,
+    TENANT_SCOPE_RESOLVER,
   ],
 })
 export class TenantIsolationModule implements NestModule {

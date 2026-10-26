@@ -10,6 +10,7 @@ import { MikroOrganizationRbacRepository } from './mikro-organization-rbac.repos
 
 /**
  * RBAC 仓储适配单测（module-rbac-dynamic-roles S1·fake `em` 镜像断言·治理仓储测试同法）。
+ * rehierarchy 切片 C 换轴：角色升租级——寻址锚 `tenantId`（主轴）·写路径双盖章 `organizationId`。
  * 锁四类行为：① ensure 幂等与 seed 展开行数；② 策略闸拒形（invalidKey/invalidConditions）；
  * ③ is_system 应屏（rename/delete 保护）；④ 每次变更同通道落审计行（甲裁留痕）。
  */
@@ -65,7 +66,7 @@ describe('MikroOrganizationRbacRepository', () => {
   describe('ensureSystemRoles（幂等 seed·§2.3）', () => {
     it('空租户 → 落 3 系统角色 + 40 授权行（19+18+3 与 seed 展开逐行等）', async () => {
       const h = makeHarness();
-      await h.repo.ensureSystemRoles('orgA');
+      await h.repo.ensureSystemRoles('tenantA', 'orgA');
       expect(h.createdOf(OrganizationRole)).toHaveLength(3);
       expect(h.createdOf(OrganizationRoleGrant)).toHaveLength(40);
       expect(h.createdOf(OrganizationRole).map((c) => c.row.key)).toEqual([
@@ -85,7 +86,7 @@ describe('MikroOrganizationRbacRepository', () => {
       h.spies.find.mockResolvedValueOnce(
         ['owner', 'admin', 'member'].map((key) => roleRow({ key, isSystem: true })),
       );
-      await h.repo.ensureSystemRoles('orgA');
+      await h.repo.ensureSystemRoles('tenantA', 'orgA');
       expect(h.created).toHaveLength(0);
       expect(h.spies.flush).not.toHaveBeenCalled();
     });
@@ -93,7 +94,7 @@ describe('MikroOrganizationRbacRepository', () => {
     it('部分缺失 → 只补种缺的角色（owner 在、补 admin+member）', async () => {
       const h = makeHarness();
       h.spies.find.mockResolvedValueOnce([roleRow({ key: 'owner', isSystem: true })]);
-      await h.repo.ensureSystemRoles('orgA');
+      await h.repo.ensureSystemRoles('tenantA', 'orgA');
       expect(h.createdOf(OrganizationRole).map((c) => c.row.key)).toEqual(['admin', 'member']);
     });
   });
@@ -101,7 +102,7 @@ describe('MikroOrganizationRbacRepository', () => {
   describe('读侧（投影输入·S2 消费）', () => {
     it('findGrants 查无角色 → null（区别于零授权的 []）', async () => {
       const h = makeHarness();
-      await expect(h.repo.findGrants('orgA', 'ghost')).resolves.toBeNull();
+      await expect(h.repo.findGrants('tenantA', 'ghost')).resolves.toBeNull();
     });
 
     it('findGrants 映射 grant 行为端口视形（conditions 缺省归一 null）', async () => {
@@ -111,7 +112,7 @@ describe('MikroOrganizationRbacRepository', () => {
         { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
         { subject: 'Member', action: 'read', conditions: null },
       ]);
-      await expect(h.repo.findGrants('orgA', 'editor')).resolves.toEqual([
+      await expect(h.repo.findGrants('tenantA', 'editor')).resolves.toEqual([
         { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
         { subject: 'Member', action: 'read', conditions: null },
       ]);
@@ -120,29 +121,42 @@ describe('MikroOrganizationRbacRepository', () => {
     it('listRoleKeys 返回本租户全部 key', async () => {
       const h = makeHarness();
       h.spies.find.mockResolvedValueOnce([roleRow({ key: 'owner' }), roleRow()]);
-      await expect(h.repo.listRoleKeys('orgA')).resolves.toEqual(['owner', 'editor']);
+      await expect(h.repo.listRoleKeys('tenantA')).resolves.toEqual(['owner', 'editor']);
     });
   });
 
   describe('createRole', () => {
     it('词法闸/保留 key 拒（不落行）', async () => {
       const h = makeHarness();
-      await expect(h.repo.createRole('orgA', 'Owner', 'x', 'u1')).resolves.toBe('invalidKey');
-      await expect(h.repo.createRole('orgA', 'owner', 'x', 'u1')).resolves.toBe('invalidKey');
+      await expect(h.repo.createRole('tenantA', 'orgA', 'Owner', 'x', 'u1')).resolves.toBe(
+        'invalidKey',
+      );
+      await expect(h.repo.createRole('tenantA', 'orgA', 'owner', 'x', 'u1')).resolves.toBe(
+        'invalidKey',
+      );
       expect(h.created).toHaveLength(0);
     });
 
     it('撞 key → duplicate（findOne 命中）', async () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValueOnce(roleRow());
-      await expect(h.repo.createRole('orgA', 'editor', 'x', 'u1')).resolves.toBe('duplicate');
+      await expect(h.repo.createRole('tenantA', 'orgA', 'editor', 'x', 'u1')).resolves.toBe(
+        'duplicate',
+      );
     });
 
     it('成功 → 角色行 isSystem=false + 审计 create 行（after 快照）', async () => {
       const h = makeHarness();
-      await expect(h.repo.createRole('orgA', 'editor', 'Editor', 'u1')).resolves.toBe('created');
+      await expect(h.repo.createRole('tenantA', 'orgA', 'editor', 'Editor', 'u1')).resolves.toBe(
+        'created',
+      );
       const role = h.createdOf(OrganizationRole)[0].row;
-      expect(role).toMatchObject({ organizationId: 'orgA', key: 'editor', isSystem: false });
+      expect(role).toMatchObject({
+        tenantId: 'tenantA',
+        organizationId: 'orgA',
+        key: 'editor',
+        isSystem: false,
+      });
       const audit = h.createdOf(OrganizationRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'create', roleKey: 'editor', actorId: 'u1' });
       expect(audit.before).toBeNull();
@@ -154,10 +168,12 @@ describe('MikroOrganizationRbacRepository', () => {
     it('renameRole/deleteRole 对系统角色 → systemRoleProtected 且零写', async () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValue(roleRow({ key: 'owner', isSystem: true }));
-      await expect(h.repo.renameRole('orgA', 'owner', 'Boss', 'u1')).resolves.toBe(
+      await expect(h.repo.renameRole('tenantA', 'orgA', 'owner', 'Boss', 'u1')).resolves.toBe(
         'systemRoleProtected',
       );
-      await expect(h.repo.deleteRole('orgA', 'owner', 'u1')).resolves.toBe('systemRoleProtected');
+      await expect(h.repo.deleteRole('tenantA', 'orgA', 'owner', 'u1')).resolves.toBe(
+        'systemRoleProtected',
+      );
       expect(h.spies.nativeDelete).not.toHaveBeenCalled();
       expect(h.created).toHaveLength(0);
     });
@@ -165,7 +181,9 @@ describe('MikroOrganizationRbacRepository', () => {
     it('renameRole 自定义角色 → assign name+updatedAt 并落 update 审计（before/after 快照）', async () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValueOnce(roleRow());
-      await expect(h.repo.renameRole('orgA', 'editor', 'Editors', 'u1')).resolves.toBe('ok');
+      await expect(h.repo.renameRole('tenantA', 'orgA', 'editor', 'Editors', 'u1')).resolves.toBe(
+        'ok',
+      );
       expect(h.spies.assign).toHaveBeenCalledWith(expect.objectContaining({ id: 'role-1' }), {
         name: 'Editors',
         updatedAt: expect.any(Date),
@@ -179,7 +197,7 @@ describe('MikroOrganizationRbacRepository', () => {
     it('deleteRole 自定义角色 → nativeDelete（FK cascade 清 grant）+ delete 审计带 before', async () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValueOnce(roleRow());
-      await expect(h.repo.deleteRole('orgA', 'editor', 'u1')).resolves.toBe('ok');
+      await expect(h.repo.deleteRole('tenantA', 'orgA', 'editor', 'u1')).resolves.toBe('ok');
       expect(h.spies.nativeDelete).toHaveBeenCalledWith(OrganizationRole, { id: 'role-1' });
       const audit = h.createdOf(OrganizationRoleAudit)[0].row;
       expect(audit).toMatchObject({ action: 'delete', roleKey: 'editor', after: null });
@@ -192,6 +210,7 @@ describe('MikroOrganizationRbacRepository', () => {
       const h = makeHarness();
       await expect(
         h.repo.grant(
+          'tenantA',
           'orgA',
           'editor',
           { subject: 'Workspace', action: 'update', conditions: { ownerId: { $in: [] } } },
@@ -205,6 +224,7 @@ describe('MikroOrganizationRbacRepository', () => {
       const h = makeHarness();
       await expect(
         h.repo.grant(
+          'tenantA',
           'orgA',
           'ghost',
           { subject: 'Member', action: 'read', conditions: null },
@@ -221,6 +241,7 @@ describe('MikroOrganizationRbacRepository', () => {
       ]);
       await expect(
         h.repo.grant(
+          'tenantA',
           'orgA',
           'editor',
           { subject: 'Workspace', action: 'update', conditions: { b: 2, a: 1 } },
@@ -235,6 +256,7 @@ describe('MikroOrganizationRbacRepository', () => {
       h.spies.find.mockResolvedValueOnce([]);
       await expect(
         h.repo.grant(
+          'tenantA',
           'orgA',
           'editor',
           { subject: 'Member', action: 'read', conditions: null },
@@ -257,7 +279,15 @@ describe('MikroOrganizationRbacRepository', () => {
         { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
       ]);
       await expect(
-        h.repo.revoke('orgA', 'editor', 'Workspace', 'update', { ownerId: '{{userId}}' }, 'u1'),
+        h.repo.revoke(
+          'tenantA',
+          'orgA',
+          'editor',
+          'Workspace',
+          'update',
+          { ownerId: '{{userId}}' },
+          'u1',
+        ),
       ).resolves.toBe('revoked');
       expect(h.spies.nativeDelete).toHaveBeenCalledTimes(1);
       const audit = h.createdOf(OrganizationRoleAudit)[0].row;
@@ -275,9 +305,9 @@ describe('MikroOrganizationRbacRepository', () => {
       h.spies.find.mockResolvedValueOnce([
         { subject: 'Member', action: 'read', conditions: { ownerId: 'u1' } },
       ]);
-      await expect(h.repo.revoke('orgA', 'editor', 'Member', 'read', null, 'u1')).resolves.toBe(
-        'notFound',
-      );
+      await expect(
+        h.repo.revoke('tenantA', 'orgA', 'editor', 'Member', 'read', null, 'u1'),
+      ).resolves.toBe('notFound');
       expect(h.spies.nativeDelete).not.toHaveBeenCalled();
     });
   });

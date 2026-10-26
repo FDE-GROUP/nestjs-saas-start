@@ -7,7 +7,7 @@
   "apps/api/src/database/mikro/column-meta.ts": 8,
   "apps/api/src/database/mikro/migration/mikro-migration.config.ts": 1,
   "apps/api/src/database/mikro/mikro-orm.factory.ts": 1,
-  "apps/api/src/database/seed.ts": 6,
+  "apps/api/src/database/seed.ts": 11,
   "apps/api/src/logger/logger.service.ts": 3,
   "apps/api/src/main.ts": 4,
   "apps/api/src/modules/auth/infrastructure/auth.bootstrap.ts": 1,
@@ -29,6 +29,7 @@
   "apps/api/src/modules/users/application/queries/handlers/export-user-data.query-handler.ts": 4,
   "apps/api/src/modules/users/infrastructure/repositories/mikro-user.repository.ts": 2,
   "apps/api/src/modules/workspaces/infrastructure/repositories/mikro-workspace.repository.ts": 5,
+  "apps/api/src/tenant-isolation/infrastructure/mikro-tenant-scope.resolver.ts": 2,
   "libs/ba-mikro-adapter/src/mikro-auth-adapter.ts": 5,
   "libs/core/src/authorization/instance-predicate.ts": 1,
   "libs/core/src/tenant-isolation/tenant-isolation.middleware.ts": 1

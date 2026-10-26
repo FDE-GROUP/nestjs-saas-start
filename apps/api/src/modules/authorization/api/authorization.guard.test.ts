@@ -15,22 +15,23 @@ function makeContext(): ExecutionContext {
 /**
  * module-rbac-casl §2.2 换形 + module-rbac-dynamic-roles S2 后的守卫契约：守卫经
  * `PermissionChecker` 端口消费**异步**布尔裁决（规则源 DB），输入 = `@Can` 声明
- * (action, subject) + ALS 预注入角色 + 活动租户 organizationId（规则分区键·丙裁）。
+ * (action, subject) + ALS 预注入角色 + 活动租户 tenantId（规则分区键·丙裁）。
+ * rehierarchy 切片 C 换轴：fail-closed 闸与分区键均锚主轴 tenantId（缺租户上下文 403）。
  * 「规则 → CASL ability 判定」由工厂/适配测覆盖，守卫测试只锁声明→端口的形状。
  */
 function makeGuard({
-  organizationId,
+  tenantId,
   role,
   requirement,
   allowed,
 }: {
-  organizationId?: string;
+  tenantId?: string;
   role?: 'owner' | 'admin' | 'member';
   requirement?: CanRequirement;
   allowed?: boolean;
 }) {
   const reflector = { getAllAndOverride: vi.fn().mockReturnValue(requirement) };
-  const tenantContext = { organizationId, role } as never;
+  const tenantContext = { tenantId, role } as never;
   const can = vi.fn().mockResolvedValue(allowed ?? false);
   const checker = { can } as unknown as PermissionChecker;
   const guard = new AuthorizationGuard(reflector as never, tenantContext, checker);
@@ -42,7 +43,7 @@ describe('AuthorizationGuard（CASL 换形）', () => {
 
   it('fail-closed: rejects when there is no active tenant', async () => {
     const { guard, can } = makeGuard({
-      organizationId: undefined,
+      tenantId: undefined,
       requirement: { action: 'create', subject: 'Member' },
     });
     await expect(guard.canActivate(makeContext())).rejects.toThrow(ForbiddenException);
@@ -50,21 +51,21 @@ describe('AuthorizationGuard（CASL 换形）', () => {
   });
 
   it('allows an in-tenant request that declares no @Can requirement', async () => {
-    const { guard, can } = makeGuard({ organizationId: 'org_1' });
+    const { guard, can } = makeGuard({ tenantId: 'tenant_1' });
     await expect(guard.canActivate(makeContext())).resolves.toBe(true);
     expect(can).not.toHaveBeenCalled();
   });
 
   it('grants when the checker reports the requirement is satisfied（端口收 ALS 注入的角色 + 租户）', async () => {
     const { guard, can } = makeGuard({
-      organizationId: 'org_1',
+      tenantId: 'tenant_1',
       role: 'admin',
       requirement: { action: 'create', subject: 'Member' },
       allowed: true,
     });
     await expect(guard.canActivate(makeContext())).resolves.toBe(true);
     expect(can).toHaveBeenCalledWith({
-      organizationId: 'org_1',
+      tenantId: 'tenant_1',
       role: 'admin',
       action: 'create',
       subject: 'Member',
@@ -73,7 +74,7 @@ describe('AuthorizationGuard（CASL 换形）', () => {
 
   it('rejects (403) when the member lacks the required permission', async () => {
     const { guard } = makeGuard({
-      organizationId: 'org_1',
+      tenantId: 'tenant_1',
       role: 'member',
       requirement: { action: 'delete', subject: 'Organization' },
       allowed: false,
@@ -83,14 +84,14 @@ describe('AuthorizationGuard（CASL 换形）', () => {
 
   it('缺角色（ALS 未注入）以 role=undefined 交端口 → 桩拒 → 403（fail-closed 贯通）', async () => {
     const { guard, can } = makeGuard({
-      organizationId: 'org_1',
+      tenantId: 'tenant_1',
       role: undefined,
       requirement: { action: 'read', subject: 'Workspace' },
       allowed: false,
     });
     await expect(guard.canActivate(makeContext())).rejects.toThrow(ForbiddenException);
     expect(can).toHaveBeenCalledWith({
-      organizationId: 'org_1',
+      tenantId: 'tenant_1',
       role: undefined,
       action: 'read',
       subject: 'Workspace',

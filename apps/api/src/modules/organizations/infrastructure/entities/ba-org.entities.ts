@@ -46,7 +46,7 @@ export const Organization = defineEntity({
     // 自助建租经 provisioning.submit 显式覆写 'pending_approval'（S4 审批制）。
     status: p.string().default(ORGANIZATION_STATUS.ACTIVE),
     // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A·自撰域列·同 `status` 受列律 L1/L2 约束）：
-    // 双库物理隔离下的平行映射载体（vision v0.10.0 §4.8/§6）；`odooCompanyId` 唯一=一租户一公司
+    // 双库物理隔离下的平行映射载体（vision v0.10.0 §4.8/§6）；`odooCompanyId` 唯一=一组织一公司
     // 双射的库级兜底（应用层预检查前置，本约束是并发竞争终防线）；公司 id 为跨库弱引用列，无 FK。
     odooCompanyId: p.integer().nullable().unique(),
     // 值域词汇仅在应用层持型（`p.string()` 不支持泛型参数·同 `status` 列裸 text 先例），

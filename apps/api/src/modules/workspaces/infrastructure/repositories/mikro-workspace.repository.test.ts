@@ -13,14 +13,23 @@ import { MikroWorkspaceRepository } from './mikro-workspace.repository';
 /**
  * 切片 3c-ii-A 双轨**镜像断言**：与 `原工作区仓储镜像测试` 同一套隔离律（S3 · FR-5 卡点），
  * 只是把旧 ORM 谓词对象换成 Mikro `FilterQuery` 平面对象。fake `em` 由 `MikroOrmService.fork()` 供给——
- * 关键不变量：`requireActiveOrganizationId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * 关键不变量：`requireActiveTenantId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * rehierarchy 切片 C 换轴：读谓词锚主轴 `tenantId`（同租跨组织互见）·写路径双盖章 `tenantId + organizationId`。
  */
-function makeRepo(tenantId: string | null) {
+function makeRepo(organizationId: string | null) {
   const requireActiveOrganizationId = vi.fn(() => {
-    if (!tenantId) throw new ForbiddenException('Missing active organization context');
-    return tenantId;
+    if (!organizationId) throw new ForbiddenException('Missing active organization context');
+    return organizationId;
   });
-  const tenant = { requireActiveOrganizationId } as unknown as TenantIsolationService;
+  // 主轴派生（活动组织 → 其 tenantId）·无归属即 fail-closed（先于组织轴调用）。
+  const requireActiveTenantId = vi.fn(() => {
+    if (!organizationId) throw new ForbiddenException('No active tenant context');
+    return `tenant-${organizationId}`;
+  });
+  const tenant = {
+    requireActiveOrganizationId,
+    requireActiveTenantId,
+  } as unknown as TenantIsolationService;
 
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
   const findOne = vi.fn().mockResolvedValue(null);
@@ -43,6 +52,7 @@ function makeRepo(tenantId: string | null) {
     repo: new MikroWorkspaceRepository(mikro, tenant),
     spies: {
       requireActiveOrganizationId,
+      requireActiveTenantId,
       fork,
       findAndCount,
       findOne,
@@ -69,7 +79,7 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
     expect(spies.nativeDelete).not.toHaveBeenCalled();
   });
 
-  it('list() ALWAYS filters by the active tenant (red if the organizationId is dropped)', async () => {
+  it('list() ALWAYS filters by the active tenant (red if the tenantId is dropped)', async () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.list({ limit: 10, offset: 5 });
     expect(spies.findAndCount).toHaveBeenCalledTimes(1);
@@ -79,7 +89,7 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
       Record<string, unknown>,
     ];
     expect(entity).toBe(Workspace);
-    expect(where).toEqual({ organizationId: 'orgA' });
+    expect(where).toEqual({ tenantId: 'tenant-orgA' });
     expect(options).toMatchObject({
       limit: 10,
       offset: 5,
@@ -87,19 +97,19 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
     });
   });
 
-  it('list() 合并授权谓词：固定展开序使 organizationId 不可被覆盖（切片 C·FR-5 卡点锁测）', async () => {
+  it('list() 合并授权谓词：固定展开序使 tenantId 不可被覆盖（切片 C·FR-5 卡点锁测）', async () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.list(
       { limit: 10, offset: 0 },
       {
-        organizationId: 'orgEvil',
+        tenantId: 'tenantEvil',
         $or: [{ ownerId: 'u9' }, { teamId: { $in: ['t1', 't2'] } }],
       },
     );
     const [, where] = spies.findAndCount.mock.calls[0] as [unknown, Record<string, unknown>];
-    // 盖章恒为最后键：授权侧伪造的 organizationId 被结构性覆盖，实例谓词原样保留。
+    // 盖章恒为最后键：授权侧伪造的 tenantId（主轴）被结构性覆盖，实例谓词原样保留。
     expect(where).toEqual({
-      organizationId: 'orgA',
+      tenantId: 'tenant-orgA',
       $or: [{ ownerId: 'u9' }, { teamId: { $in: ['t1', 't2'] } }],
     });
   });
@@ -134,10 +144,11 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
     });
   });
 
-  it('create() stamps the active tenant regardless of the draft', async () => {
+  it('create() stamps the active tenant + organization regardless of the draft', async () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.create({ name: 'Design', slug: 'design' });
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.tenantId).toBe('tenant-orgA');
     expect(data.organizationId).toBe('orgA');
     expect(spies.persist).toHaveBeenCalled();
     expect(spies.flush).toHaveBeenCalled();
@@ -166,7 +177,7 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
     spies.findOne.mockResolvedValue(null);
     const result = await repo.update('w1', { name: 'Renamed' });
     const [, where] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ id: 'w1', organizationId: 'orgA' });
+    expect(where).toEqual({ id: 'w1', tenantId: 'tenant-orgA' });
     expect(result).toBeNull();
   });
 
@@ -209,7 +220,7 @@ describe('MikroWorkspaceRepository · tenant isolation (S3 · FR-5 choke-point)'
     spies.nativeDelete.mockResolvedValueOnce(1);
     const ok = await repo.remove('w1');
     const [, where] = spies.nativeDelete.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ id: 'w1', organizationId: 'orgA' });
+    expect(where).toEqual({ id: 'w1', tenantId: 'tenant-orgA' });
     expect(ok).toBe(true);
   });
 

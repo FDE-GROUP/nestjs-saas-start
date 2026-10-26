@@ -57,25 +57,32 @@ describe('findViolations — 失实现态断言拦截 + 框定豁免', () => {
     expect(v).toEqual([]);
   });
 
-  it('⑤ 「自有 tenant 表」无框定 → 命中 vocabulary 裁定', () => {
-    const v = findViolations('f.ts', [unit(' 业务实体走 自有 tenant 表 持久化')]);
+  it('⑤ 「organization 全栈统一」无框定 → 命中 vocabulary-pivot 反转裁定', () => {
+    const v = findViolations('f.ts', [unit(' 业务命名以 organization 全栈统一·不用 tenant')]);
     expect(v).toHaveLength(1);
-    expect(v[0]?.plan).toBe('global-userfacing-tenant-naming');
+    expect(v[0]?.plan).toBe('global-organization-vocabulary-pivot');
   });
 
   it('⑥ 裁定间豁免面隔离：A 的框定词不替 B 的失实断言开脱', () => {
-    // 含 vocabulary 失实 token「自有 tenant 表」，但只带 reclamation 专属框定词「寄居」（vocabulary markers 不含）。
-    const v = findViolations('f.ts', [unit(' 自有 tenant 表 寄居于旧机制')]);
-    // 「寄居」不在 vocabulary 裁定 markers 集内 → 应仍判违规。
-    expect(v.some((x) => x.plan === 'global-userfacing-tenant-naming')).toBe(true);
+    // 含 odoo-mapping 反转 token「一租户一公司」，但只带 vocabulary 专属框定词「Allow」（odoo markers 不含）。
+    const v = findViolations('f.ts', [unit(' 一租户一公司 Allow 面')]);
+    // 「Allow」不在 odoo-mapping 裁定 markers 集内 → 应仍判违规。
+    expect(v.some((x) => x.plan === 'module-org-odoo-company-mapping')).toBe(true);
+  });
+
+  it('⑦ 一租户一公司双射现态断言无框定 → 命中 odoo-company-mapping 反转裁定', () => {
+    const v = findViolations('f.ts', [unit(' 一个租户绑定一个 Odoo 公司（一租户一公司双射）')]);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.plan).toBe('module-org-odoo-company-mapping');
   });
 });
 
 describe('登记表漂移守卫', () => {
-  it('当前登记两条有据反悔·supersededBy 齐备', () => {
+  it('当前登记三条有据反悔·supersededBy 齐备', () => {
     expect(OVERTURNED_RULINGS.map((r) => r.plan).sort()).toEqual([
+      'global-organization-vocabulary-pivot',
       'global-tenant-entity-reclamation',
-      'global-userfacing-tenant-naming',
+      'module-org-odoo-company-mapping',
     ]);
     for (const r of OVERTURNED_RULINGS) {
       expect(r.supersededBy).toMatch(/^global-/);

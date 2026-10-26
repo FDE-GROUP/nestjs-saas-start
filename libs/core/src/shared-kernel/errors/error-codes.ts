@@ -34,7 +34,7 @@ export const ERROR_CODES = {
   ORG_NOT_DELETED_TERMINAL: 'ORG:NOT_DELETED_TERMINAL',
   ORG_NOT_FOUND: 'ORG:NOT_FOUND',
   ORG_PROVISIONING_NOT_FOUND: 'ORG:PROVISIONING_NOT_FOUND',
-  // bind-existing/预检查与库级 unique 共用的公司双射冲突码（一公司只归一租户·module-org-odoo-company-mapping 切片 A）。
+  // bind-existing/预检查与库级 unique 共用的公司双射冲突码（一公司只归一组织·module-org-odoo-company-mapping 切片 A·rehierarchy 一组织一公司）。
   ORG_ODOO_BINDING_CONFLICT: 'ORG:ODOO_BINDING_CONFLICT',
   // RPC/SSO 三点门禁的拒答码：无绑定/非 ready/非 active 均此码（fail-closed·切片 B）。
   ORG_ODOO_BINDING_NOT_READY: 'ORG:ODOO_BINDING_NOT_READY',

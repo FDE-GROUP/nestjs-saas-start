@@ -39,11 +39,12 @@ export interface OverturnedRuling {
 
 /**
  * 已推翻裁定登记表（enforcement 副本·随案生长·非宪法·宪法挂钩另案见 plan §5）。
- * 每条皆锚 2026-10-23 有据实证（非臆造）：token 与 markers 均按当前工作树清零后实况配平。
+ * 每条皆锚有据实证（非臆造）：token 与 markers 均按当前工作树清零后实况配平。
  */
 export const OVERTURNED_RULINGS: readonly OverturnedRuling[] = [
   {
     // 治理态存储：寄居 metadata → 自有 `tenant` 旁表（reclamation·已反悔）→ `organization.status` 真列（consolidation）。
+    // （注：global-tenant-organization-rehierarchy 切片 D 将准入态自 org 迁回 Tenant·本条禁项随之重判·C 期仍锢 org.status）。
     plan: 'global-tenant-entity-reclamation',
     supersededBy: 'global-governance-lifecycle-consolidation',
     bannedTokens: [/tenant\.status\b(?!\.transitioned)/, /户籍/],
@@ -66,11 +67,51 @@ export const OVERTURNED_RULINGS: readonly OverturnedRuling[] = [
     ],
   },
   {
-    // 业务实体词汇：tenant 双词汇（userfacing-tenant-naming·已反悔）→ organization 全栈统一（vocabulary-pivot）。
-    plan: 'global-userfacing-tenant-naming',
-    supersededBy: 'global-organization-vocabulary-pivot',
-    bannedTokens: [/自有 tenant 表/],
-    framingMarkers: ['早期', '后续', '均已', '修订', '原', '已', '归位', '反悔', '历史'],
+    // 业务实体词汇：organization 全栈统一·"tenant" 禁入业务命名（vocabulary-pivot）→
+    // global-tenant-organization-rehierarchy 反转回 Allow：`Tenant` 重成业务实体名（隔离与计费边界）。
+    // 原 `global-userfacing-tenant-naming`（自有 tenant 表 → 被 vocabulary-pivot 撤）已随二次反转复权，其 ban 撑撤。
+    plan: 'global-organization-vocabulary-pivot',
+    supersededBy: 'global-tenant-organization-rehierarchy',
+    bannedTokens: [
+      /禁[^\n]{0,8}tenant[^\n]{0,8}业务/,
+      /tenant[^\n]{0,8}禁[^\n]{0,8}命名/,
+      /不作业务实体名/,
+      /organization 全栈统一/,
+    ],
+    framingMarkers: [
+      '原',
+      '旧',
+      '早期',
+      '后续',
+      '均已',
+      '修订',
+      '反转',
+      '复权',
+      'Allow',
+      '历史',
+      'vocabulary',
+      '曾',
+      '禁入',
+    ],
+  },
+  {
+    // 层级双射：一租户一公司（org ≡ 公司 ≡ 租户·odoo-company-mapping）→
+    // global-tenant-organization-rehierarchy 复裁：一租户多组织 · 一组织一公司（odooCompanyId 双射锚 organization）。
+    plan: 'module-org-odoo-company-mapping',
+    supersededBy: 'global-tenant-organization-rehierarchy',
+    bannedTokens: [/一租户一公司/, /一公司只归一租户/],
+    framingMarkers: [
+      '原',
+      '旧',
+      '曾',
+      '复裁',
+      '反转',
+      '历史',
+      '留痕',
+      '改',
+      '旧制',
+      '一组织一公司',
+    ],
   },
 ];
 

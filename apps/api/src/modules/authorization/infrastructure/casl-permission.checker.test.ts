@@ -2,14 +2,15 @@ import type {
   OrganizationRbacRepository,
   OrganizationRoleGrantView,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
 import { CaslPermissionChecker } from './casl-permission.checker';
 
 /**
- * CASL 裁决适配（module-rbac-dynamic-roles S2·DB 规则源落形）的行为测。
+ * CASL 裁决适配（module-rbac-dynamic-roles S2·DB 规则源落形·rehierarchy 切片 C 换租级轴）的行为测。
  * 锁 checker 自身契约（投影机制由工厂测·端口形状由守卫测分别覆盖）：
  *  ① fail-closed：无租户/无角色不触规则源；查无角色(null)/零授权([]) 皆 deny；
- *  ② lazy-ensure + 进程内缓存：miss 触发 ensure→findGrants，同 (org,key) 复用只查一次；
+ *  ② lazy-ensure + 进程内缓存：miss 触发 ensure→findGrants，同 (tenant,key) 复用只查一次（ensure 携活动组织盖章）；
  *  ③ over-grant 防线：带 conditions 的 grant 行不参与类型级判定；
  *  ④ 跨租隔离：同 key 不同租户投影独立；
  *  ⑤ invalidate 失效后重查（热改生效面）；
@@ -22,13 +23,23 @@ const grant = (
   conditions: Record<string, unknown> | null = null,
 ) => ({ subject, action, conditions }) as unknown as OrganizationRoleGrantView;
 
-function makeChecker(grantsFor: (org: string, key: string) => OrganizationRoleGrantView[] | null) {
+// 活动组织（写路径归属盖章）·从 ALS 读——镜测以固定租户轴桩提供（与分区键 tenantId 解耦）。
+const activeOrg = (): TenantIsolationService =>
+  ({ organizationId: 'orgA-active' }) as unknown as TenantIsolationService;
+
+function makeChecker(
+  grantsFor: (tenant: string, key: string) => OrganizationRoleGrantView[] | null,
+) {
   const ensureSystemRoles = vi.fn().mockResolvedValue(undefined);
-  const findGrants = vi.fn(async (org: string, key: string) =>
-    grantsFor(org, key),
+  const findGrants = vi.fn(async (tenant: string, key: string) =>
+    grantsFor(tenant, key),
   ) as unknown as ReturnType<typeof vi.fn>;
   const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
-  return { checker: new CaslPermissionChecker(rbac), ensureSystemRoles, findGrants };
+  return {
+    checker: new CaslPermissionChecker(rbac, activeOrg()),
+    ensureSystemRoles,
+    findGrants,
+  };
 }
 
 describe('CaslPermissionChecker（DB 规则源·S2）', () => {
@@ -38,7 +49,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     ]);
     await expect(
       checker.can({
-        organizationId: undefined,
+        tenantId: undefined,
         role: 'member',
         action: 'read',
         subject: 'Workspace',
@@ -46,7 +57,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     ).resolves.toBe(false);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: undefined,
         action: 'read',
         subject: 'Workspace',
@@ -59,22 +70,22 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
   it('lazy-ensure：miss 先补种系统角色再读授权', async () => {
     const { checker, ensureSystemRoles, findGrants } = makeChecker(() => [grant('Member', 'read')]);
     await expect(
-      checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
-    expect(ensureSystemRoles).toHaveBeenCalledWith('orgA');
+    expect(ensureSystemRoles).toHaveBeenCalledWith('orgA', 'orgA-active');
     expect(findGrants).toHaveBeenCalledWith('orgA', 'member');
   });
 
   it('进程内缓存：同 (org,key) 多判只查库一次', async () => {
     const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
     await checker.can({
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'member',
       action: 'read',
       subject: 'Member',
     });
     await checker.can({
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'member',
       action: 'read',
       subject: 'Member',
@@ -86,7 +97,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     const ghost = makeChecker(() => null);
     await expect(
       ghost.checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'read',
         subject: 'Member',
@@ -95,7 +106,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     const empty = makeChecker(() => []);
     await expect(
       empty.checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'read',
         subject: 'Member',
@@ -110,7 +121,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     // 仅有带条件行 → 类型级 can('update','Workspace') 必拒（否则静默升为全量放行）。
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
@@ -122,7 +133,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     const { checker } = makeChecker(() => [grant('Organization', 'delete')]);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'owner',
         action: 'delete',
         subject: 'Organization',
@@ -135,10 +146,10 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
       org === 'orgA' ? [grant('Member', 'read')] : [],
     );
     await expect(
-      checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
     await expect(
-      checker.can({ organizationId: 'orgB', role: 'member', action: 'read', subject: 'Member' }),
+      checker.can({ tenantId: 'orgB', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
     expect(findGrants).toHaveBeenCalledTimes(2); // 不同 org → 各自独立缓存条目
   });
@@ -150,16 +161,16 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
     );
     const c = checker as CaslPermissionChecker;
     await expect(
-      c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
     phase = 2;
     // 未失效 → 命中缓存仍 true；失效 → 重查转为 [] → deny。
     await expect(
-      c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(true);
     c.invalidate('orgA');
     await expect(
-      c.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
     expect(findGrants).toHaveBeenCalledTimes(2);
   });
@@ -170,13 +181,13 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
       .fn()
       .mockResolvedValue([grant('Member', 'read')]) as unknown as ReturnType<typeof vi.fn>;
     const rbac = { ensureSystemRoles, findGrants } as unknown as OrganizationRbacRepository;
-    const checker = new CaslPermissionChecker(rbac);
+    const checker = new CaslPermissionChecker(rbac, activeOrg());
     await expect(
-      checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
     // 淘汰后再次尝试 → 重新触发 ensure（失败仍 deny，但不会永久缓存 rejected Promise）。
     await expect(
-      checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
+      checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
     expect(ensureSystemRoles).toHaveBeenCalledTimes(2);
   });
@@ -189,7 +200,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
     const { checker } = makeChecker(ownerScoped);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
@@ -203,7 +214,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
     const { checker } = makeChecker(ownerScoped);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
@@ -217,7 +228,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
     const { checker } = makeChecker(ownerScoped);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
@@ -230,7 +241,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
     const { checker } = makeChecker(() => [grant('Workspace', 'read')]);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'member',
         action: 'read',
         subject: 'Workspace',
@@ -244,7 +255,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
     const { checker } = makeChecker(ownerScoped);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
@@ -255,7 +266,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
   it('实例判定复用同 (org,key) 缓存·不逐请求查库', async () => {
     const { checker, findGrants } = makeChecker(ownerScoped);
     const base = {
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'editor',
       action: 'update' as const,
       subject: 'Workspace' as const,
@@ -273,7 +284,7 @@ describe('CaslPermissionChecker（S4·check 级实例判定）', () => {
 describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B）', () => {
   // fixture subject 取词汇表内合法值（'Workspace'）——checker 测的是裁决机制本身，与切片 C 生产接入端点选型解耦。
   const base = {
-    organizationId: 'orgA',
+    tenantId: 'orgA',
     role: 'editor',
     action: 'read' as const,
     subject: 'Workspace' as const,
@@ -283,7 +294,7 @@ describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B�
     const { checker, findGrants } = makeChecker(() => [
       grant('Workspace', 'read', { ownerId: '{{userId}}' }),
     ]);
-    await expect(checker.listPredicate({ ...base, organizationId: undefined })).resolves.toEqual({
+    await expect(checker.listPredicate({ ...base, tenantId: undefined })).resolves.toEqual({
       kind: 'none',
     });
     await expect(checker.listPredicate({ ...base, role: undefined })).resolves.toEqual({
@@ -353,9 +364,11 @@ describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B�
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants: vi.fn().mockRejectedValue(new Error('db down')),
     } as unknown as OrganizationRbacRepository;
-    await expect(new CaslPermissionChecker(rbac).listPredicate(base)).resolves.toEqual({
-      kind: 'none',
-    });
+    await expect(new CaslPermissionChecker(rbac, activeOrg()).listPredicate(base)).resolves.toEqual(
+      {
+        kind: 'none',
+      },
+    );
   });
 });
 
@@ -389,7 +402,7 @@ describe('一致性回归（query 级列表过滤 切片 C·「listPredicate 与
     ]);
     const userId = 'u1';
     const check = {
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'editor',
       action: 'read' as const,
       subject: 'Workspace' as const,
@@ -415,7 +428,7 @@ describe('一致性回归（query 级列表过滤 切片 C·「listPredicate 与
       grant('Workspace', 'read', null),
     ]);
     const check = {
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'editor',
       action: 'read' as const,
       subject: 'Workspace' as const,
@@ -437,7 +450,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
     const { checker } = makeChecker(condReadGrants);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'limited',
         action: 'read',
         subject: 'Workspace',
@@ -448,7 +461,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
   it('同源同解：同一受限行 can() 过门且 listPredicate 归 where（行级可见仍由谓词治理·无越权增量）', async () => {
     const { checker } = makeChecker(condReadGrants);
     const check = {
-      organizationId: 'orgA',
+      tenantId: 'orgA',
       role: 'limited',
       action: 'read' as const,
       subject: 'Workspace' as const,
@@ -465,7 +478,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
     const { checker } = makeChecker(() => [grant('Workspace', 'update', { ownerId: 'u1' })]);
     for (const action of ['create', 'update', 'delete', 'cancel'] as const) {
       await expect(
-        checker.can({ organizationId: 'orgA', role: 'limited', action, subject: 'Workspace' }),
+        checker.can({ tenantId: 'orgA', role: 'limited', action, subject: 'Workspace' }),
       ).resolves.toBe(false);
     }
   });
@@ -474,7 +487,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
     const { checker } = makeChecker(() => [grant('Workspace', 'create', null)]);
     await expect(
       checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'limited',
         action: 'read',
         subject: 'Workspace',
@@ -484,7 +497,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
     const dirty = makeChecker(() => [grant('Workspace', 'read', { n: { $gt: 1 } })]);
     await expect(
       dirty.checker.can({
-        organizationId: 'orgA',
+        tenantId: 'orgA',
         role: 'limited',
         action: 'read',
         subject: 'Workspace',
@@ -495,7 +508,7 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
   it('conditions=null read 行 → 照常放行（零回归·all 分支与旧 typeLevel 判定同解）', async () => {
     const { checker } = makeChecker(() => [grant('Workspace', 'read', null)]);
     await expect(
-      checker.can({ organizationId: 'orgA', role: 'member', action: 'read', subject: 'Workspace' }),
+      checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Workspace' }),
     ).resolves.toBe(true);
   });
 });

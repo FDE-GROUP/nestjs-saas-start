@@ -10,6 +10,7 @@ import { OrganizationRbacAdminService } from './organization-rbac-admin.service'
  * 锁三件事：① 领域结果码 → HTTP 语义转译（invalidKey→400/duplicate→409/notFound→404/
  * systemRoleProtected→409/invalidConditions→400）；② **写成功后才失效投影缓存**（热改生效面·
  * 失败不失效）；③ 成员挂载存在性闸（系统 key 短路不查库·自定义查库 fail-closed）。
+ * rehierarchy 切片 C 换轴：分区键/失效锁主轴 `tenantId`（租级角色）·写路径双盖章携 `organizationId`。
  * @Can 授权裁决归守卫链（另片锁测），本测只覆盖服务自身的转译与失效编排。
  */
 
@@ -27,8 +28,9 @@ function makeHarness() {
   };
   const invalidate = vi.fn();
   const ctx = {
+    requireActiveTenantId: vi.fn().mockReturnValue('tenantA'),
     requireActiveOrganizationId: vi.fn().mockReturnValue('orgA'),
-    get: vi.fn().mockReturnValue({ organizationId: 'orgA', userId: 'u1' }),
+    get: vi.fn().mockReturnValue({ tenantId: 'tenantA', organizationId: 'orgA', userId: 'u1' }),
   } as unknown as TenantIsolationService;
   const svc = new OrganizationRbacAdminService(
     rbac as unknown as OrganizationRbacRepository,
@@ -51,8 +53,8 @@ describe('OrganizationRbacAdminService', () => {
     });
     const view = await h.svc.createRole('editor', 'Editor');
     expect(view).toMatchObject({ key: 'editor', isSystem: false });
-    expect(h.rbac.createRole).toHaveBeenCalledWith('orgA', 'editor', 'Editor', 'u1');
-    expect(h.invalidate).toHaveBeenCalledWith('orgA');
+    expect(h.rbac.createRole).toHaveBeenCalledWith('tenantA', 'orgA', 'editor', 'Editor', 'u1');
+    expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
   it('createRole：invalidKey→400·duplicate→409·均不失效缓存', async () => {
@@ -71,7 +73,7 @@ describe('OrganizationRbacAdminService', () => {
     h.rbac.deleteRole.mockResolvedValueOnce('notFound');
     await expect(h.svc.deleteRole('ghost')).rejects.toBeInstanceOf(NotFoundException);
     await h.svc.deleteRole('editor');
-    expect(h.invalidate).toHaveBeenCalledWith('orgA');
+    expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
   it('grant：invalidConditions→400·roleNotFound→404·duplicate→409·granted→失效', async () => {
@@ -84,7 +86,7 @@ describe('OrganizationRbacAdminService', () => {
     h.rbac.grant.mockResolvedValueOnce('duplicate');
     await expect(h.svc.grant('editor', entry)).rejects.toBeInstanceOf(ConflictException);
     await h.svc.grant('editor', entry);
-    expect(h.invalidate).toHaveBeenCalledWith('orgA');
+    expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
   it('revoke：roleNotFound/notFound→404·revoked→失效', async () => {
@@ -98,7 +100,7 @@ describe('OrganizationRbacAdminService', () => {
       NotFoundException,
     );
     await h.svc.revoke('editor', 'Workspace', 'update', null);
-    expect(h.invalidate).toHaveBeenCalledWith('orgA');
+    expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
   it('getGrants 查无角色（null）→ 404', async () => {

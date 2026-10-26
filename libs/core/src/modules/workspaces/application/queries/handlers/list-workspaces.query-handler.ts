@@ -19,9 +19,9 @@ import { ListWorkspacesQuery } from '../list-workspaces.query';
  *
  * @remarks
  * Read side goes through the repository port, which enforces the tenant scope
- * (global-tenancy §9.3 / FR-5). 租户隔离（organizationId）仍由仓储适配层唯一卡点保证；
+ * (global-tenancy §9.3 / FR-5). 租户隔离（主轴 tenantId·rehierarchy 切片 C 换轴）仍由仓储适配层唯一卡点保证；
  * 本 handler 只在其上叠加 **instance 级收窄**（module-rbac-query-level-filtering 切片 C·人裁③⑤）：
- * 携 ALS `{organizationId, role, userId}` 向 `PERMISSION_CHECKER` 取 `listPredicate`，
+ * 携 ALS `{tenantId, role, userId}` 向 `PERMISSION_CHECKER` 取 `listPredicate`，
  * `all`→不下推（现状）/ `where`→下推 port / `none`→短路空页不触库（fail-closed·绝不回退全量）。
  * 行为注记（已审）：无租户上下文时由旧「仓储层 403」改「空页」——护栏面仍系上游双守卫，
  * 生产入口不可达该分支，列表面只收窄可见性。
@@ -45,7 +45,7 @@ export class ListWorkspacesQueryHandler implements IQueryHandler<ListWorkspacesQ
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ListWorkspacesQuery): Promise<Page<WorkspaceReadModel>> {
     const predicate = await this.checker.listPredicate({
-      organizationId: this.tenant.organizationId,
+      tenantId: this.tenant.tenantId,
       role: this.tenant.role,
       userId: this.tenant.userId,
       action: 'read',

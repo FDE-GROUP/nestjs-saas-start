@@ -21,6 +21,10 @@ import { SESSION_READER } from '@core/saas-kit/tenant-isolation/session/request-
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
 import { TenantIsolationMiddleware } from '@core/saas-kit/tenant-isolation/tenant-isolation.middleware';
 import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
+import {
+  TENANT_SCOPE_RESOLVER,
+  type TenantScopeResolver,
+} from '@core/saas-kit/tenant-isolation/tenant-scope-resolver.port';
 import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
@@ -62,6 +66,14 @@ function authStub(session: FakeSession | null) {
 
 function configStub(email = 'admin@x.com') {
   return { operatorEmail: () => email };
+}
+
+/**
+ * rehierarchy 切片 C：中间件新增 `TENANT_SCOPE_RESOLVER` 依赖（活动组织 → 主轴 tenantId）。
+ * 测试桩纯读不触库（真适配 MikroTenantScopeResolver 由 AppModule ⑤ 整树坐实）。
+ */
+function tenantScopeStub(tenantId: string | undefined = 'tenant_1'): TenantScopeResolver {
+  return { resolveTenantIdOf: async () => tenantId } as unknown as TenantScopeResolver;
 }
 
 /** 在 ALS 作用域内驱动真实中间件，回传 next() 执行期间的观测值。 */
@@ -124,6 +136,8 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
           { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
+          // 切片 C：中间件主轴派生端口（坐实 DI 可解析·不触库）。
+          { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub() },
         ],
       }).compile();
 
@@ -156,6 +170,8 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
           { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
+          // 切片 C：活动组织 org_1 → 主轴 tenant_1（守卫 TenantIsolationGuard 现读 tenantId fail-closed）。
+          { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub('tenant_1') },
         ],
       }).compile();
       tcs = moduleRef.get(TenantIsolationService);
@@ -220,6 +236,8 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
           { provide: OrganizationStatusService, useValue: { isBlocked: async () => true } },
+          // 切片 C：租户被暂停 → 封禁路径 bind(undefined) → 主轴不解析（resolver 不被调）→ 守卫 403。
+          { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub('tenant_susp') },
         ],
       }).compile();
       const tcs = moduleRef.get(TenantIsolationService);

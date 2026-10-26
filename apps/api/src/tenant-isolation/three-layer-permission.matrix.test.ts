@@ -61,7 +61,7 @@ function sessionReader(session: SessionResult | null): RequestSessionReader {
   return { read: async () => view } as unknown as RequestSessionReader;
 }
 
-/** module-rbac-casl 换形 + dynamic-roles S2：端口消费异步 can({organizationId,role,action,subject})·裁决引擎在 CASL 适配侧（规则源 DB）。 */
+/** module-rbac-casl 换形 + dynamic-roles S2：端口消费异步 can({tenantId,role,action,subject})·裁决引擎在 CASL 适配侧（规则源 DB）。rehierarchy 切片 C：投影分区键换主轴 tenantId（租级角色）。 */
 function permissionChecker(allowed: boolean): PermissionChecker {
   return { can: async () => allowed } as unknown as PermissionChecker;
 }
@@ -161,8 +161,11 @@ describe('三层权限收口矩阵 (S8 · FR-11 互不授予 / fail-closed / 校
       };
       const guard = new AuthorizationGuard(reflector as never, tcs, permissionChecker(false));
       const { ctx } = ctxWith({ cookie: 's' });
+      // 主轴 tenantId 已绑 → 过 fail-closed 闸 → 抵达 CASL deny 路径（而非缺上下文红）。
       await expect(
-        tcs.run({ organizationId: 'org_1', userId: 'm' }, () => guard.canActivate(ctx)),
+        tcs.run({ tenantId: 'tenant_1', organizationId: 'org_1', userId: 'm' }, () =>
+          guard.canActivate(ctx),
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
   });

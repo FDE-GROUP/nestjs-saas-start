@@ -16,7 +16,7 @@ import { BindOrganizationOdooCompanyCommand } from '../bind-organization-odoo-co
  * @remarks
  * 门槛链（fail-closed）：租户须存在（null → 控制层 404）∧ 治理态 `active`（非 active → 409，
  * pending/suspended/deleted 不允许建立映射，防「未获批即有 Odoo 公司」绕开审批单源）；
- * 占用预检查 + `odooCompanyId` 库级 unique 双防线（一公司只归一租户）在端口内裁决
+ * 占用预检查 + `odooCompanyId` 库级 unique 双防线（一公司只归一组织）在端口内裁决
  * （`conflict` → 409 + 失败尝试观测审计·判别子带 error 不落耐久账本）。
  * 成功经 `PlatformAuditService` 产出 `bind_odoo` 结构化审计（FR-6 单点·禁散点手搓）。
  * 幂等口径：同租户重复绑定同公司 = 覆盖快照成功；换绑他司受 unique 冲突天然拦截。

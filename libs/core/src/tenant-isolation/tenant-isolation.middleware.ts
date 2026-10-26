@@ -3,6 +3,7 @@ import { OrganizationStatusService } from '../modules/organizations/lifecycle/or
 import { UserStatusService } from '../modules/organizations/lifecycle/user-status.service';
 import { type RequestSessionReader, SESSION_READER } from './session/request-session.port';
 import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
+import { TENANT_SCOPE_RESOLVER, type TenantScopeResolver } from './tenant-scope-resolver.port';
 
 /**
  * 逐请求解析活跃租户并绑定至 AsyncLocalStorage（global-tenancy §9.3 / FR-2）。
@@ -14,6 +15,9 @@ import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isol
  * import crosses into tenancy core (§9.5.4①B · P1b). Downstream guards / services read the
  * bound context via `TenantIsolationService`.
  *
+ * global-tenant-organization-rehierarchy 切片 C 换轴：封禁检查通过后另经 `TENANT_SCOPE_RESOLVER`
+ * 把活动组织升为**主轴 `tenantId`**（隔离硬边界·同租跨组织默认互见）；解析不出租户 →
+ * 不绑主轴 → guard fail-closed 403（组织轴仍绑定仅供归属/派生消费，不构成放行）。
  * The port's `read` already short-circuits public / auth / bypass routes (and any request
  * without a session cookie) to `null`, so this adds a session lookup only where one can
  * exist. Failures degrade to "no tenant" rather than throwing (enforcement is S2).
@@ -31,6 +35,8 @@ export class TenantIsolationMiddleware implements NestMiddleware {
     private readonly tenantStatus: OrganizationStatusService,
     @Inject(UserStatusService)
     private readonly userStatus: UserStatusService,
+    @Inject(TENANT_SCOPE_RESOLVER)
+    private readonly tenantScope: TenantScopeResolver,
   ) {}
 
   /**
@@ -63,8 +69,14 @@ export class TenantIsolationMiddleware implements NestMiddleware {
         const workspaceId =
           typeof wsHeader === 'string' && wsHeader.length > 0 ? wsHeader : undefined;
 
-        const bind = (boundOrganizationId: string | undefined, boundUserId?: string): void => {
+        const bind = (
+          boundOrganizationId: string | undefined,
+          boundUserId?: string,
+          boundTenantId?: string,
+        ): void => {
           const ctx: TenantIsolationScope = {
+            // 主轴（隔离硬边界）：无封禁组织才解析得出租户；封禁/失能路径下一并清空。
+            tenantId: boundTenantId,
             organizationId: boundOrganizationId,
             workspaceId,
             userId: boundUserId,
@@ -95,7 +107,15 @@ export class TenantIsolationMiddleware implements NestMiddleware {
           }
           return this.tenantStatus
             .isBlocked(organizationId)
-            .then((blocked) => bind(blocked ? undefined : organizationId, userId))
+            .then((blocked) => {
+              if (blocked) return bind(undefined, userId);
+              // 换轴派生（rehierarchy C）：活动组织 → 其 tenantId（主轴）；解析异常/无归属
+              // → 不绑主轴（guard fail-closed 403），但组织轴保留供归属面消费与诊断。
+              return this.tenantScope
+                .resolveTenantIdOf(organizationId)
+                .then((tenantId) => bind(organizationId, userId, tenantId))
+                .catch(() => bind(organizationId, userId));
+            })
             .catch(() => bind(undefined, userId)); // fail-closed: unresolvable status → no tenant
         });
       })

@@ -63,6 +63,31 @@ export const Invitation = defineEntity({
     expect(hasTenantColumn(onlyIdx)).toBe(false);
   });
 
+  it('主轴证据（rehierarchy C 换轴）：tenantId 属性形/FK 元组形均命中，uniques 纯引用不命中', () => {
+    // define 形主轴属性列。
+    expect(hasTenantColumn(block('t', '{ tenantId: p.string() }'))).toBe(true);
+    // TableMeta FK 元组形主轴列。
+    const src = `export const TENANT_SUBSCRIPTION_META: TableMeta = {
+  name: 'TenantSubscription',
+  tableName: 'tenant_subscription',
+  columns: [
+    ['id', { k: 'text', primary: true }],
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
+  ],
+  indexes: [{ name: 'x', properties: ['tenantId', 'createdAt'] }],
+};
+`;
+    const blocks = findTableBlocks('tenant-subscription.entity.ts', src);
+    expect(blocks).toHaveLength(1);
+    expect(hasTenantColumn(blocks[0] as TableBlock)).toBe(true);
+    // 仅 indexes 纯字符串引用（无列定义）→ 不构成列证据。
+    const onlyIdx = block(
+      't',
+      `{\n columns: [['id', { k: 'text' }]],\n indexes: [{ properties: ['tenantId', 'createdAt'] }],\n}`,
+    );
+    expect(hasTenantColumn(onlyIdx)).toBe(false);
+  });
+
   it('字符串内花括号/引号转义不破坏配对定界', () => {
     const src = `export const X = defineEntity({
   tableName: 'x',
@@ -157,7 +182,8 @@ describe('现树恒等（真实源码实扫·SSOT ↔ 代码）', () => {
       findTableBlocks(f.slice(root.length + 1), readFileSync(f, 'utf8')),
     );
     // 自检锚：SSOT 清单非空且判据在现树恒等（漏登/僵尸/豁免腐烂零项）。
-    expect(TENANT_SCOPED_TABLES.length).toBeGreaterThanOrEqual(7);
+    // rehierarchy C 换轴重登后在册 ≥ 9（含 organization 本体 + tenant_subscription）。
+    expect(TENANT_SCOPED_TABLES.length).toBeGreaterThanOrEqual(9);
     // 豁免面现为空是初始实扫真相（无租户列的容器根不得误入豁免·organization 初稿误分类教训）。
     expect(TENANT_SCOPED_EXEMPT_TABLES).toEqual([]);
     expect(findRegistryViolations(blocks)).toEqual([]);

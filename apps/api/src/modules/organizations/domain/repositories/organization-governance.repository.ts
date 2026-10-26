@@ -202,7 +202,7 @@ export interface OrganizationGovernanceRepository {
    * 绑定态直落 `ready`（回填系人工确认动作，无 provisioning 中间态）。
    *
    * @remarks
-   * 一公司只归一租户：应用层预检查（占用人查存）+ `odooCompanyId` 库级 unique 双防线；
+   * 一公司只归一组织：应用层预检查（占用人查存）+ `odooCompanyId` 库级 unique 双防线；
    * 本 port 不验公司在 Odoo 侧存在性（跨库弱引用·正向核验归 doctor，切片 C）。
    * @param organizationId - 目标租户 id。
    * @param input - 公司 id + 名称快照。

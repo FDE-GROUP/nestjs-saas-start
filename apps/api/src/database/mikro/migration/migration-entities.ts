@@ -165,7 +165,7 @@ export const Organization = defineEntity({
     status: p.text().default(ORGANIZATION_STATUS.ACTIVE),
     // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A）：与运行时 `ba-org.entities.ts`
     // 同列集同式（本集不导入运行时实体，双写漂移由 generate 非空 diff + gated e2e 库语义测捕获）。
-    // 公司 id 为跨库弱引用列（无 FK）；unique=一租户一公司双射的库级兜底。
+    // 公司 id 为跨库弱引用列（无 FK）；unique=一组织一公司双射的库级兜底。
     odooCompanyId: p.integer().nullable().unique(),
     odooBindingStatus: p.text().nullable(),
     odooCompanyName: p.text().nullable(),

@@ -2,6 +2,7 @@ import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -26,6 +27,10 @@ import type {
  * 自动消灭·pending 期零业务数据）·`>0` 为实删——与切片 3c-ii-B 治理读面 `destroy`（R-B3）
  * 同形同律·绝不用 `em.remove` 以免 ORM 级联/身份图分歧。`organization` 属 `tenants` 上下文
  * （表所有权单源），本类在 `modules/organizations/**` 内写自身 owned 表 → 写侧纪律天然合规，无需新增例外。
+ *
+ * 换轴写链（global-tenant-organization-rehierarchy 切片 C）：新建组织必紧随 ensure 专属租户行并盖
+ * `organization.tenantId`（切片 D 改「租内自助建 org」后本链只给新建**租户**盖章）——否则新 org
+ * 无租户归属，隔离主轴 fail-closed 将其全量 403。1:1 骨架沿回填迁移同式（`tenant.id = org.id`）。
  */
 @Injectable()
 export class MikroOrganizationProvisioningRepository implements OrganizationProvisioningRepository {
@@ -46,10 +51,23 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
     });
     const organizationId = created?.id ? String(created.id) : '';
     if (!organizationId) throw new Error('createOrganization returned no organization id');
-    // 紧随覆写：显式置 pending_approval（堵 O1）·不盖 updatedAt（provision 非治理·建后未改）。
+    // 紧随覆写：显式置 pending_approval（堵 O1）·不盖 updatedAt（provision 非治理·建后未改）；
+    // 同流 ensure 专属租户行并盖 tenantId（换轴写链·缺此环则新 org 无主轴归属 403）。
     const em = await this.mikro.fork();
+    if (!(await em.findOne(Tenant, { id: organizationId }))) {
+      em.create(Tenant, {
+        id: organizationId,
+        name,
+        slug,
+        status: ORGANIZATION_STATUS.ACTIVE,
+        createdAt: new Date(),
+        updatedAt: null,
+      });
+      await em.flush();
+    }
     await em.nativeUpdate(Organization, { id: organizationId } as never, {
       status: ORGANIZATION_STATUS.PENDING,
+      tenantId: organizationId,
     });
     return { organizationId, status: ORGANIZATION_STATUS.PENDING };
   }

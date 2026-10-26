@@ -25,6 +25,9 @@ import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
  * rows (organization_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
  * auth / CASL impl (§9.5.4①B).
  *
+ * 换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚
+ * 隔离**主轴** `tenantId`（同租跨组织互见·角色租级），缺租户上下文仍 403 同族错误码。
+ *
  * @public
  */
 @Injectable()
@@ -44,10 +47,10 @@ export class AuthorizationGuard implements CanActivate {
    * @throws {ForbiddenException} 缺少所需权限（action + subject）时。
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Fail-closed: a tenant-scoped route requires an active tenant (FR-5 seed).
-    const organizationId = this.tenantContext.organizationId;
-    if (!organizationId) {
-      throw new ForbiddenException('No active organization context', {
+    // Fail-closed: a tenant-scoped route requires an active tenant (FR-5 seed·主轴 tenantId)。
+    const tenantId = this.tenantContext.tenantId;
+    if (!tenantId) {
+      throw new ForbiddenException('No active tenant context', {
         errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
     }
@@ -61,8 +64,8 @@ export class AuthorizationGuard implements CanActivate {
 
     const role = this.tenantContext.role;
     // S2（module-rbac-dynamic-roles）：规则源 = 租户 DB grant 行，裁决异步（适配内版本缓存·
-    // 热路径命中不查库）。organizationId 为规则分区键，同 key 角色跨租互不串形。
-    const allowed = await this.checker.can({ organizationId, role, ...requirement });
+    // 热路径命中不查库）。rehierarchy 切片 C：tenantId 为规则分区键（租级角色），同 key 角色跨租互不串形。
+    const allowed = await this.checker.can({ tenantId, role, ...requirement });
     if (!allowed) {
       throw new ForbiddenException(
         `Missing permission: ${requirement.action} ${requirement.subject}`,

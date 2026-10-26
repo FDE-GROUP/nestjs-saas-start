@@ -14,10 +14,11 @@ import type {
   PermissionListPredicate,
   PermissionListPredicateRequest,
 } from '@core/saas-kit/authorization/permission.port';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { buildScopedAbility, type CaslScopedAbility } from './casl-ability.factory';
 
-/** 缓存条目：per-(org,key) 的授权事实源（grants）+ 派生的类型级 ability（守卫热路径复用·免重建）。 */
+/** 缓存条目：per-(tenant,key) 的授权事实源（grants）+ 派生的类型级 ability（守卫热路径复用·免重建）。 */
 interface CachedEntry {
   readonly grants: readonly OrganizationRoleGrantView[];
   readonly typeLevel: CaslScopedAbility;
@@ -49,10 +50,11 @@ function resolveConditions(
  * `PermissionChecker` 的 CASL 适配（module-rbac-casl §2.2 · module-rbac-dynamic-roles §2.3·S2 落形）。
  *
  * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `ORGANIZATION_RBAC_REPOSITORY` 端口读
- * per-organization 角色规则集，投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
- *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色）再 `findGrants`；
+ * per-租户角色规则集（rehierarchy 切片 C·角色升租级：分区键从 organizationId 换隔离主轴
+ * tenantId，同租内跨组织互见），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
+ *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色·首现行盖活动组织归属）再 `findGrants`；
  *  - **fail-closed**：无租户/无角色/查无角色（null）/零授权（[]）/加载抛错 → 恒 deny，绝不视同放行；
- *  - **进程内版本缓存**：同 (org,key) 记忆 ability（含在途 Promise 防并发重入），守卫热路径不逐请求查库；
+ *  - **进程内版本缓存**：同 (tenant,key) 记忆 ability（含在途 Promise 防并发重入），守卫热路径不逐请求查库；
  *    `invalidate` 为热改生效面（S3 门面在 grant/revoke/create/delete 后调用）。
  *
  * over-grant 防线（S2·类型级）：守卫热路径（`can` 不带 `resource`）用**仅含 conditions=null 行**的
@@ -68,25 +70,26 @@ function resolveConditions(
 export class CaslPermissionChecker implements PermissionChecker, PermissionInvalidator {
   constructor(
     @Inject(ORGANIZATION_RBAC_REPOSITORY) private readonly rbac: OrganizationRbacRepository,
+    @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
   ) {}
 
-  /** `(org,key)` 复合键 → 在途/已决投影 Promise（防并发重入·加载失败即时淘汰）。 */
+  /** `(tenant,key)` 复合键 → 在途/已决投影 Promise（防并发重入·加载失败即时淘汰）。 */
   private readonly abilities = new Map<string, Promise<CachedEntry>>();
 
   async can(check: PermissionCheckInput): Promise<boolean> {
-    const { organizationId, role, action, subject } = check;
+    const { tenantId, role, action, subject } = check;
     // fail-closed：无租户上下文 / 无角色 → 直拒，不触规则源。
-    if (!organizationId || !role) return false;
-    const cacheKey = `${organizationId}\u0000${role}`;
+    if (!tenantId || !role) return false;
+    const cacheKey = `${tenantId}\u0000${role}`;
     try {
-      const entry = await this.entryFor(cacheKey, organizationId, role);
+      const entry = await this.entryFor(cacheKey, tenantId, role);
       // 守卫路径（不带 resource）。
       if (check.resource === undefined) {
         // 人裁 A1（module-rbac-guard-instance-read·仅 list 面）：read 入口级判定复用
         // `listPredicate` 三态——存在任一匹配 grant 行（含 conditions 行）即过门；行级可见
         // 仍由列表面谓词下推治理。守卫面无 userId 不影响过门（模板留字面 → 行落空 deny）。
         if (action === 'read') {
-          const pred = await this.listPredicate({ organizationId, role, action, subject });
+          const pred = await this.listPredicate({ tenantId, role, action, subject });
           return pred.kind !== 'none';
         }
         // 写动作：类型级判定·复用缓存 ability·conditions 行保守 deny（S2 防线原样）。
@@ -109,8 +112,8 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
   }
 
   /** 失效本租户全部角色投影（写侧热改生效面·实现 `PermissionInvalidator`·S3 门面写后调用）。 */
-  invalidate(organizationId: string): void {
-    const prefix = `${organizationId}\u0000`;
+  invalidate(tenantId: string): void {
+    const prefix = `${tenantId}\u0000`;
     for (const key of this.abilities.keys()) {
       if (key.startsWith(prefix)) this.abilities.delete(key);
     }
@@ -126,11 +129,11 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
    *  - 转换器 grammar 外抛错 / 加载抛错 → catch 归 none + 汰缓存（fail-closed 双保险）。
    */
   async listPredicate(check: PermissionListPredicateRequest): Promise<PermissionListPredicate> {
-    const { organizationId, role, action, subject } = check;
-    if (!organizationId || !role) return { kind: 'none' };
-    const cacheKey = `${organizationId}\u0000${role}`;
+    const { tenantId, role, action, subject } = check;
+    if (!tenantId || !role) return { kind: 'none' };
+    const cacheKey = `${tenantId}\u0000${role}`;
     try {
-      const entry = await this.entryFor(cacheKey, organizationId, role);
+      const entry = await this.entryFor(cacheKey, tenantId, role);
       const matched = entry.grants.filter((g) => g.action === action && g.subject === subject);
       if (matched.length === 0) return { kind: 'none' };
       // 人裁②：存在无条件类型级行 ⇒ 该角色对此 action/subject 有无条件全量授权。
@@ -148,23 +151,20 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
     }
   }
 
-  private entryFor(
-    cacheKey: string,
-    organizationId: string,
-    roleKey: string,
-  ): Promise<CachedEntry> {
+  private entryFor(cacheKey: string, tenantId: string, roleKey: string): Promise<CachedEntry> {
     let pending = this.abilities.get(cacheKey);
     if (!pending) {
-      pending = this.buildEntry(organizationId, roleKey);
+      pending = this.buildEntry(tenantId, roleKey);
       this.abilities.set(cacheKey, pending);
     }
     return pending;
   }
 
-  private async buildEntry(organizationId: string, roleKey: string): Promise<CachedEntry> {
-    await this.rbac.ensureSystemRoles(organizationId);
+  private async buildEntry(tenantId: string, roleKey: string): Promise<CachedEntry> {
+    // lazy-ensure 写路径需归属盖章：ALS 活动组织（可缺——缺则适配器不懒建，findGrants 查无→ deny）。
+    await this.rbac.ensureSystemRoles(tenantId, this.ctx.organizationId);
     // 查无角色（null）与零授权（[]）同归空 grants → 类型级/实例级投影皆落空 → 全拒（fail-closed 双保险）。
-    const grants = (await this.rbac.findGrants(organizationId, roleKey)) ?? [];
+    const grants = (await this.rbac.findGrants(tenantId, roleKey)) ?? [];
     // 类型级投影：over-grant 防线——conditions 行（conditions≠null）不入类型级 ability。
     const typeLevel = buildScopedAbility(grants.filter((g) => (g.conditions ?? null) === null));
     return { grants, typeLevel };

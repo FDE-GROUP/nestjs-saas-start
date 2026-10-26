@@ -28,6 +28,10 @@ import { IS_TENANT_ISOLATION_EXEMPT_KEY } from './tenant-isolation-exempt.decora
  * 元数据经 `Reflector.getAllAndOverride` 读回（handler 优先 class·同 `AuthorizationGuard` 口径）。
  * 逐路由 `@UseGuards(TenantIsolationGuard)` 仍可与全局并存（幂等·无短路冲突）。
  *
+ * global-tenant-organization-rehierarchy 切片 C 换轴：判据从组织轴升**租户主轴**——无活动 `tenantId`
+ * 即 403（同租跨组织互见由仓储读谓词锚 tenantId 自然达成；组织封禁/无归属租户的增量经中间件
+ * 解析不出主轴 → 同码 fail-closed）。
+ *
  * @public
  */
 @Injectable()
@@ -54,8 +58,8 @@ export class TenantIsolationGuard implements CanActivate {
     ) {
       return true;
     }
-    if (!this.tenant.organizationId) {
-      throw new ForbiddenException('No active organization context', {
+    if (!this.tenant.tenantId) {
+      throw new ForbiddenException('No active tenant context', {
         errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
       });
     }

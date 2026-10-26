@@ -12,14 +12,24 @@ import { MikroPostRepository } from './mikro-post.repository';
 /**
  * 切片 2 双轨**镜像断言** + 就绪预备切片 B（游标分页）：posts 隔离律不变（S2 FR-5 / S3 D2·§8-6），
  * `list` 由 offset(`findAndCount`) 换为 keyset(`find` limit+1 探页)。fake `em` 由 `MikroOrmService.fork()`
- * 供给——关键不变量：`requireActiveOrganizationId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * 供给——关键不变量：`requireActiveTenantId()` fail-closed **先于** `fork()`（无租户→403 且绝不取 em/查库）。
+ * rehierarchy 切片 C 换轴：读谓词锚主轴 `tenantId`（同租跨组织互见）·写路径双盖章 `tenantId + organizationId`。
  */
-function makeRepo(tenantId: string | null, workspaceId?: string) {
+function makeRepo(organizationId: string | null, workspaceId?: string) {
   const requireActiveOrganizationId = vi.fn(() => {
-    if (!tenantId) throw new ForbiddenException('Missing active organization context');
-    return tenantId;
+    if (!organizationId) throw new ForbiddenException('Missing active organization context');
+    return organizationId;
   });
-  const tenant = { requireActiveOrganizationId, workspaceId } as unknown as TenantIsolationService;
+  // 主轴派生（活动组织 → 其 tenantId）·无归属即 fail-closed（先于组织轴调用）。
+  const requireActiveTenantId = vi.fn(() => {
+    if (!organizationId) throw new ForbiddenException('No active tenant context');
+    return `tenant-${organizationId}`;
+  });
+  const tenant = {
+    requireActiveOrganizationId,
+    requireActiveTenantId,
+    workspaceId,
+  } as unknown as TenantIsolationService;
 
   const find = vi.fn().mockResolvedValue([]);
   const findOne = vi.fn().mockResolvedValue(null);
@@ -32,7 +42,16 @@ function makeRepo(tenantId: string | null, workspaceId?: string) {
 
   return {
     repo: new MikroPostRepository(mikro, tenant),
-    spies: { requireActiveOrganizationId, fork, find, findOne, create, persist, flush },
+    spies: {
+      requireActiveOrganizationId,
+      requireActiveTenantId,
+      fork,
+      find,
+      findOne,
+      create,
+      persist,
+      flush,
+    },
   };
 }
 
@@ -69,8 +88,8 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
       Record<string, unknown>,
     ];
     expect(entity).toBe(PostEntity);
-    // 首页无 cursor：谓词即裸租户对象（organizationId 必含·去之则回归红）
-    expect(where).toEqual({ organizationId: 'orgA' });
+    // 首页无 cursor：谓词即裸租户主轴对象（tenantId 必含·去之则回归红）
+    expect(where).toEqual({ tenantId: 'tenant-orgA' });
     expect(options).toMatchObject({
       limit: 11, // request.limit + 1（探页·免 COUNT）
       orderBy: { id: QueryOrder.DESC },
@@ -81,13 +100,14 @@ describe('MikroPostRepository · tenant isolation (S2 · FR-5)', () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.findById('p1');
     const [, where] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ id: 'p1', organizationId: 'orgA' });
+    expect(where).toEqual({ id: 'p1', tenantId: 'tenant-orgA' });
   });
 
-  it('create() stamps the active tenant regardless of the draft', async () => {
+  it('create() stamps the active tenant + organization regardless of the draft', async () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.tenantId).toBe('tenant-orgA');
     expect(data.organizationId).toBe('orgA');
     expect(spies.persist).toHaveBeenCalled();
     expect(spies.flush).toHaveBeenCalled();
@@ -109,27 +129,28 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
     const { repo, spies } = makeRepo('orgA', 'wsA1');
     await repo.list({ limit: 20 });
     const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ organizationId: 'orgA', workspaceId: 'wsA1' });
+    expect(where).toEqual({ tenantId: 'tenant-orgA', workspaceId: 'wsA1' });
   });
 
   it('list() without a workspace selector stays tenant-scoped (no workspace clause)', async () => {
     const { repo, spies } = makeRepo('orgA');
     await repo.list({ limit: 20 });
     const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ organizationId: 'orgA' });
+    expect(where).toEqual({ tenantId: 'tenant-orgA' });
   });
 
   it('findById() with a workspace scopes by id + tenant + workspace (互不可见)', async () => {
     const { repo, spies } = makeRepo('orgA', 'wsA1');
     await repo.findById('p1');
     const [, where] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(where).toEqual({ id: 'p1', organizationId: 'orgA', workspaceId: 'wsA1' });
+    expect(where).toEqual({ id: 'p1', tenantId: 'tenant-orgA', workspaceId: 'wsA1' });
   });
 
   it('create() stamps BOTH the trusted tenant and the active workspace', async () => {
     const { repo, spies } = makeRepo('orgA', 'wsA1');
     await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.tenantId).toBe('tenant-orgA');
     expect(data.organizationId).toBe('orgA');
     expect(data.workspaceId).toBe('wsA1');
   });
@@ -138,6 +159,7 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
     const { repo, spies } = makeRepo('orgA');
     await repo.create(Post.draft({ title: 'hi' }));
     const data = spies.create.mock.calls[0][1] as Record<string, unknown>;
+    expect(data.tenantId).toBe('tenant-orgA');
     expect(data.organizationId).toBe('orgA');
     expect(data.workspaceId).toBeNull();
   });
@@ -191,7 +213,7 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
     ];
     expect(options).toMatchObject({ limit: 4, orderBy: { id: QueryOrder.DESC } });
     expect(where).toEqual({
-      $and: [{ organizationId: 'orgA' }, { id: { $lt: 'p2' } }],
+      $and: [{ tenantId: 'tenant-orgA' }, { id: { $lt: 'p2' } }],
     });
   });
 
@@ -207,7 +229,7 @@ describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', 
       Record<string, unknown>,
     ];
     const segments = call[1].$and as Record<string, unknown>[];
-    expect(segments[0]).toEqual({ organizationId: 'orgA', workspaceId: 'wsA1' });
+    expect(segments[0]).toEqual({ tenantId: 'tenant-orgA', workspaceId: 'wsA1' });
   });
 
   it('畸形 cursor（合法 base64url·载荷非 [id]）→ BadRequestException 且先于 fork（不查库）', async () => {

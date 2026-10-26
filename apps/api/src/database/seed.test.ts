@@ -8,6 +8,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import type { EntityManager } from '@mikro-orm/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -353,7 +354,7 @@ describe('seed ensureActiveOrganizationContext（预建活跃 org+owner）', () 
   it('有同 slug org 但无 owner member → 直插 owner member·返 exists·不 createOrganization', async () => {
     const { em, spies } = makeEm();
     const { auth, spies: as } = makeAuth();
-    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]); // 有 org
+    spies.find.mockResolvedValueOnce([{ id: 'org-1', tenantId: 'org-1' }]); // 有 org（已盖章）
     spies.findOne.mockResolvedValueOnce(null); // 无 member
 
     const result = await ensureActiveOrganizationContext(em, auth, {
@@ -377,7 +378,7 @@ describe('seed ensureActiveOrganizationContext（预建活跃 org+owner）', () 
   it('有同 slug org 且 owner member 已存在 → 不重插·返 exists（幂等）', async () => {
     const { em, spies } = makeEm();
     const { auth, spies: as } = makeAuth();
-    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]);
+    spies.find.mockResolvedValueOnce([{ id: 'org-1', tenantId: 'org-1' }]); // 已盖租户→不触发补盖
     spies.findOne.mockResolvedValueOnce({ id: 'm1', role: 'owner' }); // member 存在
 
     const result = await ensureActiveOrganizationContext(em, auth, {
@@ -388,6 +389,34 @@ describe('seed ensureActiveOrganizationContext（预建活跃 org+owner）', () 
 
     expect(result).toBe('exists');
     expect(insertsFor(spies.insert, Member)).toHaveLength(0);
+    expect(as.createOrganization).not.toHaveBeenCalled();
+  });
+
+  it('换轴写链（rehierarchy C）：存量 org 无 tenantId → 补盖专属租户行 + nativeUpdate organization.tenantId·返 exists', async () => {
+    const { em, spies } = makeEm();
+    const { auth, spies: as } = makeAuth();
+    spies.find.mockResolvedValueOnce([{ id: 'org-1' }]); // 存量 org 无租户归属
+    spies.findOne
+      .mockResolvedValueOnce(null) // findOne(Tenant) 无→懒建
+      .mockResolvedValueOnce({ id: 'm1', role: 'owner' }); // findOne(Member) 存在→不重插
+
+    const result = await ensureActiveOrganizationContext(em, auth, {
+      slug: 'seed-acme',
+      name: 'Acme (Seed)',
+      ownerUserId: 'u1',
+    });
+
+    expect(result).toBe('exists');
+    expect(insertsFor(spies.insert, Member)).toHaveLength(0);
+    // 专属租户行 id=orgId·1:1 骨架
+    const tenantInserts = insertsFor(spies.insert, Tenant);
+    expect(tenantInserts).toHaveLength(1);
+    expect(tenantInserts[0]).toMatchObject({ id: 'org-1', name: 'Acme (Seed)', slug: 'seed-acme' });
+    expect(spies.nativeUpdate).toHaveBeenCalledWith(
+      Organization,
+      { id: 'org-1' },
+      { tenantId: 'org-1' },
+    );
     expect(as.createOrganization).not.toHaveBeenCalled();
   });
 });

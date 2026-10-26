@@ -1,6 +1,7 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +12,7 @@ import { MikroOrganizationProvisioningRepository } from './mikro-organization-pr
  * `submit` 两段——BA `createOrganization` 系统动作（FR-12·**BA 面不再携生命周期态**·org 落 DB 默认 'active'）+
  * 同流紧接着 `nativeUpdate(Organization,{id},{status:pending_approval})` 显式覆写（堵 O1·不盖 updatedAt）；
  * `remove` 维 `em.nativeDelete(Organization,{id})`（纯 SQL DELETE·五子表由 FK cascade·R-B3 同律·>0 为实删）。
- * `organization` 属 tenants 上下文 → 写侧纪律天然合规（旁表 `tenant` 已随本案 DROP）。
+ * rehierarchy 切片 C 换轴：新 org 同流 ensure 专属 `Tenant` 行（id=orgId·1:1 骨架）+ 盖 `organization.tenantId`。
  */
 function makeDeps(deletedCount = 1) {
   const createOrganization = vi
@@ -24,12 +25,29 @@ function makeDeps(deletedCount = 1) {
 
   const nativeDelete = vi.fn().mockResolvedValue(deletedCount);
   const nativeUpdate = vi.fn().mockResolvedValue(1);
-  const em = { nativeDelete, nativeUpdate } as unknown as EntityManager;
+  // 换轴写链：Tenant 行不存在→懒建（findOne 返回 null）。
+  const findOne = vi.fn().mockResolvedValue(null);
+  const created: Array<{ entity: unknown; row: Record<string, unknown> }> = [];
+  const create = vi.fn((entity: unknown, data: Record<string, unknown>) => {
+    created.push({ entity, row: { ...data } });
+    return data;
+  });
+  const flush = vi.fn().mockResolvedValue(undefined);
+  const em = { nativeDelete, nativeUpdate, findOne, create, flush } as unknown as EntityManager;
   const fork = vi.fn().mockResolvedValue(em);
   const mikro = { fork } as unknown as MikroOrmService;
   return {
     repo: new MikroOrganizationProvisioningRepository(mikro, authInstance),
-    spies: { createOrganization, nativeDelete, nativeUpdate, fork },
+    spies: {
+      createOrganization,
+      nativeDelete,
+      nativeUpdate,
+      findOne,
+      create,
+      flush,
+      fork,
+      created,
+    },
   };
 }
 
@@ -55,9 +73,13 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     ];
     expect(entity).toBe(Organization);
     expect(where).toEqual({ id: 'org-new' });
-    expect(data).toEqual({ status: ORGANIZATION_STATUS.PENDING });
+    expect(data).toEqual({ status: ORGANIZATION_STATUS.PENDING, tenantId: 'org-new' });
     expect(receipt).toEqual({ organizationId: 'org-new', status: ORGANIZATION_STATUS.PENDING });
     expect(spies.nativeDelete).not.toHaveBeenCalled();
+    // 换轴写链：同流 ensure 专属租户行（id=orgId·1:1 骨架）。
+    const tenantRows = spies.created.filter((c) => c.entity === Tenant);
+    expect(tenantRows).toHaveLength(1);
+    expect(tenantRows[0].row).toMatchObject({ id: 'org-new', name: 'Acme', slug: 'acme' });
   });
 
   it('submit() loud-fails when BA returns no organization id（无本体则不翻态）', async () => {

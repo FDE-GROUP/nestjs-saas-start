@@ -20,9 +20,14 @@ import { toPostDomain } from './post-mapping';
  * ORM 修宪案 B · 切片 2 —— posts 上下文的 **MikroORM 仓储适配**（MikroORM 为唯一实现）。
  *
  * **隔离唯一 SSOT 不变**（global-tenancy §9.3 / FR-5·D2 复合作用域）：port 不暴露 tenant/workspace 参数·
- * 租户从可信 ALS 经 `requireActiveOrganizationId()` fail-closed 解析（无租户→403·且在取 em **之前**抛出→绝不查库）；
+ * 租户从可信 ALS 经 `requireActiveTenantId()` fail-closed 解析（无租户→403·且在取 em **之前**抛出→绝不查库）；
  * 可选 `workspaceId` 选择器仅**收窄**读/写、非独立安全边界。故本类是 posts 隔离的**唯一卡点**·移除任一
- * `organizationId` 谓词或改写归属即令回归红（与旧实现 版同律）。
+ * `tenantId` 谓词或改写归属即令回归红（与旧实现 版同律）。
+ *
+ * global-tenant-organization-rehierarchy 切片 C 换轴：读谓词锚 `tenantId`（**同租跨组织默认互见**·
+ * organizationId 降归属标签）；写路径显式盖 `tenantId + organizationId` 双归属（活动组织即写入归属 org·
+ * `workspaceId` 选择器行为沿旧制不做组内回验·收窄只在租界内）。边界注：若客户端置活动 org A +
+ * `x-workspace-id` 指同租 org B 工作区，归属叉积仅自伤不越租，收窄维回验收口留后续清理片。
  *
  * 读写全走 Mikro `EntityManager`（`findAndCount`/`findOne`/`create`+`persist`）·每次 `fork()` 取独立 em
  * （禁共享全局 em）。`EntityCaseNamingStrategy` 使 camelCase 属性⇄camelCase 物理列（对齐 `schema.ts`·见
@@ -36,20 +41,21 @@ export class MikroPostRepository implements PostRepository {
     @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
-  /** Trusted tenant (fail-closed) + optional active workspace selector，resolved once·先于任何 DB 访问调用。 */
-  private scope(): { organizationId: string; workspaceId?: string } {
+  /** Trusted tenant (fail-closed 主轴) + 归属组织（写双盖章）+ 可选 workspace 收窄，resolved once·先于任何 DB 访问调用。 */
+  private scope(): { tenantId: string; organizationId: string; workspaceId?: string } {
     return {
+      tenantId: this.tenant.requireActiveTenantId(),
       organizationId: this.tenant.requireActiveOrganizationId(),
       workspaceId: this.tenant.workspaceId,
     };
   }
 
   async list(request: CursorPageRequest): Promise<CursorPage<Post>> {
-    const { organizationId, workspaceId } = this.scope();
-    // `where` 为真实谓词对象（organizationId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
+    const { tenantId, workspaceId } = this.scope();
+    // `where` 为真实谓词对象（tenantId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
     // `mikro-orm.factory.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
     // 类型而非 companion interface·两者在可空/默认列上 `FilterQuery` 宽化不致；cast 不改运行时谓词。
-    const tenantFilter = workspaceId ? { organizationId, workspaceId } : { organizationId };
+    const tenantFilter = workspaceId ? { tenantId, workspaceId } : { tenantId };
 
     // 首页无 cursor：仅按租户谓词取。续页：以不透明 cursor 解出 **id 单键**（#3 甲档收口·UUIDv7 时间有序），
     // 键集谓词 `id < cursorId`（与 ORDER BY id DESC 同比较语义·唯一全序→无重无漏·免受 createdAt 亚毫秒截断丢行）。
@@ -84,23 +90,24 @@ export class MikroPostRepository implements PostRepository {
   }
 
   async findById(id: string): Promise<Post | null> {
-    const { organizationId, workspaceId } = this.scope();
-    const where = workspaceId ? { id, organizationId, workspaceId } : { id, organizationId };
+    const { tenantId, workspaceId } = this.scope();
+    const where = workspaceId ? { id, tenantId, workspaceId } : { id, tenantId };
     const em = await this.mikro.fork();
     const entity = await em.findOne(PostEntity, where as never);
     return entity ? toPostDomain(entity) : null;
   }
 
   async create(post: Post): Promise<Post> {
-    const { organizationId, workspaceId } = this.scope();
+    const { tenantId, organizationId, workspaceId } = this.scope();
     const now = new Date();
     const em = await this.mikro.fork();
-    // 领域实体携业务字段（title/content/published）；id/租户/时间戳由本适配器 + ALS 盖章落库。
+    // 领域实体携业务字段（title/content/published）；id/租户+组织双归属/时间戳由本适配器 + ALS 盖章落库。
     const entity = em.create(PostEntity, {
       id: uuidv7(),
       title: post.title,
       content: post.content ?? null,
       published: post.published,
+      tenantId,
       organizationId,
       workspaceId: workspaceId ?? null,
       createdAt: now,

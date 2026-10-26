@@ -22,7 +22,15 @@ export class TenantIsolationService {
     return tenantIsolationStorage.getStore();
   }
 
-  /** Active tenant id (== organization id), or undefined when none is set. */
+  /**
+   * 活动租户 id（隔离**主轴**·global-tenant-organization-rehierarchy 切片 C 换轴：经活动组织派生），
+   * 未解析出时 undefined。
+   */
+  get tenantId(): string | undefined {
+    return tenantIsolationStorage.getStore()?.tenantId;
+  }
+
+  /** Active organization id（二级轴·归属/派生源），or undefined when none is set. */
   get organizationId(): string | undefined {
     return tenantIsolationStorage.getStore()?.organizationId;
   }
@@ -64,11 +72,29 @@ export class TenantIsolationService {
   }
 
   /**
-   * fail-closed：要求存在活动租户，否则 403。用于租户作用域端点。
+   * fail-closed：要求存在活动**租户**（主轴），否则 403。用于租户作用域端点/仓储盖章
+   *（global-tenant-organization-rehierarchy 切片 C：取代 `requireActiveOrganizationId()` 成唯一隔离闸口）。
    *
    * @returns 活动租户 id；无则抛 `ForbiddenException`
    *
    * @throws {ForbiddenException} 缺少活动租户上下文时（fail-closed）。
+   */
+  requireActiveTenantId(): string {
+    const tenantId = tenantIsolationStorage.getStore()?.tenantId;
+    if (!tenantId)
+      throw new ForbiddenException('Missing active tenant context', {
+        errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
+      });
+    return tenantId;
+  }
+
+  /**
+   * fail-closed：要求存在**活动组织**（二级轴·归属面）——写路径双盖章与组织级消费点
+   *（Odoo 绑定/组织治理）专用；隔离裁决一律锚 `requireActiveTenantId()`，勿在此新用。
+   *
+   * @returns 活动组织 id；无则抛 `ForbiddenException`
+   *
+   * @throws {ForbiddenException} 缺少活动组织上下文时（fail-closed）。
    */
   requireActiveOrganizationId(): string {
     const organizationId = tenantIsolationStorage.getStore()?.organizationId;

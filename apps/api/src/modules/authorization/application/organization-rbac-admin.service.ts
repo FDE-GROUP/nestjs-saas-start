@@ -29,7 +29,8 @@ import {
  *
  * @remarks
  * 职责边界（授权在我·事实入 DB）：
- *  - 从 ALS 取活动租户（`requireActiveOrganizationId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）；
+ *  - 从 ALS 取活动租户（主轴 `requireActiveTenantId`·fail-closed）+ 活动组织（写路径归属盖章）
+ *    与操作者（`userId`·审计 actorId，缺省 null）（rehierarchy 切片 C·角色升租级）；
  *  - 委派 `OrganizationRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
  *  - 将端口返回的**领域结果码**转译为 HTTP 语义（领域不借异常表达事实，转译归应用层）；
  *  - **写成功后失效本租户投影缓存**（`PermissionInvalidator`·热改即生效·读写分治端口）。
@@ -52,7 +53,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @returns 角色读模型列表。
    */
   async listRoles(): Promise<OrganizationRoleView[]> {
-    return this.rbac.listRoles(this.org());
+    return this.rbac.listRoles(this.tenantId());
   }
 
   /**
@@ -63,7 +64,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @throws {NotFoundException} 指定 roleKey 的角色不存在时。
    */
   async getGrants(roleKey: string): Promise<OrganizationRoleGrantView[]> {
-    const grants = await this.rbac.findGrants(this.org(), roleKey);
+    const grants = await this.rbac.findGrants(this.tenantId(), roleKey);
     if (grants === null) {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
         errorCode: ERROR_CODES.ROLE_NOT_FOUND,
@@ -83,8 +84,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @throws {NotFoundException} 创建后回读不到角色时。
    */
   async createRole(key: string, name: string): Promise<OrganizationRoleView> {
-    const org = this.org();
-    const result = await this.rbac.createRole(org, key, name, this.actor());
+    const tenantId = this.tenantId();
+    const result = await this.rbac.createRole(tenantId, this.orgId(), key, name, this.actor());
     if (result === 'invalidKey') {
       throw new BadRequestException(`Invalid role key: ${key}`, {
         errorCode: ERROR_CODES.ROLE_INVALID_KEY,
@@ -95,8 +96,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.ROLE_DUPLICATE,
       });
     }
-    this.invalidator.invalidate(org);
-    const role = await this.rbac.findRole(org, key);
+    this.invalidator.invalidate(tenantId);
+    const role = await this.rbac.findRole(tenantId, key);
     /* c8 ignore next 3 -- created 后必可查回（同事务已提交），防御性兜底非可达分支 */
     if (!role) {
       throw new NotFoundException(`Role not found after create: ${key}`, {
@@ -112,10 +113,10 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @param name - 新的人面可读名。
    */
   async renameRole(key: string, name: string): Promise<void> {
-    const org = this.org();
-    const result = await this.rbac.renameRole(org, key, name, this.actor());
+    const tenantId = this.tenantId();
+    const result = await this.rbac.renameRole(tenantId, this.orgId(), key, name, this.actor());
     this.mapMutation(result, key);
-    this.invalidator.invalidate(org);
+    this.invalidator.invalidate(tenantId);
   }
 
   /**
@@ -123,10 +124,10 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    * @param key - 待删除的角色 key。
    */
   async deleteRole(key: string): Promise<void> {
-    const org = this.org();
-    const result = await this.rbac.deleteRole(org, key, this.actor());
+    const tenantId = this.tenantId();
+    const result = await this.rbac.deleteRole(tenantId, this.orgId(), key, this.actor());
     this.mapMutation(result, key);
-    this.invalidator.invalidate(org);
+    this.invalidator.invalidate(tenantId);
   }
 
   /**
@@ -146,8 +147,8 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
       conditions: Record<string, unknown> | null;
     },
   ): Promise<void> {
-    const org = this.org();
-    const result = await this.rbac.grant(org, roleKey, entry, this.actor());
+    const tenantId = this.tenantId();
+    const result = await this.rbac.grant(tenantId, this.orgId(), roleKey, entry, this.actor());
     if (result === 'invalidConditions') {
       throw new BadRequestException('Invalid grant conditions shape (whitelist-only)', {
         errorCode: ERROR_CODES.GRANT_INVALID_CONDITIONS,
@@ -163,7 +164,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.GRANT_DUPLICATE,
       });
     }
-    this.invalidator.invalidate(org);
+    this.invalidator.invalidate(tenantId);
   }
 
   /**
@@ -181,8 +182,16 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
   ): Promise<void> {
-    const org = this.org();
-    const result = await this.rbac.revoke(org, roleKey, subject, action, conditions, this.actor());
+    const tenantId = this.tenantId();
+    const result = await this.rbac.revoke(
+      tenantId,
+      this.orgId(),
+      roleKey,
+      subject,
+      action,
+      conditions,
+      this.actor(),
+    );
     if (result === 'roleNotFound') {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
         errorCode: ERROR_CODES.ROLE_NOT_FOUND,
@@ -193,7 +202,7 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
         errorCode: ERROR_CODES.GRANT_NOT_FOUND,
       });
     }
-    this.invalidator.invalidate(org);
+    this.invalidator.invalidate(tenantId);
   }
 
   /**
@@ -205,10 +214,16 @@ export class OrganizationRbacAdminService implements RoleAssignabilityReader {
    */
   async isRoleAssignable(role: string): Promise<boolean> {
     if ((SYSTEM_ROLE_KEYS as readonly string[]).includes(role)) return true;
-    return (await this.rbac.findRole(this.org(), role)) !== null;
+    return (await this.rbac.findRole(this.tenantId(), role)) !== null;
   }
 
-  private org(): string {
+  /** 隔离主轴（租级角色分区键·fail-closed）。 */
+  private tenantId(): string {
+    return this.ctx.requireActiveTenantId();
+  }
+
+  /** 写路径归属盖章（二级轴·expand 段 organization_role* 的 organizationId 列仍 NOT NULL）。 */
+  private orgId(): string {
     return this.ctx.requireActiveOrganizationId();
   }
 

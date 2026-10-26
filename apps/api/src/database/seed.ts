@@ -18,6 +18,7 @@ import {
   Member,
   Organization,
 } from '../modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '../modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '../modules/posts/infrastructure/entities/post.entity';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 import { MIKRO_SYS_ENTITIES } from './mikro/sys-entities';
@@ -255,8 +256,10 @@ export async function ensureActiveOrganizationContext(
   spec: { slug: string; name: string; ownerUserId: string },
 ): Promise<'created' | 'exists'> {
   const orgs = await em.find(Organization, { slug: spec.slug } as never);
-  const org = (orgs as { id: string }[])[0];
+  const org = (orgs as { id: string; tenantId?: string | null }[])[0];
   if (org) {
+    // 换轴写链（rehierarchy C）：幂等补盖租户归属（存量未盖章行兼容面·与 create 分支同式）。
+    if (!org.tenantId) await stampOrgTenant(em, org.id, spec);
     const member = await em.findOne(Member, {
       organizationId: org.id,
       userId: spec.ownerUserId,
@@ -275,7 +278,41 @@ export async function ensureActiveOrganizationContext(
   await auth.api.createOrganization({
     body: { name: spec.name, slug: spec.slug, userId: spec.ownerUserId },
   });
+  const created = (await em.find(Organization, { slug: spec.slug } as never)) as {
+    id: string;
+  }[];
+  if (created[0]) await stampOrgTenant(em, created[0].id, spec);
   return 'created';
+}
+
+/**
+ * 换轴写链（rehierarchy C）：为组织 ensure 专属租户行并盖 `organization.tenantId`——1:1 骨架沿
+ * 回填迁移同式（`tenant.id = org.id`）·幂等（存在即跳过）。缺此环则 seed/新建 org 无主轴归属，
+ * 隔离闸 fail-closed 全量 403。
+ */
+async function stampOrgTenant(
+  em: EntityManager,
+  organizationId: string,
+  spec: { slug: string; name: string },
+): Promise<void> {
+  const tenant = await em.findOne(Tenant, { id: organizationId } as never);
+  if (!tenant) {
+    await em.insert(Tenant, {
+      id: organizationId,
+      name: spec.name,
+      slug: spec.slug,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+  }
+  await em.nativeUpdate(
+    Organization,
+    { id: organizationId } as never,
+    {
+      tenantId: organizationId,
+    } as never,
+  );
 }
 
 /** 按 email 回查 user id（供 `createOrganization.body.userId`·零改 `ensureLoginableUser` 返回契约）。 */

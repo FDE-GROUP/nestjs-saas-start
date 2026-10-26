@@ -26,10 +26,10 @@ function exemptReflector() {
   } as never;
 }
 
-describe('TenantIsolationGuard (S2 · FR-5 fail-closed · S11 全局租户墙)', () => {
+describe('TenantIsolationGuard (S2 · FR-5 fail-closed · S11 全局租户墙 · rehierarchy 切片 C 主轴 tenantId)', () => {
   it('allows when an active tenant is bound', () => {
     const guard = new TenantIsolationGuard(
-      { organizationId: 'orgA' } as unknown as TenantIsolationService,
+      { tenantId: 'tenantA' } as unknown as TenantIsolationService,
       reflectorStub(),
     );
     expect(guard.canActivate(ctx)).toBe(true);
@@ -37,7 +37,7 @@ describe('TenantIsolationGuard (S2 · FR-5 fail-closed · S11 全局租户墙)',
 
   it('rejects with 403 when there is no active tenant', () => {
     const guard = new TenantIsolationGuard(
-      { organizationId: undefined } as unknown as TenantIsolationService,
+      { tenantId: undefined } as unknown as TenantIsolationService,
       reflectorStub(),
     );
     expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
@@ -45,7 +45,7 @@ describe('TenantIsolationGuard (S2 · FR-5 fail-closed · S11 全局租户墙)',
 
   it('S11 · @TenantIsolationExempt 旁路：声明豁免的路由跳过租户墙（无 tenant 亦放行·不抛 403）', () => {
     const guard = new TenantIsolationGuard(
-      { organizationId: undefined } as unknown as TenantIsolationService,
+      { tenantId: undefined } as unknown as TenantIsolationService,
       exemptReflector(),
     );
     expect(guard.canActivate(ctx)).toBe(true);

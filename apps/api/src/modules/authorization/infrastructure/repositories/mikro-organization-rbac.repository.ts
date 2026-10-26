@@ -36,6 +36,11 @@ import type {
  * 每操作 `fork()` 独立 em（V4 串租户教训·同治理仓储纪律）；实体为运行时扁平形
  * （`rbac-tables.ts` companion·FK 裸值列，关系约束由 DB 物理层强制）。
  *
+ * 换轴（global-tenant-organization-rehierarchy 切片 C·人裁假设②）：角色升租级——寻址/查询
+ * 锚 `{ tenantId, key }`；写路径双盖章 `tenantId + organizationId`（expand 段 organizationId 列仍
+ * NOT NULL·活动组织缺位则拒写 fail-closed·编排层 `unique(org,key)` 对租级行集仍保租内 key 唯一：
+ * 同租内后续组织不再重复 seed，首盖章行即全租共享角色本体）。
+ *
  * 写路径先过 domain 策略闸（key 词法 / conditions 白名单·闸外即拒 fail-closed），落行同通道
  * 追加 `organization_role_audit` 行（甲裁：每次变更一留痕·before/after 快照 JSON 规范化存储）。
  * 同格多条件行（OR 并集·甲裁表形）下的去重/撤除以 `canonicalConditions` 等值口径应用层比对
@@ -46,9 +51,10 @@ import type {
 export class MikroOrganizationRbacRepository implements OrganizationRbacRepository {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
-  async ensureSystemRoles(organizationId: string): Promise<void> {
+  async ensureSystemRoles(tenantId: string, organizationId?: string): Promise<void> {
+    if (!organizationId) return; // fail-closed：无活动组织可盖→不懒建租级行（expand 段 org 列 NOT NULL）
     const em = await this.mikro.fork();
-    const existing = await em.find(OrganizationRole, { organizationId });
+    const existing = await em.find(OrganizationRole, { tenantId });
     const existingKeys = new Set(existing.map((r) => r.key));
     const missing = SYSTEM_ROLE_SEED.filter((s) => !existingKeys.has(s.key));
     if (missing.length === 0) return;
@@ -61,6 +67,7 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
       const id = randomUUID();
       roleRows.push({
         id,
+        tenantId,
         organizationId,
         key: seed.key,
         name: seed.name,
@@ -89,47 +96,47 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
     await em.flush();
   }
 
-  async findRole(organizationId: string, key: string): Promise<OrganizationRoleView | null> {
+  async findRole(tenantId: string, key: string): Promise<OrganizationRoleView | null> {
     const em = await this.mikro.fork();
-    const row = await em.findOne(OrganizationRole, { organizationId, key });
+    const row = await em.findOne(OrganizationRole, { tenantId, key });
     return row ? toView(row) : null;
   }
 
-  async listRoleKeys(organizationId: string): Promise<string[]> {
+  async listRoleKeys(tenantId: string): Promise<string[]> {
     const em = await this.mikro.fork();
-    const rows = await em.find(OrganizationRole, { organizationId });
+    const rows = await em.find(OrganizationRole, { tenantId });
     return rows.map((r) => r.key);
   }
 
-  async listRoles(organizationId: string): Promise<OrganizationRoleView[]> {
+  async listRoles(tenantId: string): Promise<OrganizationRoleView[]> {
     const em = await this.mikro.fork();
-    const rows = await em.find(OrganizationRole, { organizationId });
+    const rows = await em.find(OrganizationRole, { tenantId });
     return rows.map(toView);
   }
 
-  async findGrants(
-    organizationId: string,
-    roleKey: string,
-  ): Promise<OrganizationRoleGrantView[] | null> {
+  async findGrants(tenantId: string, roleKey: string): Promise<OrganizationRoleGrantView[] | null> {
     const em = await this.mikro.fork();
-    const role = await em.findOne(OrganizationRole, { organizationId, key: roleKey });
+    const role = await em.findOne(OrganizationRole, { tenantId, key: roleKey });
     if (!role) return null;
     const rows = await em.find(OrganizationRoleGrant, { roleId: role.id });
     return rows.map(toGrantView);
   }
 
   async createRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     name: string,
     actorId: string | null,
   ): Promise<OrganizationRoleCreateResult> {
     if (!isValidRoleKey(key)) return 'invalidKey';
+    if (!organizationId) return 'invalidKey'; // fail-closed：无归属可盖（expand 段 org 列 NOT NULL）
     const em = await this.mikro.fork();
-    if (await em.findOne(OrganizationRole, { organizationId, key })) return 'duplicate';
+    if (await em.findOne(OrganizationRole, { tenantId, key })) return 'duplicate';
     const now = new Date();
     const role = em.create(OrganizationRole, {
       id: randomUUID(),
+      tenantId,
       organizationId,
       key,
       name,
@@ -137,48 +144,73 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
       createdAt: now,
       updatedAt: null,
     });
-    await this.audit(em, organizationId, actorId, 'create', key, null, toView(role), now);
+    await this.audit(em, tenantId, organizationId, actorId, 'create', key, null, toView(role), now);
     await em.flush();
     return 'created';
   }
 
   async renameRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     name: string,
     actorId: string | null,
   ): Promise<OrganizationRoleMutationResult> {
+    if (!organizationId) return 'notFound'; // fail-closed：无归属可盖审计行
     const em = await this.mikro.fork();
-    const role = await em.findOne(OrganizationRole, { organizationId, key });
+    const role = await em.findOne(OrganizationRole, { tenantId, key });
     if (!role) return 'notFound';
     // is_system 应屏（丙裁：系统三 key 不可改——名也不放开，防门面伪造系统角色身份）。
     if (role.isSystem) return 'systemRoleProtected';
     const before = { name: role.name };
     em.assign(role, { name, updatedAt: new Date() });
-    await this.audit(em, organizationId, actorId, 'update', key, before, { name }, new Date());
+    await this.audit(
+      em,
+      tenantId,
+      organizationId,
+      actorId,
+      'update',
+      key,
+      before,
+      { name },
+      new Date(),
+    );
     await em.flush();
     return 'ok';
   }
 
   async deleteRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     actorId: string | null,
   ): Promise<OrganizationRoleMutationResult> {
+    if (!organizationId) return 'notFound'; // fail-closed：无归属可盖审计行
     const em = await this.mikro.fork();
-    const role = await em.findOne(OrganizationRole, { organizationId, key });
+    const role = await em.findOne(OrganizationRole, { tenantId, key });
     if (!role) return 'notFound';
     if (role.isSystem) return 'systemRoleProtected';
     const before = toView(role);
     // grant 行由 DB FK cascade 消灭（与治理面 destroy 的 nativeDelete 同律·不走身份图级联）。
     await em.nativeDelete(OrganizationRole, { id: role.id });
-    await this.audit(em, organizationId, actorId, 'delete', key, before, null, new Date());
+    await this.audit(
+      em,
+      tenantId,
+      organizationId,
+      actorId,
+      'delete',
+      key,
+      before,
+      null,
+      new Date(),
+    );
     await em.flush();
     return 'ok';
   }
 
   async grant(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     roleKey: string,
     entry: OrganizationRoleGrantView,
     actorId: string | null,
@@ -186,8 +218,9 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
     if (entry.conditions !== null && !isValidGrantConditions(entry.conditions)) {
       return 'invalidConditions';
     }
+    if (!organizationId) return 'roleNotFound'; // fail-closed：无归属可盖审计行
     const em = await this.mikro.fork();
-    const role = await em.findOne(OrganizationRole, { organizationId, key: roleKey });
+    const role = await em.findOne(OrganizationRole, { tenantId, key: roleKey });
     if (!role) return 'roleNotFound';
     const siblings = await em.find(OrganizationRoleGrant, {
       roleId: role.id,
@@ -205,21 +238,33 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
       conditions: entry.conditions,
       createdAt: new Date(),
     });
-    await this.audit(em, organizationId, actorId, 'grant', roleKey, null, entry, new Date());
+    await this.audit(
+      em,
+      tenantId,
+      organizationId,
+      actorId,
+      'grant',
+      roleKey,
+      null,
+      entry,
+      new Date(),
+    );
     await em.flush();
     return 'granted';
   }
 
   async revoke(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     roleKey: string,
     subject: AuthorizationSubject,
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
     actorId: string | null,
   ): Promise<OrganizationRoleRevokeResult> {
+    if (!organizationId) return 'roleNotFound'; // fail-closed：无归属可盖审计行
     const em = await this.mikro.fork();
-    const role = await em.findOne(OrganizationRole, { organizationId, key: roleKey });
+    const role = await em.findOne(OrganizationRole, { tenantId, key: roleKey });
     if (!role) return 'roleNotFound';
     const siblings = await em.find(OrganizationRoleGrant, { roleId: role.id, subject, action });
     const target = canonicalConditions(conditions);
@@ -228,6 +273,7 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
     await em.nativeDelete(OrganizationRoleGrant, { id: hit.id });
     await this.audit(
       em,
+      tenantId,
       organizationId,
       actorId,
       'revoke',
@@ -243,6 +289,7 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
   /** 审计行与业务行同 em 同事务落（留痕与变更原子·flush 由调用侧统一触发或本行 nativeInsert 语义并入）。 */
   private async audit(
     em: Awaited<ReturnType<MikroOrmService['fork']>>,
+    tenantId: string,
     organizationId: string,
     actorId: string | null,
     action: OrganizationRoleAuditAction,
@@ -252,6 +299,7 @@ export class MikroOrganizationRbacRepository implements OrganizationRbacReposito
     now: Date,
   ): Promise<void> {
     em.create(OrganizationRoleAudit, {
+      tenantId,
       organizationId,
       actorId,
       action,

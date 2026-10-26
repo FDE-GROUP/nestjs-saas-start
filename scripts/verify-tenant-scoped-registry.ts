@@ -1,17 +1,23 @@
 // 租户实体登记恒等闸（module-tenant-scoped-entity-registry-gate · 新增 CI 门禁 · 高危 #3 · 经人签核 2026-10-26）。
 //
-// 目的：把「哪些表属租户作用域、读面必须带 `organizationId` 卡点」从「约定 + 人工评审」升格为
+// 目的：把「哪些表属租户作用域、读面必须带隔离轴卡点」从「约定 + 人工评审」升格为
 // **机制恒等校验**——boilerplate 核查（nestjs-saas-tenant-boilerplate·tmp/tenant-bp-review）暴露
 // 同形人祸：其 `tenant.config.ts` 手写白名单，新实体漏登记 = 静默无过滤无闸拦截。本案复刻
 // `GATED_E2E_FILES`（ci-fullstack.ts）三向判据形态，对本文件内置登记表与代码实存做纯文本对拍。
 //
+// 换轴（global-tenant-organization-rehierarchy 切片 C·高危 #3 随案复裁）：隔离硬轴从
+// `organizationId` 升为 `tenantId`。列位证据改**双形判定**：`tenantId` 主轴证据必中；
+// `organizationId` 证据在 expand–contract 过渡期仍视同租户域列（member/invitation 等 BA 操作面
+// 留 org 轴·旧订阅表待 D 片退场）——两形任一在册均须登记，防过渡期静默漏面；contract 段
+// （旧表退役/列收紧）后本闸收敛为纯 `tenantId` 判定。
+//
 // 判据（三向 fail-loud·登记表与判据同居本文件·SSOT 自含）：
 //  ① 有列须在册：运行时实体块（`defineEntity({...})` / `*_META: TableMeta = {...}` 所在对象字面量）
-//     内检出 `organizationId` **列位**证据（属性形 `organizationId: p.` 或 FK 元组形 `['organizationId', {`）
+//     内检出 `tenantId`/`organizationId` **列位**证据（属性形 `x: p.` 或 FK 元组形 `['x', {`）
 //     的表，其 tableName 必须 ∈ 在册 ∪ 豁免（漏登记红）；
 //  ② 在册须实存：在册表必须在某实体块中检出列证据（改名/误登记红）；
 //  ③ 豁免防腐：豁免语义锚在「携租户列而应然全局可见」——豁免表块实存但列已删（列被撤而豁免
-//     忘撤）→ 红；无租户列的表（如容器根 organization）本不触①，对其豁免条目不判矛盾（零假红）。
+//     忘撤）→ 红；无租户列的表本不触①，对其豁免条目不判矛盾（零假红）。
 //
 // 诚实边界（不可机器化·明写不覆盖）：实体有列但仓储读链漏带 where——本闸**不管**（逐仓储静态判定
 // where 形状不便宜、假阳高），该面仍由既有「镜像隔离单测 + 固定展开序」纪律承担（plan §2 非目标）。
@@ -30,33 +36,36 @@ import { fileURLToPath } from 'node:url';
 // 单测级联面不容 `.ts` 后缀导入，而脚本 node 直跑又需显式扩展；两难下合并为单文件自含，
 // 单测经 `./verify-tenant-scoped-registry`（扩展名省略·vitest 可解）消费全部导出。
 //
-// `TENANT_SCOPED_TABLES` = 「携带 `organizationId` 租户列、其读面**必须**带租户卡点（仓储 where
-// 锚定活动租户 / BA 操作 api 租户界内）」的表清单——在册是**应然断言**，实际强制仍由既有
-// 「镜像隔离单测 + 固定展开序」（module-rbac-query-level-filtering / global-tenancy S2）承担；
+// `TENANT_SCOPED_TABLES` = 「携带租户轴列（`tenantId` 主轴 ∪ 过渡期 `organizationId` 归属轴）、其读面
+// **必须**带租户卡点（仓储 where 锚定活动租户 / BA 操作 api 租户界内）」的表清单——在册是**应然断言**，
+// 实际强制仍由既有「镜像隔离单测 + 固定展开序」（module-rbac-query-level-filtering / global-tenancy S2）承担；
 // 本清单供本闸做「清单 vs 代码实存」三向对拍（有列须在册 / 在册须实存 / 豁免防腐）。
 // 生长纪律：新增带租户列的运行时实体而未在册 → fail-loud，须在此具名登记（或入豁免面并写明
 // 理由）——堵 boilerplate 核查（tmp/tenant-bp-review）暴露的「新实体漏登记=静默无过滤」同形人祸。
 
 /** 在册租户作用域表（tableName 恒等口径·沿列律 L1 表名寻址）。 */
 export const TENANT_SCOPED_TABLES: readonly string[] = [
-  // 业务数据面（S2/S3 出身·仓储层唯一隔离卡点原生覆盖）。
+  // 业务数据面（ rehierarchy C 换轴：读锚 tenantId 主轴·写双盖章）。
   'post',
   'workspace',
-  // 订阅配额面（D 片 pivot 后 organization_* 词面·ALS 盖章仓储读链）。
+  // 组织本体入册（rehierarchy C：organization 携 tenantId 后降为租户域内业务表·
+  // 目录/治理读面锚租级；tenant 表自身是租根、不持租户轴列、不触判据）。
+  'organization',
+  // 订阅面（expand–contract 并存：旧表 org 轴待 D 片退役·新租级表在册）。
   'organization_subscription',
-  // RBAC 三表之二（role/audit 直持租户列；grant 经 roleId 传递、无自列不入判）。
+  'tenant_subscription',
+  // RBAC 三表之二（role/audit 持租级列；grant 经 roleId 传递、无自列不入判）。
   'organization_role',
   'organization_role_audit',
-  // BA 组织容器族：读面治理仓储/配额均 `{ organizationId }` 锚定·消费界内无裸跨租面。
+  // BA 组织容器族：读面仍 org 轴锚定（BA 机器不盖租级列·C 片自裁不换）·消费界内无裸跨租面。
   'member',
   'invitation',
 ];
 
 /**
- * 豁免表（**仅当块内实存 `organizationId` 列**才需入此——应然全局可见 + 具名理由）。
- * 无租户列的表（如容器根 `organization`·其自身即租户）本不触判据①，**不得**列入——
- * 防把「天然全局」误分类成「豁免」（初稿即犯此错·现树探红坐实）。
- * 初始实扫（2026-10-26）：带租户列的运行时表全部应然在册，豁免面为空是**当前真相**，
+ * 豁免表（**仅当块内实存租户轴列**才需入此——应然全局可见 + 具名理由）。
+ * 无租户列的表本不触判据①，**不得**列入——防把「天然全局」误分类成「豁免」（初稿即犯此错·现树探红坐实）。
+ * 初始实扫（2026-10-26）+ rehierarchy C 换轴重扫：带租户列的运行时表全部应然在册，豁免面为空是**当前真相**，
  * 非机制空转——判据③随首个真豁免条目生长而活。
  */
 export const TENANT_SCOPED_EXEMPT_TABLES: readonly { table: string; reason: string }[] = [];
@@ -72,11 +81,15 @@ const SKIP_PATH_FRAGMENTS = ['/migrations/', '/migration/', '.snapshot'];
 const TABLE_NAME_RE = /^\s*tableName:\s*'([^']+)'/;
 /** 块起点锚：`defineEntity({`（define 形）与 `X_META: TableMeta = {`（工厂形）。 */
 const BLOCK_OPENERS: readonly RegExp[] = [/defineEntity\(\{/, /:\s*TableMeta\s*=\s*\{/];
-/** 列位证据·属性形（defineEntity properties 块内 `organizationId: p.string()...`）。 */
-const COLUMN_PROP_RE = /organizationId:\s*p\./;
-/** 列位证据·FK 元组形（TableMeta columns 内 `['organizationId', { k: 'fk'... }]`；
- *  uniques/indexes 的纯字符串引用 `['organizationId', 'slug']` 因无 `{` 紧随天然不中。 */
-const COLUMN_TUPLE_RE = /\['organizationId',\s*\{/;
+/** 列位证据·主轴属性形（defineEntity properties 块内 `tenantId: p.string()...`）。 */
+const TENANT_COLUMN_PROP_RE = /tenantId:\s*p\./;
+/** 列位证据·主轴 FK 元组形（TableMeta columns 内 `['tenantId', { k: 'fk'... }]`；
+ *  uniques/indexes 的纯字符串引用因无 `{` 紧随天然不中。 */
+const TENANT_COLUMN_TUPLE_RE = /\['tenantId',\s*\{/;
+/** 过渡期归属轴证据·属性形（`organizationId: p.`·contract 段 BA 面撤列后随判据收敛）。 */
+const ORG_COLUMN_PROP_RE = /organizationId:\s*p\./;
+/** 过渡期归属轴证据·FK 元组形（同上）。 */
+const ORG_COLUMN_TUPLE_RE = /\['organizationId',\s*\{/;
 
 export interface TableBlock {
   /** 实体表名（tableName 恒等口径）。 */
@@ -92,7 +105,8 @@ export interface TableBlock {
  * 多表同文件（ba-org.entities.ts / rbac.entities.ts）逐块独立判定——块边界即判据边界。
  */
 export function findTableBlocks(relPath: string, src: string): TableBlock[] {
-  if (!src.includes('organizationId') && !TABLE_NAME_RE.test(src)) return [];
+  if (!src.includes('organizationId') && !src.includes('tenantId') && !TABLE_NAME_RE.test(src))
+    return [];
   const lines = src.split('\n');
   const blocks: TableBlock[] = [];
   for (let i = 0; i < lines.length; i++) {
@@ -143,9 +157,14 @@ export function findTableBlocks(relPath: string, src: string): TableBlock[] {
   return blocks;
 }
 
-/** 块体内是否检出 `organizationId` 列位证据（两 pattern 任一）。 */
+/** 块体内是否检出租户轴列位证据（主轴 tenantId ∪ 过渡期 organizationId·四 pattern 任一）。 */
 export function hasTenantColumn(block: TableBlock): boolean {
-  return COLUMN_PROP_RE.test(block.body) || COLUMN_TUPLE_RE.test(block.body);
+  return (
+    TENANT_COLUMN_PROP_RE.test(block.body) ||
+    TENANT_COLUMN_TUPLE_RE.test(block.body) ||
+    ORG_COLUMN_PROP_RE.test(block.body) ||
+    ORG_COLUMN_TUPLE_RE.test(block.body)
+  );
 }
 
 export type RegistryViolation =
@@ -238,13 +257,12 @@ function main(): void {
     );
     for (const v of violations) {
       if (v.kind === 'unregistered')
-        console.log(`  - [漏登记] 表 ${v.table} 携 organizationId 列但不在册/未豁免  ｜ ${v.file}`);
-      else if (v.kind === 'stale-registry')
-        console.log(`  - [僵尸在册] 表 ${v.table} 在册却检出不到 organizationId 列实存`);
-      else
         console.log(
-          `  - [豁免腐烂] 豁免表 ${v.table} 实体块仍在但 organizationId 列已删·豁免须随案撤销`,
+          `  - [漏登记] 表 ${v.table} 携租户轴列（tenantId/organizationId）但不在册/未豁免  ｜ ${v.file}`,
         );
+      else if (v.kind === 'stale-registry')
+        console.log(`  - [僵尸在册] 表 ${v.table} 在册却检出不到租户轴列实存`);
+      else console.log(`  - [豁免腐烂] 豁免表 ${v.table} 实体块仍在但租户轴列已删·豁免须随案撤销`);
     }
     console.log(
       `\n  依据 module-tenant-scoped-entity-registry-gate：新增带租户列表 → 具名入 TENANT_SCOPED_TABLES` +

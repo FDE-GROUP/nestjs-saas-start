@@ -76,91 +76,105 @@ export type OrganizationRoleMutationResult = 'ok' | 'notFound' | 'systemRoleProt
  *  - 写侧供管理门面（create/rename/delete/grant/revoke · S3），每次变更同通道落审计行（甲裁）。
  * 返回码用字面量 union（不借 HTTP 异常表达领域事实·应用层负责转译）；conditions 形状
  * 校验在 domain 策略纯函数（`policies/rbac.policy.ts`），适配器写前必过闸。
+ *
+ * 换轴注记（global-tenant-organization-rehierarchy 切片 C·人裁假设②）：角色升**租级**——
+ * 主轴参一律 `tenantId`（同租内跨组织互见的自然配套）；`organizationId` 为写路径归属盖章
+ * （expand 段列仍 NOT NULL·活动组织缺位时适配器 fail-closed 拒写）。表名暂留 organization_*
+ * （rename 留后续清理片·避免迁移面爆炸）。
  * @public
  */
 export interface OrganizationRbacRepository {
   /**
    * 幂等 seed：缺哪个系统角色 key 补哪个（lazy-ensure · §2.3）；grants 按 seed 死数据展开。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id（租级角色主轴）。
+   * @param organizationId - 活动组织 id（首现角色的归属盖章；缺位则拒写 fail-closed）。
    * @returns 落行完成的 Promise（无返回量）。
    */
-  ensureSystemRoles(organizationId: string): Promise<void>;
+  ensureSystemRoles(tenantId: string, organizationId?: string): Promise<void>;
   /**
    * 按 key 取角色（null = 查无 → 消费侧 fail-closed）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
    * @param key - 角色 key。
    * @returns 角色读模型；查无时为 `null`。
    */
-  findRole(organizationId: string, key: string): Promise<OrganizationRoleView | null>;
+  findRole(tenantId: string, key: string): Promise<OrganizationRoleView | null>;
   /**
    * 本租户全部角色 key（存在性校验面 · S3）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
    * @returns 角色 key 列表。
    */
-  listRoleKeys(organizationId: string): Promise<string[]>;
+  listRoleKeys(tenantId: string): Promise<string[]>;
   /**
    * 本租户全部角色读模型（管理门面列表 · S3·含 name/isSystem）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
    * @returns 角色读模型列表。
    */
-  listRoles(organizationId: string): Promise<OrganizationRoleView[]>;
+  listRoles(tenantId: string): Promise<OrganizationRoleView[]>;
   /**
    * 角色的授权行（null = 查无角色；空数组 = 有角色零授权，两者消费侧皆 deny，但语义供缓存/门面区分）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
    * @param roleKey - 角色 key。
    * @returns 授权行读模型列表；查无角色时为 `null`。
    */
-  findGrants(organizationId: string, roleKey: string): Promise<OrganizationRoleGrantView[] | null>;
+  findGrants(tenantId: string, roleKey: string): Promise<OrganizationRoleGrantView[] | null>;
   /**
    * 创建自定义角色（写前过词法闸·同通道落审计行）。
-   * @param organizationId - 目标租户 id。
-   * @param key - 角色 key（组织内唯一）。
+   * @param tenantId - 目标租户 id。
+   * @param organizationId - 活动组织 id（归属盖章·缺位拒写）。
+   * @param key - 角色 key（租内唯一）。
    * @param name - 人面可读名。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
    * @returns 领域结果码（`created`/`duplicate`/`invalidKey`）。
    */
   createRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     name: string,
     actorId: string | null,
   ): Promise<OrganizationRoleCreateResult>;
   /**
    * 角色改名（系统角色屏）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
+   * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param key - 待改名的角色 key。
    * @param name - 新的人面可读名。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
    * @returns 领域结果码（`ok`/`notFound`/`systemRoleProtected`）。
    */
   renameRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     name: string,
     actorId: string | null,
   ): Promise<OrganizationRoleMutationResult>;
   /**
    * 硬删角色行（grant 行由 FK cascade 消灭·审计留 before 快照）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
+   * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param key - 待删除的角色 key。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
    * @returns 领域结果码（`ok`/`notFound`/`systemRoleProtected`）。
    */
   deleteRole(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     key: string,
     actorId: string | null,
   ): Promise<OrganizationRoleMutationResult>;
   /**
    * 新增授权行（conditions 形状写前过 domain 策略闸）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
+   * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param roleKey - 目标角色 key。
    * @param entry - 授权行（subject/action/conditions）。
    * @param actorId - 审计操作者；无登录主体时为 `null`。
    * @returns 领域结果码（`granted`/`roleNotFound`/`duplicate`/`invalidConditions`）。
    */
   grant(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     roleKey: string,
     entry: OrganizationRoleGrantView,
     actorId: string | null,
@@ -168,7 +182,8 @@ export interface OrganizationRbacRepository {
   /**
    * 撤权：`conditions` 传 null = 撤整 subject 级行；传对象 = 按 JSON 等值精确撤单条件行
    * （同格多条件行的 OR 并集形态下，撤销必须指明撤哪行·甲裁表形配套语义）。
-   * @param organizationId - 目标租户 id。
+   * @param tenantId - 目标租户 id。
+   * @param organizationId - 活动组织 id（审计归属盖章·缺位拒写）。
    * @param roleKey - 目标角色 key。
    * @param subject - 授权主体。
    * @param action - 授权动作。
@@ -177,7 +192,8 @@ export interface OrganizationRbacRepository {
    * @returns 领域结果码（`revoked`/`roleNotFound`/`notFound`）。
    */
   revoke(
-    organizationId: string,
+    tenantId: string,
+    organizationId: string | undefined,
     roleKey: string,
     subject: AuthorizationSubject,
     action: AuthorizationAction,

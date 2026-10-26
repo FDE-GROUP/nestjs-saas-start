@@ -3,10 +3,11 @@
  * 纯函数 · 零框架依赖，沿 `organization-lifecycle` 同区纪律）。
  *
  * @remarks
- * 架构前提（人裁 2026-10-26·均留痕 research/data-warehouse-introduction.md §1）：
- * - 一租户一公司（`res.company`）·单库多公司；SaaS 平台库与 Odoo 库**物理隔离、平行映射**
+ * 架构前提（人裁 2026-10-26·global-tenant-organization-rehierarchy 切片 A 复裁均留痕 research/data-warehouse-introduction.md §1）：
+ * - **一组织一公司**（`res.company`）·单库多公司（多组织共用一个 Odoo 实例恰与原生 multi-company 同构）；
+ *   SaaS 平台库与 Odoo 库**物理隔离、平行映射**
  *   （跨库弱引用，无外键/无跨库 JOIN，Odoo 数据读写只经 RPC 通道）；
- * - **公司创建单源**：必先有平台租户、后有 Odoo 公司——故 `pending` 态（意图已落、司未建）
+ * - **公司创建单源**：必先有平台组织、后有 Odoo 公司（组织创建触发该组织的 provisioning saga）——故 `pending` 态（意图已落、司未建）
  *   是 saga「先落意图」的持久化承载，孤儿公司降为低频审计项。
  *
  * 本文件只留状态词汇与裁决纯函数；持久化经 `Organization` 自撰域列真列（additive·
@@ -89,8 +90,8 @@ export function canUseOdoo(input: OdooUsabilityInput): boolean {
 export const EXPECTED_ODOO_COMPANY_PREFIX = 'SAAS-';
 
 /**
- * 由租户 id 复算确定性 Odoo 公司名（{@link EXPECTED_ODOO_COMPANY_PREFIX} + 租户 id）。
- * @param organizationId - 目标租户 id。
+ * 由组织 id 复算确定性 Odoo 公司名（{@link EXPECTED_ODOO_COMPANY_PREFIX} + 组织 id·一组织一公）。
+ * @param organizationId - 目标组织 id。
  * @returns 可复现的公司名（建司/回找/对拍同式）。
  * @public
  */

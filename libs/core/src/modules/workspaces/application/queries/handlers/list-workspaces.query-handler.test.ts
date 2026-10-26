@@ -9,12 +9,13 @@ import { ListWorkspacesQueryHandler } from './list-workspaces.query-handler';
 
 /**
  * workspaces 列表 query handler 锁测（module-rbac-query-level-filtering 切片 C·人裁③⑤）：
- * 锁定 handler 携 ALS `{organizationId, role, userId}` 取 `listPredicate({action:'read', subject:'Workspace'})`
+ * 锁定 handler 携 ALS `{tenantId, role, userId}` 取 `listPredicate({action:'read', subject:'Workspace'})`
  * 后的三分支——`all`→透传 (request, undefined)（现状不变）/ `where`→下推实例谓词 /
  * `none`→短路空页**不触 port**（fail-closed·绝不回退全量）。
+ * rehierarchy 切片 C 换轴：谓词入参主轴从 organizationId 升 tenantId（租级角色）。
  */
 
-const ctx = { organizationId: 'orgA', userId: 'u1', role: 'editor' };
+const ctx = { tenantId: 'tenantA', organizationId: 'orgA', userId: 'u1', role: 'editor' };
 
 function makeHandler(predicate: PermissionListPredicate) {
   const page: Page<WorkspaceRecord> = { items: [], total: 0, limit: 7, offset: 3 };
@@ -38,7 +39,7 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
     const result = await tenant.run(ctx, () => handler.execute(new ListWorkspacesQuery(request)));
 
     expect(listPredicate).toHaveBeenCalledWith({
-      organizationId: 'orgA',
+      tenantId: 'tenantA',
       role: 'editor',
       userId: 'u1',
       action: 'read',
@@ -48,7 +49,7 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
     expect(result).toBe(page as Page<WorkspaceReadModel>);
   });
 
-  it('where → 实例谓词作第二参下推 port（仓储层再与 organizationId 合并）', async () => {
+  it('where → 实例谓词作第二参下推 port（仓储层再与 tenantId 主轴合并）', async () => {
     const where = { $or: [{ ownerId: 'u1' }, { teamId: { $in: ['t1', 't2'] } }] };
     const { handler, list, tenant } = makeHandler({ kind: 'where', where });
 
@@ -66,13 +67,13 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
     expect(result).toEqual({ items: [], total: 0, limit: 7, offset: 3 });
   });
 
-  it('无租户上下文（ALS 空）→ 谓词入参 organizationId/role/userId 皆 undefined，归 none 即空页', async () => {
+  it('无租户上下文（ALS 空）→ 谓词入参 tenantId/role/userId 皆 undefined，归 none 即空页', async () => {
     const { handler, list, listPredicate } = makeHandler({ kind: 'none' });
 
     const result = await handler.execute(new ListWorkspacesQuery(request));
 
     expect(listPredicate).toHaveBeenCalledWith({
-      organizationId: undefined,
+      tenantId: undefined,
       role: undefined,
       userId: undefined,
       action: 'read',
