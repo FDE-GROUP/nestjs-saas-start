@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConfigService } from '@app/config/config.service';
 import { Event } from '@app/database/eventing/entities/event.entity';
-import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
-import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
+import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
@@ -23,8 +23,9 @@ import { MikroOrmService } from './mikro-orm.service';
  * 治理联动消费者 **真库往返**（module-es-first-real-consumer 治理档 S3 · env-gated）。
  *
  * 装配三面一体的收口证据：outbox 事件行（治理卡点同事务 append）→ relay 投递（registry 以
- * **同一事件类**重建）→ 消费者经系统面真 SQL 收敛订阅行，并复验 at-least-once 重投幂等
- * （no-op·updatedAt 不动）与 UUIDv7 主键/信封 id 落库形态。
+ * **同一事件类**重建）→ 消费者经系统面真 SQL 收敛**租级订阅行**（rehierarchy 片二 K2：旧
+ * `organization_subscription` 整表 DROP·收敛面改指 `tenant_subscription`·`event.aggregateId`=tenantId），
+ * 并复验 at-least-once 重投幂等（no-op·updatedAt 不动）与 UUIDv7 主键/信封 id 落库形态。
  *
  * 总线为分发替身（直调真实收敛逻辑）：类同一性（relay 重建类 === @EventsHandler 匹配类）已由
  * handler 单测锁死，本测不再经 Nest DI。dev 库可能存在他聚合的未投递残留行（relay 全表
@@ -93,12 +94,12 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   let scope: TransactionScope;
   let uow: MikroUnitOfWork;
   let relay: OutboxRelay;
-  const organizationId = uuidv7();
+  const tenantId = uuidv7();
   const subId = uuidv7();
 
   const transitionEvent = (to: string) =>
     new OrganizationStatusTransitionedEvent({
-      aggregateId: organizationId,
+      aggregateId: tenantId,
       payload: { from: null, to: to as never, actorId: 'op-link' },
     });
 
@@ -113,7 +114,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   // 本仓 DDL 列名为 camelCase（需双引号标识符）。
   async function subRow(): Promise<{ status: string; updatedAtMs: number } | null> {
     const rows = await raw(
-      'SELECT status, EXTRACT(EPOCH FROM "updatedAt") * 1000 AS ms FROM organization_subscription WHERE id = ?',
+      'SELECT status, EXTRACT(EPOCH FROM "updatedAt") * 1000 AS ms FROM tenant_subscription WHERE id = ?',
       [subId],
     );
     const r = rows[0];
@@ -166,8 +167,8 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
     const convergeStatus = async (tid: string, from: string, to: string) => {
       const em = await mikro.fork();
       const rows = await em.find(
-        OrganizationSubscription,
-        { organizationId: tid, status: from } as never,
+        TenantSubscription,
+        { tenantId: tid, status: from } as never,
         {
           orderBy: { periodStart: 'DESC', createdAt: 'DESC' },
           limit: 1,
@@ -176,7 +177,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
       const row = rows[0];
       if (!row) return false;
       await em.nativeUpdate(
-        OrganizationSubscription,
+        TenantSubscription,
         { id: row.id } as never,
         {
           status: to,
@@ -217,19 +218,19 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
         },
       } as unknown as EventBus,
     );
-    // 前置数据：org 行（FK 目标）+ 一条 active 订阅行（id 即 UUIDv7·本测顺带实证新形态落库）
+    // 前置数据：tenant 行（FK 目标）+ 一条 active 租级订阅行（id 即 UUIDv7·本测顺带实证新形态落库）
     const em = await mikro.fork();
-    await em.insert(Organization, {
-      id: organizationId,
-      name: `E2E Link Org ${organizationId}`,
-      slug: `e2e-link-${organizationId}`,
-      metadata: {},
+    await em.insert(Tenant, {
+      id: tenantId,
+      name: `E2E Link Tenant ${tenantId}`,
+      slug: `e2e-link-${tenantId}`,
+      status: ORGANIZATION_STATUS.ACTIVE,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      updatedAt: null,
     } as never);
-    await em.insert(OrganizationSubscription, {
+    await em.insert(TenantSubscription, {
       id: subId,
-      organizationId,
+      tenantId,
       plan: 'pro',
       status: SUBSCRIPTION_STATUS.ACTIVE,
       seatsLimit: 20,
@@ -248,12 +249,12 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   afterAll(async () => {
     try {
       const em = await mikro.fork();
-      await em.nativeDelete(OrganizationSubscription, { id: subId } as never);
+      await em.nativeDelete(TenantSubscription, { id: subId } as never);
       await em.nativeDelete(Event, {
         aggregateType: 'tenant',
-        aggregateId: organizationId,
+        aggregateId: tenantId,
       } as never);
-      await em.nativeDelete(Organization, { id: organizationId } as never);
+      await em.nativeDelete(Tenant, { id: tenantId } as never);
       await (mikro as unknown as { onModuleDestroy(): Promise<void> }).onModuleDestroy();
     } finally {
       releaseRelayLock();
@@ -275,7 +276,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
     const before = await subRow();
     const evRows = await raw(
       'SELECT id, "eventId" FROM event WHERE "aggregateId" = ? ORDER BY id',
-      [organizationId],
+      [tenantId],
     );
     const evRow = evRows[0] as { id: string; eventId: string };
     await raw('UPDATE event SET "dispatchedAt" = NULL WHERE id = ?', [evRow.id]);
@@ -297,7 +298,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
 
   it('UUIDv7 实证：订阅行 id 与事件信封 eventId 均为 v7 形态且时间戳高位可解码为近时刻', async () => {
     const evRows = await raw('SELECT "eventId" FROM event WHERE "aggregateId" = ? ORDER BY id', [
-      organizationId,
+      tenantId,
     ]);
     const eventId = String((evRows[0] as { eventId: string }).eventId);
     for (const id of [subId, eventId]) {

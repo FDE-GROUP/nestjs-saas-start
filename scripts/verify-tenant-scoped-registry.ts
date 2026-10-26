@@ -51,8 +51,7 @@ export const TENANT_SCOPED_TABLES: readonly string[] = [
   // 组织本体入册（rehierarchy C：organization 携 tenantId 后降为租户域内业务表·
   // 目录/治理读面锚租级；tenant 表自身是租根、不持租户轴列、不触判据）。
   'organization',
-  // 订阅面（expand–contract 并存：旧表 org 轴待 D 片退役·新租级表在册）。
-  'organization_subscription',
+  // 订阅面（rehierarchy 片二 K2：旧 `organization_subscription` 整表 DROP·仅余租级新表在册）。
   'tenant_subscription',
   // RBAC 三表之二（role/audit 持租级列；grant 经 roleId 传递、无自列不入判）。
   'organization_role',

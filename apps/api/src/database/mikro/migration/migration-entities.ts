@@ -8,7 +8,6 @@ import {
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '../../../modules/organizations/infrastructure/entities/audit-log.entity';
 import { TENANT_META } from '../../../modules/organizations/infrastructure/entities/tenant.entity';
-import { ORGANIZATION_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
@@ -264,12 +263,8 @@ export const Post = defineEntity({
   ],
 });
 
-export const OrganizationSubscription = buildMigrationEntity(ORGANIZATION_SUBSCRIPTION_META, {
-  User,
-  Organization,
-});
-
-// rehierarchy 切片 B：计费上移新表（旧表并存至 contract 段退役·META 双形单源入基线集供 generate 非空 diff 对拍）。
+// rehierarchy 片二 K2：旧 `organization_subscription` 实体已随 contract 段退役（表物理 DROP·见 drop 迁移）。
+// 计费上移新表（META 双形单源入基线集供 generate 非空 diff 对拍）。
 export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META, {
   User,
   Tenant,
@@ -294,7 +289,7 @@ export const OrganizationRoleAudit = buildMigrationEntity(ORGANIZATION_ROLE_AUDI
 // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·同元数据双变体派生·纯 additive）。
 export const AuditLog = buildMigrationEntity(AUDIT_LOG_META, { User });
 
-/** 迁移基线用的全表忠实实体集（18 表·与实体元数据逐列对齐·global-tenant-organization-rehierarchy 切片 B 新入 `tenant`/`tenant_subscription` 后 16→18）。 */
+/** 迁移基线用的全表忠实实体集（17 表·与实体元数据逐列对齐·rehierarchy 片二 K2 旧 `organization_subscription` 退役后 18→17）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -307,7 +302,6 @@ export const MIKRO_MIGRATION_ENTITIES = [
   Workspace,
   Consent,
   Post,
-  OrganizationSubscription,
   TenantSubscription,
   Event,
   OrganizationRole,

@@ -74,7 +74,7 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
   }
 
   async remove(organizationId: string): Promise<boolean> {
-    // nativeDelete＝纯 SQL DELETE·FK cascade 由 DB 层清 member/invitation/workspace/organization_subscription/post（R-B3 同律）。
+    // nativeDelete＝纯 SQL DELETE·FK cascade 由 DB 层清 member/invitation/workspace/post（R-B3 同律·旧 organization_subscription 表已随片二 K2 DROP·订阅锚上移 tenant）。
     // 治理换轴（rehierarchy E-F）：驳回 pending 申请 = 连专属租户行一并硬删（1:1 骨架·tenant.id=org.id）：
     // 先删组织（子表 FK 级联）再删租户父行，避免 organization.tenantId FK 悬挂。
     const em = await this.mikro.fork();

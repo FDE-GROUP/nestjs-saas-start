@@ -52,11 +52,8 @@ export const BA_CONTRACT_TABLES: readonly string[] = [
 /**
  * L2 棘轮豁免：现存 NOT NULL 盖章口径的可变表（insert 时 `updatedAt=createdAt`）。
  * **只减不增**（沿 type-escape ratchet 先例）：将来某表经迁移翻为 nullable 即从此清单
- * 删键；新表违 L2 直接闸红，没有加键通道（守卫断言长度上限=现值 3·global-governance-lifecycle-
- * consolidation 切片 C DROP `user_status` 旁表后其豁免键随删）。
+ * 删键；新表违 L2 直接闸红，没有加键通道（守卫断言长度上限=现值 2·global-governance-lifecycle-
+ * consolidation 切片 C DROP `user_status` 旁表后其豁免键随删·rehierarchy 片二 K2 旧 `organization_subscription`
+ * 整表退役后其豁免键亦随删）。
  */
-export const UPDATED_AT_NULLABLE_EXEMPT: readonly string[] = [
-  'workspace',
-  'organization_subscription',
-  'post',
-];
+export const UPDATED_AT_NULLABLE_EXEMPT: readonly string[] = ['workspace', 'post'];

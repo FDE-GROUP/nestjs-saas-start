@@ -36,7 +36,7 @@ import { hydrateEventRows } from '../apps/api/src/database/eventing/event-hydrat
 import { initMikroOrm } from '../apps/api/src/database/mikro/mikro-orm.factory.ts';
 import { MIKRO_SYS_ENTITIES } from '../apps/api/src/database/mikro/sys-entities.ts';
 import { Organization } from '../apps/api/src/modules/organizations/infrastructure/entities/ba-org.entities.ts';
-import { OrganizationSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/organization-subscription.entity.ts';
+import { TenantSubscription } from '../apps/api/src/modules/subscriptions/infrastructure/entities/tenant-subscription.entity.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -123,7 +123,7 @@ async function heal(em: EntityManager, report: CtxReport): Promise<number> {
   for (const d of report.drift) {
     if (!d.repairable || !d.foldStatus) continue;
     await em.nativeUpdate(
-      OrganizationSubscription as never,
+      TenantSubscription as never,
       { id: d.id } as never,
       { status: d.foldStatus } as never,
     );
@@ -155,7 +155,7 @@ async function scanLinkInvariant(em: EntityManager): Promise<LinkViolation[]> {
   )) as Array<{ id: string }>;
   const violations: LinkViolation[] = [];
   for (const t of suspended) {
-    const activeSubs = await em.count(OrganizationSubscription, {
+    const activeSubs = await em.count(TenantSubscription, {
       tenantId: t.id,
       status: SUBSCRIPTION_STATUS.ACTIVE,
     } as never);
@@ -177,7 +177,7 @@ async function runScan(): Promise<CtxReport[]> {
     reports.push(
       await scan(em, {
         name: 'subscription',
-        entity: OrganizationSubscription,
+        entity: TenantSubscription,
         aggregateType: 'subscription',
         bootstrappedType: 'subscription.bootstrapped',
         replay: (e) => replaySubscriptionLifecycle(e) ?? undefined,

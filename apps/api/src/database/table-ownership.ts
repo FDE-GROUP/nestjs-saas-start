@@ -39,8 +39,8 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   // 各业务上下文
   workspace: 'workspaces',
   post: 'posts',
-  organizationSubscription: 'subscriptions',
-  // rehierarchy 切片 B：计费上移新表（旧 organization_subscription 并存至 contract 段退役）
+  // rehierarchy 片二 K2：旧 `organization_subscription`（org 轴）整表物理 DROP·台账随删。
+  // 切片 B：计费上移新租级表（唯一订阅台账·`tenantSubscription`）。
   tenantSubscription: 'subscriptions',
   // module-rbac-dynamic-roles S1（甲裁三表）·领域细化重构后属 `authorization` 上下文：
   // 角色/授权/审计均属授权域自有表，唯一写通道 = MikroOrganizationRbacRepository（门面皆经端口读写，禁散点直访）。

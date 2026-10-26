@@ -244,7 +244,7 @@ describe('MikroOrganizationGovernanceRepository.exportOrganizationData (NFR-6)',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ]) // OrganizationSubscription
+      ]) // TenantSubscription
       .mockResolvedValueOnce([
         {
           id: 'p1',

@@ -13,10 +13,6 @@ import {
 } from '../../modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '../../modules/posts/infrastructure/entities/post.entity';
 import {
-  ORGANIZATION_SUBSCRIPTION_META,
-  OrganizationSubscription,
-} from '../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
-import {
   TENANT_SUBSCRIPTION_META,
   TenantSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
@@ -31,7 +27,7 @@ import { EVENT_META, Event } from '../eventing/entities/event.entity';
  * `database/mikro/post.entity.ts` 尾段·各实体已按 `table-ownership.ts` 表属主归位各上下文）。
  *
  * 定位：单一连接池承载的实体清单在此**集中装配**——实体定义 SSOT 各居其上下文
- * （`workspace.entity.ts`/`organization-subscription.entity.ts`/`event.entity.ts`/
+ * （`workspace.entity.ts`/`tenant-subscription.entity.ts`/`event.entity.ts`/
  * `rbac.entities.ts`/`post.entity.ts` + BA 七表 `entities.ts`），本文件只做聚合不做定义。
  * 演变（ORM 修宪案 B）：切片 2 仅 `Post` → 切片 3b BA 七表并入 → 切片 3c-ii 四表运行时扁平实体
  * 并入（与 BA 七表/Post **表集互斥无交叉**→无 `MikroORM.init` 注册冲突）→ RBAC 三表并入 →
@@ -41,23 +37,11 @@ import { EVENT_META, Event } from '../eventing/entities/event.entity';
  * ⚠ tsx 消费链文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  */
 
-/** META 双形运行时实体集（原三表 + rehierarchy 切片 B 新入 `Tenant`/`TenantSubscription`·均 buildRuntimeEntity 派生·并入 `MIKRO_SYS_ENTITIES`）。 */
-export const MIKRO_META_TABLE_ENTITIES = [
-  Workspace,
-  OrganizationSubscription,
-  Event,
-  Tenant,
-  TenantSubscription,
-];
+/** META 双形运行时实体集（rehierarchy 片二 K2：旧 `OrganizationSubscription` 退役·新层根表 `Tenant`/`TenantSubscription`·均 buildRuntimeEntity 派生·并入 `MIKRO_SYS_ENTITIES`）。 */
+export const MIKRO_META_TABLE_ENTITIES = [Workspace, Event, Tenant, TenantSubscription];
 
 /** META 双形元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
-export const META_TABLE_METAS = [
-  WORKSPACE_META,
-  ORGANIZATION_SUBSCRIPTION_META,
-  EVENT_META,
-  TENANT_META,
-  TENANT_SUBSCRIPTION_META,
-];
+export const META_TABLE_METAS = [WORKSPACE_META, EVENT_META, TENANT_META, TENANT_SUBSCRIPTION_META];
 
 /** RBAC 三表元数据（迁移装配可消费）。 */
 export const RBAC_TABLE_METAS = [

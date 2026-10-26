@@ -202,8 +202,8 @@ export class MikroOrganizationGovernanceRepository
 
   async exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null> {
     const em = await this.mikro.fork();
-    // 租户本体（BA 面全列 + 归位后的 `status` 真列）；**不按 status 过滤**——
-    // deleted 终态可导（S5 软删取证用途·NFR-6）。归列后生命周期态在 organization.status 真列。
+    // 租户本体（BA 面全列 + 自有 `status` 真列）；**不按 status 过滤**——
+    // deleted 终态可导（S5 软删取证用途·NFR-6）。片二 K1：治理生命周期权威态已上移归位 tenant.status，organization.status 降为组织自有轻量态。
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return null;
     const organization: OrganizationDataExport['organization'] = {
@@ -303,8 +303,8 @@ export class MikroOrganizationGovernanceRepository
   }
 
   async destroyTenant(tenantId: string): Promise<{ purgedOrgs: number }> {
-    // 租户硬删连带：先清名下所有组织（member/invitation/workspace/organization_subscription/post 由 DB FK
-    // cascade 自动消灭），再删租户本体（其名下 `tenant_subscription` 经 FK `onDelete:cascade` 随租户灭·不跨上下手）。
+    // 租户硬删连带：先清名下所有组织（member/invitation/workspace/post 由 DB FK
+    // cascade 自动消灭·片二 K2 旧 organization_subscription 表已 DROP），再删租户本体（其名下 `tenant_subscription` 经 FK `onDelete:cascade` 随租户灭·不跨上下手）。
     // 均 nativeDelete＝纯 SQL DELETE（R-B3·非 em.remove 免 ORM 级联分歧·单一卡点）。名下组织采 {$or:[{tenantId},{id:tenantId}]} 折叠——含 expand 段未盖章的 1:1 骨架。
     const em = await this.mikro.fork();
     const orgRows = (await em.find(

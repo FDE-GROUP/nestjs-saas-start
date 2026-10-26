@@ -182,8 +182,8 @@ describe('现树恒等（真实源码实扫·SSOT ↔ 代码）', () => {
       findTableBlocks(f.slice(root.length + 1), readFileSync(f, 'utf8')),
     );
     // 自检锚：SSOT 清单非空且判据在现树恒等（漏登/僵尸/豁免腐烂零项）。
-    // rehierarchy C 换轴重登后在册 ≥ 9（含 organization 本体 + tenant_subscription）。
-    expect(TENANT_SCOPED_TABLES.length).toBeGreaterThanOrEqual(9);
+    // rehierarchy 片二 K2 旧 `organization_subscription` 整表 DROP 后在册 ≥ 8（含 organization 本体 + tenant_subscription）。
+    expect(TENANT_SCOPED_TABLES.length).toBeGreaterThanOrEqual(8);
     // 豁免面现为空是初始实扫真相（无租户列的容器根不得误入豁免·organization 初稿误分类教训）。
     expect(TENANT_SCOPED_EXEMPT_TABLES).toEqual([]);
     expect(findRegistryViolations(blocks)).toEqual([]);
