@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ConflictException, Inject } from '@nestjs/common';
@@ -43,7 +43,7 @@ export class BindOrganizationOdooCompanyCommandHandler
   ): Promise<OrganizationOdooBindingReadModel | null> {
     const admission = await this.governance.findOrganizationAdmission(command.organizationId);
     if (admission === null) return null;
-    if (admission !== ORGANIZATION_STATUS.ACTIVE) {
+    if (admission !== TENANCY_STATUS.ACTIVE) {
       throw new ConflictException(
         `Only active organizations can bind an Odoo company (status: ${admission})`,
         { errorCode: ERROR_CODES.ORG_ILLEGAL_TRANSITION },

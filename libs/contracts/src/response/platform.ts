@@ -1,13 +1,10 @@
 import { z } from 'zod';
-import {
-  ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
-  ORGANIZATION_STATUS_VALUES,
-} from './organizations';
+import { ORGANIZATION_ODOO_BINDING_STATUS_VALUES, TENANCY_STATUS_VALUES } from './organizations';
 import { offsetPageSchema } from './page';
 
 /**
  * 平台治理面响应契约（S7b·真相源 = platform-tenants / platform-users 各 controller 返回类型·
- * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `ORGANIZATION_STATUS_VALUES`（UserStatus ≡ OrganizationStatus 别名）。
+ * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `TENANCY_STATUS_VALUES`（UserStatus ≡ TenancyStatus 别名）。
  *
  * rehierarchy 片一（治理台改锚 tenant）：跨租治理列表/详情/生命周期改以 **tenant 主键**
  * （审批准入态权威归位住 `tenant.status`·切片 E）；组织降级为租户名册下的下钻/绑定面（诊断/Odoo 绑定仍 org 级）。
@@ -24,7 +21,7 @@ export const platformTenantRowSchema = z.object({
   name: z.string(),
   slug: z.string(),
   /** 租户准入生命周期状态（无记录视同 active）。 */
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
   /** 该租户名下组织数量（一租多组织可见）。 */
   organizationCount: z.number(),
   createdAt: z.instanceof(Date),
@@ -47,7 +44,7 @@ export const platformTenantOrganizationSchema = z.object({
   organizationId: z.string(),
   name: z.string(),
   slug: z.string(),
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
   odooCompanyId: z.number().int().nullable(),
   odooBindingStatus: z.enum(ORGANIZATION_ODOO_BINDING_STATUS_VALUES).nullable(),
   odooCompanyName: z.string().nullable(),
@@ -63,7 +60,7 @@ export const platformTenantDetailSchema = z.object({
   tenantId: z.string(),
   name: z.string(),
   slug: z.string(),
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
   createdAt: z.instanceof(Date),
   organizations: z.array(platformTenantOrganizationSchema),
 });
@@ -78,7 +75,7 @@ export const platformOrganizationDrillRowSchema = z.object({
   organizationId: z.string(),
   name: z.string(),
   slug: z.string(),
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
   createdAt: z.instanceof(Date),
 });
 
@@ -103,7 +100,7 @@ export const organizationDiagnosticsSchema = z.object({
 export const tenantGovernanceResultSchema = z.object({
   /** 目标租户 id。 */
   tenantId: z.string(),
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
 });
 export type TenantGovernanceResultView = z.infer<typeof tenantGovernanceResultSchema>;
 
@@ -132,7 +129,7 @@ export const platformUserRowSchema = z.object({
   name: z.string(),
   email: z.string(),
   /** 治理状态（无记录视同 active）。 */
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
   createdAt: z.instanceof(Date),
 });
 export type PlatformUserRowView = z.infer<typeof platformUserRowSchema>;
@@ -152,5 +149,5 @@ export const platformUserPageSchema = offsetPageSchema(platformUserRowSchema);
 export const userGovernanceResultSchema = z.object({
   userId: z.string(),
   /** 迁移后的新状态。 */
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
 });

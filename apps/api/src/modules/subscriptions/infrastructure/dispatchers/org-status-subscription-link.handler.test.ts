@@ -1,6 +1,6 @@
 import { EVENT_TYPE_REGISTRY } from '@app/database/eventing/event-type-registry';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OrganizationStatusSubscriptionLinkHandler } from './org-status-subscription-link.handler';
@@ -11,7 +11,7 @@ import { OrganizationStatusSubscriptionLinkHandler } from './org-status-subscrip
  * 必须 === @EventsHandler 匹配类，否则 outbox 模式下事件永远投不到本 handler）。
  */
 
-function makeEvent(to: string, from: string | null = ORGANIZATION_STATUS.ACTIVE) {
+function makeEvent(to: string, from: string | null = TENANCY_STATUS.ACTIVE) {
   return new OrganizationStatusTransitionedEvent({
     aggregateId: 'org-9',
     payload: { from: from as never, to: to as never, actorId: 'op-1' },
@@ -31,7 +31,7 @@ describe('OrganizationStatusSubscriptionLinkHandler（治理档消费者）', ()
 
   it('suspend → active 行收敛为 suspended（终态收敛式调用·显式 organizationId 取事件 aggregateId）', async () => {
     const { handler, convergeStatus } = makeHandler();
-    await handler.handle(makeEvent(ORGANIZATION_STATUS.SUSPENDED));
+    await handler.handle(makeEvent(TENANCY_STATUS.SUSPENDED));
     expect(convergeStatus).toHaveBeenCalledExactlyOnceWith(
       'org-9',
       SUBSCRIPTION_STATUS.ACTIVE,
@@ -41,7 +41,7 @@ describe('OrganizationStatusSubscriptionLinkHandler（治理档消费者）', ()
 
   it('resume/approve(to=active) → 仅回收 suspended 行，不回溯历史 cancelled', async () => {
     const { handler, convergeStatus } = makeHandler();
-    await handler.handle(makeEvent(ORGANIZATION_STATUS.ACTIVE, ORGANIZATION_STATUS.SUSPENDED));
+    await handler.handle(makeEvent(TENANCY_STATUS.ACTIVE, TENANCY_STATUS.SUSPENDED));
     expect(convergeStatus).toHaveBeenCalledExactlyOnceWith(
       'org-9',
       SUBSCRIPTION_STATUS.SUSPENDED,
@@ -51,14 +51,14 @@ describe('OrganizationStatusSubscriptionLinkHandler（治理档消费者）', ()
 
   it('deleted / pending_approval → 零 converge 调用（FK cascade 兜底 / 时序不可能）', async () => {
     const { handler, convergeStatus } = makeHandler();
-    await handler.handle(makeEvent(ORGANIZATION_STATUS.DELETED));
-    await handler.handle(makeEvent(ORGANIZATION_STATUS.PENDING));
+    await handler.handle(makeEvent(TENANCY_STATUS.DELETED));
+    await handler.handle(makeEvent(TENANCY_STATUS.PENDING));
     expect(convergeStatus).not.toHaveBeenCalled();
   });
 
   it('幂等（at-least-once 硬要求 · ES R3a ⓑ 契约锁）：同事件重投 N 次 = 同样 N 次【同参数】收敛调用且零异常——幂等归端口契约（changed=false 即 no-op），handler 不计数不分叉', async () => {
     const { handler, convergeStatus } = makeHandler();
-    const ev = makeEvent(ORGANIZATION_STATUS.SUSPENDED);
+    const ev = makeEvent(TENANCY_STATUS.SUSPENDED);
     convergeStatus.mockResolvedValueOnce(true).mockResolvedValue(false);
     await handler.handle(ev);
     await handler.handle(ev); // 重投：端口返 false（无 from 行）→ 行为不变、零副作用

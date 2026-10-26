@@ -7,7 +7,7 @@ import { Event } from '@app/database/eventing/entities/event.entity';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
@@ -198,14 +198,14 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
             batch.map((e) => {
               if (!(e instanceof OrganizationStatusTransitionedEvent)) return undefined;
               const to = e.payload.to;
-              if (to === ORGANIZATION_STATUS.SUSPENDED) {
+              if (to === TENANCY_STATUS.SUSPENDED) {
                 return convergeStatus(
                   e.aggregateId,
                   SUBSCRIPTION_STATUS.ACTIVE,
                   SUBSCRIPTION_STATUS.SUSPENDED,
                 );
               }
-              if (to === ORGANIZATION_STATUS.ACTIVE) {
+              if (to === TENANCY_STATUS.ACTIVE) {
                 return convergeStatus(
                   e.aggregateId,
                   SUBSCRIPTION_STATUS.SUSPENDED,
@@ -224,7 +224,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
       id: tenantId,
       name: `E2E Link Tenant ${tenantId}`,
       slug: `e2e-link-${tenantId}`,
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: TENANCY_STATUS.ACTIVE,
       createdAt: new Date(),
       updatedAt: null,
     } as never);
@@ -262,7 +262,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   });
 
   it('suspend：outbox 行经 relay 投递 → 订阅行 active→suspended（真实 SQL 收敛）', async () => {
-    const ev = transitionEvent(ORGANIZATION_STATUS.SUSPENDED);
+    const ev = transitionEvent(TENANCY_STATUS.SUSPENDED);
     await uow.run(async () => {
       await store.append([ev]);
     });
@@ -288,7 +288,7 @@ gated('Tenant-status → subscription link real-DB round trip (治理档 S3 · e
   });
 
   it('resume：to=active 事件 → suspended 行回 active（可恢复语义闭环）', async () => {
-    const ev = transitionEvent(ORGANIZATION_STATUS.ACTIVE);
+    const ev = transitionEvent(TENANCY_STATUS.ACTIVE);
     await uow.run(async () => {
       await store.append([ev]);
     });

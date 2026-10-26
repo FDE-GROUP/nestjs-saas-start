@@ -1,6 +1,6 @@
 import { DomainEvent, type DomainEventProps } from '../../../../shared-kernel/domain/domain-event';
 import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-names';
-import type { OrganizationStatus } from '../organization-lifecycle';
+import type { TenancyStatus } from '../organization-lifecycle';
 
 /**
  * 租户 bootstrap 事件载荷（流起点快照）。
@@ -9,7 +9,7 @@ import type { OrganizationStatus } from '../organization-lifecycle';
  */
 export interface OrganizationBootstrappedPayload {
   /** 存量行成流时刻的治理态快照（当时 `tenant` 户籍表 `status` 真列原值·该旁表已随 consolidation 切片 B DROP）。 */
-  readonly status: OrganizationStatus;
+  readonly status: TenancyStatus;
   /** bootstrap 动作主体（运维脚本恒 `bootstrap`·审计留痕）。 */
   readonly actorId?: string;
 }

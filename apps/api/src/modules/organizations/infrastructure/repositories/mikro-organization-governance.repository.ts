@@ -10,8 +10,8 @@ import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.enti
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
-  ORGANIZATION_STATUS,
-  type OrganizationStatus,
+  TENANCY_STATUS,
+  type TenancyStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   ORGANIZATION_ODOO_BINDING_STATUS,
@@ -43,8 +43,8 @@ import type {
  * 本兑底仅在极端读不到列值时生效——与 `canTransition` 缺省/middleware deny-list 同口径
  *（治理生命周期权威态已上移归位 `tenant.status`）。
  */
-function effectiveStatus(status: OrganizationStatus | undefined): OrganizationStatus {
-  return status ?? ORGANIZATION_STATUS.ACTIVE;
+function effectiveStatus(status: TenancyStatus | undefined): TenancyStatus {
+  return status ?? TENANCY_STATUS.ACTIVE;
 }
 
 /**
@@ -78,7 +78,7 @@ export class MikroOrganizationGovernanceRepository
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: effectiveStatus(entity.status as OrganizationStatus),
+      status: effectiveStatus(entity.status as TenancyStatus),
       createdAt: entity.createdAt,
     };
   }
@@ -125,7 +125,7 @@ export class MikroOrganizationGovernanceRepository
         tenantId: t.id,
         name: t.name,
         slug: t.slug,
-        status: t.status as OrganizationStatus,
+        status: t.status as TenancyStatus,
         organizationCount: countByTenant.get(t.id) ?? 0,
         createdAt: t.createdAt,
       })),
@@ -171,7 +171,7 @@ export class MikroOrganizationGovernanceRepository
       organizationId: o.id,
       name: o.name,
       slug: o.slug,
-      status: effectiveStatus(o.status as OrganizationStatus),
+      status: effectiveStatus(o.status as TenancyStatus),
       odooCompanyId: o.odooCompanyId ?? null,
       odooBindingStatus: (o.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
       odooCompanyName: o.odooCompanyName ?? null,
@@ -180,7 +180,7 @@ export class MikroOrganizationGovernanceRepository
       tenantId: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      status: tenant.status as OrganizationStatus,
+      status: tenant.status as TenancyStatus,
       createdAt: tenant.createdAt,
       organizations,
     };
@@ -211,7 +211,7 @@ export class MikroOrganizationGovernanceRepository
       name: org.name,
       slug: org.slug,
       logo: org.logo ?? null,
-      status: effectiveStatus(org.status as OrganizationStatus),
+      status: effectiveStatus(org.status as TenancyStatus),
       metadata: org.metadata,
       createdAt: org.createdAt,
       updatedAt: org.updatedAt ?? null,
@@ -324,7 +324,7 @@ export class MikroOrganizationGovernanceRepository
    * 组织准入态读取（bind 门槛·rehierarchy 片一修读侧叠加键）：经 `organization.tenantId ?? id` 解析所属
    * 租户的 `tenant.status`（准入态归位·companion org 正确取租户态）；无租户行（防御）回落组织自有态。
    */
-  async findOrganizationAdmission(organizationId: string): Promise<OrganizationStatus | null> {
+  async findOrganizationAdmission(organizationId: string): Promise<TenancyStatus | null> {
     const em = await this.mikro.fork();
     const org = (await em.findOne(Organization, { id: organizationId } as never)) as {
       id: string;
@@ -335,9 +335,7 @@ export class MikroOrganizationGovernanceRepository
     const tenant = (await em.findOne(Tenant, {
       id: org.tenantId ?? org.id,
     } as never)) as { status: string } | null;
-    return tenant
-      ? (tenant.status as OrganizationStatus)
-      : effectiveStatus(org.status as OrganizationStatus);
+    return tenant ? (tenant.status as TenancyStatus) : effectiveStatus(org.status as TenancyStatus);
   }
 
   async bindOdooCompany(
@@ -402,7 +400,7 @@ export class MikroOrganizationGovernanceRepository
       odooBindingStatus: (org.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
       odooCompanyName: org.odooCompanyName ?? null,
       odooBoundAt: org.odooBoundAt ? new Date(org.odooBoundAt) : null,
-      organizationStatus: org.status as OrganizationStatus,
+      organizationStatus: org.status as TenancyStatus,
     };
   }
 

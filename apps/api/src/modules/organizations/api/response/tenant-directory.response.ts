@@ -1,11 +1,11 @@
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ApiProperty } from '@nestjs/swagger';
 import type { TenantDirectoryEntryView, TenantDirectoryView } from '@saas/contracts/index';
 import type {
   TenantDirectoryEntry,
   TenantDirectoryOrganization,
 } from '../../domain/repositories/tenant-directory.repository';
-import { ORGANIZATION_STATUS_ENUM } from './organization-application.response';
+import { TENANCY_STATUS_ENUM } from './organization-application.response';
 
 /**
  * 租户目录·组织条目响应（二级·归属标签·global-tenant-organization-rehierarchy 切片 E-F）。
@@ -31,8 +31,8 @@ export class TenantDirectoryEntryResponse {
   name!: string;
   @ApiProperty({ description: '租户 slug。' })
   slug!: string;
-  @ApiProperty({ enum: ORGANIZATION_STATUS_ENUM, description: '租户准入态。' })
-  status!: OrganizationStatus;
+  @ApiProperty({ enum: TENANCY_STATUS_ENUM, description: '租户准入态。' })
+  status!: TenancyStatus;
   @ApiProperty({
     type: () => [TenantDirectoryOrganizationResponse],
     description: '该租户下当前用户可见的组织集合。',

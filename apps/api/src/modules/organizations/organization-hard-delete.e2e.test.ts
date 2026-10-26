@@ -14,7 +14,7 @@ import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenan
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { CommandBus } from '@nestjs/cqrs';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -72,7 +72,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       id,
       name: `HD ${id}`,
       slug: `hd-${id}`,
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: TENANCY_STATUS.ACTIVE,
       createdAt: new Date(),
       updatedAt: null,
     } as never);
@@ -192,7 +192,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
   it('软删→硬删：六表 cascade 灭、tenant 事件补删、user 幸存；重复硬删 404 幂等', async () => {
     // ① 真软删（transition → deleted 终态）
     const soft = await commandBus.execute(new DeleteOrganizationCommand(orgId, userId));
-    expect(soft).toMatchObject({ tenantId: orgId, status: ORGANIZATION_STATUS.DELETED });
+    expect(soft).toMatchObject({ tenantId: orgId, status: TENANCY_STATUS.DELETED });
 
     // ② 真硬删（先补删事件后删主行）
     const result = await commandBus.execute(

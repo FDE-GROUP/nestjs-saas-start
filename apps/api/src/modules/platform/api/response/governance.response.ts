@@ -1,5 +1,5 @@
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { UserStatus } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
@@ -30,7 +30,7 @@ import type {
 } from '../../../organizations/domain/repositories/organization-governance.repository';
 import type { PlatformUserRow } from '../../../organizations/domain/repositories/user-governance.repository';
 
-const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
+const STATUS_VALUES = Object.values(TENANCY_STATUS);
 
 /**
  * 平台治理面租户列表行响应契约（F1 甲①）——schema 源，纯文档面零运行时。
@@ -38,7 +38,7 @@ const STATUS_VALUES = Object.values(ORGANIZATION_STATUS);
  * @remarks
  * 真相源 = 各 controller 实际返回类型（platform-tenants / platform-users）；
  * 漂移防线：文末编译期双向赋值锁（tsc 结构恒等·build 拓红），非 runtime 测。
- * 状态枚举复用 `@core` ORGANIZATION_STATUS 单源（UserStatus ≡ OrganizationStatus 别名）。
+ * 状态枚举复用 `@core` TENANCY_STATUS 单源（UserStatus ≡ TenancyStatus 别名）。
  * rehierarchy 片一（治理台改锚 tenant·准入态归位）：跨租治理行升为 **tenant 主键**（准入态权威住 `tenant.status`·名下组织计数）。
  * @public
  */
@@ -57,7 +57,7 @@ export class PlatformTenantRowResponse {
 
   /** 租户准入生命周期状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '准入态（无记录视同 active）。' })
-  status!: OrganizationStatus;
+  status!: TenancyStatus;
 
   /** 该租户名下组织数量。 */
   @ApiProperty({ description: '名下组织数量（一租多组织可见）。' })
@@ -119,7 +119,7 @@ export class PlatformTenantOrganizationResponse {
 
   /** 组织自有轻量态（canUseOdoo 裁决用·非准入态）。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '组织自有态。' })
-  status!: OrganizationStatus;
+  status!: TenancyStatus;
 
   /** 绑定的 Odoo 公司 id（未绑定 null）。 */
   @ApiProperty({ nullable: true, description: '绑定的 Odoo 公司 id（未绑定为 null）。' })
@@ -158,7 +158,7 @@ export class PlatformTenantDetailResponse {
 
   /** 租户准入生命周期状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '准入态（无记录视同 active）。' })
-  status!: OrganizationStatus;
+  status!: TenancyStatus;
 
   /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
@@ -193,7 +193,7 @@ export class PlatformOrganizationDrillRowResponse {
 
   /** 组织生命周期状态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '组织态（无记录视同 active）。' })
-  status!: OrganizationStatus;
+  status!: TenancyStatus;
 
   /** 创建时间。 */
   @ApiProperty({ format: 'date-time' })
@@ -250,7 +250,7 @@ export class TenantGovernanceResultResponse {
 
   /** 迁移后的租户准入态。 */
   @ApiProperty({ enum: STATUS_VALUES, description: '迁移后的准入态。' })
-  status!: OrganizationStatus;
+  status!: TenancyStatus;
 }
 
 const _tgrf: TenantGovernanceResultResponse = {} as TenantGovernanceResult;

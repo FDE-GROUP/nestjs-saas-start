@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ConflictException } from '@nestjs/common';
@@ -19,22 +19,22 @@ describe('ApproveOrganizationCommandHandler (S4/S5 · FR-1 严格迁移 · FR-6 
   it('transitions pending → active, returns the receipt and audits', async () => {
     const transition = vi.fn().mockResolvedValue({
       kind: 'ok',
-      previous: ORGANIZATION_STATUS.PENDING,
-      status: ORGANIZATION_STATUS.ACTIVE,
+      previous: TENANCY_STATUS.PENDING,
+      status: TENANCY_STATUS.ACTIVE,
     });
     const { handler, audit } = makeHandler(transition);
     await expect(handler.execute(new ApproveOrganizationCommand('org-1', 'op-1'))).resolves.toEqual(
       {
         organizationId: 'org-1',
-        status: ORGANIZATION_STATUS.ACTIVE,
+        status: TENANCY_STATUS.ACTIVE,
       },
     );
-    expect(transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.ACTIVE, {
+    expect(transition).toHaveBeenCalledWith('org-1', TENANCY_STATUS.ACTIVE, {
       actorId: 'op-1',
     });
     expect(audit.logOrganizationGovernance).toHaveBeenCalledWith('approve', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.ACTIVE,
     });
   });
 
@@ -50,16 +50,16 @@ describe('ApproveOrganizationCommandHandler (S4/S5 · FR-1 严格迁移 · FR-6 
   it('throws 409 on an illegal transition (e.g. already deleted) and audits the rejection', async () => {
     const transition = vi.fn().mockResolvedValue({
       kind: 'illegal',
-      from: ORGANIZATION_STATUS.DELETED,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.DELETED,
+      to: TENANCY_STATUS.ACTIVE,
     });
     const { handler, audit } = makeHandler(transition);
     await expect(
       handler.execute(new ApproveOrganizationCommand('org-1', 'op-1')),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(audit.logOrganizationGovernance).toHaveBeenCalledWith('approve', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.DELETED,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.DELETED,
+      to: TENANCY_STATUS.ACTIVE,
       error: 'illegal_transition',
     });
   });

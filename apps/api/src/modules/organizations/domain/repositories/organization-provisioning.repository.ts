@@ -1,4 +1,4 @@
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /** 租户开通网关端口的 DI 注入 token。 @public */
 export const ORGANIZATION_PROVISIONING_REPOSITORY = Symbol('ORGANIZATION_PROVISIONING_REPOSITORY');
@@ -11,7 +11,7 @@ export interface OrganizationProvisioningReceipt {
   /** 所属租户 id。 */
   organizationId: string;
   /** 开通回执的租户生命周期状态。 */
-  status: OrganizationStatus;
+  status: TenancyStatus;
 }
 
 /**

@@ -6,7 +6,7 @@ import {
   type OrganizationGovernanceRepository,
 } from '@app/modules/organizations/domain/repositories/organization-governance.repository';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   canUseOdoo,
   ORGANIZATION_ODOO_BINDING_STATUS,
@@ -94,7 +94,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
     await em.nativeUpdate(
       Organization,
       { id: orgSuspended } as never,
-      { status: ORGANIZATION_STATUS.SUSPENDED } as never,
+      { status: TENANCY_STATUS.SUSPENDED } as never,
     );
   }, 120000);
 
@@ -113,7 +113,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
     if (!row) return;
     expect(row.odooCompanyId).toBe(companyA);
     expect(row.odooBindingStatus).toBe(ORGANIZATION_ODOO_BINDING_STATUS.READY);
-    expect(row.organizationStatus).toBe(ORGANIZATION_STATUS.ACTIVE);
+    expect(row.organizationStatus).toBe(TENANCY_STATUS.ACTIVE);
     expect(
       canUseOdoo({
         status: row.organizationStatus,
@@ -146,7 +146,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
   it('④暂停租户携 ready 绑定：organizationStatus=suspended → canUseOdoo 假（治理态透传·防字段错位漏检）', async () => {
     const row = await reader.read(orgSuspended);
     expect(row?.odooBindingStatus).toBe(ORGANIZATION_ODOO_BINDING_STATUS.READY);
-    expect(row?.organizationStatus).toBe(ORGANIZATION_STATUS.SUSPENDED);
+    expect(row?.organizationStatus).toBe(TENANCY_STATUS.SUSPENDED);
     if (!row) return;
     expect(
       canUseOdoo({

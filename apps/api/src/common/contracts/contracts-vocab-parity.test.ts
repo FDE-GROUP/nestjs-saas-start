@@ -3,15 +3,15 @@ import {
   AUTHORIZATION_ACTION_VALUES,
   AUTHORIZATION_SUBJECT_VALUES,
 } from '@core/saas-kit/authorization/authorization-rules';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { ORGANIZATION_PLANS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import {
   AUTHORIZATION_ACTION_VALUES as CONTRACT_ACTION_VALUES,
   AUTHORIZATION_SUBJECT_VALUES as CONTRACT_SUBJECT_VALUES,
   ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
-  ORGANIZATION_STATUS_VALUES,
   PAYMENT_PROVIDER_VALUES,
+  TENANCY_STATUS_VALUES,
   TENANT_PLAN_IDS,
 } from '@saas/contracts';
 import { describe, expect, it } from 'vitest';
@@ -37,8 +37,8 @@ describe('@saas/contracts · wire 词汇与 @core SSOT 对拍', () => {
     expect(asSet(TENANT_PLAN_IDS)).toEqual(asSet(Object.keys(ORGANIZATION_PLANS)));
   });
 
-  it('租户生命周期状态与 @core ORGANIZATION_STATUS 值域逐字一致', () => {
-    expect(asSet(ORGANIZATION_STATUS_VALUES)).toEqual(asSet(Object.values(ORGANIZATION_STATUS)));
+  it('租户生命周期状态与 @core TENANCY_STATUS 值域逐字一致', () => {
+    expect(asSet(TENANCY_STATUS_VALUES)).toEqual(asSet(Object.values(TENANCY_STATUS)));
   });
 
   // module-org-odoo-company-mapping 切片 A：绑定态 wire 内联与 core 词汇同锁（另含声明序一致——

@@ -14,7 +14,7 @@ import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenan
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { CommandBus } from '@nestjs/cqrs';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
@@ -66,7 +66,7 @@ gated('平台租户治理台 e2e（一租多组织 cascade + 跨租可见 + susp
       id,
       name,
       slug: name.toLowerCase(),
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: TENANCY_STATUS.ACTIVE,
       createdAt: new Date(),
       updatedAt: null,
     } as never);
@@ -79,7 +79,7 @@ gated('平台租户治理台 e2e（一租多组织 cascade + 跨租可见 + susp
       name: `MT ${orgId}`,
       slug: `mt-${orgId}`,
       ...(tenantId ? { tenantId } : {}),
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: TENANCY_STATUS.ACTIVE,
     } as never);
     await em.insert(Member, {
       id: `e2e-mt-mem-${orgId}`,
@@ -194,7 +194,7 @@ gated('平台租户治理台 e2e（一租多组织 cascade + 跨租可见 + susp
     // companion 经 `tenantId ?? id` 折叠计数=2；1:1 骨架无 tenantId 回落 org.id 计数=1。
     expect(byId.get(multiTenantId)?.organizationCount).toBe(2);
     expect(byId.get(soloTenantId)?.organizationCount).toBe(1);
-    expect(byId.get(multiTenantId)?.status).toBe(ORGANIZATION_STATUS.ACTIVE);
+    expect(byId.get(multiTenantId)?.status).toBe(TENANCY_STATUS.ACTIVE);
   });
 
   it('findTenantDetail 名册含全部 companion org', async () => {
@@ -207,16 +207,16 @@ gated('平台租户治理台 e2e（一租多组织 cascade + 跨租可见 + susp
 
   it('suspend 租户 → companion org 读准入态=suspended（非其自有恒 active·改锚读侧反证）', async () => {
     const soft = await commandBus.execute(new SuspendOrganizationCommand(multiTenantId, userId));
-    expect(soft).toMatchObject({ tenantId: multiTenantId, status: ORGANIZATION_STATUS.SUSPENDED });
+    expect(soft).toMatchObject({ tenantId: multiTenantId, status: TENANCY_STATUS.SUSPENDED });
     // companion org 自有 org.status 仍 active（准入态只住 tenant.status·假设③）……
     const em = await mikro.fork();
     const orgA = (await em.findOne(Organization, { id: companionA } as never)) as unknown as {
       status: string;
     };
-    expect(orgA.status).toBe(ORGANIZATION_STATUS.ACTIVE);
+    expect(orgA.status).toBe(TENANCY_STATUS.ACTIVE);
     // ……但经租户解析的准入态正确回落 suspended（改锚前经 id==orgId 叠加会恒 active 的 bug 不复现）。
     const admission = await governance.findOrganizationAdmission(companionA);
-    expect(admission).toBe(ORGANIZATION_STATUS.SUSPENDED);
+    expect(admission).toBe(TENANCY_STATUS.SUSPENDED);
     // 租户停留 suspended（非 deleted）——供下一条前置闸反证 + 末条软删（suspended→deleted 合法）。
   });
 
@@ -231,7 +231,7 @@ gated('平台租户治理台 e2e（一租多组织 cascade + 跨租可见 + susp
   it('软删→硬删租户：名下所有 org 及子表 cascade 灭 + 订阅/租户本体清 + 事件双维补删 + user 幸存', async () => {
     // 先软删进 deleted 终态越过前置闸（封禁整个租户·非改各 org 自有态）
     const soft = await commandBus.execute(new DeleteOrganizationCommand(multiTenantId, userId));
-    expect(soft).toMatchObject({ tenantId: multiTenantId, status: ORGANIZATION_STATUS.DELETED });
+    expect(soft).toMatchObject({ tenantId: multiTenantId, status: TENANCY_STATUS.DELETED });
 
     // 硬删连带（对租户动作）
     const result = await commandBus.execute(

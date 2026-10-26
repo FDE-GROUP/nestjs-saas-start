@@ -1,6 +1,6 @@
 // S9 铁律：EVENT_STORE 为 Symbol token 必须值导入；EventStore 纯类型面可 import type
 
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { EVENT_STORE, type EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
 import {
@@ -56,7 +56,7 @@ export class DeleteOrganizationPermanentlyCommandHandler
   ): Promise<TenantHardDeleteResult | null> {
     const detail = await this.governance.findTenantDetail(command.tenantId);
     if (!detail) return null; // 不存在/已被硬删 → 404（幂等）
-    if (detail.status !== ORGANIZATION_STATUS.DELETED) {
+    if (detail.status !== TENANCY_STATUS.DELETED) {
       await this.audit.logOrganizationGovernance(
         'hard_delete',
         command.tenantId,
@@ -94,7 +94,7 @@ export class DeleteOrganizationPermanentlyCommandHandler
         command.tenantId,
         command.operatorId,
         {
-          from: ORGANIZATION_STATUS.DELETED,
+          from: TENANCY_STATUS.DELETED,
           error: 'already_gone',
         },
       );
@@ -106,7 +106,7 @@ export class DeleteOrganizationPermanentlyCommandHandler
       command.tenantId,
       command.operatorId,
       {
-        from: ORGANIZATION_STATUS.DELETED,
+        from: TENANCY_STATUS.DELETED,
         reason: `cascade purged ${purgedOrgs} orgs / ${purgedEvents} events`,
       },
     );

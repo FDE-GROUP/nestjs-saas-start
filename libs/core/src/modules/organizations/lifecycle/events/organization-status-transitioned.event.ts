@@ -1,6 +1,6 @@
 import { DomainEvent, type DomainEventProps } from '../../../../shared-kernel/domain/domain-event';
 import { DOMAIN_EVENTS } from '../../../../shared-kernel/domain/domain-event-names';
-import type { OrganizationStatus } from '../organization-lifecycle';
+import type { TenancyStatus } from '../organization-lifecycle';
 
 /**
  * 租户状态迁移事件载荷（迁移端点 + 治理主体/理由）。
@@ -9,9 +9,9 @@ import type { OrganizationStatus } from '../organization-lifecycle';
  */
 export interface OrganizationStatusTransitionedPayload {
   /** 迁移前状态；从未记录状态的行为 null（与 transition 返回的 previous===undefined 同口径）。 */
-  readonly from: OrganizationStatus | null;
+  readonly from: TenancyStatus | null;
   /** 迁移后的目标状态。 */
-  readonly to: OrganizationStatus;
+  readonly to: TenancyStatus;
   /** 治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱·§6-③）。 */
   readonly actorId?: string;
   /** 租户状态迁移原因。 */

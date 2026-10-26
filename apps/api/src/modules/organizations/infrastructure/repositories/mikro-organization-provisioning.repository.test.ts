@@ -2,7 +2,7 @@ import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroOrganizationProvisioningRepository } from './mikro-organization-provisioning.repository';
@@ -75,7 +75,7 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     expect(entity).toBe(Organization);
     expect(where).toEqual({ id: 'org-new' });
     expect(data).toEqual({ tenantId: 'org-new' });
-    expect(receipt).toEqual({ organizationId: 'org-new', status: ORGANIZATION_STATUS.PENDING });
+    expect(receipt).toEqual({ organizationId: 'org-new', status: TENANCY_STATUS.PENDING });
     expect(spies.nativeDelete).not.toHaveBeenCalled();
     // 治理换轴（E-F）：专属租户行携 pending_approval（审批对象）·id=orgId（1:1 骨架）。
     const tenantRows = spies.created.filter((c) => c.entity === Tenant);
@@ -84,7 +84,7 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
       id: 'org-new',
       name: 'Acme',
       slug: 'acme',
-      status: ORGANIZATION_STATUS.PENDING,
+      status: TENANCY_STATUS.PENDING,
     });
   });
 

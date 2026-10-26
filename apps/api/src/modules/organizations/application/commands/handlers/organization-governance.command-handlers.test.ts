@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ConflictException } from '@nestjs/common';
@@ -25,22 +25,22 @@ describe('SuspendOrganizationCommandHandler (S5 · FR-6/FR-10)', () => {
   it('transitions to suspended and audits', async () => {
     const d = deps({
       kind: 'ok',
-      previous: ORGANIZATION_STATUS.ACTIVE,
-      status: ORGANIZATION_STATUS.SUSPENDED,
+      previous: TENANCY_STATUS.ACTIVE,
+      status: TENANCY_STATUS.SUSPENDED,
     });
     const handler = new SuspendOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new SuspendOrganizationCommand('org-1', 'op-1'))).resolves.toEqual(
       {
         tenantId: 'org-1',
-        status: ORGANIZATION_STATUS.SUSPENDED,
+        status: TENANCY_STATUS.SUSPENDED,
       },
     );
-    expect(d.transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.SUSPENDED, {
+    expect(d.transition).toHaveBeenCalledWith('org-1', TENANCY_STATUS.SUSPENDED, {
       actorId: 'op-1',
     });
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.ACTIVE,
-      to: ORGANIZATION_STATUS.SUSPENDED,
+      from: TENANCY_STATUS.ACTIVE,
+      to: TENANCY_STATUS.SUSPENDED,
     });
   });
 
@@ -56,16 +56,16 @@ describe('SuspendOrganizationCommandHandler (S5 · FR-6/FR-10)', () => {
   it('409s and audits an illegal transition', async () => {
     const d = deps({
       kind: 'illegal',
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.SUSPENDED,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.SUSPENDED,
     });
     const handler = new SuspendOrganizationCommandHandler(d.status, d.audit);
     await expect(
       handler.execute(new SuspendOrganizationCommand('org-1', 'op-1')),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(d.auditSpy).toHaveBeenCalledWith('suspend', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.SUSPENDED,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.SUSPENDED,
       error: 'illegal_transition',
     });
   });
@@ -75,20 +75,20 @@ describe('ResumeOrganizationCommandHandler (S5 · FR-6)', () => {
   it('transitions suspended → active and audits', async () => {
     const d = deps({
       kind: 'ok',
-      previous: ORGANIZATION_STATUS.SUSPENDED,
-      status: ORGANIZATION_STATUS.ACTIVE,
+      previous: TENANCY_STATUS.SUSPENDED,
+      status: TENANCY_STATUS.ACTIVE,
     });
     const handler = new ResumeOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new ResumeOrganizationCommand('org-1', 'op-1'))).resolves.toEqual({
       tenantId: 'org-1',
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: TENANCY_STATUS.ACTIVE,
     });
-    expect(d.transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.ACTIVE, {
+    expect(d.transition).toHaveBeenCalledWith('org-1', TENANCY_STATUS.ACTIVE, {
       actorId: 'op-1',
     });
     expect(d.auditSpy).toHaveBeenCalledWith('resume', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.SUSPENDED,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.SUSPENDED,
+      to: TENANCY_STATUS.ACTIVE,
     });
   });
 });
@@ -97,29 +97,29 @@ describe('DeleteOrganizationCommandHandler (S5 · FR-6/NFR-6 软删)', () => {
   it('transitions to deleted terminal and audits', async () => {
     const d = deps({
       kind: 'ok',
-      previous: ORGANIZATION_STATUS.ACTIVE,
-      status: ORGANIZATION_STATUS.DELETED,
+      previous: TENANCY_STATUS.ACTIVE,
+      status: TENANCY_STATUS.DELETED,
     });
     const handler = new DeleteOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new DeleteOrganizationCommand('org-1', 'op-1'))).resolves.toEqual({
       tenantId: 'org-1',
-      status: ORGANIZATION_STATUS.DELETED,
+      status: TENANCY_STATUS.DELETED,
     });
-    expect(d.transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.DELETED, {
+    expect(d.transition).toHaveBeenCalledWith('org-1', TENANCY_STATUS.DELETED, {
       actorId: 'op-1',
       reason: 'platform_delete',
     });
     expect(d.auditSpy).toHaveBeenCalledWith('delete', 'org-1', 'op-1', {
-      from: ORGANIZATION_STATUS.ACTIVE,
-      to: ORGANIZATION_STATUS.DELETED,
+      from: TENANCY_STATUS.ACTIVE,
+      to: TENANCY_STATUS.DELETED,
     });
   });
 
   it('409s when re-deleting an already-deleted tenant', async () => {
     const d = deps({
       kind: 'illegal',
-      from: ORGANIZATION_STATUS.DELETED,
-      to: ORGANIZATION_STATUS.DELETED,
+      from: TENANCY_STATUS.DELETED,
+      to: TENANCY_STATUS.DELETED,
     });
     const handler = new DeleteOrganizationCommandHandler(d.status, d.audit);
     await expect(

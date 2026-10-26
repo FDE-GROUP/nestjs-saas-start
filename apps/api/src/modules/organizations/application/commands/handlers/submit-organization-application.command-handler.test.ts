@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { describe, expect, it, vi } from 'vitest';
 import type { OrganizationProvisioningRepository } from '../../../domain/repositories/organization-provisioning.repository';
 import { SubmitOrganizationApplicationCommand } from '../submit-organization-application.command';
@@ -8,7 +8,7 @@ describe('SubmitOrganizationApplicationCommandHandler (S4 · FR-1)', () => {
   it('routes to the provisioning gateway and projects the receipt', async () => {
     const submit = vi
       .fn()
-      .mockResolvedValue({ organizationId: 'org-9', status: ORGANIZATION_STATUS.PENDING });
+      .mockResolvedValue({ organizationId: 'org-9', status: TENANCY_STATUS.PENDING });
     const handler = new SubmitOrganizationApplicationCommandHandler({
       submit,
     } as unknown as OrganizationProvisioningRepository);
@@ -17,7 +17,7 @@ describe('SubmitOrganizationApplicationCommandHandler (S4 · FR-1)', () => {
       handler.execute(new SubmitOrganizationApplicationCommand('u1', 'Acme', 'acme')),
     ).resolves.toEqual({
       organizationId: 'org-9',
-      status: ORGANIZATION_STATUS.PENDING,
+      status: TENANCY_STATUS.PENDING,
     });
     expect(submit).toHaveBeenCalledWith('u1', 'Acme', 'acme');
   });

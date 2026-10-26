@@ -1,4 +1,4 @@
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /**
  * `TenantDirectoryRepository` 端口的 DI 注入 token（领域自持·依赖倒置）。
@@ -24,8 +24,8 @@ export interface TenantDirectoryEntry {
   readonly tenantId: string;
   readonly name: string;
   readonly slug: string;
-  /** 租户准入态（治理权威已上移归位 tenant.status·沿 ORGANIZATION_STATUS 值域）。 */
-  readonly status: OrganizationStatus;
+  /** 租户准入态（治理权威已上移归位 tenant.status·沿 TENANCY_STATUS 值域）。 */
+  readonly status: TenancyStatus;
   readonly organizations: TenantDirectoryOrganization[];
 }
 

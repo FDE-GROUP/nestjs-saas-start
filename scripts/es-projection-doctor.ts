@@ -26,7 +26,7 @@
  */
 import '../apps/api/src/load-env.ts';
 
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { replaySubscriptionLifecycle } from '@core/saas-kit/modules/subscriptions/domain/subscription-lifecycle-fold';
 import { SUBSCRIPTION_STATUS } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
 import type { EntityManager } from '@mikro-orm/core';
@@ -146,13 +146,9 @@ interface LinkViolation {
  */
 async function scanLinkInvariant(em: EntityManager): Promise<LinkViolation[]> {
   // 租户态已归 `organization.status` 真列（global-governance-lifecycle-consolidation 切片 B·原 tenant 旁表 DROP）。
-  const suspended = (await em.find(
-    Organization,
-    { status: ORGANIZATION_STATUS.SUSPENDED } as never,
-    {
-      orderBy: { id: QueryOrder.ASC },
-    },
-  )) as Array<{ id: string }>;
+  const suspended = (await em.find(Organization, { status: TENANCY_STATUS.SUSPENDED } as never, {
+    orderBy: { id: QueryOrder.ASC },
+  })) as Array<{ id: string }>;
   const violations: LinkViolation[] = [];
   for (const t of suspended) {
     const activeSubs = await em.count(TenantSubscription, {

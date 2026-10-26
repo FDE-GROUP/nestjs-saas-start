@@ -1,4 +1,4 @@
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 
 /**
  * 租户生命周期治理返回形状（CQRS 读侧·rehierarchy 片一 治理台改锚 tenant）。
@@ -11,7 +11,7 @@ export interface TenantGovernanceResult {
   /** 目标租户 id。 */
   tenantId: string;
   /** 迁移后的租户准入态。 */
-  status: OrganizationStatus;
+  status: TenancyStatus;
 }
 
 /**

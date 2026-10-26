@@ -15,7 +15,7 @@
  *
  * @public
  */
-import { ORGANIZATION_STATUS, type OrganizationStatus } from './organization-lifecycle';
+import { TENANCY_STATUS, type TenancyStatus } from './organization-lifecycle';
 
 /**
  * Odoo 公司绑定生命周期状态词汇（值域单源·迁移工件 CHECK 表达式与本声明序同式，
@@ -49,7 +49,7 @@ export type OrganizationOdooBindingStatus =
  */
 export interface OdooUsabilityInput {
   /** 租户生命周期态（undefined 视同 active·与 lifecycle deny-list 同口径）。 */
-  status?: OrganizationStatus | undefined;
+  status?: TenancyStatus | undefined;
   /** 绑定态（null/undefined = 未绑定）。 */
   odooBindingStatus?: OrganizationOdooBindingStatus | null | undefined;
   /** 绑定的 Odoo 公司 id（平行映射外键·跨库弱引用）。 */
@@ -69,7 +69,7 @@ export interface OdooUsabilityInput {
  * @public
  */
 export function canUseOdoo(input: OdooUsabilityInput): boolean {
-  const orgActive = (input.status ?? ORGANIZATION_STATUS.ACTIVE) === ORGANIZATION_STATUS.ACTIVE;
+  const orgActive = (input.status ?? TENANCY_STATUS.ACTIVE) === TENANCY_STATUS.ACTIVE;
   return (
     orgActive &&
     input.odooBindingStatus === ORGANIZATION_ODOO_BINDING_STATUS.READY &&

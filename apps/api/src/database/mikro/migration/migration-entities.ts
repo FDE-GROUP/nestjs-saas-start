@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
@@ -64,7 +64,7 @@ export const User = defineEntity({
       .default('USER'),
     // global-governance-lifecycle-consolidation 切片 C：用户治理生命周期态归 user 真列
     //（原 `user_status` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·deny-list 兑底转真列）。
-    status: p.text().default(ORGANIZATION_STATUS.ACTIVE),
+    status: p.text().default(TENANCY_STATUS.ACTIVE),
     statusReason: p.text().nullable(),
     createdAt: tsNow(),
     updatedAt: ts(),
@@ -75,9 +75,9 @@ export const User = defineEntity({
     {
       name: 'user_status_check',
       expression: `status IN (${[
-        ORGANIZATION_STATUS.ACTIVE,
-        ORGANIZATION_STATUS.SUSPENDED,
-        ORGANIZATION_STATUS.DELETED,
+        TENANCY_STATUS.ACTIVE,
+        TENANCY_STATUS.SUSPENDED,
+        TENANCY_STATUS.DELETED,
       ]
         .map((v) => `'${v}'`)
         .join(', ')})`,
@@ -161,7 +161,7 @@ export const Organization = defineEntity({
     metadata: p.json<Record<string, any>>().nullable(),
     // global-governance-lifecycle-consolidation 切片 B：租户治理生命周期态归 organization 真列
     //（原 `tenant` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·堵 O1）。
-    status: p.text().default(ORGANIZATION_STATUS.ACTIVE),
+    status: p.text().default(TENANCY_STATUS.ACTIVE),
     // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A）：与运行时 `ba-org.entities.ts`
     // 同列集同式（本集不导入运行时实体，双写漂移由 generate 非空 diff + gated e2e 库语义测捕获）。
     // 公司 id 为跨库弱引用列（无 FK）；unique=一组织一公司双射的库级兜底。
@@ -172,12 +172,12 @@ export const Organization = defineEntity({
     odooFailureReason: p.text().nullable(),
   },
   uniques: [{ name: 'organization_odooCompanyId_unique', properties: ['odooCompanyId'] }],
-  // 值域自 `ORGANIZATION_STATUS`/`ORGANIZATION_ODOO_BINDING_STATUS` 单源生成·与运行时
+  // 值域自 `TENANCY_STATUS`/`ORGANIZATION_ODOO_BINDING_STATUS` 单源生成·与运行时
   // ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
   checks: [
     {
       name: 'organization_status_check',
-      expression: `status IN (${Object.values(ORGANIZATION_STATUS)
+      expression: `status IN (${Object.values(TENANCY_STATUS)
         .map((v) => `'${v}'`)
         .join(', ')})`,
     },

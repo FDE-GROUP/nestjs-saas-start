@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { AuditLogEntry } from '@core/saas-kit/shared-kernel/audit/audit-log.store';
 import { Logger } from '@nestjs/common';
@@ -18,8 +18,8 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
 
   it('已提交动作：pino 结构化载荷 + audit_log 落账（entityType=tenant）', async () => {
     await svc.logOrganizationGovernance('approve', 'orgA', 'op1', {
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.ACTIVE,
     });
     const payload = logSpy.mock.calls[0][0] as Record<string, unknown>;
     expect(payload).toMatchObject({
@@ -27,24 +27,24 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
       action: 'approve',
       organizationId: 'orgA',
       operatorId: 'op1',
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.ACTIVE,
     });
     expect(appended).toHaveLength(1);
     expect(appended[0]).toMatchObject({
       entityType: 'tenant',
       entityId: 'orgA',
       action: 'approve',
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.ACTIVE,
       actorId: 'op1',
     });
   });
 
   it('用户治理动作：落账 entityType=user（S6）', async () => {
     await svc.logUserGovernance('suspend', 'u1', 'op1', {
-      from: ORGANIZATION_STATUS.ACTIVE,
-      to: ORGANIZATION_STATUS.SUSPENDED,
+      from: TENANCY_STATUS.ACTIVE,
+      to: TENANCY_STATUS.SUSPENDED,
       reason: 'abuse',
     });
     expect(appended).toHaveLength(1);
@@ -58,8 +58,8 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
 
   it('失败尝试（携 error）：仅观测·不入耐久账本', async () => {
     await svc.logOrganizationGovernance('suspend', 'orgA', 'op1', {
-      from: ORGANIZATION_STATUS.PENDING,
-      to: ORGANIZATION_STATUS.SUSPENDED,
+      from: TENANCY_STATUS.PENDING,
+      to: TENANCY_STATUS.SUSPENDED,
       error: 'illegal_transition',
     });
     expect(logSpy).toHaveBeenCalledTimes(1);
@@ -68,19 +68,19 @@ describe('PlatformAuditService (S5 · FR-6 治理审计单点 · 切片 E 双通
 
   it('驳回/硬删无 to：from 落账、to 归 null', async () => {
     await svc.logOrganizationGovernance('hard_delete', 'orgC', 'op2', {
-      from: ORGANIZATION_STATUS.DELETED,
+      from: TENANCY_STATUS.DELETED,
     });
     expect(appended[0]).toMatchObject({
       entityId: 'orgC',
-      from: ORGANIZATION_STATUS.DELETED,
+      from: TENANCY_STATUS.DELETED,
       to: null,
     });
   });
 
   it('PII 最小化（负向）：账条目绝不含 email/姓名等个人数据字段', async () => {
     await svc.logUserGovernance('resume', 'u9', 'op1', {
-      from: ORGANIZATION_STATUS.SUSPENDED,
-      to: ORGANIZATION_STATUS.ACTIVE,
+      from: TENANCY_STATUS.SUSPENDED,
+      to: TENANCY_STATUS.ACTIVE,
     });
     const entry = appended[0] as unknown as Record<string, unknown>;
     for (const forbidden of ['email', 'name', 'phone', 'password', 'user', 'operator']) {

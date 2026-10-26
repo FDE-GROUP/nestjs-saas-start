@@ -4,11 +4,11 @@ import { z } from 'zod';
  * 租户生命周期状态 wire 值集（**传输层内联单源**）。
  *
  * @remarks
- * ⚠ 状态值域 SSOT 在 `@core` ORGANIZATION_STATUS·此处内联字面量由 contracts-vocab-parity 对拍锁漂移。
+ * ⚠ 状态值域 SSOT 在 `@core` TENANCY_STATUS·此处内联字面量由 contracts-vocab-parity 对拍锁漂移。
  *
  * @public
  */
-export const ORGANIZATION_STATUS_VALUES = [
+export const TENANCY_STATUS_VALUES = [
   'pending_approval',
   'active',
   'suspended',
@@ -24,7 +24,7 @@ export const ORGANIZATION_STATUS_VALUES = [
 export const organizationApplicationViewSchema = z.object({
   /** organization 主键（= 租户 id）。 */
   organizationId: z.string(),
-  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  status: z.enum(TENANCY_STATUS_VALUES),
 });
 export type OrganizationApplicationView = z.infer<typeof organizationApplicationViewSchema>;
 
@@ -33,7 +33,7 @@ export type OrganizationApplicationView = z.infer<typeof organizationApplication
  *
  * @remarks
  * ⚠ 状态值域 SSOT 在 `@core` ORGANIZATION_ODOO_BINDING_STATUS·此处内联字面量由
- * contracts-vocab-parity 对拍锁漂移（沿 `ORGANIZATION_STATUS_VALUES` 同法）。
+ * contracts-vocab-parity 对拍锁漂移（沿 `TENANCY_STATUS_VALUES` 同法）。
  *
  * @public
  */

@@ -6,11 +6,7 @@ import {
 } from '../../../shared-kernel/domain/event-publisher.port';
 import { UNIT_OF_WORK, type UnitOfWork } from '../../../shared-kernel/domain/unit-of-work.port';
 import { OrganizationStatusTransitionedEvent } from './events/organization-status-transitioned.event';
-import {
-  canTransition,
-  isOrganizationBlocked,
-  type OrganizationStatus,
-} from './organization-lifecycle';
+import { canTransition, isTenancyBlocked, type TenancyStatus } from './organization-lifecycle';
 import { TENANT_STATUS_STORE, type TenantStatusStore } from './tenant-status.store';
 
 /**
@@ -19,9 +15,9 @@ import { TENANT_STATUS_STORE, type TenantStatusStore } from './tenant-status.sto
  * @public
  */
 export type TenantTransitionResult =
-  | { kind: 'ok'; previous: OrganizationStatus | undefined; status: OrganizationStatus }
+  | { kind: 'ok'; previous: TenancyStatus | undefined; status: TenancyStatus }
   | { kind: 'not-found' }
-  | { kind: 'illegal'; from: OrganizationStatus | undefined; to: OrganizationStatus };
+  | { kind: 'illegal'; from: TenancyStatus | undefined; to: TenancyStatus };
 
 /**
  * 迁移可选上下文（§6-③）：治理动作主体与理由，进事件 payload，不落存储新键。
@@ -62,7 +58,7 @@ export class TenantStatusService {
    * @param tenantId - 目标租户 id。
    * @returns 当前状态；无记录返回 `undefined`。
    */
-  async read(tenantId: string): Promise<OrganizationStatus | undefined> {
+  async read(tenantId: string): Promise<TenancyStatus | undefined> {
     return this.store.readStatus(tenantId);
   }
 
@@ -81,7 +77,7 @@ export class TenantStatusService {
    * @returns 命中失能态返回 `true`；否则 `false`。
    */
   async isBlocked(tenantId: string): Promise<boolean> {
-    return isOrganizationBlocked(await this.store.readStatus(tenantId));
+    return isTenancyBlocked(await this.store.readStatus(tenantId));
   }
 
   /**
@@ -98,7 +94,7 @@ export class TenantStatusService {
    */
   async transition(
     tenantId: string,
-    to: OrganizationStatus,
+    to: TenancyStatus,
     options?: TenantTransitionOptions,
   ): Promise<TenantTransitionResult> {
     return this.uow.run(async () => {

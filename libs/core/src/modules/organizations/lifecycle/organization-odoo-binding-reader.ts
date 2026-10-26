@@ -1,4 +1,4 @@
-import type { OrganizationStatus } from './organization-lifecycle';
+import type { TenancyStatus } from './organization-lifecycle';
 import type { OrganizationOdooBindingStatus } from './organization-odoo-binding';
 
 /**
@@ -37,7 +37,7 @@ export interface OrganizationOdooBindingRow {
   /** 绑定确立时间。 */
   odooBoundAt: Date | null;
   /** 租户治理生命周期态（可选·缺席视同 active）。 */
-  organizationStatus?: OrganizationStatus;
+  organizationStatus?: TenancyStatus;
 }
 
 /**

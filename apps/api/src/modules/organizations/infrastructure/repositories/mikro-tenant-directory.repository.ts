@@ -4,7 +4,7 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
-import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   TenantDirectoryEntry,
@@ -53,7 +53,7 @@ export class MikroTenantDirectoryRepository implements TenantDirectoryRepository
         tenantId: string;
         name: string;
         slug: string;
-        status: OrganizationStatus;
+        status: TenancyStatus;
         organizations: { organizationId: string; name: string; slug: string }[];
       }
     >();
@@ -66,7 +66,7 @@ export class MikroTenantDirectoryRepository implements TenantDirectoryRepository
           tenantId,
           name: tenant?.name ?? org.name,
           slug: tenant?.slug ?? org.slug,
-          status: (tenant?.status ?? org.status) as OrganizationStatus,
+          status: (tenant?.status ?? org.status) as TenancyStatus,
           organizations: [],
         };
         grouped.set(tenantId, entry);

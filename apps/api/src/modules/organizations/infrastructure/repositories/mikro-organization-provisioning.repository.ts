@@ -3,7 +3,7 @@ import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   OrganizationProvisioningReceipt,
@@ -61,7 +61,7 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
         id: organizationId,
         name,
         slug,
-        status: ORGANIZATION_STATUS.PENDING,
+        status: TENANCY_STATUS.PENDING,
         createdAt: new Date(),
         updatedAt: null,
       });
@@ -70,7 +70,7 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
     await em.nativeUpdate(Organization, { id: organizationId } as never, {
       tenantId: organizationId,
     });
-    return { organizationId, status: ORGANIZATION_STATUS.PENDING };
+    return { organizationId, status: TENANCY_STATUS.PENDING };
   }
 
   async remove(organizationId: string): Promise<boolean> {

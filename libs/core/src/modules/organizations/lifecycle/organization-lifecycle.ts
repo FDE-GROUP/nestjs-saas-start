@@ -2,24 +2,25 @@
  * 租户生命周期状态词汇（FR-1 · 方案 §9.4）·纯函数·零框架依赖。
  *
  * @remarks
- * 状态存 **`organization.status` 真列**（BA 共享表 additive 自撰域列·global-governance-lifecycle-
- * consolidation 切片 B·人裁 2026-10-23：原 global-tenant-entity-reclamation 切片 B（人签 2026-10-20）
- * 定自有 `tenant` 旁表真列、更早寄居 `organization.metadata` jsonb 的 S4 存储裁定均已修订——BA 缩回
- * 宪法「纯认证与成员数据源」定位·旁表随本案 DROP）。持久化原语经状态存储端口倒置（治理侧 `TenantStatusStore`·本文件只留纯态判定）。
+ * 生命周期真相源 = **`tenant.status`**（global-tenant-organization-rehierarchy 片一改锚·人裁 2026-10-26
+ * 「一租户多组织」层级 Tenant ⊃ Organization ⊃ Workspace·治理态上移租户级）；`organization.status` 已降为租内
+ * 自有轻量态（片二 K1·死服务 `OrganizationStatusService` 退役·不再作治理真相）。本枚举名 `TENANCY_STATUS`（片三
+ * 词汇复裁·旧名 `ORGANIZATION_STATUS`·**值域/wire 冻结不变**）；历史曾寄居 `organization.metadata` jsonb/自有旁表
+ * 的裁定均已修订（BA 缩回宪法「纯认证与成员数据源」定位）。持久化原语经状态存储端口倒置（治理侧 `TenantStatusStore`·本文件只留纯态判定）。
  * S4 落地 `pending_approval → active`（审批制准入）；`suspended`/`deleted` 迁移由 S5/S6
  * （经营者治理·fail-closed 暂停）驱动，此处先行定义。
  *
  * @public
  */
-export const ORGANIZATION_STATUS = {
+export const TENANCY_STATUS = {
   PENDING: 'pending_approval',
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
   DELETED: 'deleted',
 } as const;
 
-/** 租户生命周期状态的字面量联合（自 `ORGANIZATION_STATUS` 派生·契约详见该常量）。 @public */
-export type OrganizationStatus = (typeof ORGANIZATION_STATUS)[keyof typeof ORGANIZATION_STATUS];
+/** 租户生命周期状态的字面量联合（自 `TENANCY_STATUS` 派生·契约详见该常量）。 @public */
+export type TenancyStatus = (typeof TENANCY_STATUS)[keyof typeof TENANCY_STATUS];
 
 /**
  * 拦截判定（S4 中间件失能卡点·deny-list 语义）：仅显式处于失能态时拦截。
@@ -33,11 +34,11 @@ export type OrganizationStatus = (typeof ORGANIZATION_STATUS)[keyof typeof ORGAN
  * @returns 命中失能态返回 `true`；否则 `false`
  * @public
  */
-export function isOrganizationBlocked(status: OrganizationStatus | undefined): boolean {
+export function isTenancyBlocked(status: TenancyStatus | undefined): boolean {
   return (
-    status === ORGANIZATION_STATUS.PENDING ||
-    status === ORGANIZATION_STATUS.SUSPENDED ||
-    status === ORGANIZATION_STATUS.DELETED
+    status === TENANCY_STATUS.PENDING ||
+    status === TENANCY_STATUS.SUSPENDED ||
+    status === TENANCY_STATUS.DELETED
   );
 }
 
@@ -48,15 +49,15 @@ export function isOrganizationBlocked(status: OrganizationStatus | undefined): b
  * - suspended → active（恢复）/ deleted；deleted 终态（硬删留运维）
  * 无状态记录（存量/seeded·旧无户籍行）按 active 对待（与中间件 deny-list 同口径）。
  */
-const TRANSITIONS: Record<OrganizationStatus, readonly OrganizationStatus[]> = {
-  [ORGANIZATION_STATUS.PENDING]: [ORGANIZATION_STATUS.ACTIVE, ORGANIZATION_STATUS.DELETED],
-  [ORGANIZATION_STATUS.ACTIVE]: [
-    ORGANIZATION_STATUS.ACTIVE,
-    ORGANIZATION_STATUS.SUSPENDED,
-    ORGANIZATION_STATUS.DELETED,
+const TRANSITIONS: Record<TenancyStatus, readonly TenancyStatus[]> = {
+  [TENANCY_STATUS.PENDING]: [TENANCY_STATUS.ACTIVE, TENANCY_STATUS.DELETED],
+  [TENANCY_STATUS.ACTIVE]: [
+    TENANCY_STATUS.ACTIVE,
+    TENANCY_STATUS.SUSPENDED,
+    TENANCY_STATUS.DELETED,
   ],
-  [ORGANIZATION_STATUS.SUSPENDED]: [ORGANIZATION_STATUS.ACTIVE, ORGANIZATION_STATUS.DELETED],
-  [ORGANIZATION_STATUS.DELETED]: [],
+  [TENANCY_STATUS.SUSPENDED]: [TENANCY_STATUS.ACTIVE, TENANCY_STATUS.DELETED],
+  [TENANCY_STATUS.DELETED]: [],
 };
 
 /**
@@ -67,9 +68,6 @@ const TRANSITIONS: Record<OrganizationStatus, readonly OrganizationStatus[]> = {
  * @returns 合法迁移边返回 `true`；否则 `false`
  * @public
  */
-export function canTransition(
-  from: OrganizationStatus | undefined,
-  to: OrganizationStatus,
-): boolean {
-  return TRANSITIONS[from ?? ORGANIZATION_STATUS.ACTIVE].includes(to);
+export function canTransition(from: TenancyStatus | undefined, to: TenancyStatus): boolean {
+  return TRANSITIONS[from ?? TENANCY_STATUS.ACTIVE].includes(to);
 }

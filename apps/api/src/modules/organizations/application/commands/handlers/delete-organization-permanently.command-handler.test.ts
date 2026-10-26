@@ -1,6 +1,6 @@
 import {
-  ORGANIZATION_STATUS,
-  type OrganizationStatus,
+  TENANCY_STATUS,
+  type TenancyStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { EventStore } from '@core/saas-kit/shared-kernel/domain/event-store.port';
@@ -45,7 +45,7 @@ const handler = new DeleteOrganizationPermanentlyCommandHandler(governance, even
 
 function tenantDetail(
   tenantId: string,
-  status: OrganizationStatus,
+  status: TenancyStatus,
   orgIds: string[],
 ): PlatformTenantDetail {
   return {
@@ -88,7 +88,7 @@ describe('DeleteOrganizationPermanentlyCommandHandler (NFR-6 删除半 · 租户
       calls.push('uow');
       return fn();
     });
-    state.detail = tenantDetail('tenantA', ORGANIZATION_STATUS.DELETED, ['orgA', 'orgB']);
+    state.detail = tenantDetail('tenantA', TENANCY_STATUS.DELETED, ['orgA', 'orgB']);
     state.purgedOrgs = 2;
   });
 
@@ -114,12 +114,12 @@ describe('DeleteOrganizationPermanentlyCommandHandler (NFR-6 删除半 · 租户
       'hard_delete',
       'tenantA',
       'op1',
-      expect.objectContaining({ from: ORGANIZATION_STATUS.DELETED }),
+      expect.objectContaining({ from: TENANCY_STATUS.DELETED }),
     );
   });
 
   it('非 deleted 终态（active）→ 409 前置闸，绝不触事件/连带删', async () => {
-    state.detail = tenantDetail('tenantA', ORGANIZATION_STATUS.ACTIVE, ['orgA']);
+    state.detail = tenantDetail('tenantA', TENANCY_STATUS.ACTIVE, ['orgA']);
     await expect(
       handler.execute(new DeleteOrganizationPermanentlyCommand('tenantA', 'op1')),
     ).rejects.toThrow(ConflictException);

@@ -1,4 +1,4 @@
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 
@@ -17,8 +17,8 @@ import { defineEntity, p } from '@mikro-orm/core';
  * ba/ 区随本片消解）。
  */
 
-/** 值域 = `ORGANIZATION_STATUS` 声明序单源（与迁移工件 `organization_status_check` 同表达式·枚举漂移由下次 generate 非空 diff 捕获）。 */
-const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(ORGANIZATION_STATUS)
+/** 值域 = `TENANCY_STATUS` 声明序单源（与迁移工件 `organization_status_check` 同表达式·枚举漂移由下次 generate 非空 diff 捕获）。 */
+const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANCY_STATUS)
   .map((v) => `'${v}'`)
   .join(', ')})`;
 
@@ -46,7 +46,7 @@ export const Organization = defineEntity({
     // 租户治理生命周期态（global-governance-lifecycle-consolidation 切片 B·原 tenant.status 旁列归位）：
     // NOT NULL DEFAULT 'active'——缺席态消失（堵 O1 fail-open），BA 系统动作直建 org（seed/内部）落 'active'，
     // 自助建租经 provisioning.submit 显式覆写 'pending_approval'（S4 审批制）。
-    status: p.string().default(ORGANIZATION_STATUS.ACTIVE),
+    status: p.string().default(TENANCY_STATUS.ACTIVE),
     // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A·自撰域列·同 `status` 受列律 L1/L2 约束）：
     // 双库物理隔离下的平行映射载体（vision v0.10.0 §4.8/§6）；`odooCompanyId` 唯一=一组织一公司
     // 双射的库级兜底（应用层预检查前置，本约束是并发竞争终防线）；公司 id 为跨库弱引用列，无 FK。

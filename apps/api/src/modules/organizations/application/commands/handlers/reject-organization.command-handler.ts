@@ -1,7 +1,7 @@
 import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
 import {
-  ORGANIZATION_STATUS,
-  type OrganizationStatus,
+  TENANCY_STATUS,
+  type TenancyStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
@@ -62,10 +62,10 @@ export class RejectOrganizationCommandHandler
    */
   async execute(command: RejectOrganizationCommand): Promise<boolean> {
     // 前置态取自 `tenant.status` 真列（rehierarchy E-F 治理换轴·准入态归位·审批对象为租户准入）。
-    const current: OrganizationStatus | undefined = await this.status.read(command.organizationId);
+    const current: TenancyStatus | undefined = await this.status.read(command.organizationId);
     // 仅显式 pending 可驳回。read 对「不存在」返回 undefined，交给 remove 谓词裁决
     //（命中 0 行 → false → 控制层 404；驳回路径 以 pending 为唯一合法域，FR-1 语义）。
-    if (current !== undefined && current !== ORGANIZATION_STATUS.PENDING) {
+    if (current !== undefined && current !== TENANCY_STATUS.PENDING) {
       await this.audit.logOrganizationGovernance(
         'reject',
         command.organizationId,
@@ -101,8 +101,8 @@ export class RejectOrganizationCommandHandler
       command.organizationId,
       command.operatorId,
       {
-        from: removed ? ORGANIZATION_STATUS.PENDING : current,
-        to: ORGANIZATION_STATUS.DELETED,
+        from: removed ? TENANCY_STATUS.PENDING : current,
+        to: TENANCY_STATUS.DELETED,
         error: removed ? undefined : 'not_found',
       },
     );

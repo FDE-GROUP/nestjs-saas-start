@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { OutboxRelay } from '@app/database/eventing/outbox-relay';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
-import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -66,7 +66,7 @@ gated('organization.status 自有态真列库语义（片二 K1 · env-gated）'
   it('①默认入册：新 org status 默认 active（列缺省兑底·metadata 零我方寄居键）', async () => {
     const em = await mikro.fork();
     const org = await em.findOne(Organization, { id: orgId } as never);
-    expect(org?.status).toBe(ORGANIZATION_STATUS.ACTIVE);
+    expect(org?.status).toBe(TENANCY_STATUS.ACTIVE);
     // 自有态在 organization.status 真列·metadata 不携 status（BA 面零我方寄居键）
     expect((org?.metadata ?? {}) as Record<string, unknown>).not.toHaveProperty('status');
   });
@@ -84,10 +84,10 @@ gated('organization.status 自有态真列库语义（片二 K1 · env-gated）'
       Organization,
       { id: orgId } as never,
       {
-        status: ORGANIZATION_STATUS.SUSPENDED,
+        status: TENANCY_STATUS.SUSPENDED,
       } as never,
     );
     const org = await em.findOne(Organization, { id: orgId } as never);
-    expect(org?.status).toBe(ORGANIZATION_STATUS.SUSPENDED);
+    expect(org?.status).toBe(TENANCY_STATUS.SUSPENDED);
   });
 });
