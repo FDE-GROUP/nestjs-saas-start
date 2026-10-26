@@ -16,14 +16,16 @@
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><code>organizationId</code> == the active organization id resolved from the Better Auth session
-(<code>session.activeOrganizationId</code>, D4 session-cookie). <code>workspaceId</code> 由 S3 填充
-（x-workspace-id 选择器）；<code>role</code> 由 module-rbac-casl 丙裁落地——会话解析点从 BA
-membership 数据面预注入的活动租户成员角色（CASL 裁决输入·fail-closed 缺省 undefined）。</p>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>主轴 <code>tenantId</code> == 活动组织所属租户（global-tenant-organization-rehierarchy 切片 C 换轴：
+隔离硬边界从 organizationId 升为 tenantId·同租跨组织默认互见），由中间件经<strong>活动组织派生</strong>
+（BA <code>session.activeOrganizationId</code> 机制不动·§假设①）；<code>organizationId</code> 降为活动组织归属/派生源
+（写路径双盖章 + Odoo 绑定等组织级消费点仍需）。<code>workspaceId</code> 由 S3 填充（x-workspace-id 选择器）；
+<code>role</code> 由 module-rbac-casl 丙裁落地——会话解析点从 BA membership 数据面预注入的成员角色
+（CASL 裁决输入·fail-closed 缺省 undefined；rehierarchy 切片 C 后角色为<strong>租级</strong>词汇）。</p>
 </div></div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">TenantIsolationScope</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#organizationid">organizationId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#role">role</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#userid">userId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#workspaceid">workspaceId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">TenantIsolationScope</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#organizationid">organizationId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#role">role</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#tenantid">tenantId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#userid">userId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#workspaceid">workspaceId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L15">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:15</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L17">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:17</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -33,6 +35,7 @@ membership 数据面预注入的活动租户成员角色（CASL 裁决输入·fa
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#organizationid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id?</span></a>
 <a href="#role" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>role?</span></a>
+<a href="#tenantid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>tenant<wbr/>Id?</span></a>
 <a href="#userid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>user<wbr/>Id?</span></a>
 <a href="#workspaceid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>workspace<wbr/>Id?</span></a>
 </div></section></div></details></section></section>
@@ -42,31 +45,38 @@ membership 数据面预注入的活动租户成员角色（CASL 裁决输入·fa
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="organizationid"><code class="tsd-tag">Optional</code><span>organization<wbr/>Id</span><a href="#organizationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">organizationId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
-<div class="tsd-comment tsd-typography"><p>所属租户 id。</p>
+<div class="tsd-comment tsd-typography"><p>活动组织 id（归属/派生源·二级轴·非隔离边界）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L17">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:17</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L21">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:21</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="role"><code class="tsd-tag">Optional</code><span>role</span><a href="#role" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
-<div class="tsd-comment tsd-typography"><p>当前租户内成员角色。</p>
+<div class="tsd-comment tsd-typography"><p>当前租户内成员角色（租级）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L23">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:23</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L27">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:27</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="tenantid"><code class="tsd-tag">Optional</code><span>tenant<wbr/>Id</span><a href="#tenantid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">tenantId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
+<div class="tsd-comment tsd-typography"><p>所属租户 id（隔离硬轴·主轴·缺则下游 fail-closed 403）。</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L19">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:19</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="userid"><code class="tsd-tag">Optional</code><span>user<wbr/>Id</span><a href="#userid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">userId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>用户 id。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L21">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:21</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L25">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:25</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="workspaceid"><code class="tsd-tag">Optional</code><span>workspace<wbr/>Id</span><a href="#workspaceid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">workspaceId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>所属工作区 id。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L19">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:19</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation-scope.ts#L23">libs/core/src/tenant-isolation/tenant-isolation-scope.ts:23</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -82,7 +92,7 @@ membership 数据面预注入的活动租户成员角色（CASL 裁决输入·fa
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#organizationid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a><a href="#role"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>role</span></a><a href="#userid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>user<wbr/>Id</span></a><a href="#workspaceid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>workspace<wbr/>Id</span></a></div></details></div></details></div>
+<div><a href="#organizationid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a><a href="#role"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>role</span></a><a href="#tenantid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>tenant<wbr/>Id</span></a><a href="#userid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>user<wbr/>Id</span></a><a href="#workspaceid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>workspace<wbr/>Id</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../index.html">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

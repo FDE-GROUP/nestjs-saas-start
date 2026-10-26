@@ -18,12 +18,14 @@
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Tenant subscription repository port (domain-owned · global-tenancy S7 · FR-7/FR-8/D5).</p>
 <p>订阅是租户自有聚合，1:N 历史（每次改档新增一行·旧行留作升降级审计）。与 workspace port 同构：
-<strong>不暴露 organizationId 参数</strong>——所属租户由 adapter 从可信 AsyncLocalStorage 上下文注入（<code>requireActiveOrganizationId</code>
+<strong>不暴露 tenantId 参数</strong>——所属租户由 adapter 从可信 AsyncLocalStorage 上下文注入（<code>requireActiveTenantId</code>
 fail-closed·FR-5 单点），任何调用方都无法指向外部租户。配额裁决/限额读取属 <code>QuotaService</code>
 （tenancy 层单点），本 port 只管订阅行的写与历史读，避免限额逻辑散点。</p>
+<p>global-tenant-organization-rehierarchy 切片 D（计费单位上移）：订阅锚从 <code>organizationId</code> 升 <strong><code>tenantId</code></strong>——
+一租多组织后按租户总量控制席位/配额才是正当语义（<code>organization_subscription</code>→<code>tenant_subscription</code>）。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L16">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:16</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts#L19">libs/core/src/modules/subscriptions/domain/repositories/subscription.repository.ts:19</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

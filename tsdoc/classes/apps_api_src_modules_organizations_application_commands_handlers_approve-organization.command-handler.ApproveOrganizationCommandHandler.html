@@ -16,8 +16,8 @@
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>经 <code>OrganizationStatusService.transition</code>
-统一写回 <code>organization.status</code> 真列（禁散点手搓对象·S5 起按迁移表严格裁决）。
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>经 <code>TenantStatusService.transition</code>
+统一写回 <code>tenant.status</code> 真列（rehierarchy 切片 E-F 治理换轴归位·禁散点手搜对象·S5 起按迁移表严格裁决）。
 目标租户不存在 → null（控制层 404）；非法迁移（如已 deleted）→ 409。
 成功经 <code>PlatformAuditService</code> 产出结构化审计（FR-6）。
 架构精度修宪 S4：三分支样板收敛至 <code>governedOrganizationTransition</code> 共用用例（薄壳）。</p>
@@ -27,7 +27,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">ICommandHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="apps_api_src_modules_organizations_application_commands_approve-organization.command.ApproveOrganizationCommand.html" class="tsd-signature-type tsd-kind-class">ApproveOrganizationCommand</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts#L22">apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts:22</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts#L22">apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts:22</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -58,7 +58,7 @@
 <aside class="tsd-sources">
 <p>Implementation of ICommandHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts#L35">apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts:35</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts#L35">apps/api/src/modules/organizations/application/commands/handlers/approve-organization.command-handler.ts:35</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

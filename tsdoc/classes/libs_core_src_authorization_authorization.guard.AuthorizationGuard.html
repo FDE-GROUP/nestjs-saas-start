@@ -24,13 +24,15 @@ role denies. The allow/deny decision itself is delegated to the core-owned
 <code>PermissionChecker</code> port, whose reference-app adapter projects the tenant's DB grant
 rows (organization_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
 auth / CASL impl (§9.5.4①B).</p>
+<p>换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚
+隔离<strong>主轴</strong> <code>tenantId</code>（同租跨组织互见·角色租级），缺租户上下文仍 403 同族错误码。</p>
 </div></div></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">CanActivate</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/authorization/authorization.guard.ts#L31">libs/core/src/authorization/authorization.guard.ts:31</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/authorization/authorization.guard.ts#L34">libs/core/src/authorization/authorization.guard.ts:34</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -65,7 +67,7 @@ auth / CASL impl (§9.5.4①B).</p>
 </div></div><aside class="tsd-sources">
 <p>Implementation of CanActivate.canActivate</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/authorization/authorization.guard.ts#L46">libs/core/src/authorization/authorization.guard.ts:46</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/authorization/authorization.guard.ts#L49">libs/core/src/authorization/authorization.guard.ts:49</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

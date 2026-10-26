@@ -17,9 +17,9 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>Read side goes through the repository port, which enforces the tenant scope
-(global-tenancy §9.3 / FR-5). 租户隔离（organizationId）仍由仓储适配层唯一卡点保证；
+(global-tenancy §9.3 / FR-5). 租户隔离（主轴 tenantId·rehierarchy 切片 C 换轴）仍由仓储适配层唯一卡点保证；
 本 handler 只在其上叠加 <strong>instance 级收窄</strong>（module-rbac-query-level-filtering 切片 C·人裁③⑤）：
-携 ALS <code>{organizationId, role, userId}</code> 向 <code>PERMISSION_CHECKER</code> 取 <code>listPredicate</code>，
+携 ALS <code>{tenantId, role, userId}</code> 向 <code>PERMISSION_CHECKER</code> 取 <code>listPredicate</code>，
 <code>all</code>→不下推（现状）/ <code>where</code>→下推 port / <code>none</code>→短路空页不触库（fail-closed·绝不回退全量）。
 行为注记（已审）：无租户上下文时由旧「仓储层 403」改「空页」——护栏面仍系上游双守卫，
 生产入口不可达该分支，列表面只收窄可见性。</p>
@@ -29,7 +29,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">IQueryHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_workspaces_application_queries_list-workspaces.query.ListWorkspacesQuery.html" class="tsd-signature-type tsd-kind-class">ListWorkspacesQuery</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts#L32">libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts:32</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts#L32">libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts:32</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -60,7 +60,7 @@
 <aside class="tsd-sources">
 <p>Implementation of IQueryHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts#L46">libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts:46</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts#L46">libs/core/src/modules/workspaces/application/queries/handlers/list-workspaces.query-handler.ts:46</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

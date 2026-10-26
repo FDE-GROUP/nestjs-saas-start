@@ -17,7 +17,9 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>缺行回落 <code>FREE_PLAN</code>（带限额·裁②非 fail-open）。用量维度 = 成员数
-（<code>COUNT(member where organizationId)</code>·实时算·不建 usage 表）。</p>
+（<code>COUNT(member where tenantId)</code>·实时算·不建 usage 表）。</p>
+<p>global-tenant-organization-rehierarchy 切片 D（计费单位上移）：入参轴从 <code>organizationId</code> 升 <strong><code>tenantId</code></strong>——
+一租多组织后席位/配额按租户总量聚合才是正当语义（生效订阅读 <code>tenant_subscription</code>·member 按 tenantId 计数）。</p>
 <p>架构精度修宪 S2：<strong>裁决不再抛 HTTP</strong>（原 <code>assertSeats</code> 402 已删）——本服务属 kit 的
 领域/应用面，402 翻译归适配器角色消费点（<code>QuotaGuard</code> / auth <code>seats-quota.hook</code>），
 由其消费 <code>checkSeats</code> 判别结果后自行抛（P1 result-union 范式）。限额经 <code>Quota</code> VO
@@ -25,7 +27,7 @@
 同层，禁散点。</p>
 </div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L56">libs/core/src/modules/subscriptions/quota/quota.service.ts:56</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L59">libs/core/src/modules/subscriptions/quota/quota.service.ts:59</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -46,14 +48,14 @@
 <h3 class="tsd-anchor-link" id="checkseats"><span>check<wbr/>Seats</span><a href="#checkseats" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="checkseats-1"><span class="tsd-kind-call-signature">checkSeats</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">adding</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaVerdict.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaVerdict</a><span class="tsd-signature-symbol">&gt;</span><a href="#checkseats-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="checkseats-1"><span class="tsd-kind-call-signature">checkSeats</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">adding</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaVerdict.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaVerdict</a><span class="tsd-signature-symbol">&gt;</span><a href="#checkseats-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>纯裁决（不抛·P1 result-union）：used + adding 是否仍在限额内。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">organizationId</span>: <span class="tsd-signature-type">string</span></span>
+<li><span><span class="tsd-kind-parameter">tenantId</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>目标租户 id</p>
 </div></li>
 <li><span><span class="tsd-kind-parameter">adding</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></span>
@@ -62,73 +64,73 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaVerdict.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaVerdict</a><span class="tsd-signature-symbol">&gt;</span></h4><p>座位配额裁决结果（ok/used/limit）</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L97">libs/core/src/modules/subscriptions/quota/quota.service.ts:97</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L100">libs/core/src/modules/subscriptions/quota/quota.service.ts:100</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="currentseats"><span>current<wbr/>Seats</span><a href="#currentseats" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="currentseats-1"><span class="tsd-kind-call-signature">currentSeats</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#currentseats-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="currentseats-1"><span class="tsd-kind-call-signature">currentSeats</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#currentseats-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>当前用量 = 该租户成员数。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">organizationId</span>: <span class="tsd-signature-type">string</span></span>
+<li><span><span class="tsd-kind-parameter">tenantId</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>目标租户 id</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>成员数量</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L86">libs/core/src/modules/subscriptions/quota/quota.service.ts:86</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L89">libs/core/src/modules/subscriptions/quota/quota.service.ts:89</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="currentsubscription"><span>current<wbr/>Subscription</span><a href="#currentsubscription" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="currentsubscription-1"><span class="tsd-kind-call-signature">currentSubscription</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.store.ActiveSubscriptionView.html" class="tsd-signature-type tsd-kind-interface">ActiveSubscriptionView</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#currentsubscription-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="currentsubscription-1"><span class="tsd-kind-call-signature">currentSubscription</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.store.ActiveSubscriptionView.html" class="tsd-signature-type tsd-kind-interface">ActiveSubscriptionView</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><a href="#currentsubscription-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>当前生效订阅（最新 active 行 by periodStart desc），无 → null。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">organizationId</span>: <span class="tsd-signature-type">string</span></span>
+<li><span><span class="tsd-kind-parameter">tenantId</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>目标租户 id</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.store.ActiveSubscriptionView.html" class="tsd-signature-type tsd-kind-interface">ActiveSubscriptionView</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>生效订阅视图；无 active 行返回 <code>null</code></p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L65">libs/core/src/modules/subscriptions/quota/quota.service.ts:65</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L68">libs/core/src/modules/subscriptions/quota/quota.service.ts:68</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="effectiveseatslimit"><span>effective<wbr/>Seats<wbr/>Limit</span><a href="#effectiveseatslimit" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="effectiveseatslimit-1"><span class="tsd-kind-call-signature">effectiveSeatsLimit</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_subscriptions_quota_quota.vo.Quota.html" class="tsd-signature-type tsd-kind-class">Quota</a><span class="tsd-signature-symbol">&gt;</span><a href="#effectiveseatslimit-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="effectiveseatslimit-1"><span class="tsd-kind-call-signature">effectiveSeatsLimit</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_subscriptions_quota_quota.vo.Quota.html" class="tsd-signature-type tsd-kind-class">Quota</a><span class="tsd-signature-symbol">&gt;</span><a href="#effectiveseatslimit-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>生效座位限额（P2 · Quota VO）：有 active 订阅 → 摄入其 seatsLimit；无 → FREE_PLAN 档。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">organizationId</span>: <span class="tsd-signature-type">string</span></span>
+<li><span><span class="tsd-kind-parameter">tenantId</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>目标租户 id</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_subscriptions_quota_quota.vo.Quota.html" class="tsd-signature-type tsd-kind-class">Quota</a><span class="tsd-signature-symbol">&gt;</span></h4><p>承载不变量的 <code>Quota</code> 限额</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L75">libs/core/src/modules/subscriptions/quota/quota.service.ts:75</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L78">libs/core/src/modules/subscriptions/quota/quota.service.ts:78</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="snapshot"><span>snapshot</span><a href="#snapshot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="snapshot-1"><span class="tsd-kind-call-signature">snapshot</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaSnapshot.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaSnapshot</a><span class="tsd-signature-symbol">&gt;</span><a href="#snapshot-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="snapshot-1"><span class="tsd-kind-call-signature">snapshot</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaSnapshot.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaSnapshot</a><span class="tsd-signature-symbol">&gt;</span><a href="#snapshot-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>读侧单点快照（S7 · FR-7/FR-8）：当前生效订阅 + 座位用量 + FR-8 customer 映射。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">organizationId</span>: <span class="tsd-signature-type">string</span></span>
+<li><span><span class="tsd-kind-parameter">tenantId</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>目标租户 id</p>
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/libs_core_src_modules_subscriptions_quota_quota.service.SeatQuotaSnapshot.html" class="tsd-signature-type tsd-kind-interface">SeatQuotaSnapshot</a><span class="tsd-signature-symbol">&gt;</span></h4><p>生效档位/用量/映射的读侧快照</p>
@@ -138,7 +140,7 @@
 <h4 class="tsd-anchor-link" id="remarks-1">Remarks<a href="#remarks-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>复用 <code>currentSubscription</code>/<code>currentSeats</code>·限额逻辑不另起炉灶（禁散点）。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.service.ts#L114">libs/core/src/modules/subscriptions/quota/quota.service.ts:114</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.service.ts#L117">libs/core/src/modules/subscriptions/quota/quota.service.ts:117</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

@@ -21,7 +21,10 @@
 through the core-owned <code>RequestSessionReader</code> port — no Better Auth / <code>@app/modules/auth</code>
 import crosses into tenancy core (§9.5.4①B · P1b). Downstream guards / services read the
 bound context via <code>TenantIsolationService</code>.</p>
-<p>The port's <code>read</code> already short-circuits public / auth / bypass routes (and any request
+<p>global-tenant-organization-rehierarchy 切片 C 换轴：封禁检查通过后另经 <code>TENANT_SCOPE_RESOLVER</code>
+把活动组织升为<strong>主轴 <code>tenantId</code></strong>（隔离硬边界·同租跨组织默认互见）；解析不出租户 →
+不绑主轴 → guard fail-closed 403（组织轴仍绑定仅供归属/派生消费，不构成放行）。
+The port's <code>read</code> already short-circuits public / auth / bypass routes (and any request
 without a session cookie) to <code>null</code>, so this adds a session lookup only where one can
 exist. Failures degrade to &quot;no tenant&quot; rather than throwing (enforcement is S2).</p>
 </div></div></section>
@@ -30,7 +33,7 @@ exist. Failures degrade to &quot;no tenant&quot; rather than throwing (enforceme
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">NestMiddleware</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation.middleware.ts#L24">libs/core/src/tenant-isolation/tenant-isolation.middleware.ts:24</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation.middleware.ts#L28">libs/core/src/tenant-isolation/tenant-isolation.middleware.ts:28</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -66,7 +69,7 @@ exist. Failures degrade to &quot;no tenant&quot; rather than throwing (enforceme
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <p>Implementation of NestMiddleware.use</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/tenant-isolation/tenant-isolation.middleware.ts#L43">libs/core/src/tenant-isolation/tenant-isolation.middleware.ts:43</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/tenant-isolation/tenant-isolation.middleware.ts#L49">libs/core/src/tenant-isolation/tenant-isolation.middleware.ts:49</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

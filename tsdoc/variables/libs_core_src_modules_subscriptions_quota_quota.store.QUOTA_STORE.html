@@ -17,11 +17,13 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p><code>QuotaService</code> 是租户座位配额读写的唯一卡点（S7 · FR-7），但 core 侧不应感知
-<code>organization_subscription</code>/<code>member</code> 表与旧实现。此端口只暴露两个持久化原语：取当前生效
+<code>tenant_subscription</code>/<code>member</code> 表与旧实现。此端口只暴露两个持久化原语：取当前生效
 订阅视图、数成员；档位回落/超限裁决等逻辑留在 core（<code>tenant-plans</code> + <code>QuotaService</code>）。</p>
+<p>global-tenant-organization-rehierarchy 切片 D（计费单位上移）：配额锥从 <code>organizationId</code> 升 <strong><code>tenantId</code></strong>——
+席位/配额按租户总量聚合（member 按 tenantId 计数）。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/quota/quota.store.ts#L11">libs/core/src/modules/subscriptions/quota/quota.store.ts:11</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/quota/quota.store.ts#L14">libs/core/src/modules/subscriptions/quota/quota.store.ts:14</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

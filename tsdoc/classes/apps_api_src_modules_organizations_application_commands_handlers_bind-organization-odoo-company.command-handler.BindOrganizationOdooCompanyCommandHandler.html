@@ -18,7 +18,7 @@
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>门槛链（fail-closed）：租户须存在（null → 控制层 404）∧ 治理态 <code>active</code>（非 active → 409，
 pending/suspended/deleted 不允许建立映射，防「未获批即有 Odoo 公司」绕开审批单源）；
-占用预检查 + <code>odooCompanyId</code> 库级 unique 双防线（一公司只归一租户）在端口内裁决
+占用预检查 + <code>odooCompanyId</code> 库级 unique 双防线（一公司只归一组织）在端口内裁决
 （<code>conflict</code> → 409 + 失败尝试观测审计·判别子带 error 不落耐久账本）。
 成功经 <code>PlatformAuditService</code> 产出 <code>bind_odoo</code> 结构化审计（FR-6 单点·禁散点手搓）。
 幂等口径：同租户重复绑定同公司 = 覆盖快照成功；换绑他司受 unique 冲突天然拦截。</p>
@@ -28,7 +28,7 @@ pending/suspended/deleted 不允许建立映射，防「未获批即有 Odoo 公
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">ICommandHandler</span><span class="tsd-signature-symbol">&lt;</span><a href="apps_api_src_modules_organizations_application_commands_bind-organization-odoo-company.command.BindOrganizationOdooCompanyCommand.html" class="tsd-signature-type tsd-kind-class">BindOrganizationOdooCompanyCommand</a><span class="tsd-signature-symbol">&gt;</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts#L26">apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts:26</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts#L26">apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts:26</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -59,7 +59,7 @@ pending/suspended/deleted 不允许建立映射，防「未获批即有 Odoo 公
 <aside class="tsd-sources">
 <p>Implementation of ICommandHandler.execute</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts#L41">apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts:41</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts#L41">apps/api/src/modules/organizations/application/commands/handlers/bind-organization-odoo-company.command-handler.ts:41</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

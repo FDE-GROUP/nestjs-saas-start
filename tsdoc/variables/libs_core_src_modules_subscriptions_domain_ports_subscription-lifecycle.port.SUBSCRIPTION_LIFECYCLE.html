@@ -17,16 +17,18 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>订阅生命周期的<strong>治理联动端口</strong>（系统面 · module-es-first-real-consumer 治理档）。</p>
-<p>与用户面 <code>SubscriptionRepository</code> 的关键区别：后者不暴露 organizationId（所属租户由 adapter 从请求
-ALS <code>requireActiveOrganizationId()</code> fail-closed 盖章·FR-5 隔离卡点）；本端口的调用方是<strong>平台治理事件消费者</strong>
-（跨上下文经领域事件驱动），不在任何目标租户的请求上下文里——organizationId 显式传参且来源为治理卡点
-产出的事件行 <code>aggregateId</code>（可信单源），与 <code>QuotaStore</code>（tenancy 系统面·显式 organizationId）同侧同律。</p>
+<p>与用户面 <code>SubscriptionRepository</code> 的关键区别：后者不暴露 tenantId（所属租户由 adapter 从请求
+ALS <code>requireActiveTenantId()</code> fail-closed 盖章·FR-5 隔离卡点）；本端口的调用方是<strong>平台治理事件消费者</strong>
+（跨上下文经领域事件驱动），不在任何目标租户的请求上下文里——tenantId 显式传参且来源为治理卡点
+产出的事件行 <code>aggregateId</code>（可信单源），与 <code>QuotaStore</code>（tenancy 系统面·显式 tenantId）同侧同律。</p>
+<p>global-tenant-organization-rehierarchy 切片 D（计费单位上移）：治理联动锥从 <code>organizationId</code> 升 <strong><code>tenantId</code></strong>
+（租户准入态迁移→租户订阅行联动）。</p>
 <p><strong>幂等契约（at-least-once 硬要求的兑现面）</strong>：终态收敛式——仅当该租户存在最新 <code>from</code> 态行时
 将其置为 <code>to</code> 态；无 <code>from</code> 行即零写返回 <code>false</code>。同事件重投、乱序滞后均收敛至同一终态，
 绝不按事件计数变更。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2870f6fc0e95bf79ae9d12bd44de74bcea2d8d02/libs/core/src/modules/subscriptions/domain/ports/subscription-lifecycle.port.ts#L20">libs/core/src/modules/subscriptions/domain/ports/subscription-lifecycle.port.ts:20</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/2e30e9a0514c7ce23d75899320a457dcb536b07b/libs/core/src/modules/subscriptions/domain/ports/subscription-lifecycle.port.ts#L23">libs/core/src/modules/subscriptions/domain/ports/subscription-lifecycle.port.ts:23</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
