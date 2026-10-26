@@ -17,14 +17,14 @@
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>授权在我·数据在 DB：每端点声明 <code>@Can(&lt;动作&gt;, 'Role'|'RoleGrant')</code>，由 <code>AuthorizationGuard</code>
-携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 <code>OrganizationRbacAdminService</code>
+携 ALS 角色经 CASL（规则源 = 本租户 DB grant 行）裁决；通过后委派 <code>TenantRbacAdminService</code>
 落库（写侧过 domain 策略闸 + 同通道审计行 + 写后失效投影缓存）。BA 内置 create-role/roles 端点
 维持封堵（甲裁不代建→本片自建），本门面是租户差异化授权策略的唯一入口。</p>
 <p><code>@Can</code> 落点与 seed 一致：owner/admin 持 <code>Role</code>(create/read/update/delete) + <code>RoleGrant</code>
 (create/read/delete)，member 无 → 非管理员请求由守卫 403（fail-closed）。</p>
 </div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L71">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:71</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L63">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:63</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -47,7 +47,7 @@
 <h3 class="tsd-anchor-link" id="createrole"><span>create<wbr/>Role</span><a href="#createrole" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="createrole-1"><span class="tsd-kind-call-signature">createRole</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleView</a><span class="tsd-signature-symbol">&gt;</span><a href="#createrole-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="createrole-1"><span class="tsd-kind-call-signature">createRole</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleView</a><span class="tsd-signature-symbol">&gt;</span><a href="#createrole-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>创建自定义角色（仅 owner/admin）。</p>
 </div>
@@ -57,10 +57,10 @@
 <li><span><span class="tsd-kind-parameter">dto</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span></span>
 <div class="tsd-comment tsd-typography"><p>创建载荷（key/name）。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleView</a><span class="tsd-signature-symbol">&gt;</span></h4><p>创建后的角色读模型。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleView</a><span class="tsd-signature-symbol">&gt;</span></h4><p>创建后的角色读模型。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L105">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:105</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L93">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:93</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="deleterole"><span>delete<wbr/>Role</span><a href="#deleterole" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -77,7 +77,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L135">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:135</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L123">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:123</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="grant"><span>grant</span><a href="#grant" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -94,12 +94,12 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L173">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:173</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L159">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:159</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="listgrants"><span>list<wbr/>Grants</span><a href="#listgrants" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="listgrants-1"><span class="tsd-kind-call-signature">listGrants</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">roleKey</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleGrantView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleGrantView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listgrants-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="listgrants-1"><span class="tsd-kind-call-signature">listGrants</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">roleKey</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleGrantView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleGrantView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listgrants-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>列出某角色的授权行（回显勾选态）。</p>
 </div>
@@ -109,26 +109,26 @@
 <li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">roleKey</span>: <span class="tsd-signature-type">string</span></span>
 <div class="tsd-comment tsd-typography"><p>查询参数：目标角色 key（缺失 → 400）。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleGrantView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleGrantView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>授权行读模型列表。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleGrantView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleGrantView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>授权行读模型列表。</p>
 
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-throws">
 <h4 class="tsd-anchor-link" id="throws">Throws<a href="#throws" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>缺少 roleKey 查询参数时。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L154">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:154</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L140">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:140</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="listroles"><span>list<wbr/>Roles</span><a href="#listroles" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="listroles-1"><span class="tsd-kind-call-signature">listRoles</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listroles-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="listroles-1"><span class="tsd-kind-call-signature">listRoles</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listroles-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>列出活动租户全部角色（系统 + 自定义）。</p>
 </div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.OrganizationRoleView.html" class="tsd-signature-type tsd-kind-interface">OrganizationRoleView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>角色读模型列表。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.TenantRoleView.html" class="tsd-signature-type tsd-kind-interface">TenantRoleView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>角色读模型列表。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L86">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:86</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L76">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:76</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="renamerole"><span>rename<wbr/>Role</span><a href="#renamerole" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -145,7 +145,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L120">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:120</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L108">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:108</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="revoke"><span>revoke</span><a href="#revoke" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -162,7 +162,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L195">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:195</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/authorization-admin.controller.ts#L181">apps/api/src/modules/authorization/api/authorization-admin.controller.ts:181</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

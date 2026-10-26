@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>OrganizationRoleView | 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</title><meta name="description" content="Documentation for 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><link rel="stylesheet" href="../assets/rhineai-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>TenantRoleViewResponse | 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</title><meta name="description" content="Documentation for 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><link rel="stylesheet" href="../assets/rhineai-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container"><a href="../index.html" class="title">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
 <ul role="listbox" id="tsd-search-results"></ul>
@@ -8,15 +8,19 @@
 <div class="col-content">
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb" aria-label="Breadcrumb">
-<li><a href="../modules/apps_api_src_modules_authorization_domain_repositories_organization-rbac.repository.html">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository</a></li>
-<li><a href="" aria-current="page">OrganizationRoleView</a></li></ul>
-<h1>Interface OrganizationRoleView</h1></div>
+<li><a href="../modules/apps_api_src_modules_authorization_api_response_role.response.html">apps/api/src/modules/authorization/api/response/role.response</a></li>
+<li><a href="" aria-current="page">TenantRoleViewResponse</a></li></ul>
+<h1>Class TenantRoleViewResponse</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>角色最小读模型（companion <code>OrganizationRoleRow</code> 的端口视形·不泄实体）。</p>
-</div></section>
-<div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">OrganizationRoleView</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#id">id</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#issystem">isSystem</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#key">key</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#name">name</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>角色/授权面响应契约（F1 甲①）——schema 源，纯文档面零运行时。</p>
+</div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-remarks">
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>真相源 = <code>AuthorizationAdminController</code> 实际返回类型；漂移防线：文末编译期双向赋值锁。
+subject/action 词汇复用 <code>@core</code> CASL 单源数组（conditions 为白名单自由对象）。</p>
+</div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts#L13">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts:13</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/response/role.response.ts#L23">apps/api/src/modules/authorization/api/response/role.response.ts:23</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -33,33 +37,33 @@
 <h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
 <section>
 <section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="id"><code class="tsd-tag">Readonly</code><span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h3 class="tsd-anchor-link" id="id"><span>id</span><a href="#id" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">id</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>角色行 id。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts#L15">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts:15</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/response/role.response.ts#L26">apps/api/src/modules/authorization/api/response/role.response.ts:26</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="issystem"><code class="tsd-tag">Readonly</code><span>is<wbr/>System</span><a href="#issystem" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h3 class="tsd-anchor-link" id="issystem"><span>is<wbr/>System</span><a href="#issystem" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">isSystem</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 <div class="tsd-comment tsd-typography"><p>是否为内置系统角色（不可改删）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts#L21">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts:21</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/response/role.response.ts#L38">apps/api/src/modules/authorization/api/response/role.response.ts:38</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="key"><code class="tsd-tag">Readonly</code><span>key</span><a href="#key" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h3 class="tsd-anchor-link" id="key"><span>key</span><a href="#key" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">key</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>唯一 key（角色/存储对象）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts#L17">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts:17</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/response/role.response.ts#L30">apps/api/src/modules/authorization/api/response/role.response.ts:30</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="name"><code class="tsd-tag">Readonly</code><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<h3 class="tsd-anchor-link" id="name"><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">name</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>角色显示名。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts#L19">apps/api/src/modules/authorization/domain/repositories/organization-rbac.repository.ts:19</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/api/response/role.response.ts#L34">apps/api/src/modules/authorization/api/response/role.response.ts:34</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

@@ -18,7 +18,7 @@
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>定位：本文件是<strong>数据、不是规则</strong>——旧 <code>TENANT_RULES</code> 矩阵（2026-10-17 CASL 片）逐格
 原样迁为死数据，供两处消费：① lazy-ensure：租户首次解析授权时无角色行则按本数据落
-<code>organization_role</code>/<code>organization_role_grant</code> 三系统角色（幂等·is_system=true 不可改不可删）；
+<code>tenant_role</code>/<code>tenant_role_grant</code> 三系统角色（幂等·is_system=true 不可改不可删）；
 ② 迁移/seed 脚本回填。DB grant 行才是授权事实 SSOT，本数据落库后即不再被裁决链
 直接消费（S2 checker 换 DB 源后本文件仅剩 ensure 职责）。</p>
 <p>语义注记（平移自旧矩阵注释）：<code>Member/Invitation</code> 的 <code>read</code> = 现状对拍扩项（BA 1.7.7
@@ -29,7 +29,7 @@
 </div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">SystemRoleGrantSeed</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#actions">actions</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> (<span class="tsd-signature-type">&quot;create&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;read&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;update&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;delete&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;cancel&quot;</span>)<span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#subject">subject</a><span class="tsd-signature-symbol">:</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Organization&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Member&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Invitation&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Workspace&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Role&quot;</span><br/>        <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;RoleGrant&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L24">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:24</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L24">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:24</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -49,14 +49,14 @@
 <div class="tsd-comment tsd-typography"><p>动作集合。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L28">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:28</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L28">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:28</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="subject"><code class="tsd-tag">Readonly</code><span>subject</span><a href="#subject" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">subject</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Organization&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Member&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Invitation&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Workspace&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Role&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;RoleGrant&quot;</span></div>
 <div class="tsd-comment tsd-typography"><p>被授权资源主体。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L26">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:26</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/apps/api/src/modules/authorization/domain/constants/system-role-seed.ts#L26">apps/api/src/modules/authorization/domain/constants/system-role-seed.ts:26</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

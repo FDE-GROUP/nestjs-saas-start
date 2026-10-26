@@ -22,12 +22,12 @@
 由治理审计单点 <code>PlatformAuditService</code>（core）消费（端口倒置·沿 <code>USER_STATUS_STORE</code> 先例）。</p>
 <p><strong>PII 最小化</strong>（人裁·仅 id·不携邮箱）：条目只承载被治理实体/操作者的<strong>标识符</strong>与动作语义，
 严禁落 email/姓名等个人数据；<code>entityId</code> 系多态裸值（非 FK），故实体被硬删后账行仍幸存
-（对齐 <code>organization_role_audit</code>「留痕不因本体消亡而丢」先例）。</p>
+（对齐 <code>tenant_role_audit</code>「留痕不因本体消亡而丢」先例）。</p>
 <p>语义：append-only——只插不改不删（<code>audit_log</code> 入 <code>IMMUTABLE_TABLES</code>）；本端口只暴露 <code>append</code>
 单原语，不提供任何 update/delete（耐久账本不可篡改是设计而非缺失）。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/libs/core/src/shared-kernel/audit/audit-log.store.ts#L19">libs/core/src/shared-kernel/audit/audit-log.store.ts:19</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/libs/core/src/shared-kernel/audit/audit-log.store.ts#L19">libs/core/src/shared-kernel/audit/audit-log.store.ts:19</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

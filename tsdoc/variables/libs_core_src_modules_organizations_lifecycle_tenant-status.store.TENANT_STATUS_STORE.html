@@ -13,14 +13,14 @@
 <h1>Variable TENANT_STATUS_STORE<code class="tsd-tag">Const</code></h1></div>
 <div class="tsd-signature"><span class="tsd-kind-variable">TENANT_STATUS_STORE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">typeof</span> <a href="" class="tsd-signature-type tsd-kind-variable">TENANT_STATUS_STORE</a><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>租户状态存储端口的 DI 注入 token（global-tenant-organization-rehierarchy 切片 E-F · 治理换轴·
-<code>TenantStatusService</code> 唯一写卡点·对拍 <code>ORGANIZATION_STATUS_STORE</code> 端口形制）。</p>
+<code>TenantStatusService</code> 唯一写卡点·status 导向三原语形制）。</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
 <h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>复裁定（人裁 2026-10-26「一租户多组织 · 一组织一公司」）将<strong>治理准入态</strong>从 <code>organization.status</code>
 <strong>上移归位 <code>tenant.status</code></strong>（Tenant = 隔离与计费边界·审批只管租户准入）。Organization 保留轻量
 自有态（<code>canUseOdoo</code> 仍读 org.status active），但审批/暂停/恢复/驳回/删除的<strong>权威态</strong>是本端口。</p>
-<p>语义约定（对拍 <code>OrganizationStatusStore</code>·仅锚定表从 organization 换 tenant）：</p>
+<p>语义约定（仅锚定表为 tenant）：</p>
 <ul>
 <li><code>readStatus</code>：<code>tenant.status</code> NOT NULL 真列，本体存在即有值；本体行不存在 → <code>undefined</code>；</li>
 <li><code>tenantExists</code>：<code>tenant</code> 行命中与否——<code>transition</code> 的 not-found（404）判据；</li>
@@ -30,7 +30,7 @@
 <code>tenant.status</code>（1:1 骨架·同持治理态），换轴读写两侧一致，无孤儿态。</p>
 </div></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/d892f82bea556e8a1909f465691b8c76b1511bb5/libs/core/src/modules/organizations/lifecycle/tenant-status.store.ts#L21">libs/core/src/modules/organizations/lifecycle/tenant-status.store.ts:21</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/948840a53828ddfb9bf4812a5aec89476756ddef/libs/core/src/modules/organizations/lifecycle/tenant-status.store.ts#L21">libs/core/src/modules/organizations/lifecycle/tenant-status.store.ts:21</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

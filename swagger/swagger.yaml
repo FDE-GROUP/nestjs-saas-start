@@ -246,7 +246,7 @@ paths:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrganizationRoleViewResponse'
+                          $ref: '#/components/schemas/TenantRoleViewResponse'
         '403':
           description: CASL deny (no Role read).
           content:
@@ -289,7 +289,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/OrganizationRoleViewResponse'
+                        $ref: '#/components/schemas/TenantRoleViewResponse'
         '400':
           description: Invalid/reserved role key.
           content:
@@ -401,7 +401,7 @@ paths:
                       data:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrganizationRoleGrantViewResponse'
+                          $ref: '#/components/schemas/TenantRoleGrantViewResponse'
         '404':
           description: Role not found.
           content:
@@ -2400,7 +2400,7 @@ components:
         - timestamp
         - path
         - requestId
-    OrganizationRoleViewResponse:
+    TenantRoleViewResponse:
       type: object
       properties:
         id:
@@ -2420,7 +2420,7 @@ components:
         - key
         - name
         - isSystem
-    OrganizationRoleGrantViewResponse:
+    TenantRoleGrantViewResponse:
       type: object
       properties:
         subject:
