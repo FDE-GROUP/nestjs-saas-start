@@ -2408,7 +2408,7 @@ components:
           description: UUIDv7。
         key:
           type: string
-          description: 角色 key（组织内唯一）。
+          description: 角色 key（租户内唯一）。
         name:
           type: string
           description: 人面可读名。
