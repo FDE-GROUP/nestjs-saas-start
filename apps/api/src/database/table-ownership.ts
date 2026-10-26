@@ -23,7 +23,10 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   verification: 'auth',
   consent: 'auth',
   // organizations：审批制生命周期与成员域（BA organization/member/invitation 由本侧服务端 SDK 写）
-  // organization 携自撰域列 status（租户治理生命周期态·global-governance-lifecycle-consolidation 切片 B 归列·原 tenant 旁表 DROP）
+  // global-tenant-organization-rehierarchy 切片 B：`tenant` 新层根表（组织之父行·非旧旁表血脉·
+  // 写通道归 organizations 治理链·切片 D 审批上移后 provisioning 唯一写面）
+  tenant: 'organizations',
+  // organization 携自撰域列 status（组织轻量自有态）+ tenantId（归属租户边·expand 段可空）
   organization: 'organizations',
   member: 'organizations',
   invitation: 'organizations',
@@ -37,6 +40,8 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   workspace: 'workspaces',
   post: 'posts',
   organizationSubscription: 'subscriptions',
+  // rehierarchy 切片 B：计费上移新表（旧 organization_subscription 并存至 contract 段退役）
+  tenantSubscription: 'subscriptions',
   // module-rbac-dynamic-roles S1（甲裁三表）·领域细化重构后属 `authorization` 上下文：
   // 角色/授权/审计均属授权域自有表，唯一写通道 = MikroOrganizationRbacRepository（门面皆经端口读写，禁散点直访）。
   organizationRole: 'authorization',

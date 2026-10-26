@@ -7,11 +7,19 @@ import {
 } from '../../modules/authorization/infrastructure/entities/rbac.entities';
 import { AuditLog } from '../../modules/organizations/infrastructure/entities/audit-log.entity';
 import { MIKRO_ORG_ENTITIES } from '../../modules/organizations/infrastructure/entities/ba-org.entities';
+import {
+  TENANT_META,
+  Tenant,
+} from '../../modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '../../modules/posts/infrastructure/entities/post.entity';
 import {
   ORGANIZATION_SUBSCRIPTION_META,
   OrganizationSubscription,
 } from '../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import {
+  TENANT_SUBSCRIPTION_META,
+  TenantSubscription,
+} from '../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import {
   WORKSPACE_META,
   Workspace,
@@ -33,11 +41,23 @@ import { EVENT_META, Event } from '../eventing/entities/event.entity';
  * ⚠ tsx 消费链文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  */
 
-/** 三表运行时实体集（global-governance-lifecycle-consolidation 切片 C DROP `user_status` 旁表后·归位后跨上下文聚合·并入 `MIKRO_SYS_ENTITIES`）。 */
-export const MIKRO_THREE_TABLE_ENTITIES = [Workspace, OrganizationSubscription, Event];
+/** META 双形运行时实体集（原三表 + rehierarchy 切片 B 新入 `Tenant`/`TenantSubscription`·均 buildRuntimeEntity 派生·并入 `MIKRO_SYS_ENTITIES`）。 */
+export const MIKRO_META_TABLE_ENTITIES = [
+  Workspace,
+  OrganizationSubscription,
+  Event,
+  Tenant,
+  TenantSubscription,
+];
 
-/** 三表元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
-export const THREE_TABLE_METAS = [WORKSPACE_META, ORGANIZATION_SUBSCRIPTION_META, EVENT_META];
+/** META 双形元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
+export const META_TABLE_METAS = [
+  WORKSPACE_META,
+  ORGANIZATION_SUBSCRIPTION_META,
+  EVENT_META,
+  TENANT_META,
+  TENANT_SUBSCRIPTION_META,
+];
 
 /** RBAC 三表元数据（迁移装配可消费）。 */
 export const RBAC_TABLE_METAS = [
@@ -52,7 +72,7 @@ export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES
 export const MIKRO_SYS_ENTITIES = [
   PostEntity,
   ...MIKRO_ENTITIES,
-  ...MIKRO_THREE_TABLE_ENTITIES,
+  ...MIKRO_META_TABLE_ENTITIES,
   ...MIKRO_RBAC_TABLE_ENTITIES,
   // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·属主 tenants）。
   AuditLog,

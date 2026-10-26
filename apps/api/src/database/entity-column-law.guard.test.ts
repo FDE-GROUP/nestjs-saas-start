@@ -4,8 +4,10 @@ import {
   ORGANIZATION_ROLE_META,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '@app/modules/organizations/infrastructure/entities/audit-log.entity';
+import { TENANT_META } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { ORGANIZATION_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TENANT_SUBSCRIPTION_META } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { WORKSPACE_META } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { describe, expect, it } from 'vitest';
 import {
@@ -32,7 +34,7 @@ import { MIKRO_ENTITIES } from './mikro/sys-entities';
  * 列形不在覆盖面（外部契约）。
  */
 
-/** 自撰表事实（数据级派生：META 六表 + Post）。 */
+/** 自撰表事实（数据级派生：META 九表 + Post）。 */
 interface SelfTableFacts {
   table: string;
   hasCreatedAt: boolean;
@@ -68,6 +70,9 @@ const SELF_TABLES: SelfTableFacts[] = [
   metaFacts(ORGANIZATION_ROLE_GRANT_META),
   metaFacts(ORGANIZATION_ROLE_AUDIT_META),
   metaFacts(AUDIT_LOG_META),
+  // global-tenant-organization-rehierarchy 切片 B：新层根表 + 计费上移新表（均 L2 合规 nullable·不入豁免账）
+  metaFacts(TENANT_META),
+  metaFacts(TENANT_SUBSCRIPTION_META),
   POST_FACTS,
 ];
 
@@ -118,16 +123,16 @@ describe('实体列定律 L2：updatedAt 可空口径（人裁 (a)·nullable 为
   });
 });
 
-describe('全表登记恒等（16 表·新增/移除未登记即红）', () => {
+describe('全表登记恒等（18 表·新增/移除未登记即红）', () => {
   it('BA 契约面表名与清单恒等', () => {
     expect([...baTableNames].sort()).toEqual([...BA_CONTRACT_TABLES].sort());
   });
 
-  it('自撰 ∪ BA = 16 表无漏重；自撰按 L1/L2 三分（不可变/豁免/合规 nullable）全覆盖', () => {
+  it('自撰 ∪ BA = 18 表无漏重；自撰按 L1/L2 三分（不可变/豁免/合规 nullable）全覆盖', () => {
     const all = [...SELF_TABLES.map((f) => f.table), ...baTableNames];
-    expect(all).toHaveLength(16);
-    expect(new Set(all).size, '表名出现重复归属').toBe(16);
-    // 自撰 8 表逐一有归宿：immutable 登记 ∪ 豁免登记 ∪（有 updatedAt 且非豁免=合规）
+    expect(all).toHaveLength(18);
+    expect(new Set(all).size, '表名出现重复归属').toBe(18);
+    // 自撰 10 表逐一有归宿：immutable 登记 ∪ 豁免登记 ∪（有 updatedAt 且非豁免=合规）
     for (const f of SELF_TABLES) {
       const classified =
         IMMUTABLE_TABLES.includes(f.table) ||
@@ -135,8 +140,8 @@ describe('全表登记恒等（16 表·新增/移除未登记即红）', () => {
         (f.hasUpdatedAt && f.updatedAtNullable === true);
       expect(classified, `自撰表 ${f.table} 未落入定律任何清单`).toBe(true);
     }
-    // 8 BA + 4 不可变 + 3 豁免 + 1 合规 nullable = 16 实数对拍（global-governance-lifecycle-consolidation
-    // 切片 E 立 `audit_log` append-only 账本后·不可变面 event/grant/role_audit/audit_log=4）：合规 nullable 面 = 8−4−3 = 1（organization_role）
-    expect(SELF_TABLES.length).toBe(8);
+    // 8 BA + 4 不可变 + 3 豁免 + 3 合规 nullable = 18 实数对拍（global-tenant-organization-rehierarchy 切片 B
+    // 新入 `tenant`/`tenant_subscription` 后合规面 = organization_role + 两新表；不可变面 event/grant/role_audit/audit_log=4）
+    expect(SELF_TABLES.length).toBe(10);
   });
 });

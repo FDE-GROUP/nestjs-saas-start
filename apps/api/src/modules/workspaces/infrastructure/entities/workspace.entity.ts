@@ -17,6 +17,9 @@ export const WORKSPACE_META: TableMeta = {
   tableName: 'workspace',
   columns: [
     ['id', { k: 'text', primary: true }],
+    // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·FK cascade 给租户级联删除
+    // 留 NFR-6 血脉；切片 C 换轴后读谓词锚本列）。
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
     ['name', { k: 'text' }],
     ['slug', { k: 'text' }],
@@ -33,6 +36,8 @@ export const WORKSPACE_META: TableMeta = {
 
 export interface Workspace {
   id: string;
+  /** 归属租户（expand 段可空·回填后全量有值·NOT NULL 收紧留 contract 段）。 */
+  tenantId?: string | null;
   organizationId: string;
   name: string;
   slug: string;

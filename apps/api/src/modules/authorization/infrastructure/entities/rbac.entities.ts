@@ -27,6 +27,9 @@ export const ORGANIZATION_ROLE_META: TableMeta = {
   tableName: 'organization_role',
   columns: [
     ['id', { k: 'text', primary: true }],
+    // 角色升租级（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable）：同租内跨组织
+    // 互见的自然配套——授予键从 organizationId 换 tenantId（切片 C 换轴消费本列）。
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
     ['key', { k: 'text' }],
     ['name', { k: 'text' }],
@@ -60,6 +63,8 @@ export const ORGANIZATION_ROLE_AUDIT_META: TableMeta = {
   tableName: 'organization_role_audit',
   columns: [
     ['id', { k: 'bigintAutoPk' }],
+    // 租级留痕冗余列（同上·切片 C 换轴后审计读锚本列）。
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
     ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
     // 操作者可删：set null 留审计行本体（留痕不因 actor 消亡而丢）。
     ['actorId', { k: 'fk', target: 'User', onDelete: 'set null', nullable: true }],
@@ -81,6 +86,8 @@ export const ORGANIZATION_ROLE_AUDIT_META: TableMeta = {
 
 export interface OrganizationRoleRow {
   id: string;
+  /** 归属租户（expand 段可空·角色租级化后仓储锚本列）。 */
+  tenantId?: string | null;
   organizationId: string;
   key: string;
   name: string;
@@ -106,6 +113,7 @@ export const OrganizationRoleGrant: EntitySchema<OrganizationRoleGrantRow> = bui
 
 export interface OrganizationRoleAuditRow {
   id: number;
+  tenantId?: string | null;
   organizationId: string;
   actorId: string | null;
   action: string;

@@ -7,7 +7,9 @@ import {
   ORGANIZATION_ROLE_META,
 } from '../../../modules/authorization/infrastructure/entities/rbac.entities';
 import { AUDIT_LOG_META } from '../../../modules/organizations/infrastructure/entities/audit-log.entity';
+import { TENANT_META } from '../../../modules/organizations/infrastructure/entities/tenant.entity';
 import { ORGANIZATION_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/organization-subscription.entity';
+import { TENANT_SUBSCRIPTION_META } from '../../../modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { WORKSPACE_META } from '../../../modules/workspaces/infrastructure/entities/workspace.entity';
 import { EVENT_META } from '../../eventing/entities/event.entity';
 import { buildMigrationEntity } from '../column-meta';
@@ -140,11 +142,17 @@ export const Verification = defineEntity({
   },
 });
 
+// rehierarchy 切片 B：新层根表（无 FK 依赖·须先于 Organization 求值——各表 tenantId 列在此引用）。
+export const Tenant = buildMigrationEntity(TENANT_META, {});
+
 export const Organization = defineEntity({
   name: 'Organization',
   tableName: 'organization',
   properties: {
     id: p.text().primary(),
+    // 归属租户（global-tenant-organization-rehierarchy 切片 B·expand 段 nullable·FK cascade）：
+    // 新层级 Tenant ⊃ Organization ⊃ Workspace 的边——本表现系租户域内业务表（切片 C registry 闸换轴随动）。
+    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
     name: p.text(),
     slug: p.text(),
     logo: p.text().nullable(),
@@ -190,6 +198,8 @@ export const Member = defineEntity({
   tableName: 'member',
   properties: {
     id: p.text().primary(),
+    // 租级归属冗余列（与 organization.tenantId 同批回填·expand 段 nullable）。
+    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
     organizationId: p.manyToOne(Organization).mapToPk().deleteRule('cascade'),
     userId: p.manyToOne(User).mapToPk().deleteRule('cascade'),
     role: p.text().default('member'),
@@ -203,6 +213,7 @@ export const Invitation = defineEntity({
   tableName: 'invitation',
   properties: {
     id: p.text().primary(),
+    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
     organizationId: p.manyToOne(Organization).mapToPk().deleteRule('cascade'),
     email: p.text(),
     role: p.text(),
@@ -214,7 +225,7 @@ export const Invitation = defineEntity({
   indexes: [{ name: 'invitation_org_email_idx', properties: ['organizationId', 'email'] }],
 });
 
-export const Workspace = buildMigrationEntity(WORKSPACE_META, { User, Organization });
+export const Workspace = buildMigrationEntity(WORKSPACE_META, { User, Organization, Tenant });
 
 export const Consent = defineEntity({
   name: 'Consent',
@@ -241,6 +252,7 @@ export const Post = defineEntity({
     title: p.text(),
     content: p.text().nullable(),
     published: p.boolean().default(false),
+    tenantId: p.manyToOne(Tenant).mapToPk().deleteRule('cascade').nullable(),
     organizationId: p.manyToOne(Organization).mapToPk().deleteRule('cascade'),
     workspaceId: p.manyToOne(Workspace).mapToPk().nullable().deleteRule('set null'),
     createdAt: tsNow(),
@@ -257,27 +269,38 @@ export const OrganizationSubscription = buildMigrationEntity(ORGANIZATION_SUBSCR
   Organization,
 });
 
+// rehierarchy 切片 B：计费上移新表（旧表并存至 contract 段退役·META 双形单源入基线集供 generate 非空 diff 对拍）。
+export const TenantSubscription = buildMigrationEntity(TENANT_SUBSCRIPTION_META, {
+  User,
+  Tenant,
+});
+
 export const Event = buildMigrationEntity(EVENT_META, { User, Organization });
 
 // module-rbac-dynamic-roles S1（甲裁三表）：授权事实 SSOT 入 DB·同元数据双变体派生（纯 additive）。
-export const OrganizationRole = buildMigrationEntity(ORGANIZATION_ROLE_META, { Organization });
+export const OrganizationRole = buildMigrationEntity(ORGANIZATION_ROLE_META, {
+  Organization,
+  Tenant,
+});
 export const OrganizationRoleGrant = buildMigrationEntity(ORGANIZATION_ROLE_GRANT_META, {
   OrganizationRole,
 });
 export const OrganizationRoleAudit = buildMigrationEntity(ORGANIZATION_ROLE_AUDIT_META, {
   Organization,
+  Tenant,
   User,
 });
 
 // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·同元数据双变体派生·纯 additive）。
 export const AuditLog = buildMigrationEntity(AUDIT_LOG_META, { User });
 
-/** 迁移基线用的全表忠实实体集（16 表·与 schema 逐列对齐·global-governance-lifecycle-consolidation 切片 E 立 `audit_log` 账本后 15→16）。 */
+/** 迁移基线用的全表忠实实体集（18 表·与实体元数据逐列对齐·global-tenant-organization-rehierarchy 切片 B 新入 `tenant`/`tenant_subscription` 后 16→18）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
   Session,
   Verification,
+  Tenant,
   Organization,
   Member,
   Invitation,
@@ -285,6 +308,7 @@ export const MIKRO_MIGRATION_ENTITIES = [
   Consent,
   Post,
   OrganizationSubscription,
+  TenantSubscription,
   Event,
   OrganizationRole,
   OrganizationRoleGrant,
