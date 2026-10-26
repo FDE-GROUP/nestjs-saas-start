@@ -5,7 +5,11 @@ import { expect, test } from '@playwright/test';
  *
  * 真 SPA（vite dev :5173）+ 真 API（编译产物 :7009·经 vite proxy 同源）+ 真库（Testcontainers 一次性 PG·seed）。
  * 栈生命周期归编排器 `scripts/e2e-web.ts`——它跑完 seed 后本 spec 才执行，故 `admin@example.com`/`admin123`
- * 及其唯一成员组织 `seed-acme` 必已就位（登录后首页 loader「引导落租」自动激活唯一组织）。
+ * 及其成员组织必已就位。
+ *
+ * rehierarchy 切片 D 起 seed 给运营者专属租户挂**两个**组织（`seed-acme` + companion `seed-acme-b`），
+ * 故运营者成员组织数 ≠ 1，首页「引导落租」不再自动激活（该自动激活仅在恰有一个成员组织时无歧义触发）。
+ * 本黄金流遂显式经**双层切换器**选一个组织（`POST /organizations/active`）再落 /posts——顺带端到端验证切片 E-F 切换器。
  */
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@example.com';
@@ -32,6 +36,10 @@ test.describe('认证会话墙', () => {
 test.describe('核心写黄金流：登录 → 引导落租 → 建文章', () => {
   test('建 post 并回显于列表', async ({ page }) => {
     await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+    // 双层切换器：租户下选一个组织激活上下文（点击→POST /organizations/active→成功回执）。
+    await page.getByRole('button', { name: '切换到此组织' }).first().click();
+    await expect(page.getByText(/^已切换到/)).toBeVisible({ timeout: 15_000 });
 
     await page.goto('/posts');
     // posts loader 过会话墙后拉列表；建表单以「标题」字段为锚。

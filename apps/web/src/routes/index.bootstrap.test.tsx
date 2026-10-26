@@ -102,7 +102,7 @@ describe('dashboard loader 引导落租', () => {
     ]);
     renderAt('/');
     await vi.waitFor(() =>
-      expect(screen.getByText('尚无活跃组织，请在「我的组织」中切换。')).toBeTruthy(),
+      expect(screen.getByText('尚无活跃租户，请在「租户与组织」中选择。')).toBeTruthy(),
     );
     expect(mocks.POST).not.toHaveBeenCalled();
     expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
@@ -142,6 +142,54 @@ describe('dashboard loader 引导落租', () => {
     );
     await vi.waitFor(() =>
       expect(screen.getByRole('status').textContent).toContain('已提交，等待平台审批'),
+    );
+  });
+
+  it('租户目录非空 → 渲双层「租户与组织」（顶层租户 + 二级组织），点击切换命中 /organizations/active', async () => {
+    mocks.requireSession.mockResolvedValue(session('org-a'));
+    mocks.GET.mockImplementation((path: string) => {
+      if (path === '/api/v1/organizations')
+        return Promise.resolve({
+          data: {
+            data: [
+              { id: 'org-a', name: 'Acme' },
+              { id: 'org-b', name: 'Beta' },
+            ],
+          },
+          error: null,
+        });
+      if (path === '/api/v1/tenants')
+        return Promise.resolve({
+          data: {
+            data: {
+              tenants: [
+                {
+                  tenantId: 't1',
+                  name: 'Acme Holdings',
+                  status: 'active',
+                  organizations: [
+                    { organizationId: 'org-a', name: 'Acme' },
+                    { organizationId: 'org-b', name: 'Beta' },
+                  ],
+                },
+              ],
+            },
+          },
+          error: null,
+        });
+      if (path === '/api/v1/subscriptions/current')
+        return Promise.resolve({ data: { data: activeSub }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+    renderAt('/');
+    await vi.waitFor(() => expect(screen.getByText('租户：Acme Holdings')).toBeTruthy());
+    const buttons = screen.getAllByRole('button', { name: '切换到此组织' });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[1] as HTMLElement);
+    await vi.waitFor(() =>
+      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/active', {
+        body: { organizationId: 'org-b' },
+      }),
     );
   });
 });

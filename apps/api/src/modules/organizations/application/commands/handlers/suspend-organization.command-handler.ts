@@ -1,5 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
@@ -11,8 +11,8 @@ import { governedOrganizationTransition } from './governed-organization-transiti
  * 暂停租户 handler（FR-6/FR-10·平台级）：`active → suspended`，经状态服务严格裁决。
  *
  * @remarks
- * 经 `OrganizationStatusService.transition`
- * 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），`organization.status` 真列单点写回；
+ * 经 `TenantStatusService.transition`
+ * 严格裁决（§9.4 迁移表·非法 → 409·不存在 → null 转 404），准入态归位后 `tenant.status` 真列单点写回；
  * 中间件 deny-list 使该租户业务面即时失能。成败均落结构化审计（FR-6）。
  * 架构精度修宪 S4：三分支样板收敛至 `governedOrganizationTransition` 共用用例（薄壳）。
  * @public
@@ -22,7 +22,7 @@ export class SuspendOrganizationCommandHandler
   implements ICommandHandler<SuspendOrganizationCommand>
 {
   constructor(
-    @Inject(OrganizationStatusService) private readonly status: OrganizationStatusService,
+    @Inject(TenantStatusService) private readonly status: TenantStatusService,
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 

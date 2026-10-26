@@ -5,6 +5,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
@@ -67,15 +68,39 @@ export class MikroOrganizationGovernanceRepository
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   // entities.ts 的 `defineEntity` 结果只有值、无 companion interface，实例类型经 `InferEntity` 提取。
-  // 归列后 `organization` 行自带 `status` 真列，无需旁表 join。
-  private toRow(entity: InferEntity<typeof Organization>): PlatformOrganizationRow {
+  // 治理换轴归位（rehierarchy E-F）：审批准入态权威上移 `tenant.status`——平台目录/待审队列的 `status`
+  // 取所属租户态（org.status 去审批化后恒 active·不再反映准入态）。无租户行（防御）回落 org 自有态。
+  private toRow(
+    entity: InferEntity<typeof Organization>,
+    tenantStatus?: OrganizationStatus,
+  ): PlatformOrganizationRow {
     return {
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: effectiveStatus(entity.status as OrganizationStatus),
+      status: tenantStatus ?? effectiveStatus(entity.status as OrganizationStatus),
       createdAt: entity.createdAt,
     };
+  }
+
+  /**
+   * 批量取一组组织的专属租户准入态（1:1 骨架·tenant.id=org.id；多组织回落任一在租态）。
+   * 一次 in 查避免逐行 N+1；无租户行的 org 不出现在映射（toRow 回落自有态）。
+   */
+  private async tenantStatusByOrg(
+    em: Awaited<ReturnType<MikroOrmService['fork']>>,
+    orgIds: string[],
+  ): Promise<Map<string, OrganizationStatus>> {
+    if (orgIds.length === 0) return new Map();
+    const tenants = await em.find(Tenant, { id: { $in: orgIds } } as never, {
+      fields: ['id', 'status'] as never,
+    });
+    return new Map(
+      (tenants as { id: string; status: string }[]).map((t) => [
+        t.id,
+        t.status as OrganizationStatus,
+      ]),
+    );
   }
 
   async list(opts: {
@@ -95,8 +120,12 @@ export class MikroOrganizationGovernanceRepository
       limit: opts.limit,
       offset: opts.offset,
     });
+    const tenantStatuses = await this.tenantStatusByOrg(
+      em,
+      entities.map((e) => e.id),
+    );
     return createPage(
-      entities.map((entity) => this.toRow(entity)),
+      entities.map((entity) => this.toRow(entity, tenantStatuses.get(entity.id))),
       total,
       opts,
     );
@@ -106,7 +135,8 @@ export class MikroOrganizationGovernanceRepository
     const em = await this.mikro.fork();
     const entity = await em.findOne(Organization, { id: organizationId } as never);
     if (!entity) return null;
-    return this.toRow(entity);
+    const tenantStatuses = await this.tenantStatusByOrg(em, [entity.id]);
+    return this.toRow(entity, tenantStatuses.get(entity.id));
   }
 
   async diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null> {

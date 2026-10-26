@@ -1,5 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
 import type { DomainEventPublisher } from '@core/saas-kit/shared-kernel/domain/event-publisher.port';
@@ -24,7 +24,7 @@ function makeHandler(
   } as unknown as DomainEventPublisher;
   const handler = new RejectOrganizationCommandHandler(
     { remove } as unknown as OrganizationProvisioningRepository,
-    { read } as unknown as OrganizationStatusService,
+    { read } as unknown as TenantStatusService,
     audit as unknown as PlatformAuditService,
     publisher,
     // ES Phase B 后半：pass-through UoW（单测不开库事务；真事务装配行为由 e2e/relay 验）

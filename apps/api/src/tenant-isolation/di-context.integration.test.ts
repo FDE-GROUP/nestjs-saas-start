@@ -11,7 +11,7 @@ import { ConfigPlatformSettings } from '@app/modules/platform/infrastructure/con
 import { MikroPlatformIdentityLookup } from '@app/modules/platform/infrastructure/mikro-platform-identity.lookup';
 import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { PERMISSION_CHECKER } from '@core/saas-kit/authorization/permission.port';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { PLATFORM_SETTINGS } from '@core/saas-kit/platform/platform-config.port';
@@ -135,7 +135,8 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
             } as unknown as OrganizationRbacRepository,
           },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
+          // 治理换轴（E-F）：中间件失能卡点改注入 TenantStatusService（读 tenant.status）。
+          { provide: TenantStatusService, useValue: { isBlocked: async () => false } },
           // 切片 C：中间件主轴派生端口（坐实 DI 可解析·不触库）。
           { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub() },
         ],
@@ -169,7 +170,7 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           // 中间件经真实 AuthSessionReader 适配→保留 getSession→ALS 端到端传播保真度。
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: OrganizationStatusService, useValue: { isBlocked: async () => false } },
+          { provide: TenantStatusService, useValue: { isBlocked: async () => false } },
           // 切片 C：活动组织 org_1 → 主轴 tenant_1（守卫 TenantIsolationGuard 现读 tenantId fail-closed）。
           { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub('tenant_1') },
         ],
@@ -235,8 +236,8 @@ describe('S9 · Tenancy DI / 上下文集成（design:paramtypes 回归 + ALS �
           },
           { provide: SESSION_READER, useClass: AuthSessionReader },
           { provide: UserStatusService, useValue: { isBlocked: async () => false } },
-          { provide: OrganizationStatusService, useValue: { isBlocked: async () => true } },
-          // 切片 C：租户被暂停 → 封禁路径 bind(undefined) → 主轴不解析（resolver 不被调）→ 守卫 403。
+          { provide: TenantStatusService, useValue: { isBlocked: async () => true } },
+          // 治理换轴（E-F）：先派生 tenant_susp、再对**租户**判失能→ isBlocked=true → bind(undefined) → 守卫 403。
           { provide: TENANT_SCOPE_RESOLVER, useValue: tenantScopeStub('tenant_susp') },
         ],
       }).compile();

@@ -29,7 +29,7 @@ export class ListPostsQueryHandler
    */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
   async execute(query: ListPostsQuery): Promise<CursorPage<PostReadModel>> {
-    const page = await this.posts.list(query.request);
+    const page = await this.posts.list(query.request, query.organizationId);
     return createCursorPage(page.items.map(toPostReadModel), page.hasMore, page.nextCursor);
   }
 }

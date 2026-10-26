@@ -28,7 +28,7 @@ describe('ListPostsQueryHandler · 领域实体→投影 + 游标信封透传', 
     const request = { limit: 4, cursor: 'prev' };
     const result = await handler.execute(new ListPostsQuery(request));
 
-    expect(list).toHaveBeenCalledWith(request);
+    expect(list).toHaveBeenCalledWith(request, undefined);
     // 信封语义逐字保留（hasMore/nextCursor 不因映射丢失）
     expect(result.hasMore).toBe(true);
     expect(result.nextCursor).toBe('cur-1');

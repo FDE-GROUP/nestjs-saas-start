@@ -993,6 +993,12 @@ paths:
             type: string
             maxLength: 512
             pattern: ^[A-Za-z0-9_-]+$
+        - name: organizationId
+          required: false
+          in: query
+          schema:
+            type: string
+            maxLength: 128
       responses:
         '200':
           description: Cursor page of posts owned by the active organization.
@@ -1874,6 +1880,31 @@ paths:
         Read the active organization Odoo availability for the apps panel
         (personal channel)
       tags: *ref_12
+  /api/v1/tenants:
+    get:
+      operationId: TenantsController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: Tenant directory grouped by the current user memberships.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TenantDirectoryResponse'
+        '401':
+          description: Missing or invalid session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: List tenant directory of the current user (tenants → organizations)
+      tags:
+        - tenants
   /api/v1/subscriptions/current:
     get:
       operationId: SubscriptionsController_getCurrent_v1
@@ -2496,7 +2527,7 @@ components:
           description: organization 主键。
         status:
           type: string
-          enum:
+          enum: &ref_17
             - pending_approval
             - active
             - suspended
@@ -2727,6 +2758,59 @@ components:
         - available
         - odooBindingStatus
         - odooCompanyId
+    TenantDirectoryOrganizationResponse:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          description: 组织主键（二级轴·绑一家 Odoo 公司）。
+        name:
+          type: string
+          description: 组织名称。
+        slug:
+          type: string
+          description: 组织 slug。
+      required:
+        - organizationId
+        - name
+        - slug
+    TenantDirectoryEntryResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: 租户主键（隔离主轴）。
+        name:
+          type: string
+          description: 租户名称。
+        slug:
+          type: string
+          description: 租户 slug。
+        status:
+          type: string
+          enum: *ref_17
+          description: 租户准入态。
+        organizations:
+          description: 该租户下当前用户可见的组织集合。
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantDirectoryOrganizationResponse'
+      required:
+        - tenantId
+        - name
+        - slug
+        - status
+        - organizations
+    TenantDirectoryResponse:
+      type: object
+      properties:
+        tenants:
+          description: 当前用户可见的租户目录（每租携其下组织集合）。
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantDirectoryEntryResponse'
+      required:
+        - tenants
     SubscriptionResponse:
       type: object
       properties:
@@ -2810,7 +2894,7 @@ components:
           description: 集成状态恒 "ok"。
         selected:
           type: string
-          enum: &ref_17
+          enum: &ref_18
             - stripe
             - alipay
             - wechat_pay
@@ -2820,7 +2904,7 @@ components:
           description: 可用通道集合。
           items:
             type: string
-            enum: *ref_17
+            enum: *ref_18
       required:
         - status
         - selected
@@ -2833,7 +2917,7 @@ components:
           description: 通道侧 customer id。
         providerId:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 所属通道。
         email:
           type: string
@@ -2854,7 +2938,7 @@ components:
           description: checkout / payment intent id。
         providerId:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 所属通道。
         status:
           type: string
@@ -2878,7 +2962,7 @@ components:
           description: refund id。
         providerId:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 所属通道。
         status:
           type: string

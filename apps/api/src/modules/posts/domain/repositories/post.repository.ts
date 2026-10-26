@@ -17,6 +17,10 @@ export const POST_REPOSITORY = Symbol('POST_REPOSITORY');
  * choke-point for the compound `(tenant, workspace)` isolation (global-tenancy §9.3 / FR-5,
  * D2) — handlers never scatter `where organizationId/workspaceId` by hand.
  *
+ * rehierarchy 切片 E-F 例外（可审计）：`list` 收**可选 `organizationId` 收窄筛选维**——它是归属
+ * 标签而非隔离轴，适配器仍恒以可信 `tenantId` 为主谓词再 AND 之（外来 org 只收窄至 0 行、绝不括宽/越租），
+ * 故不悖离「port 不暴露租户轴」的卡点语义。
+ *
  * 分层对齐后端口流动**充血领域实体** `Post`（非裸记录·见 architecture「Entity Doctrine」）：
  * `create` 收业务态 `Post.draft(...)`（适配器补租户/id/时间戳落库）、`find/list` 返回复原后的完整
  * 领域实体；到传输投影 `PostReadModel` 的映射归 application，领域实体不越界进 `api/`。
@@ -26,9 +30,11 @@ export interface PostRepository {
   /**
    * 仅列当前租户内的帖子（最新在前）。
    * @param request - 游标分页请求。
+   * @param organizationId - 可选租内收窄筛选维（归属标签·非安全轴）：传值则只留该组织的行，
+   * 与可信 `tenantId` 谓词 AND（外来 org 恒命中 0 行·绝不越租/括宽）；缺省即同租跨组织默认互见。
    * @returns 游标分页信封（(createdAt,id) 复合降序·就绪预备切片 B）。
    */
-  list(request: CursorPageRequest): Promise<CursorPage<Post>>;
+  list(request: CursorPageRequest, organizationId?: string): Promise<CursorPage<Post>>;
   /**
    * 取当前租户内的单帖（绝不泄露其他租户的行）。
    * @param id - 帖子主键。

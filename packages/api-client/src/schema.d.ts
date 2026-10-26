@@ -674,6 +674,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tenants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tenant directory of the current user (tenants → organizations) */
+        get: operations["TenantsController_list_v1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/subscriptions/current": {
         parameters: {
             query?: never;
@@ -1083,6 +1100,33 @@ export interface components {
             odooBindingStatus: "pending" | "provisioning" | "ready" | "failed" | null;
             /** @description 绑定的 Odoo 公司 id（res.company 主键·无绑定即 null）。 */
             odooCompanyId: number | null;
+        };
+        TenantDirectoryOrganizationResponse: {
+            /** @description 组织主键（二级轴·绑一家 Odoo 公司）。 */
+            organizationId: string;
+            /** @description 组织名称。 */
+            name: string;
+            /** @description 组织 slug。 */
+            slug: string;
+        };
+        TenantDirectoryEntryResponse: {
+            /** @description 租户主键（隔离主轴）。 */
+            tenantId: string;
+            /** @description 租户名称。 */
+            name: string;
+            /** @description 租户 slug。 */
+            slug: string;
+            /**
+             * @description 租户准入态。
+             * @enum {string}
+             */
+            status: "pending_approval" | "active" | "suspended" | "deleted";
+            /** @description 该租户下当前用户可见的组织集合。 */
+            organizations: components["schemas"]["TenantDirectoryOrganizationResponse"][];
+        };
+        TenantDirectoryResponse: {
+            /** @description 当前用户可见的租户目录（每租携其下组织集合）。 */
+            tenants: components["schemas"]["TenantDirectoryEntryResponse"][];
         };
         SubscriptionResponse: {
             /** @description 是否已有生效订阅。 */
@@ -2212,6 +2256,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string;
+                organizationId?: string;
             };
             header?: never;
             path?: never;
@@ -3114,6 +3159,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
                         data?: components["schemas"]["OrganizationOdooAvailabilityResponse"];
+                    };
+                };
+            };
+            /** @description Missing or invalid session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    TenantsController_list_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant directory grouped by the current user memberships. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["TenantDirectoryResponse"];
                     };
                 };
             };

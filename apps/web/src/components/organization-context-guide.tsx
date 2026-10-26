@@ -10,10 +10,10 @@ import { SectionHeading } from './panels';
 export function OrganizationContextGuidePanel({ hasMemberships }: { hasMemberships: boolean }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900">
-      <SectionHeading>无活跃组织</SectionHeading>
+      <SectionHeading>无活跃租户</SectionHeading>
       {hasMemberships ? (
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          你已有组织成员身份，但尚未激活任一组织，管理页暂不可入。请到首页「我的组织」切换。
+          你已有组织成员身份，但尚未激活任一租户上下文，管理页暂不可入。请到首页「租户与组织」中选择。
         </p>
       ) : (
         <p className="text-sm text-slate-600 dark:text-slate-300">

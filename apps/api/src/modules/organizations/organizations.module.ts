@@ -2,6 +2,8 @@ import { ORGANIZATION_ODOO_BINDING_READER } from '@core/saas-kit/modules/organiz
 import { ORGANIZATION_ODOO_BINDING_WRITER } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
 import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
 import { ORGANIZATION_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.store';
+import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
+import { TENANT_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.store';
 import { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import { USER_STATUS_STORE } from '@core/saas-kit/modules/organizations/lifecycle/user-status.store';
 import { AUDIT_LOG_STORE } from '@core/saas-kit/shared-kernel/audit/audit-log.store';
@@ -10,6 +12,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { OrganizationsController } from './api/organizations.controller';
 import { OrganizationsOrgAdminController } from './api/organizations-org-admin.controller';
 import { OrganizationsSelfController } from './api/organizations-self.controller';
+import { TenantsController } from './api/tenants.controller';
 import { ApproveOrganizationCommandHandler } from './application/commands/handlers/approve-organization.command-handler';
 import { BindOrganizationOdooCompanyCommandHandler } from './application/commands/handlers/bind-organization-odoo-company.command-handler';
 import { DeleteOrganizationCommandHandler } from './application/commands/handlers/delete-organization.command-handler';
@@ -27,12 +30,15 @@ import { ListPlatformOrganizationsQueryHandler } from './application/queries/han
 import { ListPlatformUsersQueryHandler } from './application/queries/handlers/list-platform-users.query-handler';
 import { ORGANIZATION_GOVERNANCE_REPOSITORY } from './domain/repositories/organization-governance.repository';
 import { ORGANIZATION_PROVISIONING_REPOSITORY } from './domain/repositories/organization-provisioning.repository';
+import { TENANT_DIRECTORY_REPOSITORY } from './domain/repositories/tenant-directory.repository';
 import { USER_GOVERNANCE_REPOSITORY } from './domain/repositories/user-governance.repository';
 import { MikroAuditLogStore } from './infrastructure/mikro-audit-log.store';
 import { MikroOrganizationStatusStore } from './infrastructure/mikro-organization-status.store';
+import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
 import { MikroOrganizationGovernanceRepository } from './infrastructure/repositories/mikro-organization-governance.repository';
 import { MikroOrganizationProvisioningRepository } from './infrastructure/repositories/mikro-organization-provisioning.repository';
+import { MikroTenantDirectoryRepository } from './infrastructure/repositories/mikro-tenant-directory.repository';
 import { MikroUserGovernanceRepository } from './infrastructure/repositories/mikro-user-governance.repository';
 
 const CommandHandlers = [
@@ -76,6 +82,7 @@ const QueryHandlers = [
     OrganizationsController,
     OrganizationsOrgAdminController,
     OrganizationsSelfController,
+    TenantsController,
   ],
   providers: [
     ...CommandHandlers,
@@ -104,11 +111,17 @@ const QueryHandlers = [
     { provide: ORGANIZATION_ODOO_BINDING_WRITER, useExisting: ORGANIZATION_GOVERNANCE_REPOSITORY },
     // S6 user governance: platform-level cross-user read model (no tenant filter)。
     { provide: USER_GOVERNANCE_REPOSITORY, useClass: MikroUserGovernanceRepository },
+    // rehierarchy 切片 E-F：只读租户目录（用户级·成员组织按派生租户归组）供前端双层切换器。
+    { provide: TENANT_DIRECTORY_REPOSITORY, useClass: MikroTenantDirectoryRepository },
     // 机制层提纯（未决项 4）：lifecycle 服务与 store 适配自 TenantIsolationModule 归位本上下文。
     // §9.5.4①B 端口倒置：core 服务经端口消费持久化，适配由本（参考）应用装配。
     OrganizationStatusService,
+    // 治理换轴归位（rehierarchy 切片 E-F）：审批/暂停/恢复/驳回/删除的权威态上移 `tenant.status`，
+    // 由本服务作唯一读写卡点（与 OrganizationStatusService 管的组织自有态正交）。
+    TenantStatusService,
     UserStatusService,
     { provide: ORGANIZATION_STATUS_STORE, useClass: MikroOrganizationStatusStore },
+    { provide: TENANT_STATUS_STORE, useClass: MikroTenantStatusStore },
     { provide: USER_STATUS_STORE, useClass: MikroUserStatusStore },
     // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本适配（唯一写面·属主 tenants）。
     //  core `PlatformAuditService`（PlatformModule @Global）经本端口消费·@Global 保跨模块可见。
@@ -122,6 +135,8 @@ const QueryHandlers = [
   exports: [
     // 随 @Global 导出：跨上下文消费面（tenancy 中间件 deny-list·auth 会话墙·platform 闸门）保形。
     OrganizationStatusService,
+    TenantStatusService,
+    TENANT_STATUS_STORE,
     UserStatusService,
     ORGANIZATION_STATUS_STORE,
     USER_STATUS_STORE,

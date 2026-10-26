@@ -14,10 +14,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroOrganizationGovernanceRepository } from './mikro-organization-governance.repository';
 
 /**
- * 切片 3c-ii-B 镜像断言（global-governance-lifecycle-consolidation 切片 B 归列后）：状态源从
- * `tenant` 旁表迁至 `organization.status` 真列——列表/单查均**单次 findAndCount/findOne(Organization)**
- * 即携 status，无旁表二查；`effectiveStatus` 仅在极端读不到列值时兑底 active。fake `em` 经
- * `MikroOrmService.fork()` 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
+ * 切片 3c-ii-B 镜像断言（global-tenant-organization-rehierarchy 切片 E-F 治理换轴后）：平台目录/待审队列
+ * 的准入态权威上移 `tenant.status`——`list`/`findById` 先取组织行、再**批量**取专属租户态
+ * （tenantStatusByOrg 一次 `find(Tenant)`），行 `status` 取租户态；无租户行（防御）回落组织自有态。
+ * fake `em` 经 `MikroOrmService.fork()` 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
  */
 function makeRepo() {
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
@@ -49,13 +49,13 @@ const orgRow = {
 describe('MikroOrganizationGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('list() maps rows, coerces missing status column → active, and reports total', async () => {
+  it('list() maps rows, coerces missing tenant/org status → active, and reports total', async () => {
     const { repo, spies } = makeRepo();
     spies.findAndCount.mockResolvedValueOnce([
       [{ ...orgRow, metadata: null, status: undefined }],
       7,
     ]);
-    // 归列后无旁表二查（find 不应被触）；status 缺失→effectiveStatus 兑底 active
+    // 无租户行（find 默认 []）→ 回落组织自有态兑底 active
     const page = await repo.list({ limit: 20, offset: 0 });
     expect(page.total).toBe(7);
     expect(page.items[0]).toMatchObject({
@@ -65,19 +65,21 @@ describe('MikroOrganizationGovernanceRepository (S5 · FR-6 跨租户视图)', (
       status: ORGANIZATION_STATUS.ACTIVE,
     });
     expect(page).toMatchObject({ limit: 20, offset: 0 });
-    expect(spies.find).not.toHaveBeenCalled();
+    // 治理换轴：批量取专属租户态一次（find(Tenant)）。
+    expect(spies.find).toHaveBeenCalledTimes(1);
   });
 
-  it('list() preserves an explicit lifecycle status carried on the organization row', async () => {
+  it('list() 治理换轴：行 status 取专属 tenant.status（覆盖组织自有态）', async () => {
     const { repo, spies } = makeRepo();
     spies.findAndCount.mockResolvedValueOnce([
-      [{ ...orgRow, status: ORGANIZATION_STATUS.SUSPENDED }],
+      [{ ...orgRow, status: ORGANIZATION_STATUS.ACTIVE }],
       1,
     ]);
+    // 专属租户处于 suspended（1:1 骨架·tenant.id=org.id）——准入态以租户为准。
+    spies.find.mockResolvedValueOnce([{ id: 'orgA', status: ORGANIZATION_STATUS.SUSPENDED }]);
     const page = await repo.list({ limit: 10, offset: 5 });
     expect(page.items[0].status).toBe(ORGANIZATION_STATUS.SUSPENDED);
-    // 归列：状态直读 organization 行，无旁表 find
-    expect(spies.find).not.toHaveBeenCalled();
+    expect(spies.find).toHaveBeenCalledTimes(1);
   });
 
   it('list() builds the $ilike search predicate over name/slug', async () => {

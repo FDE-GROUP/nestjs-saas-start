@@ -12,4 +12,5 @@ export * from './platform';
 export * from './posts';
 export * from './storage';
 export * from './subscriptions';
+export * from './tenants';
 export * from './workspaces';

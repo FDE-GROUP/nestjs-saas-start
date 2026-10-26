@@ -1,4 +1,4 @@
-import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { UserStatusService } from '@core/saas-kit/modules/organizations/lifecycle/user-status.service';
 import type { RequestSessionReader } from '@core/saas-kit/tenant-isolation/session/request-session.port';
 import { TenantIsolationMiddleware } from '@core/saas-kit/tenant-isolation/tenant-isolation.middleware';
@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
  * §9.5.4①B · P1b：中间件经 `RequestSessionReader` 端口消费会话（不再打桩 Better Auth 实例）。
  * 会话解析（cookie / 旁路 / getSession）细节改由 `AuthSessionReader` 适配单测覆盖。
  * rehierarchy 切片 C：封禁通过后另经 `TenantScopeResolver` 把活动组织升为主轴 `tenantId`。
+ * rehierarchy 切片 E-F 治理换轴：先派生 tenantId、再对**租户**判失能（deny-list 读 `tenant.status`）。
  */
 function makeMiddleware(opts: {
   activeOrganizationId?: string;
@@ -36,7 +37,7 @@ function makeMiddleware(opts: {
     opts.blocked === 'throw'
       ? vi.fn().mockRejectedValue(new Error('db down'))
       : vi.fn().mockResolvedValue(opts.blocked ?? false);
-  const status = { isBlocked } as unknown as OrganizationStatusService;
+  const status = { isBlocked } as unknown as TenantStatusService;
 
   const userIsBlocked = vi.fn().mockResolvedValue(opts.userBlocked ?? false);
   const userStatus = { isBlocked: userIsBlocked } as unknown as UserStatusService;
@@ -80,7 +81,8 @@ describe('TenantIsolationMiddleware · S4 approval fail-closed (deny-list)', () 
   it('binds NO tenant when the active tenant is blocked (pending/suspended/deleted)', async () => {
     const { mw, isBlocked } = makeMiddleware({ activeOrganizationId: 'orgP', blocked: true });
     const store = await run(mw, reqWith());
-    expect(isBlocked).toHaveBeenCalledWith('orgP');
+    // 治理换轴（E-F）：失能卡点改读**租户**态——isBlocked 以派生 tenantId 为参。
+    expect(isBlocked).toHaveBeenCalledWith('tenant-orgP');
     expect(store?.organizationId).toBeUndefined();
     expect(store?.userId).toBe('u1'); // user-level identity still resolved
   });

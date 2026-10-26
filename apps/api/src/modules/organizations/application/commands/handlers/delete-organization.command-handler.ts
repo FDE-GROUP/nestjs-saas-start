@@ -1,5 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { ConflictException, Inject } from '@nestjs/common';
@@ -8,7 +8,7 @@ import type { OrganizationApplicationReadModel } from '../../read-models/organiz
 import { DeleteOrganizationCommand } from '../delete-organization.command';
 
 /**
- * 软删租户 handler（FR-6·NFR-6·平台级）：迁至 `deleted` 终态（§9.4），保留行供后续导出/硬删。
+ * 软删租户 handler（FR-6·NFR-6·平台级）：迁至 `deleted` 终态（§9.4），经 `TenantStatusService.transition` 写回 `tenant.status`（rehierarchy E-F 治理换轴归位）。
  *
  * @remarks
  * 中间件 deny-list 即时失能。已 deleted 再删 → 非法迁移 409；不存在 → null（404）。落结构化审计。
@@ -19,7 +19,7 @@ export class DeleteOrganizationCommandHandler
   implements ICommandHandler<DeleteOrganizationCommand>
 {
   constructor(
-    @Inject(OrganizationStatusService) private readonly status: OrganizationStatusService,
+    @Inject(TenantStatusService) private readonly status: TenantStatusService,
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
   ) {}
 

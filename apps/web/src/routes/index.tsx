@@ -27,6 +27,35 @@ function extractOrganizations(raw: unknown): OrganizationOrg[] {
   return [];
 }
 
+/**
+ * 租户目录防御形（GET /tenants·Nest typed 契约经 api-client 导出·此处取窄面供双层切换器渲染）。
+ * 顶层=租户（隔离与计费边界），二级=组织（绑一家 Odoo 公司）。
+ */
+interface TenantDirectoryOrg {
+  organizationId?: string;
+  name?: string;
+  slug?: string;
+}
+interface TenantDirectoryEntry {
+  tenantId?: string;
+  name?: string;
+  slug?: string;
+  status?: string;
+  organizations?: TenantDirectoryOrg[];
+}
+function extractTenants(raw: unknown): TenantDirectoryEntry[] {
+  const list = (raw as { tenants?: unknown } | undefined)?.tenants;
+  return Array.isArray(list) ? (list as TenantDirectoryEntry[]) : [];
+}
+
+/** 租户准入态人类标签（顶层说租户·状态可辨）。 */
+const TENANT_STATUS_LABEL: Record<string, string> = {
+  pending_approval: '待审批',
+  active: '生效',
+  suspended: '已暂停',
+  deleted: '已删除',
+};
+
 export const Route = createFileRoute('/')({
   // 未登录直接弹回登录页（deny-by-default 的前端映射·与后端会话墙同向）。
   loader: async () => {
@@ -37,6 +66,12 @@ export const Route = createFileRoute('/')({
     if (organizationError)
       logApiError({ path: '/api/v1/organizations', scope: 'organizations' }, organizationError);
     const organizations = organizationError ? [] : extractOrganizations(organizationData?.data);
+
+    // 租户目录（GET /tenants·双层切换器数据源）：把成员组织按派生租户归组。与 `organizations`
+    // 取数正交（后者仍供引导落租/订阅门控），目录缺席（未携/错）降级为空→切换器不渲。
+    const { data: tenantData, error: tenantError } = await api.GET('/api/v1/tenants');
+    if (tenantError) logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, tenantError);
+    const tenants = tenantError ? [] : extractTenants(tenantData?.data);
 
     // 引导落租（module-frontend-organization-bootstrap-activation）：会话未带 activeOrganizationId 且
     // **恰有一个**成员组织时自动 `POST /api/v1/organizations/active`（消订阅面冷 403·多组织交手动切换器·不自动择）。
@@ -75,13 +110,15 @@ export const Route = createFileRoute('/')({
       subscription,
       note,
       organizations,
+      tenants,
     };
   },
   component: DashboardPage,
 });
 
 function DashboardPage() {
-  const { user, hasActiveOrganization, subscription, note, organizations } = Route.useLoaderData();
+  const { user, hasActiveOrganization, subscription, note, organizations, tenants } =
+    Route.useLoaderData();
   const navigate = useNavigate();
 
   async function onSignOut() {
@@ -112,14 +149,14 @@ function DashboardPage() {
         </div>
       </section>
 
-      <OrganizationSwitchSection organizations={organizations} />
+      <TenantSwitchSection tenants={tenants} />
 
       <section className="flex flex-col gap-3">
         <SectionHeading>订阅摘要</SectionHeading>
         {!hasActiveOrganization && organizations.length === 0 ? (
           <OrganizationOnboardingPanel />
         ) : !hasActiveOrganization ? (
-          <EmptyPanel label="尚无活跃组织，请在「我的组织」中切换。" />
+          <EmptyPanel label="尚无活跃租户，请在「租户与组织」中选择。" />
         ) : note ? (
           <ErrorPanel message={note} />
         ) : (
@@ -133,7 +170,7 @@ function DashboardPage() {
 /** 纯展示（收 typed 订阅快照·可脱离 router 组件测）。 */
 export function SubscriptionView({ subscription }: { subscription?: SubscriptionResponse | null }) {
   if (!subscription?.hasSubscription) {
-    return <EmptyPanel label="当前组织尚无生效订阅。" />;
+    return <EmptyPanel label="当前租户尚无生效订阅。" />;
   }
   return (
     <dl className="grid grid-cols-1 gap-x-2 gap-y-1 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-[8rem_1fr] dark:border-slate-700">
@@ -151,8 +188,8 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
   );
 }
 
-/** 租户切换区域（操作面）。 */
-function OrganizationSwitchSection({ organizations }: { organizations: OrganizationOrg[] }) {
+/** 双层切换器（顶层租户上下文 · 二级组织选择·rehierarchy 切片 E-F）。 */
+function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
   const switchAction = useAction();
 
   async function handleSwitch(orgId: string, orgName: string) {
@@ -168,24 +205,46 @@ function OrganizationSwitchSection({ organizations }: { organizations: Organizat
     });
   }
 
-  if (organizations.length === 0) return null;
+  if (tenants.length === 0) return null;
 
   return (
     <section className="flex flex-col gap-3">
-      <SectionHeading>我的组织</SectionHeading>
-      <div className="flex flex-col gap-2">
-        {organizations.map((t) => (
+      <SectionHeading>租户与组织</SectionHeading>
+      <div className="flex flex-col gap-3">
+        {tenants.map((tenant) => (
           <div
-            key={t.id}
-            className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+            key={tenant.tenantId}
+            className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700"
           >
-            <span className="font-medium text-slate-800 dark:text-slate-100">{t.name ?? t.id}</span>
-            <SubmitButton
-              pending={switchAction.pending}
-              onClick={() => t.id && handleSwitch(t.id, t.name ?? t.id)}
-            >
-              切换到此组织
-            </SubmitButton>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-slate-800 dark:text-slate-100">
+                租户：{tenant.name ?? tenant.tenantId}
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {TENANT_STATUS_LABEL[tenant.status ?? ''] ?? tenant.status}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {(tenant.organizations ?? []).map((org) => (
+                <div
+                  key={org.organizationId}
+                  className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
+                >
+                  <span className="font-medium text-slate-800 dark:text-slate-100">
+                    {org.name ?? org.organizationId}
+                  </span>
+                  <SubmitButton
+                    pending={switchAction.pending}
+                    onClick={() =>
+                      org.organizationId &&
+                      handleSwitch(org.organizationId, org.name ?? org.organizationId)
+                    }
+                  >
+                    切换到此组织
+                  </SubmitButton>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

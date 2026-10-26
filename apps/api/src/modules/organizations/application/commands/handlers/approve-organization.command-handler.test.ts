@@ -1,5 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
@@ -9,7 +9,7 @@ import { ApproveOrganizationCommandHandler } from './approve-organization.comman
 function makeHandler(transition: ReturnType<typeof vi.fn>) {
   const audit = { logOrganizationGovernance: vi.fn() };
   const handler = new ApproveOrganizationCommandHandler(
-    { transition } as unknown as OrganizationStatusService,
+    { transition } as unknown as TenantStatusService,
     audit as unknown as PlatformAuditService,
   );
   return { handler, audit };

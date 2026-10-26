@@ -1,5 +1,5 @@
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import type { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ConflictException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,7 +15,7 @@ function deps(result: unknown) {
   const audit = { logOrganizationGovernance: vi.fn() };
   return {
     transition,
-    status: { transition } as unknown as OrganizationStatusService,
+    status: { transition } as unknown as TenantStatusService,
     audit: audit as unknown as PlatformAuditService,
     auditSpy: audit.logOrganizationGovernance,
   };

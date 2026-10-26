@@ -17,8 +17,8 @@ import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swag
 import {
   type CreatePost,
   createPostSchema,
-  type ListCursorQuery,
-  listCursorQuerySchema,
+  type ListPostsQuery as ListPostsQueryDto,
+  listPostsQuerySchema,
   postCursorPageSchema,
   postViewSchema,
 } from '@saas/contracts/index';
@@ -70,10 +70,10 @@ export class PostsController {
   @ApiResponse(apiError(400, 'Malformed cursor.'))
   @ApiResponse(apiError(403, 'No active organization context.'))
   list(
-    @Query({ schema: listCursorQuerySchema }) request: ListCursorQuery,
+    @Query({ schema: listPostsQuerySchema }) request: ListPostsQueryDto,
   ): Promise<CursorPage<PostReadModel>> {
     return this.queryBus.execute<ListPostsQuery, CursorPage<PostReadModel>>(
-      new ListPostsQuery(request),
+      new ListPostsQuery(request, request.organizationId),
     );
   }
 

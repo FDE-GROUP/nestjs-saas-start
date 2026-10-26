@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, type NestMiddleware } from '@nestjs/common';
-import { OrganizationStatusService } from '../modules/organizations/lifecycle/organization-status.service';
+import { TenantStatusService } from '../modules/organizations/lifecycle/tenant-status.service';
 import { UserStatusService } from '../modules/organizations/lifecycle/user-status.service';
 import { type RequestSessionReader, SESSION_READER } from './session/request-session.port';
 import { type TenantIsolationScope, tenantIsolationStorage } from './tenant-isolation-scope';
@@ -31,8 +31,8 @@ export class TenantIsolationMiddleware implements NestMiddleware {
   constructor(
     @Inject(SESSION_READER)
     private readonly session: RequestSessionReader,
-    @Inject(OrganizationStatusService)
-    private readonly tenantStatus: OrganizationStatusService,
+    @Inject(TenantStatusService)
+    private readonly tenantStatus: TenantStatusService,
     @Inject(UserStatusService)
     private readonly userStatus: UserStatusService,
     @Inject(TENANT_SCOPE_RESOLVER)
@@ -96,27 +96,26 @@ export class TenantIsolationMiddleware implements NestMiddleware {
             bind(undefined, undefined);
             return;
           }
-          // S4 · FR-1 审批制失能卡点 (deny-list): a tenant explicitly pending approval /
-          // suspended / deleted binds NO organizationId → downstream TenantIsolationGuard fails
-          // closed (403) on business routes. No status recorded (legacy/seeded) → allowed,
-          // so existing dev tenants are never locked. Async: only pay the extra read when
-          // a tenant is actually resolved.
+          // S4 · FR-1 审批制失能卡点 (deny-list·global-tenant-organization-rehierarchy 切片 E-F 治理换轴)：
+          // 治理准入态权威从 `organization.status` 上移归位 `tenant.status`——审批只管租户准入。先经
+          // `TENANT_SCOPE_RESOLVER` 把活动组织升为主轴 tenantId，再对**租户**判失能：显式 pending_approval /
+          // suspended / deleted 的租户 → bind 清空（guard fail-closed 403）。无租户归属（expand 段未盖章增量）
+          // → 不绑主轴（403）；租户无状态记录（存量/seeded·视同 active）→ 放行，绝不误锁既有 dev 租户。
           if (!organizationId) {
             bind(undefined, userId);
             return;
           }
-          return this.tenantStatus
-            .isBlocked(organizationId)
-            .then((blocked) => {
-              if (blocked) return bind(undefined, userId);
-              // 换轴派生（rehierarchy C）：活动组织 → 其 tenantId（主轴）；解析异常/无归属
-              // → 不绑主轴（guard fail-closed 403），但组织轴保留供归属面消费与诊断。
-              return this.tenantScope
-                .resolveTenantIdOf(organizationId)
-                .then((tenantId) => bind(organizationId, userId, tenantId))
-                .catch(() => bind(organizationId, userId));
+          return this.tenantScope
+            .resolveTenantIdOf(organizationId)
+            .then((tenantId) => {
+              // 解析不出租户归属：保留组织轴供归属面消费、主轴留空（guard 仍 fail-closed 403）。
+              if (!tenantId) return bind(organizationId, userId);
+              return this.tenantStatus.isBlocked(tenantId).then((blocked) => {
+                if (blocked) return bind(undefined, userId);
+                return bind(organizationId, userId, tenantId);
+              });
             })
-            .catch(() => bind(undefined, userId)); // fail-closed: unresolvable status → no tenant
+            .catch(() => bind(undefined, userId)); // fail-closed: 解析/状态不可得 → 不绑租户
         });
       })
       .catch((err: Error) => {

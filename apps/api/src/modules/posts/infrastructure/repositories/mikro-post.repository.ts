@@ -50,12 +50,16 @@ export class MikroPostRepository implements PostRepository {
     };
   }
 
-  async list(request: CursorPageRequest): Promise<CursorPage<Post>> {
+  async list(request: CursorPageRequest, organizationId?: string): Promise<CursorPage<Post>> {
     const { tenantId, workspaceId } = this.scope();
     // `where` 为真实谓词对象（tenantId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
     // `mikro-orm.factory.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
     // 类型而非 companion interface·两者在可空/默认列上 `FilterQuery` 宽化不致；cast 不改运行时谓词。
-    const tenantFilter = workspaceId ? { tenantId, workspaceId } : { tenantId };
+    // 主轴恒 tenantId（可信 ALS）；`workspaceId` 头选择器 + `organizationId` 查询参皆为**租内可选收窄维**
+    //（rehierarchy E-F·归属标签），传入才 AND·外来 org 与主轴合取恒 0 行、绝不括宽。
+    const tenantFilter: Record<string, unknown> = { tenantId };
+    if (workspaceId) tenantFilter.workspaceId = workspaceId;
+    if (organizationId) tenantFilter.organizationId = organizationId;
 
     // 首页无 cursor：仅按租户谓词取。续页：以不透明 cursor 解出 **id 单键**（#3 甲档收口·UUIDv7 时间有序），
     // 键集谓词 `id < cursorId`（与 ORDER BY id DESC 同比较语义·唯一全序→无重无漏·免受 createdAt 亚毫秒截断丢行）。

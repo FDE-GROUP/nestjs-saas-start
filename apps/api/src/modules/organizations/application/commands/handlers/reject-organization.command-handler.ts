@@ -3,7 +3,7 @@ import {
   ORGANIZATION_STATUS,
   type OrganizationStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import { OrganizationStatusService } from '@core/saas-kit/modules/organizations/lifecycle/organization-status.service';
+import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import {
@@ -44,7 +44,8 @@ export class RejectOrganizationCommandHandler
   constructor(
     @Inject(ORGANIZATION_PROVISIONING_REPOSITORY)
     private readonly provisioning: OrganizationProvisioningRepository,
-    @Inject(OrganizationStatusService) private readonly status: OrganizationStatusService,
+    // 治理换轴归位（rehierarchy E-F）：pending 准入态权威住 `tenant.status`，驳回判据读租户态。
+    @Inject(TenantStatusService) private readonly status: TenantStatusService,
     @Inject(PlatformAuditService) private readonly audit: PlatformAuditService,
     // S9 教训：显式 @Inject token + 值导入，防 swc design:paramtypes 退化
     @Inject(DOMAIN_EVENT_PUBLISHER) private readonly events: DomainEventPublisher,
@@ -60,7 +61,7 @@ export class RejectOrganizationCommandHandler
    * @throws {ConflictException} 申请非 pending 状态、不可驳回时。
    */
   async execute(command: RejectOrganizationCommand): Promise<boolean> {
-    // 前置态取自 organization.status 真列（global-governance-lifecycle-consolidation 切片 B·治理面撤回放即真相）。
+    // 前置态取自 `tenant.status` 真列（rehierarchy E-F 治理换轴·准入态归位·审批对象为租户准入）。
     const current: OrganizationStatus | undefined = await this.status.read(command.organizationId);
     // 仅显式 pending 可驳回。read 对「不存在」返回 undefined，交给 remove 谓词裁决
     //（命中 0 行 → false → 控制层 404；驳回路径 以 pending 为唯一合法域，FR-1 语义）。

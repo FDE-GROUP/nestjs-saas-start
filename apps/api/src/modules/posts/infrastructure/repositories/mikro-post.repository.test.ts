@@ -165,6 +165,31 @@ describe('MikroPostRepository · compound workspace scope (S3 · D2/§8-6)', () 
   });
 });
 
+describe('MikroPostRepository · 组织收窄筛选维（rehierarchy E-F·归属标签非隔离轴）', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('list() 传 organizationId → 谓词租户主轴 AND 收窄维（tenantId 恒含·绝不被括宽）', async () => {
+    const { repo, spies } = makeRepo('orgA');
+    await repo.list({ limit: 20 }, 'orgA');
+    const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(where).toEqual({ tenantId: 'tenant-orgA', organizationId: 'orgA' });
+  });
+
+  it('list() 传外来 organizationId → 仍锚可信租户主轴 AND（外来 org 只收窄至 0 行·不越租）', async () => {
+    const { repo, spies } = makeRepo('orgA');
+    await repo.list({ limit: 20 }, 'org-of-other-tenant');
+    const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(where).toEqual({ tenantId: 'tenant-orgA', organizationId: 'org-of-other-tenant' });
+  });
+
+  it('list() 缺省 organizationId → 不携组织段（同租跨组织默认互见）', async () => {
+    const { repo, spies } = makeRepo('orgA');
+    await repo.list({ limit: 20 });
+    const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(where).toEqual({ tenantId: 'tenant-orgA' });
+  });
+});
+
 describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', () => {
   beforeEach(() => vi.clearAllMocks());
 

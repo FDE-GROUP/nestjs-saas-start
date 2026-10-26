@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serializer.constants.js';
-import { listCursorQuerySchema, postCursorPageSchema, postViewSchema } from '@saas/contracts/index';
+import { listPostsQuerySchema, postCursorPageSchema, postViewSchema } from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
 import { PostsController } from './posts.controller';
 
@@ -9,12 +9,12 @@ import { PostsController } from './posts.controller';
 // design:paramtypes）——锁「schema 已挂到 @Query 参数元数据」，复刻旧 paramtypes 锁的本职：
 // 防漏配/import type 致 limit/cursor 校验整链静默跳过（S9 同形风险的 schema 侧等价守卫）。
 describe('PostsController query schema metadata', () => {
-  it('list() 的 @Query 携 listCursorQuerySchema（S4 schema 路径·非 class DTO）', () => {
+  it('list() 的 @Query 携 listPostsQuerySchema（S4 schema 路径·非 class DTO）', () => {
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, PostsController, 'list') as Record<
       string,
       { schema?: unknown }
     >;
-    expect(Object.values(args).some((v) => v.schema === listCursorQuerySchema)).toBe(true);
+    expect(Object.values(args).some((v) => v.schema === listPostsQuerySchema)).toBe(true);
   });
 
   // S7b 白名单序列化：官方 StandardSchemaSerializerInterceptor 经 getAllAndOverride 读

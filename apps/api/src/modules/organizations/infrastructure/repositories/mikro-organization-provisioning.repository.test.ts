@@ -10,8 +10,9 @@ import { MikroOrganizationProvisioningRepository } from './mikro-organization-pr
 /**
  * ORM 修宪案 B · 切片 3d（S-d2）· global-governance-lifecycle-consolidation 切片 B 归列后的镜像断言：
  * `submit` 两段——BA `createOrganization` 系统动作（FR-12·**BA 面不再携生命周期态**·org 落 DB 默认 'active'）+
- * 同流紧接着 `nativeUpdate(Organization,{id},{status:pending_approval})` 显式覆写（堵 O1·不盖 updatedAt）；
- * `remove` 维 `em.nativeDelete(Organization,{id})`（纯 SQL DELETE·五子表由 FK cascade·R-B3 同律·>0 为实删）。
+ * 同流 `nativeUpdate(Organization,{id},{tenantId})` 盖章换轴写链（组织去审批化·不再手覆 pending）；
+ * 专属 `Tenant` 行携 `status=pending_approval`（治理换轴 E-F·审批对象为租户准入态）。
+ * `remove` 驳回 pending 申请＝`em.nativeDelete(Organization,{id})` + 连专属 `Tenant` 父行硬删（R-B3 同律·>0 为实删）。
  * rehierarchy 切片 C 换轴：新 org 同流 ensure 专属 `Tenant` 行（id=orgId·1:1 骨架）+ 盖 `organization.tenantId`。
  */
 function makeDeps(deletedCount = 1) {
@@ -54,7 +55,7 @@ function makeDeps(deletedCount = 1) {
 describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户通道)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('submit() calls BA createOrganization as a system action and overwrites organization.status to pending_approval', async () => {
+  it('submit() calls BA createOrganization as a system action and stamps tenantId (org 去审批化·pending 态上移 tenant)', async () => {
     const { repo, spies } = makeDeps();
     const receipt = await repo.submit('user-1', 'Acme', 'acme');
 
@@ -64,7 +65,7 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     expect(body.slug).toBe('acme');
     // 归列后 BA 面零我方寄居键（status/appliedAt 全退场·判据②字面清零）
     expect(body).not.toHaveProperty('metadata');
-    // 紧随覆写：nativeUpdate organization(pending_approval)·不盖 updatedAt（建后未改·L2）
+    // 换轴写链：nativeUpdate organization 仅盖 tenantId（组织去审批化·不再写 status pending）·不盖 updatedAt。
     expect(spies.nativeUpdate).toHaveBeenCalledTimes(1);
     const [entity, where, data] = spies.nativeUpdate.mock.calls[0] as [
       unknown,
@@ -73,13 +74,18 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     ];
     expect(entity).toBe(Organization);
     expect(where).toEqual({ id: 'org-new' });
-    expect(data).toEqual({ status: ORGANIZATION_STATUS.PENDING, tenantId: 'org-new' });
+    expect(data).toEqual({ tenantId: 'org-new' });
     expect(receipt).toEqual({ organizationId: 'org-new', status: ORGANIZATION_STATUS.PENDING });
     expect(spies.nativeDelete).not.toHaveBeenCalled();
-    // 换轴写链：同流 ensure 专属租户行（id=orgId·1:1 骨架）。
+    // 治理换轴（E-F）：专属租户行携 pending_approval（审批对象）·id=orgId（1:1 骨架）。
     const tenantRows = spies.created.filter((c) => c.entity === Tenant);
     expect(tenantRows).toHaveLength(1);
-    expect(tenantRows[0].row).toMatchObject({ id: 'org-new', name: 'Acme', slug: 'acme' });
+    expect(tenantRows[0].row).toMatchObject({
+      id: 'org-new',
+      name: 'Acme',
+      slug: 'acme',
+      status: ORGANIZATION_STATUS.PENDING,
+    });
   });
 
   it('submit() loud-fails when BA returns no organization id（无本体则不翻态）', async () => {
@@ -99,18 +105,29 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     await expect(repo.submit('u', 'n', 's')).rejects.toThrow(/Auth instance not initialized/);
   });
 
-  it('remove() nativeDeletes scoped by organization id → true on hit (single card, FK cascade·不逐表删)', async () => {
+  it('remove() nativeDeletes organization + owned tenant row → true on hit (驳回连租户硬删)', async () => {
     const { repo, spies } = makeDeps(1);
     expect(await repo.remove('org-1')).toBe(true);
     expect(spies.fork).toHaveBeenCalledTimes(1);
-    expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
-    const [entity, where] = spies.nativeDelete.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(entity).toBe(Organization);
-    expect(where).toEqual({ id: 'org-1' });
+    // 治理换轴（E-F）：先删组织（子表 FK 级联）再删租户父行·两次 nativeDelete。
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(2);
+    const [orgEntity, orgWhere] = spies.nativeDelete.mock.calls[0] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(orgEntity).toBe(Organization);
+    expect(orgWhere).toEqual({ id: 'org-1' });
+    const [tenantEntity, tenantWhere] = spies.nativeDelete.mock.calls[1] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(tenantEntity).toBe(Tenant);
+    expect(tenantWhere).toEqual({ id: 'org-1' });
   });
 
-  it('remove() → false on miss (idempotent·0 affected)', async () => {
-    const { repo } = makeDeps(0);
+  it('remove() → false on miss (idempotent·0 affected·不删租户)', async () => {
+    const { repo, spies } = makeDeps(0);
     expect(await repo.remove('ghost')).toBe(false);
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
   });
 });

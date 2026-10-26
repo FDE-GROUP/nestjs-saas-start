@@ -15,6 +15,7 @@ import {
   listCursorQuerySchema,
   listPageQuerySchema,
   listPlatformOrganizationsQuerySchema,
+  listPostsQuerySchema,
   refundPaymentSchema,
   removeMemberSchema,
   renameRoleSchema,
@@ -86,6 +87,15 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
     });
     expectIssueKey(listCursorQuerySchema, { cursor: '@@bad' }, 'cursor', 'validate.cursor.invalid');
     expectIssueAt(listCursorQuerySchema, { nope: 1 }, '');
+  });
+
+  it('listPostsQuerySchema：可选 organizationId 透传·缺省过·未知键仍拒（extend 保 strict）', () => {
+    expect(parseOk(listPostsQuerySchema, {})).toEqual({ limit: 20 });
+    expect(parseOk(listPostsQuerySchema, { organizationId: 'org_1' })).toEqual({
+      limit: 20,
+      organizationId: 'org_1',
+    });
+    expectIssueAt(listPostsQuerySchema, { nope: 1 }, '');
   });
 
   it('createPostSchema：title 必填回 key·可选字段放行·published 须布尔·未知键拒', () => {
