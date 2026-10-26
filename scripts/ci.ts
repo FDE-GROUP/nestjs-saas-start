@@ -95,6 +95,12 @@ if (!quick) {
   // 本轮加固：同闸内再 `gen:types` 重生 api-client schema.d.ts 并纳入 git diff 对拍面，
   // 堵旧盲区（旧闸只比 yaml↔码、不覆盖 schema.d.ts↔yaml，曾掩盖 S6 漏重生）。
   step('OpenAPI codegen 对拍 (spec ↔ committed yaml ↔ schema.d.ts)', run('run', 'openapi:drift'));
+  // 租户实体登记恒等闸（module-tenant-scoped-entity-registry-gate · 新增门禁 · 高危#3 经人签核 2026-10-26）：
+  // 对脚本内置登记表与实体块实存做三向对拍（有列须在册/在册须实存/豁免防腐），
+  // 堵 boilerplate 核查（tmp/tenant-bp-review）同形人祸「新实体漏登记=静默无过滤」。纯文本块定界扫描、亚秒级。
+  // 仅入 full（裁点②随案采推荐·quick 不加）。诚实边界：不管「有列但仓储读链漏带 where」
+  //（镜像隔离单测+固定展开序承担·plan §2 非目标）。防假阳：uniques/indexes 纯字符串引用不中列证据 pattern。
+  step('Tenant-scoped registry guard', run('run', 'verify:tenant-scoped-registry'));
 }
 step('Tests (vitest)', run('run', 'test'));
 
