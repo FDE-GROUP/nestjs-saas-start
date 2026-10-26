@@ -13,6 +13,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -36,9 +37,17 @@ import { AppModule } from '../app.module';
  * 无匹配 Nest 路由 → 中间件不触发 → 404），故经 auth 网关透传的原生 `api.*`（`createOrganization` 同款
  * 「服务端编排网关」范式）驱动真实流程——同样是真 BA、真会话、真隔离，仅绕开测试未装配的 HTTP 中间件层。
  *
- * 断言含 S11 双层全局墙的**语义分层**：无 session → **401**（会话墙先于租户墙）；有 session 但未
- * set-active（无 `activeOrganizationId`）→ **403**（租户墙 fail-closed）；跨租户互不可见 + 越界写
- * 越界写经严格管 400 拒入（切片 A′ 后与生产同装配）+ 伪造 `x-workspace-id` 选择器读恒 0 行（FR-5/NFR-1 红线）。
+ * 断言含 S11 双层全局墙的**语义分层** + rehierarchy 切片 C 换轴的**租户语义矩阵**（隔离硬轴 `organizationId →
+ * tenantId`，同租跨组织默认互见）：无 session → **401**（会话墙先于租户墙）；有 session 但未 set-active（无
+ * `activeOrganizationId`→派生不出活动租户）→ **403**（租户墙 fail-closed）；而 @TenantIsolationExempt 面（GET
+ * /tenants）仅经会话墙、无活动租户亦 **200**（exempt 不回归）；**同租跨组织互见**（新默认）+ **跨租互不可见**
+ *（硬边界）+ 越界写携伪造 body `organizationId`/`workspaceId`/`tenantId` 经严格管 **400** 拒入（切片 A′ 后与生产
+ * 同装配）+ 伪造 `x-workspace-id` 选择器读恒 0 行（FR-5/NFR-1 红线）。
+ *
+ * 夹具换轴注：BA 原生 `createOrganization` 不盖 `tenantId`，而隔离主轴经活动组织派生 `tenantId`（
+ * `TENANT_SCOPE_RESOLVER` 查 `organization.tenantId`）——缺租户行则 `requireActiveTenantId()` fail-closed 403。
+ * 故 `createOrgAndActivate` 沿生产换轴写链（provisioning/seed）补建专属租户行并盖 `organization.tenantId`
+ *（1:1·`tenant.id=org.id`）；同租场景可传 `existingTenantId` 令后续组织复用同租户。
  *
  * **默认跳过**：需一个已建好 schema 的真实 Postgres。仅当 `E2E_DATABASE_URL` 存在时运行（作开关），
  * 真正连接串取 `DATABASE_URL`（两者应指向同一个库），故不破默认 CI 的 DB-free 不变量。本地执行见
@@ -74,6 +83,7 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
   const stamp = Date.now();
   const createdUserIds: string[] = [];
   const createdOrgIds: string[] = [];
+  const createdTenantIds: string[] = [];
 
   const authApi = () => app.get<InjectAuthInstance>(AuthInstanceInjectKey).get().api;
 
@@ -105,6 +115,9 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
     }
+    if (createdTenantIds.length) {
+      await em.nativeDelete(Tenant, { id: { $in: createdTenantIds } } as never);
+    }
     if (createdUserIds.length) {
       await em.nativeDelete(Session, { userId: { $in: createdUserIds } } as never);
       await em.nativeDelete(Account, { userId: { $in: createdUserIds } } as never);
@@ -135,8 +148,16 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     return { email, userId, cookie };
   }
 
-  /** 服务端系统动作建租户（申请人成 owner member）→ set-active 落真实 session 的 activeOrganizationId。 */
-  async function createOrgAndActivate(actor: Actor, tag: string): Promise<string> {
+  /**
+   * 服务端系统动作建租户（申请人成 owner member）→ 换轴补建专属租户行盖 `organization.tenantId` →
+   * set-active 落真实 session 的 activeOrganizationId。缺 `existingTenantId` 时新建 1:1 专属租户（tenant.id=org.id）；
+   * 传入时复用已有租户（同租跨组织场景）。
+   */
+  async function createOrgAndActivate(
+    actor: Actor,
+    tag: string,
+    existingTenantId?: string,
+  ): Promise<{ orgId: string; tenantId: string }> {
     const created = await authApi().createOrganization({
       body: { name: `E2E Org ${tag}`, slug: `e2e-org-${tag}-${stamp}`, userId: actor.userId },
     });
@@ -145,6 +166,23 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     createdOrgIds.push(orgId);
     actor.orgId = orgId;
 
+    // 换轴：BA 不盖 tenantId → 隔离主轴派生不出租户。沿生产写链补建/复用租户行并盖 organization.tenantId，
+    // 否则后续真 cookie 打 /posts 会被 requireActiveTenantId() fail-closed 403。
+    const em = await mikro.fork();
+    const tenantId = existingTenantId ?? orgId;
+    if (!existingTenantId) {
+      await em.insert(Tenant, {
+        id: tenantId,
+        name: `E2E Tenant ${tag}`,
+        slug: `e2e-org-${tag}-${stamp}`,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: null,
+      } as never);
+      createdTenantIds.push(tenantId);
+    }
+    await em.nativeUpdate(Organization, { id: orgId } as never, { tenantId } as never);
+
     const act = await authApi().setActiveOrganization({
       body: { organizationId: orgId },
       headers: { cookie: actor.cookie },
@@ -152,7 +190,7 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     });
     if (act.status >= 400)
       throw new Error(`setActiveOrganization(${tag}) ${act.status}: ${await act.text()}`);
-    return orgId;
+    return { orgId, tenantId };
   }
 
   const listPosts = (cookie?: string, extra?: Record<string, string>) =>
@@ -181,6 +219,17 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     expect(res.statusCode).toBe(403);
   });
 
+  it('exempt 面不回归：有会话但未 set-active 打 @TenantIsolationExempt 的 GET /tenants → 200（仅经会话墙、无租户上下文亦放行）', async () => {
+    // 与上测（同形状会话）的 /posts → 403 形成对照：证 exempt 装饰器仍令目录读面绕开租户墙（不回归）。
+    const lonely = await signUpThenSignIn('exempt');
+    const res = await app.inject({
+      method: 'GET',
+      url: '/tenants',
+      headers: { cookie: lonely.cookie },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
   it('两租户各经真登录编排 → 真 cookie 打 /posts 跨租户互不可见', async () => {
     const a = await signUpThenSignIn('a');
     await createOrgAndActivate(a, 'a');
@@ -203,19 +252,35 @@ gated('租户隔离全栈 e2e（真·Better Auth 登录编排 · 无认证桩 ·
     expect(lb.body).not.toContain('E2E-REAL-ALPHA');
   });
 
+  it('同租跨组织互见（换轴新默认）：同租户下切至第二个组织仍可见首组织帖子', async () => {
+    const a = await signUpThenSignIn('tw');
+    // org1 伴生专属租户 T；发帖落入 T（写时 ALS 派生 tenantId=T）。
+    const { tenantId } = await createOrgAndActivate(a, 'tw1');
+    const p = await createPost(a.cookie, { title: 'E2E-SAME-TENANT', published: true });
+    expect(p.statusCode).toBe(201);
+
+    // 同一 actor 在同租户 T 下再挂 org2 并切为活动组织（organizationId 变、tenantId 不变）。
+    await createOrgAndActivate(a, 'tw2', tenantId);
+    const list = await listPosts(a.cookie);
+    expect(list.statusCode).toBe(200);
+    // 主轴为 tenantId 而非 organizationId → 同租跨组织默认互见（旧模按 organizationId 会盲）。
+    expect(list.body).toContain('E2E-SAME-TENANT');
+  });
+
   it('负向·越界写：真会话携伪造 body organizationId/workspaceId → 严格管 400 拒入，victim 租户仍不可见', async () => {
     const a = await signUpThenSignIn('w');
     await createOrgAndActivate(a, 'w');
     const victim = await signUpThenSignIn('victim');
-    await createOrgAndActivate(victim, 'victim');
+    const { tenantId: victimTenantId } = await createOrgAndActivate(victim, 'victim');
 
-    // 生产真相（切片 A′ 补齐全局管后订正断言）：CreatePostDto 无租户字段，
-    // whitelist+forbidNonWhitelisted 在 handler 前即 400 拒入——原「201+盖归属」是无管 harness
-    // 下的非生产语义。仓储层「强制盖可信租户」兜底仍由隔离单测锁（双防线：拒入在前、盖归属在后）。
+    // 生产真相（切片 A′ 补齐全局管后订正断言）：CreatePostDto 无租户/组织/工作区字段，
+    // whitelist+forbidNonWhitelisted 在 handler 前即 400 拒入——伪造 body 面（含换轴后的 tenantId）一律零受理。
+    // 仓储层「强制盖可信租户」兜底仍由隔离单测锁（双防线：拒入在前、盖归属在后）。
     const res = await createPost(a.cookie, {
       title: 'E2E-REAL-WRITE-A',
       published: true,
       organizationId: victim.orgId,
+      tenantId: victimTenantId,
       workspaceId: 'ws_forged',
     });
     expect(res.statusCode).toBe(400);

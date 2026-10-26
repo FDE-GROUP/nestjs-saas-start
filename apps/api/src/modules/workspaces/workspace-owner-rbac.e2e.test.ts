@@ -18,6 +18,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { ListWorkspacesQueryHandler } from '@core/saas-kit/modules/workspaces/application/queries/handlers/list-workspaces.query-handler';
 import { ListWorkspacesQuery } from '@core/saas-kit/modules/workspaces/application/queries/list-workspaces.query';
@@ -77,6 +78,7 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
   const stamp = Date.now();
   const createdUserIds: string[] = [];
   const createdOrgIds: string[] = [];
+  const createdTenantIds: string[] = [];
 
   const authApi = () => app.get<InjectAuthInstance>(AuthInstanceInjectKey).get().api;
 
@@ -115,6 +117,9 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
       await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
       await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
     }
+    if (createdTenantIds.length) {
+      await em.nativeDelete(Tenant, { id: { $in: createdTenantIds } } as never);
+    }
     if (createdUserIds.length) {
       await em.nativeDelete(Session, { userId: { $in: createdUserIds } } as never);
       await em.nativeDelete(Account, { userId: { $in: createdUserIds } } as never);
@@ -152,6 +157,7 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     });
 
   const listWorkspacesViaHandler = (ctx: {
+    tenantId: string;
     organizationId: string;
     userId?: string;
     role?: string;
@@ -172,6 +178,22 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     const orgId = String((created as { id?: unknown }).id);
     if (!orgId || orgId === 'undefined') throw new Error(`createOrganization 无 id`);
     createdOrgIds.push(orgId);
+
+    // rehierarchy 切片 C/D 换轴：BA 原生 createOrganization 不盖 tenantId，而隔离主轴已换 tenantId——
+    // TenantIsolationMiddleware 经活动组织派生 tenantId（TENANT_SCOPE_RESOLVER 查 organization.tenantId），
+    // 缺 tenantId 则 requireActiveTenantId() fail-closed 403。沿生产换轴写链补建专属租户行并盖
+    // organization.tenantId（1:1·tenant.id=org.id），否则真实 HTTP 面盖章/读取无法落到租户作用域。
+    const stampEm = await mikro.fork();
+    await stampEm.insert(Tenant, {
+      id: orgId,
+      name: `E2E Owner Tenant ${stamp}`,
+      slug: `e2e-owner-org-${stamp}`,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await stampEm.nativeUpdate(Organization, { id: orgId } as never, { tenantId: orgId } as never);
+    createdTenantIds.push(orgId);
 
     // A 也需 set-active（会话落 activeOrganizationId，否则租户墙 fail-closed 403·实跑自捕）。
     const actA = await authApi().setActiveOrganization({
@@ -202,9 +224,12 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
 
     // 自定义 limited 角色：create 无条件（类型级放行）+ read 带实例条件（where 支下推）。
     // 分两次 flush：运行时扁平实体无 relation 依赖序，同批会 grant 先于 role（FK 抢跑·实跑自捕）。
+    // rehierarchy 切片 B/C 换轴：RBAC 授权 reader `findGrants(tenantId, roleKey)` 改按 **tenantId** 解析
+    // `organization_role`（角色升租级），故须盖 tenantId=orgId（1:1）——否则查无角色 → guard fail-closed 403。
     const roleId = uuidv7();
     em.create(OrganizationRole, {
       id: roleId,
+      tenantId: orgId,
       organizationId: orgId,
       key: 'limited',
       name: 'Limited',
@@ -257,8 +282,11 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     expect(wB.statusCode).toBe(201);
 
     // — 系统路径 NULL 属主行（em 直插·无会话 userId 的同型形状）。
+    // 切片 C 换轴：workspace 读谓词锚 `tenantId`，直插行不经 ALS 盖章，须显式补 tenantId=orgId
+    // （1:1），否则 A（all 全见仍受租户谓词约束）亦看不到此行。
     em.create(Workspace, {
       id: uuidv7(),
+      tenantId: orgId,
       organizationId: orgId,
       name: 'System',
       slug: `sys-${stamp}`,
@@ -286,12 +314,18 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     expect(slugsBHttp).toEqual([`beta-${stamp}`]);
 
     const slugsB = (
-      await listWorkspacesViaHandler({ organizationId: orgId, userId: b.userId, role: 'limited' })
+      await listWorkspacesViaHandler({
+        tenantId: orgId,
+        organizationId: orgId,
+        userId: b.userId,
+        role: 'limited',
+      })
     ).map((w) => w.slug);
     expect(slugsB).toEqual([`beta-${stamp}`]);
 
     // — 5. A（owner seed 无条件 read → kind all）：三行全见。
     const listA = await listWorkspacesViaHandler({
+      tenantId: orgId,
       organizationId: orgId,
       userId: a.userId,
       role: 'owner',

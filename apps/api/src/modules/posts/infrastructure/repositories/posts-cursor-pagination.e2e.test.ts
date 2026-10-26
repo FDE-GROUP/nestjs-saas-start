@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { TransactionScope } from '@app/database/eventing/transaction-scope';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { decodeCursor } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
@@ -50,7 +51,19 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
     );
     const em = await mikro.fork();
     await em.insert(Organization, { id: orgId, name: `E2E Cursor ${stamp}`, slug: orgId } as never);
+    // rehierarchy 切片 C 换轴：post.tenantId 有物理 FK→tenant（`post_tenantId_foreign`），1:1 骨架令
+    // tenantId=orgId 需先落同名 Tenant 行才能插入携租户归属的 post。
+    await em.insert(Tenant, {
+      id: orgId,
+      name: `E2E Cursor ${stamp}`,
+      slug: orgId,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
     // 单语句多行 INSERT（不携 createdAt）→ DB 默认 now() 事务级恒定 → 六行 createdAt 逐 µs 相等（#3 回归面）。
+    // rehierarchy 切片 C 换轴：读谓词锚 `tenantId`（同租跨组织默认互见）；此处 1:1 骨架令 tenantId=orgId
+    // （与生产 stampOrgTenant 缺省式一致），夹具 post 显式盖 tenantId，否则仓储 `{ tenantId }` 谓词恒 0 行。
     await em.insert(
       PostEntity,
       ids.map((id) => ({
@@ -58,6 +71,7 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
         title: `cursor-${id}`,
         content: null,
         published: true,
+        tenantId: orgId,
         organizationId: orgId,
         workspaceId: null,
         updatedAt: new Date(),
@@ -71,11 +85,15 @@ gated('posts 游标分页真库 e2e（切片 B · 戊=② · env-gated）', () =
     // organization 级联（ON DELETE CASCADE）清 post；显式先删 post 更稳。
     await em.nativeDelete(PostEntity, { organizationId: orgId } as never);
     await em.nativeDelete(Organization, { id: orgId } as never);
+    await em.nativeDelete(Tenant, { id: orgId } as never);
     await mikro.onModuleDestroy();
   });
 
   function repo() {
+    // 切片 C 换轴：`MikroPostRepository.scope()` 现同时读 `requireActiveTenantId()`（主轴）与
+    // `requireActiveOrganizationId()`（写归属）——假桩须两者齐备，1:1 骨架下同回 orgId。
     const fakeTenant = {
+      requireActiveTenantId: () => orgId,
       requireActiveOrganizationId: () => orgId,
       workspaceId: undefined,
     } as unknown as TenantIsolationService;

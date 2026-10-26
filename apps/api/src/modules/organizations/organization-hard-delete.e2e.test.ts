@@ -10,6 +10,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { OrganizationSubscription } from '@app/modules/subscriptions/infrastructure/entities/organization-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
@@ -63,6 +64,18 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
 
   async function seedOrganizationOwned(em: EntityManager, id: string, withExtras: boolean) {
     await em.insert(Organization, { id, name: `HD ${id}`, slug: `hd-${id}` } as never);
+    // rehierarchy 切片 E 换轴：组织去审批化、准入态权威上移 `tenant.status`——软删 handler 现对
+    // `TenantStatusService.transition(orgId, deleted)` 卡 tenantExists（Tenant 主键），硬删前置闸经
+    // `governance.findById` 读叠加后的租户态。故每个待测 org 须伴生 1:1 专属租户行（tenant.id=org.id·
+    // status active），否则软删 tenantExists=false 直接 not-found、两段式删链无法推进。
+    await em.insert(Tenant, {
+      id,
+      name: `HD ${id}`,
+      slug: `hd-${id}`,
+      status: ORGANIZATION_STATUS.ACTIVE,
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
     if (!withExtras) return;
     await em.insert(Member, {
       id: `e2e-hd-mem-${stamp}`,
@@ -165,10 +178,12 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
     // 清净残余（org 级联灭子表；user/event 独立清）——运行幂等
     const em = await mikro.fork();
     await em.nativeDelete(Organization, { id: { $in: [orgId, activeOrgId] } } as never);
+    await em.nativeDelete(Tenant, { id: { $in: [orgId, activeOrgId] } } as never);
     await em.nativeDelete(Event, { aggregateId: { $in: [orgId, activeOrgId] } } as never);
     // atomicOrgId 回滚后仍在（事务未提交）——显式清净保证运行幂等
     await em.nativeDelete(Event, { aggregateId: atomicOrgId } as never);
     await em.nativeDelete(Organization, { id: atomicOrgId } as never);
+    await em.nativeDelete(Tenant, { id: atomicOrgId } as never);
     await em.nativeDelete(User, { id: userId } as never);
     await app?.close();
   });
