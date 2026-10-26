@@ -43,17 +43,22 @@ export class OauthSsoController {
     description: 'Unregistered client_id or redirect_uri not in whitelist.',
   })
   @ApiResponse({ status: 401, description: 'No authenticated session (global session wall).' })
-  authorize(
+  @ApiResponse({
+    status: 403,
+    description: 'Odoo not available for the active organization (canUseOdoo fail-closed).',
+  })
+  async authorize(
     @Query({ schema: authorizeQuerySchema }) query: OauthAuthorizeQuery,
     @Req() req: SessionRequest,
     @Res() reply: FastifyReply,
-  ): void {
+  ): Promise<void> {
     const session = req.sessionUser;
     if (!session) {
       reply.code(401).send({ message: 'Missing or invalid session' });
       return;
     }
-    reply.code(302).redirect(this.oauthSso.buildAuthorizeRedirect(query, session));
+    // 铸令牌前经 service 跑 Odoo 可用性 fail-closed（非 ready → 403 不重定向）；异常沿全局 filter 出口。
+    reply.code(302).redirect(await this.oauthSso.buildAuthorizeRedirect(query, session));
   }
 
   /**

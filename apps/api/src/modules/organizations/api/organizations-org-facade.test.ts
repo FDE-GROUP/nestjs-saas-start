@@ -1,5 +1,10 @@
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import type { RoleAssignabilityReader } from '@app/modules/authorization/domain/ports/role-assignability.port';
+import type {
+  OrganizationOdooBindingReader,
+  OrganizationOdooBindingRow,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
+import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { OrganizationsOrgAdminController } from './organizations-org-admin.controller';
@@ -24,6 +29,18 @@ function rbacStub(assignable = true): RoleAssignabilityReader {
 }
 
 const HEADERS = { cookie: 'session=abc' };
+
+/** Odoo 绑定读端口桩（缺省查无绑定·odooAvailability 委派用）。 @internal */
+function bindingsStub(
+  row: OrganizationOdooBindingRow | null = null,
+): OrganizationOdooBindingReader {
+  return { read: vi.fn().mockResolvedValue(row) } as unknown as OrganizationOdooBindingReader;
+}
+
+/** 租户软读桩（缺省无活跃租户）。 @internal */
+function tenantStub(organizationId?: string): TenantIsolationService {
+  return { organizationId } as unknown as TenantIsolationService;
+}
 
 describe('OrganizationsOrgAdminController（管理门面·委派 + BA 错误归一）', () => {
   it('listMembers 透传 headers 直调 BA 服务端数据面', async () => {
@@ -82,7 +99,11 @@ describe('OrganizationsOrgAdminController（管理门面·委派 + BA 错误归�
 describe('OrganizationsSelfController（个人通道门面·委派形状）', () => {
   it('listMyInvitations 以会话用户 email 收敛服务端查询可见面', async () => {
     const listUserInvitations = vi.fn().mockResolvedValue([]);
-    const ctrl = new OrganizationsSelfController(instanceWith({ listUserInvitations }));
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({ listUserInvitations }),
+      bindingsStub(),
+      tenantStub(),
+    );
     await ctrl.listMyInvitations(HEADERS, { id: 'u1', email: 'me@acme.com' });
     expect(listUserInvitations).toHaveBeenCalledWith({
       headers: HEADERS,
@@ -92,7 +113,11 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
 
   it('acceptInvitation 透传 body（seats 配额 hook 在 BA 服务端管线照旧生效·不在门面重实现）', async () => {
     const acceptInvitation = vi.fn().mockResolvedValue({ member: { id: 'm1' } });
-    const ctrl = new OrganizationsSelfController(instanceWith({ acceptInvitation }));
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({ acceptInvitation }),
+      bindingsStub(),
+      tenantStub(),
+    );
     await expect(ctrl.acceptInvitation(HEADERS, { invitationId: 'inv-1' })).resolves.toEqual({
       member: { id: 'm1' },
     });
@@ -106,9 +131,81 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
     const apiError = Object.assign(new Error('Seat limit reached'), { status: '402' });
     const ctrl = new OrganizationsSelfController(
       instanceWith({ setActiveOrganization: vi.fn().mockRejectedValue(apiError) }),
+      bindingsStub(),
+      tenantStub(),
     );
     await expect(ctrl.setActive(HEADERS, { organizationId: 'org_1' })).rejects.toMatchObject({
       status: 402,
+    });
+  });
+});
+
+describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·映射切片 D）', () => {
+  it('活跃租户 ready 绑定 → available=true + 透传绑定态/公司 id', async () => {
+    const row: OrganizationOdooBindingRow = {
+      organizationId: 'org-1',
+      odooCompanyId: 42,
+      odooBindingStatus: 'ready',
+      odooCompanyName: 'SAAS-org-1',
+      odooBoundAt: new Date(),
+    };
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({}),
+      bindingsStub(row),
+      tenantStub('org-1'),
+    );
+    await expect(ctrl.odooAvailability()).resolves.toEqual({
+      available: true,
+      odooBindingStatus: 'ready',
+      odooCompanyId: 42,
+    });
+  });
+
+  it('无活跃租户 → available=false 且不触达 reader 端口（面板缺席态可渲染）', async () => {
+    const read = vi.fn().mockResolvedValue(null);
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({}),
+      { read } as unknown as OrganizationOdooBindingReader,
+      tenantStub(),
+    );
+    await expect(ctrl.odooAvailability()).resolves.toEqual({
+      available: false,
+      odooBindingStatus: null,
+      odooCompanyId: null,
+    });
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it('活跃租户查无绑定 → available=false/null', async () => {
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({}),
+      bindingsStub(null),
+      tenantStub('org-1'),
+    );
+    await expect(ctrl.odooAvailability()).resolves.toEqual({
+      available: false,
+      odooBindingStatus: null,
+      odooCompanyId: null,
+    });
+  });
+
+  it('绑定 provisioning（建司中）→ available=false 但透传中间态（面板据此显「开通中」）', async () => {
+    const row: OrganizationOdooBindingRow = {
+      organizationId: 'org-1',
+      odooCompanyId: null,
+      odooBindingStatus: 'provisioning',
+      odooCompanyName: null,
+      odooBoundAt: null,
+    };
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({}),
+      bindingsStub(row),
+      tenantStub('org-1'),
+    );
+    await expect(ctrl.odooAvailability()).resolves.toEqual({
+      available: false,
+      odooBindingStatus: 'provisioning',
+      odooCompanyId: null,
     });
   });
 });

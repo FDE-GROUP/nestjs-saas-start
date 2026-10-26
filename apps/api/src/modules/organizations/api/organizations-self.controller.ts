@@ -3,7 +3,13 @@ import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import { canUseOdoo } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
+import {
+  ORGANIZATION_ODOO_BINDING_READER,
+  type OrganizationOdooBindingReader,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
 import {
   Body,
@@ -15,6 +21,7 @@ import {
   HttpStatus,
   Inject,
   Post,
+  SerializeOptions,
   UseGuards,
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -23,16 +30,20 @@ import {
   invitationIdSchema,
   type LeaveOrganization,
   leaveOrganizationSchema,
+  type OrganizationOdooAvailabilityView,
+  organizationOdooAvailabilityViewSchema,
   type SetActiveOrganization,
   setActiveOrganizationSchema,
 } from '@saas/contracts/index';
 import {
   ApiEnvelope,
   ApiErrorResponse,
+  apiEnvelopeShape,
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
 import { mapBaError } from './ba-error.mapping';
+import { OrganizationOdooAvailabilityResponse } from './response/organization-odoo-availability.response';
 
 /** BA org 个人通道窄类型（服务端 API·非 HTTP）。 */
 interface OrganizationSelfApi {
@@ -61,13 +72,18 @@ interface OrganizationSelfApi {
  * 不经被封堵的 BA 内置 org HTTP 面。
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse)
+@ApiExtraModels(ApiEnvelope, ApiErrorResponse, OrganizationOdooAvailabilityResponse)
 @ApiTags('organizations')
 // 入组前/无租户态的合法个人操作（成员资格列表、接受/拒绝邀请）→ 类级豁免租户墙，登录仍必需。
 @TenantIsolationExempt()
 @Controller('organizations')
 export class OrganizationsSelfController {
-  constructor(@Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance) {}
+  constructor(
+    @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
+    @Inject(ORGANIZATION_ODOO_BINDING_READER)
+    private readonly bindings: OrganizationOdooBindingReader,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
+  ) {}
 
   private ba(): OrganizationSelfApi {
     const auth = this.authInstance.get();
@@ -245,5 +261,42 @@ export class OrganizationsSelfController {
     } catch (err) {
       return mapBaError(err);
     }
+  }
+
+  /**
+   * 读当前活跃租户的 Odoo 可用性（apps 面板数据源·module-org-odoo-company-mapping 切片 D）。
+   *
+   * @remarks
+   * 软读会话活跃租户（本路由随类级 `@TenantIsolationExempt`·无活跃 org 不 403 而返「不可用」——面板
+   * 需在未入组/未选租户态也能渲染），命中则经 published reader 端口取绑定行喂 `canUseOdoo` 单源裁决
+   * （与 SSO/RPC 门禁同口径·三点门禁不漂移）。**不**触 Odoo·只读 SaaS 侧绑定态。
+   * @returns 可用性视图（available/绑定态/公司 id·缺席一律 false/null）。
+   */
+  @Get('odoo/availability')
+  @UseGuards(SessionGuard)
+  @SerializeOptions({ schema: organizationOdooAvailabilityViewSchema })
+  @ApiOperation({
+    summary: 'Read the active organization Odoo availability for the apps panel (personal channel)',
+  })
+  @ApiResponse(
+    apiEnvelopeShape(OrganizationOdooAvailabilityResponse, {
+      description: 'Odoo availability by binding status (single-source canUseOdoo verdict).',
+    }),
+  )
+  @ApiResponse(apiError(401, 'Missing or invalid session.'))
+  async odooAvailability(): Promise<OrganizationOdooAvailabilityView> {
+    const organizationId = this.tenant.organizationId;
+    if (!organizationId) return { available: false, odooBindingStatus: null, odooCompanyId: null };
+    const row = await this.bindings.read(organizationId);
+    if (!row) return { available: false, odooBindingStatus: null, odooCompanyId: null };
+    return {
+      available: canUseOdoo({
+        status: row.organizationStatus,
+        odooBindingStatus: row.odooBindingStatus,
+        odooCompanyId: row.odooCompanyId,
+      }),
+      odooBindingStatus: row.odooBindingStatus,
+      odooCompanyId: row.odooCompanyId,
+    };
   }
 }

@@ -1,5 +1,12 @@
 import { ConfigService } from '@app/config/config.service';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { canUseOdoo } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
+import {
+  ORGANIZATION_ODOO_BINDING_READER,
+  type OrganizationOdooBindingReader,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
+import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
+import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -29,16 +36,20 @@ export class OauthSsoService {
     @Inject(ConfigService) private readonly configService: ConfigService,
     @Inject(SsoTokenService) private readonly ssoToken: SsoTokenService,
     @Inject(MikroOrmService) private readonly mikro: MikroOrmService,
+    @Inject(ORGANIZATION_ODOO_BINDING_READER)
+    private readonly bindings: OrganizationOdooBindingReader,
+    @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
   ) {}
 
   /**
-   * 校验入参并构造隐式流重定向目标 URL。
+   * 校验入参并构造隐式流重定向目标 URL（铸令牌前附 Odoo 可用性 fail-closed 门禁·切片 D）。
    * @param query - 已通过 zod 契约的 authorize 入参。
    * @param session - 会话墙挂上的已认证主体。
    * @returns 302 重定向目标（`redirect_uri#access_token=…`）。
    * @throws {BadRequestException} client 未注册或 redirect_uri 不在精确白名单。
+   * @throws {ForbiddenException} 活跃租户 Odoo 未就绪（`canUseOdoo` 假/无活跃租户·铸令牌前阻断）。
    */
-  buildAuthorizeRedirect(query: OauthAuthorizeQuery, session: SessionUser): string {
+  async buildAuthorizeRedirect(query: OauthAuthorizeQuery, session: SessionUser): Promise<string> {
     const client = this.configService
       .getOauthSsoConfig()
       .clients.find((c) => c.clientId === query.client_id);
@@ -47,6 +58,24 @@ export class OauthSsoService {
     }
     if (!client.redirectUris.includes(query.redirect_uri)) {
       throw new BadRequestException('redirect_uri not in exact whitelist');
+    }
+    // Odoo 可用性 fail-closed（裁点④·切片 D）：SSO 是入 Odoo 的唯一通道，铸令牌前以会话活跃
+    // 租户跑 `canUseOdoo` 单源裁决（与 apps 面板/RPC 域注入同口径）——非 ready/suspended/未绑定/无活跃租户一律 403，
+    // 使「审批通过」不即「Odoo 可入」（建司慢/失败/已挂起均拦在门外）。本端点标 `@TenantIsolationExempt`（跨租 OP），
+    // 故用软读 `organizationId`（无活跃租户 = 不可入 Odoo），非 requireActiveOrganizationId 的 403。
+    const organizationId = this.tenant.organizationId;
+    const binding = organizationId ? await this.bindings.read(organizationId) : null;
+    if (
+      !binding ||
+      !canUseOdoo({
+        status: binding.organizationStatus,
+        odooBindingStatus: binding.odooBindingStatus,
+        odooCompanyId: binding.odooCompanyId,
+      })
+    ) {
+      throw new ForbiddenException('Odoo not available for the active organization', {
+        errorCode: ERROR_CODES.ORG_ODOO_BINDING_NOT_READY,
+      });
     }
     const issued = this.ssoToken.issue(session.id, client.audience);
     const fragment = new URLSearchParams({

@@ -205,6 +205,10 @@ paths:
           description: Unregistered client_id or redirect_uri not in whitelist.
         '401':
           description: No authenticated session (global session wall).
+        '403':
+          description: >-
+            Odoo not available for the active organization (canUseOdoo
+            fail-closed).
       summary: >-
         OAuth2 implicit-flow authorization endpoint (this repo acts as Odoo
         auth_oauth OP)
@@ -1842,6 +1846,34 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List pending invitations addressed to the current user
       tags: *ref_12
+  /api/v1/organizations/odoo/availability:
+    get:
+      operationId: OrganizationsSelfController_odooAvailability_v1
+      parameters: []
+      responses:
+        '200':
+          description: >-
+            Odoo availability by binding status (single-source canUseOdoo
+            verdict).
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OrganizationOdooAvailabilityResponse'
+        '401':
+          description: Missing or invalid session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: >-
+        Read the active organization Odoo availability for the apps panel
+        (personal channel)
+      tags: *ref_12
   /api/v1/subscriptions/current:
     get:
       operationId: SubscriptionsController_getCurrent_v1
@@ -2669,6 +2701,32 @@ components:
         - odooBindingStatus
         - odooCompanyName
         - odooBoundAt
+    OrganizationOdooAvailabilityResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: Odoo 能力当前对该租户是否可用（canUseOdoo 单源裁决）。
+        odooBindingStatus:
+          type:
+            - string
+            - 'null'
+          enum:
+            - pending
+            - provisioning
+            - ready
+            - failed
+            - null
+          description: 绑定生命周期态（null=未绑定/无活跃租户）。
+        odooCompanyId:
+          type:
+            - number
+            - 'null'
+          description: 绑定的 Odoo 公司 id（res.company 主键·无绑定即 null）。
+      required:
+        - available
+        - odooBindingStatus
+        - odooCompanyId
     SubscriptionResponse:
       type: object
       properties:

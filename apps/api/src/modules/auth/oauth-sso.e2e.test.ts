@@ -9,6 +9,11 @@ import {
   Session,
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  ORGANIZATION_GOVERNANCE_REPOSITORY,
+  type OrganizationGovernanceRepository,
+} from '@app/modules/organizations/domain/repositories/organization-governance.repository';
+import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { VersioningType } from '@nestjs/common';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
@@ -24,6 +29,11 @@ import { AppModule } from '../../app.module';
  * 完整 Nest router/guard/validation 链·B1 override OutboxRelay 节后台轮询）。默认跳过：仅当
  * `E2E_DATABASE_URL` 存在时运行（`ci:db` 编排器已迁移+seed），不破默认 CI 的 DB-free 不变量。
  * 夹具（user/session/account）afterAll 清净，时间戳唯一 email 幂等。
+ *
+ * authorize 携会话 + ready 绑定 + 已注册 client/精确 redirect → 302 + fragment access_token（切片 D 门禁改造）：
+ * 门禁前该用例仅需会话；现 `buildAuthorizeRedirect` 铸令牌前跑 `canUseOdoo`——故先置活跃租户 ready 绑定
+ * （bind-existing 直落 ready）与会话 `activeOrganizationId`，并补「无绑定 → 403」fail-closed 用例。
+ * 门禁只读 SaaS 侧绑定态，无需活体 Odoo。
  *
  * client 注册表经 env `SSO_OAUTH_CLIENTS` 注入（切片 B config 面·boot 前设置即生效）。
  */
@@ -43,6 +53,10 @@ gated('SSO OP 隐式流全链 e2e（真库·env-gated·切片 E）', () => {
   let userId: string | undefined;
   let cookie = '';
   let accessToken = '';
+  let governance: OrganizationGovernanceRepository;
+  const orgReady = `e2e-sso-ready-${stamp}`;
+  const orgNoBinding = `e2e-sso-nobind-${stamp}`;
+  const companyReady = 500000 + (stamp % 1000000000);
 
   beforeAll(async () => {
     // client 注册表已由 `./oauth-sso.e2e.setup`（首条 import）在 config 求值前就位。
@@ -62,6 +76,7 @@ gated('SSO OP 隐式流全链 e2e（真库·env-gated·切片 E）', () => {
     app.useGlobalPipes(createValidationPipe());
     await app.init();
     mikro = app.get(MikroOrmService);
+    governance = app.get(ORGANIZATION_GOVERNANCE_REPOSITORY);
   }, 120000);
 
   afterAll(async () => {
@@ -71,6 +86,7 @@ gated('SSO OP 隐式流全链 e2e（真库·env-gated·切片 E）', () => {
       await em.nativeDelete(Session, { userId } as never);
       await em.nativeDelete(Account, { userId } as never);
       await em.nativeDelete(User, { id: userId } as never);
+      await em.nativeDelete(Organization, { id: { $in: [orgReady, orgNoBinding] } } as never);
     }
     await app.close();
   });
@@ -112,7 +128,25 @@ gated('SSO OP 隐式流全链 e2e（真库·env-gated·切片 E）', () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it('authorize 携会话 + 已注册 client/精确 redirect → 302 + fragment access_token', async () => {
+  it('authorize 携会话 + ready 绑定 + 已注册 client/精确 redirect → 302 + fragment access_token', async () => {
+    // 切片 D 门禁：先置活跃租户 ready 绑定（bind-existing 直落 ready）+ 会话 activeOrganizationId。
+    const em = await mikro.fork();
+    await em.insert(Organization, {
+      id: orgReady,
+      name: 'E2E Ready',
+      slug: `e2e-sso-r-${stamp}`,
+      metadata: {},
+    } as never);
+    await governance.bindOdooCompany(orgReady, {
+      odooCompanyId: companyReady,
+      odooCompanyName: `SAAS-${orgReady}`,
+    });
+    await em.nativeUpdate(
+      Session,
+      { userId } as never,
+      { activeOrganizationId: orgReady } as never,
+    );
+
     const res = await app.inject({
       method: 'GET',
       url: `/api/v1/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=openid%20email&state=nonce-1`,
@@ -126,6 +160,28 @@ gated('SSO OP 隐式流全链 e2e（真库·env-gated·切片 E）', () => {
     expect(accessToken.split('.')).toHaveLength(3);
     expect(frag.get('token_type')).toBe('Bearer');
     expect(frag.get('state')).toBe('nonce-1');
+  });
+
+  it('authorize 携会话但活跃租户未绑定（未开通）→ 403（fail-closed·审批≠可入）', async () => {
+    const em = await mikro.fork();
+    await em.insert(Organization, {
+      id: orgNoBinding,
+      name: 'E2E NoBind',
+      slug: `e2e-sso-nb-${stamp}`,
+      metadata: {},
+    } as never);
+    await em.nativeUpdate(
+      Session,
+      { userId } as never,
+      { activeOrganizationId: orgNoBinding } as never,
+    );
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/v1/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT)}&response_type=token&scope=openid%20email`,
+      headers: { cookie },
+    });
+    expect(res.statusCode).toBe(403);
   });
 
   it('authorize 未注册 client_id → 400（不重定向到未登记地址）', async () => {

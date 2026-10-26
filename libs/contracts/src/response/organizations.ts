@@ -61,3 +61,25 @@ export const organizationOdooBindingViewSchema = z.object({
   odooBoundAt: z.instanceof(Date).nullable(),
 });
 export type OrganizationOdooBindingView = z.infer<typeof organizationOdooBindingViewSchema>;
+
+/**
+ * 当前活跃租户的 Odoo 可用性视图（module-org-odoo-company-mapping 切片 D · apps 面板数据源）。
+ *
+ * @remarks
+ * 前端 apps 面板按绑定态渲染（可用/开通中/失败/未开通）的唯一读面；`available`
+ * 与后端 SSO/RPC 门禁同一 `canUseOdoo` 单源裁决（三点门禁口径不漂移）。字段均为只读展示用·
+ * `odooBindingStatus=null` 表未绑定（存量/演示行）。**不**含公司实体数据（走 odoo-rpc-api 域注入面）。
+ *
+ * @public
+ */
+export const organizationOdooAvailabilityViewSchema = z.object({
+  /** Odoo 能力当前对该租户是否可用（`canUseOdoo` 裁决结果）。 */
+  available: z.boolean(),
+  /** 绑定生命周期态（null=未绑定/无活跃租户）。 */
+  odooBindingStatus: z.enum(ORGANIZATION_ODOO_BINDING_STATUS_VALUES).nullable(),
+  /** 绑定的 Odoo 公司 id（无绑定即 null）。 */
+  odooCompanyId: z.number().int().positive().nullable(),
+});
+export type OrganizationOdooAvailabilityView = z.infer<
+  typeof organizationOdooAvailabilityViewSchema
+>;

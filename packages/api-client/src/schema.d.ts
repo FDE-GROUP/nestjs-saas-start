@@ -657,6 +657,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/odoo/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the active organization Odoo availability for the apps panel (personal channel) */
+        get: operations["OrganizationsSelfController_odooAvailability_v1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/subscriptions/current": {
         parameters: {
             query?: never;
@@ -1056,6 +1073,17 @@ export interface components {
              */
             odooBoundAt: string | null;
         };
+        OrganizationOdooAvailabilityResponse: {
+            /** @description Odoo 能力当前对该租户是否可用（canUseOdoo 单源裁决）。 */
+            available: boolean;
+            /**
+             * @description 绑定生命周期态（null=未绑定/无活跃租户）。
+             * @enum {string|null}
+             */
+            odooBindingStatus: "pending" | "provisioning" | "ready" | "failed" | null;
+            /** @description 绑定的 Odoo 公司 id（res.company 主键·无绑定即 null）。 */
+            odooCompanyId: number | null;
+        };
         SubscriptionResponse: {
             /** @description 是否已有生效订阅。 */
             hasSubscription: boolean;
@@ -1350,6 +1378,13 @@ export interface operations {
             };
             /** @description No authenticated session (global session wall). */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Odoo not available for the active organization (canUseOdoo fail-closed). */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3048,6 +3083,37 @@ export interface operations {
                         data?: {
                             [key: string]: unknown;
                         };
+                    };
+                };
+            };
+            /** @description Missing or invalid session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsSelfController_odooAvailability_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Odoo availability by binding status (single-source canUseOdoo verdict). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["OrganizationOdooAvailabilityResponse"];
                     };
                 };
             };
