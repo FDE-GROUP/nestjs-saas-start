@@ -40,6 +40,8 @@ const GATED_E2E_FILES = [
   'apps/api/src/database/eventing/outbox-relay.e2e.test.ts',
   'apps/api/src/database/mikro/organization-status-subscription-link.e2e.test.ts',
   'apps/api/src/modules/organizations/organization-hard-delete.e2e.test.ts',
+  // rehierarchy 片一 治理台改锚 tenant：一租多组织（companion org）连带硬删 + 跨租可见 + suspend 准入权威真库 e2e。
+  'apps/api/src/modules/platform/platform-tenants.governance.e2e.test.ts',
   'apps/api/src/modules/users/user-hard-delete.e2e.test.ts',
   'apps/api/src/modules/organizations/organization-table.e2e.test.ts',
   // module-org-odoo-company-mapping 切片 A：绑定列组（unique 双射/CHECK/bind-existing 端口）库语义。

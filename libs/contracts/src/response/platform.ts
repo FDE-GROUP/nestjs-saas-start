@@ -1,42 +1,94 @@
 import { z } from 'zod';
-import { ORGANIZATION_STATUS_VALUES } from './organizations';
+import {
+  ORGANIZATION_ODOO_BINDING_STATUS_VALUES,
+  ORGANIZATION_STATUS_VALUES,
+} from './organizations';
 import { offsetPageSchema } from './page';
 
 /**
  * 平台治理面响应契约（S7b·真相源 = platform-tenants / platform-users 各 controller 返回类型·
  * apps 侧编译期双向赋值锁锚定）。状态词汇复用 `ORGANIZATION_STATUS_VALUES`（UserStatus ≡ OrganizationStatus 别名）。
+ *
+ * rehierarchy 片一（治理台改锚 tenant）：跨租治理列表/详情/生命周期改以 **tenant 主键**
+ * （审批准入态权威归位住 `tenant.status`·切片 E）；组织降级为租户名册下的下钻/绑定面（诊断/Odoo 绑定仍 org 级）。
  */
 
 /**
- * 平台侧租户列表行视图。
+ * 平台侧租户列表行视图（tenant 主键·准入态权威·名下组织计数）。
  *
  * @public
  */
-export const platformOrganizationRowSchema = z.object({
-  /** organization 主键（= 租户 id）。 */
+export const platformTenantRowSchema = z.object({
+  /** tenant 主键（隔离与计费边界）。 */
+  tenantId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  /** 租户准入生命周期状态（无记录视同 active）。 */
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  /** 该租户名下组织数量（一租多组织可见）。 */
+  organizationCount: z.number(),
+  createdAt: z.instanceof(Date),
+});
+export type PlatformTenantRowView = z.infer<typeof platformTenantRowSchema>;
+
+/**
+ * offset 分页整体响应（`Page<PlatformTenantRow>`）。
+ *
+ * @public
+ */
+export const platformTenantPageSchema = offsetPageSchema(platformTenantRowSchema);
+
+/**
+ * 租户名册下的组织条目（下钻/绑定面·一组织一公司）。Odoo 绑定列可空（未绑定时 null）。
+ *
+ * @public
+ */
+export const platformTenantOrganizationSchema = z.object({
   organizationId: z.string(),
   name: z.string(),
   slug: z.string(),
-  /** 生命周期状态（无记录视同 active）。 */
   status: z.enum(ORGANIZATION_STATUS_VALUES),
-  createdAt: z.instanceof(Date),
+  odooCompanyId: z.number().int().nullable(),
+  odooBindingStatus: z.enum(ORGANIZATION_ODOO_BINDING_STATUS_VALUES).nullable(),
+  odooCompanyName: z.string().nullable(),
 });
-export type PlatformOrganizationRowView = z.infer<typeof platformOrganizationRowSchema>;
+export type PlatformTenantOrganizationView = z.infer<typeof platformTenantOrganizationSchema>;
 
 /**
- * offset 分页整体响应（`Page<PlatformOrganizationRow>`）。
+ * 平台侧租户详情视图（租户基本盘 + 名下组织名册）。
  *
  * @public
  */
-export const platformOrganizationPageSchema = offsetPageSchema(platformOrganizationRowSchema);
+export const platformTenantDetailSchema = z.object({
+  tenantId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  createdAt: z.instanceof(Date),
+  organizations: z.array(platformTenantOrganizationSchema),
+});
+export type PlatformTenantDetailView = z.infer<typeof platformTenantDetailSchema>;
 
 /**
- * 租户诊断快照（关联计数·平台运维核对用）。
+ * 组织身份下钻行（诊断快照的 organization 段·平台治理台以 tenant 锚定后仅留此轻形供 org 级诊断）。
+ *
+ * @public
+ */
+export const platformOrganizationDrillRowSchema = z.object({
+  organizationId: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
+  createdAt: z.instanceof(Date),
+});
+
+/**
+ * 按组织诊断快照（关联计数·平台运维下钻核对用·org 级·经租户详情抵达）。
  *
  * @public
  */
 export const organizationDiagnosticsSchema = z.object({
-  organization: platformOrganizationRowSchema,
+  organization: platformOrganizationDrillRowSchema,
   memberCount: z.number(),
   invitationCount: z.number(),
   workspaceCount: z.number(),
@@ -44,16 +96,31 @@ export const organizationDiagnosticsSchema = z.object({
 });
 
 /**
- * 租户硬删除结果（供审计核对）。
+ * 租户生命周期治理结果（approve/suspend/resume/delete 迁移后回执·tenant 主键）。
  *
  * @public
  */
-export const organizationHardDeleteResultSchema = z.object({
-  /** 被硬删的 organization 主键。 */
-  organizationId: z.string(),
+export const tenantGovernanceResultSchema = z.object({
+  /** 目标租户 id。 */
+  tenantId: z.string(),
+  status: z.enum(ORGANIZATION_STATUS_VALUES),
+});
+export type TenantGovernanceResultView = z.infer<typeof tenantGovernanceResultSchema>;
+
+/**
+ * 租户硬删除结果（连带清除该租户名下所有组织·供审计核对）。
+ *
+ * @public
+ */
+export const tenantHardDeleteResultSchema = z.object({
+  /** 被硬删的 tenant 主键。 */
+  tenantId: z.string(),
+  /** 本次连带消灭的组织行数（一租多组织）。 */
+  purgedOrgs: z.number(),
   /** 本次清除的 lifecycle 事件数（供审计核对）。 */
   purgedEvents: z.number(),
 });
+export type TenantHardDeleteResultView = z.infer<typeof tenantHardDeleteResultSchema>;
 
 /**
  * 平台侧用户列表行视图。

@@ -124,7 +124,7 @@ function RootLayout() {
                 订阅计费
               </Link>
               <Link
-                to="/platform/organizations"
+                to="/platform/tenants"
                 search={{ offset: 0 }}
                 className={NAV_BASE}
                 activeProps={{ 'aria-current': 'page', className: NAV_ACTIVE }}

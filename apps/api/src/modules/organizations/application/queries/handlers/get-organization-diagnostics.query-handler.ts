@@ -4,7 +4,7 @@ import {
   ORGANIZATION_GOVERNANCE_REPOSITORY,
   type OrganizationGovernanceRepository,
 } from '../../../domain/repositories/organization-governance.repository';
-import type { OrganizationDiagnostics } from '../../read-models/platform-organization.read-model';
+import type { OrganizationDiagnostics } from '../../read-models/platform-tenant.read-model';
 import { GetOrganizationDiagnosticsQuery } from '../get-organization-diagnostics.query';
 
 /**

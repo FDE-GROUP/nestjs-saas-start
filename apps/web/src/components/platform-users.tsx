@@ -1,6 +1,6 @@
 import type { components } from '@saas/api-client';
 import type { ReactNode } from 'react';
-import { StatusBadge } from './platform-organizations';
+import { StatusBadge } from './platform-tenants';
 
 /**
  * 平台用户治理面纯展示/判定基元（前端 F4b · module-frontend-platform §F4b）。

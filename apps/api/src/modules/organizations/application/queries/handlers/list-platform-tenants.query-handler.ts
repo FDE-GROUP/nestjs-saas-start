@@ -4,22 +4,19 @@ import {
   ORGANIZATION_GOVERNANCE_REPOSITORY,
   type OrganizationGovernanceRepository,
 } from '../../../domain/repositories/organization-governance.repository';
-import type { PlatformOrganizationPage } from '../../read-models/platform-organization.read-model';
-import { ListPlatformOrganizationsQuery } from '../list-platform-organizations.query';
+import type { PlatformTenantPage } from '../../read-models/platform-tenant.read-model';
+import { ListPlatformTenantsQuery } from '../list-platform-tenants.query';
 
 /**
- * 跨租户列表查询处理器（FR-6·平台级读侧）。
+ * 跨租租户列表查询处理器（FR-6·平台级读侧·治理台改锚 tenant）。
  *
  * @remarks
- * Deliberately tenant-agnostic: the governance repository
- * applies NO tenant filter (platform-level sees everything, FR-11①); access is gated
- * upstream by `PlatformOperatorGuard` on the controller route.
+ * 刻意租户无关：治理仓储不施加任何租户过滤（平台级天然见全量·FR-11①），
+ * 访问裁决由 controller 侧 `PlatformOperatorGuard` 前置把守。
  * @public
  */
-@QueryHandler(ListPlatformOrganizationsQuery)
-export class ListPlatformOrganizationsQueryHandler
-  implements IQueryHandler<ListPlatformOrganizationsQuery>
-{
+@QueryHandler(ListPlatformTenantsQuery)
+export class ListPlatformTenantsQueryHandler implements IQueryHandler<ListPlatformTenantsQuery> {
   constructor(
     @Inject(ORGANIZATION_GOVERNANCE_REPOSITORY)
     private readonly governance: OrganizationGovernanceRepository,
@@ -31,8 +28,8 @@ export class ListPlatformOrganizationsQueryHandler
    * @returns 平台级租户分页页。
    */
   // fallow-ignore-next-line unused-class-member -- contract method invoked by the @nestjs/cqrs QueryBus
-  async execute(query: ListPlatformOrganizationsQuery): Promise<PlatformOrganizationPage> {
-    return this.governance.list({
+  async execute(query: ListPlatformTenantsQuery): Promise<PlatformTenantPage> {
+    return this.governance.listTenants({
       limit: query.limit,
       offset: query.offset,
       search: query.search,

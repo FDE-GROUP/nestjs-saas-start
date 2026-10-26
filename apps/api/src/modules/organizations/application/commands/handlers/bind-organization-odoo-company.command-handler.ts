@@ -41,11 +41,11 @@ export class BindOrganizationOdooCompanyCommandHandler
   async execute(
     command: BindOrganizationOdooCompanyCommand,
   ): Promise<OrganizationOdooBindingReadModel | null> {
-    const existing = await this.governance.findById(command.organizationId);
-    if (!existing) return null;
-    if (existing.status !== ORGANIZATION_STATUS.ACTIVE) {
+    const admission = await this.governance.findOrganizationAdmission(command.organizationId);
+    if (admission === null) return null;
+    if (admission !== ORGANIZATION_STATUS.ACTIVE) {
       throw new ConflictException(
-        `Only active organizations can bind an Odoo company (status: ${existing.status})`,
+        `Only active organizations can bind an Odoo company (status: ${admission})`,
         { errorCode: ERROR_CODES.ORG_ILLEGAL_TRANSITION },
       );
     }

@@ -142,15 +142,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/organizations": {
+    "/api/v1/platform/tenants": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List all organizations across the platform (operator only) */
-        get: operations["PlatformOrganizationsController_list_v1"];
+        /** List all tenants across the platform (operator only) */
+        get: operations["PlatformTenantsController_list_v1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -159,59 +159,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/organizations/{id}": {
+    "/api/v1/platform/tenants/{tenantId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get one organization (operator only) */
-        get: operations["PlatformOrganizationsController_detail_v1"];
+        /** Get one tenant with its organization roster (operator only) */
+        get: operations["PlatformTenantsController_detail_v1"];
         put?: never;
         post?: never;
-        /** Soft-delete an organization (→ deleted terminal · row kept for export) */
-        delete: operations["PlatformOrganizationsController_remove_v1"];
+        /** Soft-delete a tenant (→ deleted terminal · blocks the whole tenant · row kept for export) */
+        delete: operations["PlatformTenantsController_remove_v1"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/platform/organizations/{id}/diagnostics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Per-organization diagnostics: member/invitation/workspace/post counts */
-        get: operations["PlatformOrganizationsController_diagnostics_v1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/platform/organizations/{id}/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Export all organization-owned data as a single JSON payload (NFR-6) */
-        get: operations["PlatformOrganizationsController_exportData_v1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/platform/organizations/{id}/suspend": {
+    "/api/v1/platform/tenants/{tenantId}/suspend": {
         parameters: {
             query?: never;
             header?: never;
@@ -224,11 +190,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Suspend an active organization (active → suspended · fail-closed失能) */
-        patch: operations["PlatformOrganizationsController_suspend_v1"];
+        /** Suspend an active tenant (active → suspended · blocks the whole tenant) */
+        patch: operations["PlatformTenantsController_suspend_v1"];
         trace?: never;
     };
-    "/api/v1/platform/organizations/{id}/resume": {
+    "/api/v1/platform/tenants/{tenantId}/resume": {
         parameters: {
             query?: never;
             header?: never;
@@ -241,11 +207,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Resume a suspended organization (suspended → active) */
-        patch: operations["PlatformOrganizationsController_resume_v1"];
+        /** Resume a suspended tenant (suspended → active) */
+        patch: operations["PlatformTenantsController_resume_v1"];
         trace?: never;
     };
-    "/api/v1/platform/organizations/{id}/permanent": {
+    "/api/v1/platform/tenants/{tenantId}/permanent": {
         parameters: {
             query?: never;
             header?: never;
@@ -255,8 +221,42 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Hard-delete a deleted-terminal organization (irreversible · FK cascade + event purge · NFR-6) */
-        delete: operations["PlatformOrganizationsController_permanentRemove_v1"];
+        /** Hard-delete a deleted-terminal tenant (irreversible · cascade purge of all its orgs + event purge · NFR-6) */
+        delete: operations["PlatformTenantsController_permanentRemove_v1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/tenants/{tenantId}/organizations/{orgId}/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Per-organization diagnostics: member/invitation/workspace/post counts (drill-down) */
+        get: operations["PlatformTenantsController_diagnostics_v1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform/tenants/{tenantId}/organizations/{orgId}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export all organization-owned data as a single JSON payload (NFR-6 · drill-down) */
+        get: operations["PlatformTenantsController_exportData_v1"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -947,21 +947,23 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        PlatformOrganizationRowResponse: {
-            /** @description organization 主键。 */
-            organizationId: string;
+        PlatformTenantRowResponse: {
+            /** @description tenant 主键。 */
+            tenantId: string;
             name: string;
             slug: string;
             /**
-             * @description 生命周期状态（无记录视同 active）。
+             * @description 准入态（无记录视同 active）。
              * @enum {string}
              */
             status: "pending_approval" | "active" | "suspended" | "deleted";
+            /** @description 名下组织数量（一租多组织可见）。 */
+            organizationCount: number;
             /** Format: date-time */
             createdAt: string;
         };
-        PlatformOrganizationPageResponse: {
-            items: components["schemas"]["PlatformOrganizationRowResponse"][];
+        PlatformTenantPageResponse: {
+            items: components["schemas"]["PlatformTenantRowResponse"][];
             /** @description 全量行数。 */
             total: number;
             /** @description 回显页宽。 */
@@ -969,9 +971,53 @@ export interface components {
             /** @description 回显偏移。 */
             offset: number;
         };
+        PlatformTenantOrganizationResponse: {
+            /** @description organization 主键。 */
+            organizationId: string;
+            name: string;
+            slug: string;
+            /**
+             * @description 组织自有态。
+             * @enum {string}
+             */
+            status: "pending_approval" | "active" | "suspended" | "deleted";
+            /** @description 绑定的 Odoo 公司 id（未绑定为 null）。 */
+            odooCompanyId: Record<string, never> | null;
+            /** @description Odoo 绑定态（未绑定为 null）。 */
+            odooBindingStatus: Record<string, never> | null;
+            /** @description Odoo 公司名快照（未绑定为 null）。 */
+            odooCompanyName: Record<string, never> | null;
+        };
+        PlatformTenantDetailResponse: {
+            /** @description tenant 主键。 */
+            tenantId: string;
+            name: string;
+            slug: string;
+            /**
+             * @description 准入态（无记录视同 active）。
+             * @enum {string}
+             */
+            status: "pending_approval" | "active" | "suspended" | "deleted";
+            /** Format: date-time */
+            createdAt: string;
+            organizations: components["schemas"]["PlatformTenantOrganizationResponse"][];
+        };
+        PlatformOrganizationDrillRowResponse: {
+            /** @description organization 主键。 */
+            organizationId: string;
+            name: string;
+            slug: string;
+            /**
+             * @description 组织态（无记录视同 active）。
+             * @enum {string}
+             */
+            status: "pending_approval" | "active" | "suspended" | "deleted";
+            /** Format: date-time */
+            createdAt: string;
+        };
         OrganizationDiagnosticsResponse: {
-            /** @description 组织行。 */
-            organization: components["schemas"]["PlatformOrganizationRowResponse"];
+            /** @description 组织下钻行。 */
+            organization: components["schemas"]["PlatformOrganizationDrillRowResponse"];
             /** @description 成员数。 */
             memberCount: number;
             /** @description 待处理邀请数。 */
@@ -981,20 +1027,22 @@ export interface components {
             /** @description 帖子数。 */
             postCount: number;
         };
-        OrganizationHardDeleteResultResponse: {
-            /** @description 被硬删的 organization 主键。 */
-            organizationId: string;
-            /** @description 本次清除的 lifecycle 事件数（供审计核对）。 */
-            purgedEvents: number;
-        };
-        OrganizationApplicationResponse: {
-            /** @description organization 主键。 */
-            organizationId: string;
+        TenantGovernanceResultResponse: {
+            /** @description 目标 tenant 主键。 */
+            tenantId: string;
             /**
-             * @description 生命周期状态。
+             * @description 迁移后的准入态。
              * @enum {string}
              */
             status: "pending_approval" | "active" | "suspended" | "deleted";
+        };
+        TenantHardDeleteResultResponse: {
+            /** @description 被硬删的 tenant 主键。 */
+            tenantId: string;
+            /** @description 本次连带消灭的组织行数（一租多组织）。 */
+            purgedOrgs: number;
+            /** @description 本次清除的 lifecycle 事件数（供审计核对）。 */
+            purgedEvents: number;
         };
         PlatformUserRowResponse: {
             /** @description 用户主键。 */
@@ -1071,6 +1119,15 @@ export interface components {
             limit: number;
             /** @description 回显偏移。 */
             offset: number;
+        };
+        OrganizationApplicationResponse: {
+            /** @description organization 主键。 */
+            organizationId: string;
+            /**
+             * @description 生命周期状态。
+             * @enum {string}
+             */
+            status: "pending_approval" | "active" | "suspended" | "deleted";
         };
         OrganizationOdooBindingResponse: {
             /** @description organization 主键。 */
@@ -1762,7 +1819,7 @@ export interface operations {
             };
         };
     };
-    PlatformOrganizationsController_list_v1: {
+    PlatformTenantsController_list_v1: {
         parameters: {
             query?: {
                 limit?: number;
@@ -1775,14 +1832,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description A page of organizations with lifecycle status. */
+            /** @description A page of tenants with admission status and org counts. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["PlatformOrganizationPageResponse"];
+                        data?: components["schemas"]["PlatformTenantPageResponse"];
                     };
                 };
             };
@@ -1797,29 +1854,29 @@ export interface operations {
             };
         };
     };
-    PlatformOrganizationsController_detail_v1: {
+    PlatformTenantsController_detail_v1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                tenantId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Organization row. */
+            /** @description Tenant detail. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["PlatformOrganizationRowResponse"];
+                        data?: components["schemas"]["PlatformTenantDetailResponse"];
                     };
                 };
             };
-            /** @description Organization not found. */
+            /** @description Tenant not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1830,29 +1887,29 @@ export interface operations {
             };
         };
     };
-    PlatformOrganizationsController_remove_v1: {
+    PlatformTenantsController_remove_v1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                tenantId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Organization marked deleted. */
+            /** @description Tenant marked deleted. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationApplicationResponse"];
+                        data?: components["schemas"]["TenantGovernanceResultResponse"];
                     };
                 };
             };
-            /** @description Organization not found. */
+            /** @description Tenant not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1872,12 +1929,139 @@ export interface operations {
             };
         };
     };
-    PlatformOrganizationsController_diagnostics_v1: {
+    PlatformTenantsController_suspend_v1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant suspended. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["TenantGovernanceResultResponse"];
+                    };
+                };
+            };
+            /** @description Tenant not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Illegal transition for the current status. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PlatformTenantsController_resume_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant resumed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["TenantGovernanceResultResponse"];
+                    };
+                };
+            };
+            /** @description Tenant not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Illegal transition for the current status. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PlatformTenantsController_permanentRemove_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant rows purged; payload carries purgedOrgs/purgedEvents for audit核对. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["TenantHardDeleteResultResponse"];
+                    };
+                };
+            };
+            /** @description Tenant not found (or already hard-deleted · idempotent). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Not in deleted terminal state — soft-delete first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PlatformTenantsController_diagnostics_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+                orgId: string;
             };
             cookie?: never;
         };
@@ -1905,12 +2089,13 @@ export interface operations {
             };
         };
     };
-    PlatformOrganizationsController_exportData_v1: {
+    PlatformTenantsController_exportData_v1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                tenantId: string;
+                orgId: string;
             };
             cookie?: never;
         };
@@ -1931,132 +2116,6 @@ export interface operations {
             };
             /** @description Organization not found. */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    PlatformOrganizationsController_suspend_v1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Organization suspended. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationApplicationResponse"];
-                    };
-                };
-            };
-            /** @description Organization not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Illegal transition for the current status. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    PlatformOrganizationsController_resume_v1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Organization resumed. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationApplicationResponse"];
-                    };
-                };
-            };
-            /** @description Organization not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Illegal transition for the current status. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-        };
-    };
-    PlatformOrganizationsController_permanentRemove_v1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Organization rows purged; payload carries purgedEvents for audit核对. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiEnvelope"] & {
-                        data?: components["schemas"]["OrganizationHardDeleteResultResponse"];
-                    };
-                };
-            };
-            /** @description Organization not found (or already hard-deleted · idempotent). */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorResponse"];
-                };
-            };
-            /** @description Not in deleted terminal state — soft-delete first. */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

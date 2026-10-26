@@ -14,7 +14,7 @@ import {
   leaveOrganizationSchema,
   listCursorQuerySchema,
   listPageQuerySchema,
-  listPlatformOrganizationsQuerySchema,
+  listPlatformTenantsQuerySchema,
   listPostsQuerySchema,
   refundPaymentSchema,
   removeMemberSchema,
@@ -243,13 +243,13 @@ describe('@saas/contracts · 请求契约换轨 parity（复刻旧 class-validat
     expectIssueAt(refundPaymentSchema, { checkoutId: 'pi_1', amount: 0 }, 'amount');
   });
 
-  it('listPlatformOrganizationsQuerySchema：继承分页 + search 可选', () => {
-    expect(parseOk(listPlatformOrganizationsQuerySchema, { search: 'ac' })).toEqual({
+  it('listPlatformTenantsQuerySchema：继承分页 + search 可选', () => {
+    expect(parseOk(listPlatformTenantsQuerySchema, { search: 'ac' })).toEqual({
       limit: 20,
       offset: 0,
       search: 'ac',
     });
-    expectIssueAt(listPlatformOrganizationsQuerySchema, { bogus: 1 }, '');
+    expectIssueAt(listPlatformTenantsQuerySchema, { bogus: 1 }, '');
   });
 
   it('suspendUserSchema：reason 可选·超 500 拒·空对象放行', () => {
@@ -346,9 +346,9 @@ describe('@saas/contracts · 业务文本入参 maxLength 输入卫生（承 fol
       'validate.text.maxLength',
     );
     // platform search 200（可选）
-    parseOk(listPlatformOrganizationsQuerySchema, { search: TOO(200) });
+    parseOk(listPlatformTenantsQuerySchema, { search: TOO(200) });
     expectIssueKey(
-      listPlatformOrganizationsQuerySchema,
+      listPlatformTenantsQuerySchema,
       { search: TOO(201) },
       'search',
       'validate.text.maxLength',

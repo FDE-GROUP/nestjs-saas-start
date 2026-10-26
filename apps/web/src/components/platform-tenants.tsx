@@ -1,20 +1,24 @@
 import type { components } from '@saas/api-client';
 
 /**
- * 平台租户治理面纯展示/判定基元（前端 F4a · module-frontend-platform §2.3）。
- * 生命周期动作可用性镜像后端 `organization-lifecycle.ts` TRANSITIONS——前端 disable 非法转移
+ * 平台租户治理面纯展示/判定基元（前端 F4a · module-frontend-platform §2.3 · rehierarchy 片一 治理台改锚 tenant）。
+ * 生命周期动作可用性镜像后端 `tenant.status` 状态机（TRANSITIONS）——前端 disable 非法转移
  * 仅为止损体验，最终裁判仍是后端 409（双保险·对齐 F3 系统角色模式）。
+ *
+ * @remarks
+ * 治理台改锚 tenant：租户控制台的生命周期动作收敛为 suspend/resume/软删/硬删（键 tenantId）；
+ * 申请审批（approve/reject）系用户向 organizations 申请面（非租户治理台），故本组件不再暴露。
  */
-export type OrganizationStatus = components['schemas']['PlatformOrganizationRowResponse']['status'];
+export type TenantStatus = components['schemas']['PlatformTenantRowResponse']['status'];
 
-const LABELS: Record<OrganizationStatus, string> = {
+const LABELS: Record<TenantStatus, string> = {
   pending_approval: '待审批',
   active: '生效',
   suspended: '已暂停',
   deleted: '已删除',
 };
 
-const STYLES: Record<OrganizationStatus, string> = {
+const STYLES: Record<TenantStatus, string> = {
   pending_approval: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
   active: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400',
   suspended: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
@@ -22,7 +26,7 @@ const STYLES: Record<OrganizationStatus, string> = {
 };
 
 /** 状态徽标（未知值回落原串·防渲染崩）。 */
-export function StatusBadge({ status }: { status: OrganizationStatus }) {
+export function StatusBadge({ status }: { status: TenantStatus }) {
   return (
     <span
       className={`rounded px-2 py-0.5 text-xs ${STYLES[status] ?? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}
@@ -33,22 +37,16 @@ export function StatusBadge({ status }: { status: OrganizationStatus }) {
 }
 
 /**
- * 按当前状态判定各类治理动作是否合法（镜像 TRANSITIONS）：
- * approve/reject 仅 pending_approval（审批通过·驳回=物理硬删申请）·
+ * 按当前租户准入态判定各类生命周期动作是否合法（镜像 TRANSITIONS）：
  * suspend 仅 active · resume 仅 suspended · 软删非 deleted · 硬删仅 deleted 终态。
  */
-export function actionEnabled(status: OrganizationStatus): {
-  approve: boolean;
-  reject: boolean;
+export function actionEnabled(status: TenantStatus): {
   suspend: boolean;
   resume: boolean;
   softDelete: boolean;
   permanentDelete: boolean;
 } {
-  const pendingApproval = status === 'pending_approval';
   return {
-    approve: pendingApproval,
-    reject: pendingApproval,
     suspend: status === 'active',
     resume: status === 'suspended',
     softDelete: status !== 'deleted',
@@ -62,23 +60,19 @@ const DANGER =
   'rounded border border-red-300 px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-500/50 dark:text-red-400 dark:hover:bg-red-500/10';
 
 /**
- * 生命周期动作按钮组（纯·回调外置·可脱离 router/mutation 测 enable/disable 矩阵）。
+ * 租户生命周期动作按钮组（纯·回调外置·可脱离 router/mutation 测 enable/disable 矩阵）。
  * 破坏性动作（软删/硬删）的实际确认由调用方在回调里把关（见详情路由）。
  */
-export function OrganizationActions({
+export function TenantActions({
   status,
   pending,
-  onApprove,
-  onReject,
   onSuspend,
   onResume,
   onSoftDelete,
   onPermanentDelete,
 }: {
-  status: OrganizationStatus;
+  status: TenantStatus;
   pending: boolean;
-  onApprove: () => void;
-  onReject: () => void;
   onSuspend: () => void;
   onResume: () => void;
   onSoftDelete: () => void;
@@ -87,24 +81,6 @@ export function OrganizationActions({
   const en = actionEnabled(status);
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        disabled={!en.approve || pending}
-        title={en.approve ? '审批通过（pending→active）' : '当前状态不允许审批'}
-        onClick={onApprove}
-        className={BTN}
-      >
-        审批通过
-      </button>
-      <button
-        type="button"
-        disabled={!en.reject || pending}
-        title={en.reject ? '驳回申请（不可逆硬删待审批组织）' : '仅待审批态可驳回'}
-        onClick={onReject}
-        className={DANGER}
-      >
-        驳回申请
-      </button>
       <button
         type="button"
         disabled={!en.suspend || pending}
@@ -136,7 +112,9 @@ export function OrganizationActions({
         type="button"
         disabled={!en.permanentDelete || pending}
         title={
-          en.permanentDelete ? '不可逆硬删（需先软删 · FK 级联 + 事件清除）' : '仅已删除终态可硬删'
+          en.permanentDelete
+            ? '不可逆硬删（需先软删 · 连带清除名下所有组织 + 事件清除）'
+            : '仅已删除终态可硬删'
         }
         onClick={onPermanentDelete}
         className={DANGER}

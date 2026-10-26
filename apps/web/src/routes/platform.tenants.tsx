@@ -3,39 +3,36 @@ import { createFileRoute, Link, Outlet, useMatchRoute, useNavigate } from '@tans
 import { useState } from 'react';
 import { Field, FormWrap } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { StatusBadge } from '../components/platform-organizations';
+import { StatusBadge } from '../components/platform-tenants';
 import { api } from '../lib/api';
 import { apiErrorDetail, describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
-type OrganizationRow = components['schemas']['PlatformOrganizationRowResponse'];
+type TenantRow = components['schemas']['PlatformTenantRowResponse'];
 
 const LIMIT = 20;
 
-interface OrganizationSearch {
+interface TenantSearch {
   offset: number;
   q?: string;
 }
 
-export const Route = createFileRoute('/platform/organizations')({
-  validateSearch: (search: Record<string, unknown>): OrganizationSearch => ({
+export const Route = createFileRoute('/platform/tenants')({
+  validateSearch: (search: Record<string, unknown>): TenantSearch => ({
     offset: Number(search.offset ?? 0) || 0,
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),
   // search 经 loaderDeps 注入 deps（对齐 TanStack Router 1.x：LoaderFnContext 无 search 字段，
   // validated search 只在 loaderDeps 的 opts 暴露）——此前直取 ctx.search 运行期恒 undefined 致崩。
-  loaderDeps: ({ search }): OrganizationSearch => ({ offset: search.offset, q: search.q }),
+  loaderDeps: ({ search }): TenantSearch => ({ offset: search.offset, q: search.q }),
   loader: async ({ deps }) => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/platform/organizations', {
+    const { data, error } = await api.GET('/api/v1/platform/tenants', {
       params: { query: { limit: LIMIT, offset: deps.offset, search: deps.q } },
     });
     if (error) {
-      logApiError(
-        { path: '/api/v1/platform/organizations', scope: 'platform.organizations' },
-        error,
-      );
+      logApiError({ path: '/api/v1/platform/tenants', scope: 'platform.tenants' }, error);
       return {
         kind: 'error' as const,
         denied: apiErrorDetail(error).statusCode === 403,
@@ -44,17 +41,17 @@ export const Route = createFileRoute('/platform/organizations')({
     }
     return { kind: 'ok' as const, page: data?.data, offset: deps.offset, q: deps.q };
   },
-  component: PlatformOrganizationsPage,
+  component: PlatformTenantsPage,
 });
 
-function PlatformOrganizationsPage() {
+function PlatformTenantsPage() {
   const result = Route.useLoaderData();
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const [q, setQ] = useState(result.kind === 'ok' ? (result.q ?? '') : '');
 
-  // 详情路由 `/platform/organizations/$id` 是本路由的文件式子路由——命中子路由时交由 Outlet 渲染。
-  if (matchRoute({ to: '/platform/organizations/$id' })) return <Outlet />;
+  // 详情路由 `/platform/tenants/$tenantId` 是本路由的文件式子路由——命中子路由时交由 Outlet 渲染。
+  if (matchRoute({ to: '/platform/tenants/$tenantId' })) return <Outlet />;
 
   if (result.kind === 'error') {
     return (
@@ -72,19 +69,19 @@ function PlatformOrganizationsPage() {
 
   function goPage(nextOffset: number) {
     navigate({
-      to: '/platform/organizations',
+      to: '/platform/tenants',
       search: (prev) => ({ ...prev, offset: Math.max(0, nextOffset) }),
     });
   }
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
-    navigate({ to: '/platform/organizations', search: () => ({ offset: 0, q: q || undefined }) });
+    navigate({ to: '/platform/tenants', search: () => ({ offset: 0, q: q || undefined }) });
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeading>组织治理</SectionHeading>
+      <SectionHeading>租户治理</SectionHeading>
 
       <FormWrap onSubmit={submitSearch} className="flex items-end gap-3">
         <Field
@@ -102,7 +99,7 @@ function PlatformOrganizationsPage() {
         </button>
       </FormWrap>
 
-      <OrganizationsListView items={items} />
+      <TenantsListView items={items} />
 
       <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
         <button
@@ -130,7 +127,7 @@ function PlatformOrganizationsPage() {
         <section className="flex flex-col gap-2">
           <SectionHeading>进入详情</SectionHeading>
           {items.map((t) => (
-            <OrganizationRowLink key={t.organizationId} organization={t} />
+            <TenantRowLink key={t.tenantId} tenant={t} />
           ))}
         </section>
       )}
@@ -139,17 +136,18 @@ function PlatformOrganizationsPage() {
 }
 
 /** 单租户详情入口（含 Link·页面级·不入纯展示测）。 */
-function OrganizationRowLink({ organization }: { organization: OrganizationRow }) {
+function TenantRowLink({ tenant }: { tenant: TenantRow }) {
   return (
     <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
-      <span className="flex-1 font-medium text-slate-800 dark:text-slate-100">
-        {organization.name}
+      <span className="flex-1 font-medium text-slate-800 dark:text-slate-100">{tenant.name}</span>
+      <span className="text-xs text-slate-400 dark:text-slate-500">{tenant.slug}</span>
+      <span className="text-xs text-slate-400 dark:text-slate-500">
+        组织 {tenant.organizationCount}
       </span>
-      <span className="text-xs text-slate-400 dark:text-slate-500">{organization.slug}</span>
-      <StatusBadge status={organization.status} />
+      <StatusBadge status={tenant.status} />
       <Link
-        to="/platform/organizations/$id"
-        params={{ id: organization.organizationId }}
+        to="/platform/tenants/$tenantId"
+        params={{ tenantId: tenant.tenantId }}
         search={{ offset: 0 }}
         className="text-xs text-blue-600 hover:underline dark:text-blue-400"
       >
@@ -161,34 +159,35 @@ function OrganizationRowLink({ organization }: { organization: OrganizationRow }
 
 /**
  * 纯展示（收 typed 租户页·可脱离 router 组件测：typed 渲染 / 空态 / 状态徽标）。
- * 数据源 = `PlatformOrganizationPageResponse`（`{items,total,limit,offset}`·offset 分页）。
+ * 数据源 = `PlatformTenantPageResponse`（`{items,total,limit,offset}`·offset 分页）。
  */
-export function OrganizationsListView({ items }: { items?: OrganizationRow[] }) {
+export function TenantsListView({ items }: { items?: TenantRow[] }) {
   const list = items ?? [];
   return (
     <section className="flex flex-col gap-3">
       {list.length === 0 ? (
-        <EmptyPanel label="平台暂无组织数据。" />
+        <EmptyPanel label="平台暂无租户数据。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="py-2 pr-4 font-medium">名称</th>
               <th className="py-2 pr-4 font-medium">Slug</th>
+              <th className="py-2 pr-4 font-medium">组织数</th>
               <th className="py-2 pr-4 font-medium">状态</th>
               <th className="py-2 font-medium">创建时间</th>
             </tr>
           </thead>
           <tbody>
             {list.map((t) => (
-              <tr
-                key={t.organizationId}
-                className="border-b border-slate-100 dark:border-slate-800"
-              >
+              <tr key={t.tenantId} className="border-b border-slate-100 dark:border-slate-800">
                 <td className="py-2 pr-4 font-medium text-slate-800 dark:text-slate-100">
                   {t.name}
                 </td>
                 <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">{t.slug}</td>
+                <td className="py-2 pr-4 text-slate-600 dark:text-slate-300">
+                  {t.organizationCount}
+                </td>
                 <td className="py-2 pr-4">
                   <StatusBadge status={t.status} />
                 </td>

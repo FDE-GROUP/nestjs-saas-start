@@ -32,8 +32,10 @@ import type {
   OrganizationDiagnostics,
   OrganizationGovernanceRepository,
   OrganizationOdooBindingRecord,
-  PlatformOrganizationPage,
-  PlatformOrganizationRow,
+  PlatformOrganizationDrillRow,
+  PlatformTenantDetail,
+  PlatformTenantPage,
+  TenantOrganizationEntry,
 } from '../../domain/repositories/organization-governance.repository';
 
 /**
@@ -68,46 +70,28 @@ export class MikroOrganizationGovernanceRepository
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   // entities.ts 的 `defineEntity` 结果只有值、无 companion interface，实例类型经 `InferEntity` 提取。
-  // 治理换轴归位（rehierarchy E-F）：审批准入态权威上移 `tenant.status`——平台目录/待审队列的 `status`
-  // 取所属租户态（org.status 去审批化后恒 active·不再反映准入态）。无租户行（防御）回落 org 自有态。
-  private toRow(
-    entity: InferEntity<typeof Organization>,
-    tenantStatus?: OrganizationStatus,
-  ): PlatformOrganizationRow {
+  /**
+   * 组织实体 → org 级下钻行（诊断快照用·展 org 自有态；租户准入态另在租户行/详情体现）。
+   */
+  private toDrillRow(entity: InferEntity<typeof Organization>): PlatformOrganizationDrillRow {
     return {
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: tenantStatus ?? effectiveStatus(entity.status as OrganizationStatus),
+      status: effectiveStatus(entity.status as OrganizationStatus),
       createdAt: entity.createdAt,
     };
   }
 
   /**
-   * 批量取一组组织的专属租户准入态（1:1 骨架·tenant.id=org.id；多组织回落任一在租态）。
-   * 一次 in 查避免逐行 N+1；无租户行的 org 不出现在映射（toRow 回落自有态）。
+   * 跨租租户列表（**tenant 主键**·准入态归位直读 `tenant.status`·每行批量算名下组织计数）。
+   * 计数含 1:1 骨架（`organization.tenantId ?? id` 落本页租户集才计），一次 in 查折叠避免逐行 N+1。
    */
-  private async tenantStatusByOrg(
-    em: Awaited<ReturnType<MikroOrmService['fork']>>,
-    orgIds: string[],
-  ): Promise<Map<string, OrganizationStatus>> {
-    if (orgIds.length === 0) return new Map();
-    const tenants = await em.find(Tenant, { id: { $in: orgIds } } as never, {
-      fields: ['id', 'status'] as never,
-    });
-    return new Map(
-      (tenants as { id: string; status: string }[]).map((t) => [
-        t.id,
-        t.status as OrganizationStatus,
-      ]),
-    );
-  }
-
-  async list(opts: {
+  async listTenants(opts: {
     limit: number;
     offset: number;
     search?: string;
-  }): Promise<PlatformOrganizationPage> {
+  }): Promise<PlatformTenantPage> {
     const em = await this.mikro.fork();
     const where = opts.search
       ? {
@@ -115,34 +99,98 @@ export class MikroOrganizationGovernanceRepository
         }
       : {};
     // `as never` 仅系调用边界 cast（mikro-orm.factory.ts 以 `entities as never` 装配致 FilterQuery 宽化不匹配·不改运行时谓词）。
-    const [entities, total] = await em.findAndCount(Organization, where as never, {
+    const [tenants, total] = await em.findAndCount(Tenant, where as never, {
       orderBy: { createdAt: QueryOrder.DESC },
       limit: opts.limit,
       offset: opts.offset,
     });
-    const tenantStatuses = await this.tenantStatusByOrg(
-      em,
-      entities.map((e) => e.id),
-    );
+    const pageIds = (tenants as { id: string }[]).map((t) => t.id);
+    const pageSet = new Set(pageIds);
+    const orgRows = pageIds.length
+      ? ((await em.find(
+          Organization,
+          { $or: [{ tenantId: { $in: pageIds } }, { id: { $in: pageIds } }] } as never,
+          { fields: ['id', 'tenantId'] as never },
+        )) as { id: string; tenantId: string | null }[])
+      : [];
+    const countByTenant = new Map<string, number>();
+    for (const o of orgRows) {
+      const tid = o.tenantId ?? o.id;
+      if (pageSet.has(tid)) countByTenant.set(tid, (countByTenant.get(tid) ?? 0) + 1);
+    }
     return createPage(
-      entities.map((entity) => this.toRow(entity, tenantStatuses.get(entity.id))),
+      (
+        tenants as { id: string; name: string; slug: string; status: string; createdAt: Date }[]
+      ).map((t) => ({
+        tenantId: t.id,
+        name: t.name,
+        slug: t.slug,
+        status: t.status as OrganizationStatus,
+        organizationCount: countByTenant.get(t.id) ?? 0,
+        createdAt: t.createdAt,
+      })),
       total,
       opts,
     );
   }
 
-  async findById(organizationId: string): Promise<PlatformOrganizationRow | null> {
+  /**
+   * 租户详情（tenant 基本盘 + 名下组织名册·含 Odoo 绑定态）；查无 → null。
+   * 名下组织采 `{$or:[{tenantId},{id:tenantId}]}` 折叠——含 expand 段未盖章的 1:1 骨架 org（org.id==tenant.id）。
+   */
+  async findTenantDetail(tenantId: string): Promise<PlatformTenantDetail | null> {
     const em = await this.mikro.fork();
-    const entity = await em.findOne(Organization, { id: organizationId } as never);
-    if (!entity) return null;
-    const tenantStatuses = await this.tenantStatusByOrg(em, [entity.id]);
-    return this.toRow(entity, tenantStatuses.get(entity.id));
+    const tenant = (await em.findOne(Tenant, { id: tenantId } as never)) as {
+      id: string;
+      name: string;
+      slug: string;
+      status: string;
+      createdAt: Date;
+    } | null;
+    if (!tenant) return null;
+    const orgs = (await em.find(Organization, { $or: [{ tenantId }, { id: tenantId }] } as never, {
+      fields: [
+        'id',
+        'name',
+        'slug',
+        'status',
+        'odooCompanyId',
+        'odooBindingStatus',
+        'odooCompanyName',
+      ] as never,
+    })) as {
+      id: string;
+      name: string;
+      slug: string;
+      status: string;
+      odooCompanyId: number | null;
+      odooBindingStatus: string | null;
+      odooCompanyName: string | null;
+    }[];
+    const organizations: TenantOrganizationEntry[] = orgs.map((o) => ({
+      organizationId: o.id,
+      name: o.name,
+      slug: o.slug,
+      status: effectiveStatus(o.status as OrganizationStatus),
+      odooCompanyId: o.odooCompanyId ?? null,
+      odooBindingStatus: (o.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
+      odooCompanyName: o.odooCompanyName ?? null,
+    }));
+    return {
+      tenantId: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      status: tenant.status as OrganizationStatus,
+      createdAt: tenant.createdAt,
+      organizations,
+    };
   }
 
   async diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null> {
-    const organization = await this.findById(organizationId);
-    if (!organization) return null;
     const em = await this.mikro.fork();
+    const entity = await em.findOne(Organization, { id: organizationId } as never);
+    if (!entity) return null;
+    const organization = this.toDrillRow(entity);
     const [memberCount, invitationCount, workspaceCount, postCount] = await Promise.all([
       em.count(Member, { organizationId } as never),
       em.count(Invitation, { organizationId } as never),
@@ -254,12 +302,42 @@ export class MikroOrganizationGovernanceRepository
     return { organization, members, invitations, workspaces, subscriptions, posts };
   }
 
-  async destroy(organizationId: string): Promise<boolean> {
-    // 仅删主行；member/invitation/workspace/organization_subscription/post 由 FK onDelete: 'cascade' 在 DB 层
-    // 自动消灭（单一卡点·零迁移）。nativeDelete＝纯 SQL DELETE（R-B3·非 em.remove 免 ORM 级联分歧）。
+  async destroyTenant(tenantId: string): Promise<{ purgedOrgs: number }> {
+    // 租户硬删连带：先清名下所有组织（member/invitation/workspace/organization_subscription/post 由 DB FK
+    // cascade 自动消灭），再删租户本体（其名下 `tenant_subscription` 经 FK `onDelete:cascade` 随租户灭·不跨上下手）。
+    // 均 nativeDelete＝纯 SQL DELETE（R-B3·非 em.remove 免 ORM 级联分歧·单一卡点）。名下组织采 {$or:[{tenantId},{id:tenantId}]} 折叠——含 expand 段未盖章的 1:1 骨架。
     const em = await this.mikro.fork();
-    const affected = await em.nativeDelete(Organization, { id: organizationId } as never);
-    return affected > 0;
+    const orgRows = (await em.find(
+      Organization,
+      { $or: [{ tenantId }, { id: tenantId }] } as never,
+      { fields: ['id'] as never },
+    )) as { id: string }[];
+    const orgIds = orgRows.map((o) => o.id);
+    const purgedOrgs = orgIds.length
+      ? await em.nativeDelete(Organization, { id: { $in: orgIds } } as never)
+      : 0;
+    await em.nativeDelete(Tenant, { id: tenantId } as never);
+    return { purgedOrgs };
+  }
+
+  /**
+   * 组织准入态读取（bind 门槛·rehierarchy 片一修读侧叠加键）：经 `organization.tenantId ?? id` 解析所属
+   * 租户的 `tenant.status`（准入态归位·companion org 正确取租户态）；无租户行（防御）回落组织自有态。
+   */
+  async findOrganizationAdmission(organizationId: string): Promise<OrganizationStatus | null> {
+    const em = await this.mikro.fork();
+    const org = (await em.findOne(Organization, { id: organizationId } as never)) as {
+      id: string;
+      tenantId: string | null;
+      status: string;
+    } | null;
+    if (!org) return null;
+    const tenant = (await em.findOne(Tenant, {
+      id: org.tenantId ?? org.id,
+    } as never)) as { status: string } | null;
+    return tenant
+      ? (tenant.status as OrganizationStatus)
+      : effectiveStatus(org.status as OrganizationStatus);
   }
 
   async bindOdooCompany(

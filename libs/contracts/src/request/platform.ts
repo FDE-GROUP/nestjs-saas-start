@@ -4,15 +4,15 @@ import { strictObject } from '../strict';
 import { pageShape } from './pagination';
 
 /**
- * 跨租户列表查询（旧 `ListPlatformOrganizationsDto extends ListPageDto` + search 模糊）。
+ * 跨租列表查询（治理台改锚 tenant·旧 `ListPlatformOrganizationsDto` → `ListPlatformTenantsDto` + search 模糊）。
  *
  * @public
  */
-export const listPlatformOrganizationsQuerySchema = strictObject({
+export const listPlatformTenantsQuerySchema = strictObject({
   ...pageShape,
   search: optStringMax(200),
 });
-export type ListPlatformOrganizationsQuery = z.infer<typeof listPlatformOrganizationsQuerySchema>;
+export type ListPlatformTenantsQuery = z.infer<typeof listPlatformTenantsQuerySchema>;
 
 /**
  * 跨平台用户列表查询（旧 `ListPlatformUsersDto extends ListPageDto` + search 模糊）。

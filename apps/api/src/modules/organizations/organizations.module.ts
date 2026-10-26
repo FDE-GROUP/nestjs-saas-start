@@ -25,8 +25,8 @@ import { SuspendOrganizationCommandHandler } from './application/commands/handle
 import { SuspendUserCommandHandler } from './application/commands/handlers/suspend-user.command-handler';
 import { ExportOrganizationDataQueryHandler } from './application/queries/handlers/export-organization-data.query-handler';
 import { GetOrganizationDiagnosticsQueryHandler } from './application/queries/handlers/get-organization-diagnostics.query-handler';
-import { GetPlatformOrganizationQueryHandler } from './application/queries/handlers/get-platform-organization.query-handler';
-import { ListPlatformOrganizationsQueryHandler } from './application/queries/handlers/list-platform-organizations.query-handler';
+import { GetPlatformTenantQueryHandler } from './application/queries/handlers/get-platform-tenant.query-handler';
+import { ListPlatformTenantsQueryHandler } from './application/queries/handlers/list-platform-tenants.query-handler';
 import { ListPlatformUsersQueryHandler } from './application/queries/handlers/list-platform-users.query-handler';
 import { ORGANIZATION_GOVERNANCE_REPOSITORY } from './domain/repositories/organization-governance.repository';
 import { ORGANIZATION_PROVISIONING_REPOSITORY } from './domain/repositories/organization-provisioning.repository';
@@ -56,8 +56,8 @@ const CommandHandlers = [
 ];
 
 const QueryHandlers = [
-  ListPlatformOrganizationsQueryHandler,
-  GetPlatformOrganizationQueryHandler,
+  ListPlatformTenantsQueryHandler,
+  GetPlatformTenantQueryHandler,
   GetOrganizationDiagnosticsQueryHandler,
   ExportOrganizationDataQueryHandler,
   ListPlatformUsersQueryHandler,

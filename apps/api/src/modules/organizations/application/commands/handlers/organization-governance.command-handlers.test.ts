@@ -31,7 +31,7 @@ describe('SuspendOrganizationCommandHandler (S5 · FR-6/FR-10)', () => {
     const handler = new SuspendOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new SuspendOrganizationCommand('org-1', 'op-1'))).resolves.toEqual(
       {
-        organizationId: 'org-1',
+        tenantId: 'org-1',
         status: ORGANIZATION_STATUS.SUSPENDED,
       },
     );
@@ -80,7 +80,7 @@ describe('ResumeOrganizationCommandHandler (S5 · FR-6)', () => {
     });
     const handler = new ResumeOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new ResumeOrganizationCommand('org-1', 'op-1'))).resolves.toEqual({
-      organizationId: 'org-1',
+      tenantId: 'org-1',
       status: ORGANIZATION_STATUS.ACTIVE,
     });
     expect(d.transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.ACTIVE, {
@@ -102,7 +102,7 @@ describe('DeleteOrganizationCommandHandler (S5 · FR-6/NFR-6 软删)', () => {
     });
     const handler = new DeleteOrganizationCommandHandler(d.status, d.audit);
     await expect(handler.execute(new DeleteOrganizationCommand('org-1', 'op-1'))).resolves.toEqual({
-      organizationId: 'org-1',
+      tenantId: 'org-1',
       status: ORGANIZATION_STATUS.DELETED,
     });
     expect(d.transition).toHaveBeenCalledWith('org-1', ORGANIZATION_STATUS.DELETED, {

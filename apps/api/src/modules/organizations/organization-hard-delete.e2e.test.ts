@@ -64,10 +64,10 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
 
   async function seedOrganizationOwned(em: EntityManager, id: string, withExtras: boolean) {
     await em.insert(Organization, { id, name: `HD ${id}`, slug: `hd-${id}` } as never);
-    // rehierarchy 切片 E 换轴：组织去审批化、准入态权威上移 `tenant.status`——软删 handler 现对
-    // `TenantStatusService.transition(orgId, deleted)` 卡 tenantExists（Tenant 主键），硬删前置闸经
-    // `governance.findById` 读叠加后的租户态。故每个待测 org 须伴生 1:1 专属租户行（tenant.id=org.id·
-    // status active），否则软删 tenantExists=false 直接 not-found、两段式删链无法推进。
+    // rehierarchy 片一 治理台改锚 tenant：软/硬删均对**租户**动作——`TenantStatusService.transition(tenantId, deleted)`
+    // 卡 tenantExists（Tenant 主键），硬删前置闸经 `governance.findTenantDetail` 读 `tenant.status`。故每个待测
+    // org 须伴生 1:1 专属租户行（tenant.id=org.id·status active），否则软删 tenantExists=false 直接 not-found、
+    // 两段式删链无法推进。
     await em.insert(Tenant, {
       id,
       name: `HD ${id}`,
@@ -191,13 +191,13 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
   it('软删→硬删：六表 cascade 灭、tenant 事件补删、user 幸存；重复硬删 404 幂等', async () => {
     // ① 真软删（transition → deleted 终态）
     const soft = await commandBus.execute(new DeleteOrganizationCommand(orgId, userId));
-    expect(soft).toMatchObject({ organizationId: orgId, status: ORGANIZATION_STATUS.DELETED });
+    expect(soft).toMatchObject({ tenantId: orgId, status: ORGANIZATION_STATUS.DELETED });
 
     // ② 真硬删（先补删事件后删主行）
     const result = await commandBus.execute(
       new DeleteOrganizationPermanentlyCommand(orgId, userId),
     );
-    expect(result).toMatchObject({ organizationId: orgId });
+    expect(result).toMatchObject({ tenantId: orgId });
     const purged = (result as { purgedEvents: number }).purgedEvents;
     expect(purged).toBeGreaterThanOrEqual(1); // 至少清掉本测手写的那行
 
@@ -241,7 +241,7 @@ gated('按租户硬删全栈 e2e（真库 FK cascade + 事件补删 · env-gated
       ORGANIZATION_GOVERNANCE_REPOSITORY,
     );
     const spy = vi
-      .spyOn(governance, 'destroy')
+      .spyOn(governance, 'destroyTenant')
       .mockRejectedValue(new Error('injected destroy failure'));
     try {
       await expect(

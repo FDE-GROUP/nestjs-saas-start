@@ -2,24 +2,58 @@ import type { OrganizationStatus } from '@core/saas-kit/modules/organizations/li
 import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
 
-/** 平台租户治理仓储端口的 DI 注入 token。 @public */
+/**
+ * 平台租户治理仓储端口的 DI 注入 token。
+ * @public
+ */
 export const ORGANIZATION_GOVERNANCE_REPOSITORY = Symbol('ORGANIZATION_GOVERNANCE_REPOSITORY');
 
 /**
- * 跨租户运营列表行（组织基本盘 + 生命周期态）。
+ * 跨租治理列表行（**tenant 主键**·准入态权威·名下组织计数）。
  * @public
  */
-export interface PlatformOrganizationRow {
-  /** 所属租户 id。 */
-  organizationId: string;
+export interface PlatformTenantRow {
+  /** 租户主键（隔离与计费边界）。 */
+  tenantId: string;
   /** 租户名称。 */
   name: string;
   /** URL 友好的短标识。 */
   slug: string;
-  /** 无状态记录（存量/seeded）视同 active（与 canTransition/middleware deny-list 同口径）。 */
+  /** 租户准入生命周期态（无记录视同 active·与 canTransition/deny-list 同口径）。 */
   status: OrganizationStatus;
+  /** 该租户名下组织数量（一租多组织可见）。 */
+  organizationCount: number;
   /** 创建时间。 */
   createdAt: Date;
+}
+
+/**
+ * 租户名册下的组织条目（下钻/绑定面·一组织一公司）。Odoo 绑定列未绑定时为 null。
+ * @public
+ */
+export interface TenantOrganizationEntry {
+  /** 组织主键。 */
+  organizationId: string;
+  name: string;
+  slug: string;
+  /** 组织自有轻量态（canUseOdoo 裁决用·非准入态）。 */
+  status: OrganizationStatus;
+  odooCompanyId: number | null;
+  odooBindingStatus: OrganizationOdooBindingStatus | null;
+  odooCompanyName: string | null;
+}
+
+/**
+ * 租户详情（tenant 基本盘 + 名下组织名册）。
+ * @public
+ */
+export interface PlatformTenantDetail {
+  tenantId: string;
+  name: string;
+  slug: string;
+  status: OrganizationStatus;
+  createdAt: Date;
+  organizations: TenantOrganizationEntry[];
 }
 
 /**
@@ -27,15 +61,28 @@ export interface PlatformOrganizationRow {
  * 旧名留作别名，消费方 import 面不动，随重构自然淘汰）。
  * @public
  */
-export type PlatformOrganizationPage = Page<PlatformOrganizationRow>;
+export type PlatformTenantPage = Page<PlatformTenantRow>;
 
 /**
- * 按租户诊断（FR-6）：租户行 + 关联数据量，供经营者一眼判断租户实况。
+ * 组织身份下钻行（`OrganizationDiagnostics.organization` 段·治理台以 tenant 锚定后仅留此轻形供 org 级诊断）。
+ * @public
+ */
+export interface PlatformOrganizationDrillRow {
+  /** 组织主键。 */
+  organizationId: string;
+  name: string;
+  slug: string;
+  status: OrganizationStatus;
+  createdAt: Date;
+}
+
+/**
+ * 按组织诊断（FR-6）：组织行 + 关联数据量，供经营者一眼判断组织实况（org 级下钻·经租户详情抵达）。
  * @public
  */
 export interface OrganizationDiagnostics {
-  /** 所属租户行。 */
-  organization: PlatformOrganizationRow;
+  /** 所属组织行。 */
+  organization: PlatformOrganizationDrillRow;
   /** 成员数量。 */
   memberCount: number;
   /** 邀请数量。 */
@@ -158,45 +205,52 @@ export interface OrganizationDataExport {
  * 使用——**刻意不做租户过滤**（平台级天然跨租户，FR-11①），因此该 port 绝不允许被
  * 租户级切片引用（守卫在 controller 逐路由接线，fail-closed）。
  *
- * 状态迁移（suspend/resume/delete）不在此 port——统一走 `OrganizationStatusService.transition`
- * （`organization.status` 真列单点·consolidation 切片 B 归位·§9.4 迁移表）；此处只保留行级读与硬删（deleted 终态后的运维硬删留接口）。
+ * 状态迁移（approve/suspend/resume/delete）不在此 port——统一走 `TenantStatusService.transition`（rehierarchy 片一治理换轴归位：准入态权威上移 `tenant.status` 真列单点·§9.4 迁移表）；此处只保留行级读与硬删连带（deleted 终态后的运维硬删留接口）。
  * @public
  */
 export interface OrganizationGovernanceRepository {
   /**
-   * 跨租户列表（name/slug 模糊过滤·createdAt 倒序·limit/offset 分页）。
+   * 跨租租户列表（**tenant 主键**·name/slug 模糊过滤·createdAt 倒序·limit/offset 分页·每行携名下组织计数）。
    * @param opts - 分页请求 + 可选搜索串。
    * @returns 租户行分页页。
    */
-  list(opts: PageRequest & { search?: string }): Promise<PlatformOrganizationPage>;
+  listTenants(opts: PageRequest & { search?: string }): Promise<PlatformTenantPage>;
   /**
-   * 租户详情；不存在 → null（调用方转 404）。
-   * @param organizationId - 目标租户 id。
-   * @returns 租户行；查无时为 `null`。
+   * 租户详情（tenant 基本盘 + 名下组织名册）；不存在 → null（调用方转 404）。
+   * @param tenantId - 目标租户 id。
+   * @returns 租户详情；查无时为 `null`。
    */
-  findById(organizationId: string): Promise<PlatformOrganizationRow | null>;
+  findTenantDetail(tenantId: string): Promise<PlatformTenantDetail | null>;
   /**
-   * 按租户诊断（成员/邀请/workspace/帖子计数）；不存在 → null。
-   * @param organizationId - 目标租户 id。
+   * 按组织诊断（成员/邀请/workspace/帖子计数）；不存在 → null。org 级下钻·经租户详情抵达。
+   * @param organizationId - 目标组织 id。
    * @returns 诊断快照；查无时为 `null`。
    */
   diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null>;
   /**
-   * 按租户导出全部名下数据（NFR-6）；不存在 → null。deleted 终态亦可导。
-   * @param organizationId - 目标租户 id。
+   * 按组织导出全部名下数据（NFR-6）；不存在 → null。deleted 终态亦可导。
+   * @param organizationId - 目标组织 id。
    * @returns 六段聚合导出体；查无时为 `null`。
    */
   exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null>;
   /**
-   * 运营硬删（NFR-6 删除半）：仅删 organization 主行，五张子表由 DB FK cascade 自动消灭。
+   * 租户硬删连带（NFR-6 删除半）：清除该租户名下**所有组织**（含 1:1 骨架自持租户 id==org.id 那一组）
+   * + 租户行 + 名下订阅行；各子表由 DB FK cascade 自动消灭。
    *
    * @remarks
-   * 单一卡点·应用层不逐表删；**前置闸（仅 deleted 终态可硬删）在 application 层 handler 裁决**，
-   * 访问控管在 controller guard——本 port 供纯粹消灭动作，不叠业务门槛（与 diagnostics 同位阶）。
-   * @param organizationId - 目标租户 id。
-   * @returns 实删时为 `true`，行不存在为 `false`。
+   * 单一卡点·应用层不逐表删；**前置闸（仅 tenant.status——准入态归位单点——处 deleted 终态可硬删）在 application 层 handler 裁决**，
+   * 访问控管在 controller guard——本 port 供纯粹连带消灭动作，不叠业务门槛。事件补删归 handler（需 eventStore）。
+   * @param tenantId - 目标租户 id。
+   * @returns `purgedOrgs`＝本次连带消灭的组织行数（0 表示租户本体不存在·调用方转 404 幂等）。
    */
-  destroy(organizationId: string): Promise<boolean>;
+  destroyTenant(tenantId: string): Promise<{ purgedOrgs: number }>;
+  /**
+   * 组织准入态读取（bind 门槛用·rehierarchy 片一修读侧叠加键）：经 `organization.tenantId ?? id` 解析所属
+   * 租户的 `tenant.status`（准入态权威归位·companion org 正确取租户态·非恒 active）；组织不存在 → null（控制层 404）。
+   * @param organizationId - 目标组织 id。
+   * @returns 所属租户准入态；组织查无时为 `null`。
+   */
+  findOrganizationAdmission(organizationId: string): Promise<OrganizationStatus | null>;
   /**
    * bind-existing 回填（module-org-odoo-company-mapping 切片 A）：把现存 Odoo 公司绑定到组织，
    * 绑定态直落 `ready`（回填系人工确认动作，无 provisioning 中间态）。

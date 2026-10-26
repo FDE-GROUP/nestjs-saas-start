@@ -5,6 +5,7 @@ import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { ORGANIZATION_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
@@ -14,10 +15,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroOrganizationGovernanceRepository } from './mikro-organization-governance.repository';
 
 /**
- * 切片 3c-ii-B 镜像断言（global-tenant-organization-rehierarchy 切片 E-F 治理换轴后）：平台目录/待审队列
- * 的准入态权威上移 `tenant.status`——`list`/`findById` 先取组织行、再**批量**取专属租户态
- * （tenantStatusByOrg 一次 `find(Tenant)`），行 `status` 取租户态；无租户行（防御）回落组织自有态。
- * fake `em` 经 `MikroOrmService.fork()` 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
+ * 切片 3c-ii-B 镜像断言（global-tenant-organization-rehierarchy 片一 治理台改锚 tenant）：平台目录/详情的
+ * 准入态权威住 `tenant.status`——`listTenants`/`findTenantDetail` 先取**租户行**（findAndCount/findOne on Tenant），
+ * 名下组织批量折叠计数/名册（`organization.tenantId ?? id` 回落含 1:1 骨架 + companion org）。fake `em` 经
+ * `MikroOrmService.fork()` 供给。刻意**无租户上下文**（平台级天然全量·FR-11①·访问裁决在 controller guard）。
  */
 function makeRepo() {
   const findAndCount = vi.fn().mockResolvedValue([[], 0]);
@@ -46,51 +47,57 @@ const orgRow = {
   updatedAt: null,
 };
 
+const tenantRow = {
+  id: 't1',
+  name: 'Acme',
+  slug: 'acme',
+  status: ORGANIZATION_STATUS.ACTIVE,
+  createdAt: new Date('2026-01-01'),
+};
+
 describe('MikroOrganizationGovernanceRepository (S5 · FR-6 跨租户视图)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('list() maps rows, coerces missing tenant/org status → active, and reports total', async () => {
+  it('listTenants() 展租户行·批量计名下组织（一租多组织·含 1:1 骨架回落）·报告 total', async () => {
     const { repo, spies } = makeRepo();
     spies.findAndCount.mockResolvedValueOnce([
-      [{ ...orgRow, metadata: null, status: undefined }],
-      7,
+      [{ ...tenantRow, status: ORGANIZATION_STATUS.SUSPENDED }],
+      3,
     ]);
-    // 无租户行（find 默认 []）→ 回落组织自有态兑底 active
-    const page = await repo.list({ limit: 20, offset: 0 });
-    expect(page.total).toBe(7);
+    // 名下两组织：1:1 骨架（tenantId 自指）+ companion（tenantId='t1'）——准入态以租户为准（非恒 active）。
+    spies.find.mockResolvedValueOnce([
+      { id: 't1', tenantId: 't1' },
+      { id: 'orgB', tenantId: 't1' },
+    ]);
+    const page = await repo.listTenants({ limit: 20, offset: 0 });
+    expect(page.total).toBe(3);
     expect(page.items[0]).toMatchObject({
-      organizationId: 'orgA',
+      tenantId: 't1',
       name: 'Acme',
       slug: 'acme',
-      status: ORGANIZATION_STATUS.ACTIVE,
+      status: ORGANIZATION_STATUS.SUSPENDED,
+      organizationCount: 2,
     });
     expect(page).toMatchObject({ limit: 20, offset: 0 });
-    // 治理换轴：批量取专属租户态一次（find(Tenant)）。
-    expect(spies.find).toHaveBeenCalledTimes(1);
   });
 
-  it('list() 治理换轴：行 status 取专属 tenant.status（覆盖组织自有态）', async () => {
+  it('listTenants() 无本页组织 → organizationCount 0（find 不因空页集触发）', async () => {
     const { repo, spies } = makeRepo();
-    spies.findAndCount.mockResolvedValueOnce([
-      [{ ...orgRow, status: ORGANIZATION_STATUS.ACTIVE }],
-      1,
-    ]);
-    // 专属租户处于 suspended（1:1 骨架·tenant.id=org.id）——准入态以租户为准。
-    spies.find.mockResolvedValueOnce([{ id: 'orgA', status: ORGANIZATION_STATUS.SUSPENDED }]);
-    const page = await repo.list({ limit: 10, offset: 5 });
-    expect(page.items[0].status).toBe(ORGANIZATION_STATUS.SUSPENDED);
-    expect(spies.find).toHaveBeenCalledTimes(1);
+    spies.findAndCount.mockResolvedValueOnce([[tenantRow], 1]);
+    const page = await repo.listTenants({ limit: 10, offset: 5 });
+    expect(page.items[0].organizationCount).toBe(0);
   });
 
-  it('list() builds the $ilike search predicate over name/slug', async () => {
+  it('listTenants() builds the $ilike search predicate over Tenant name/slug', async () => {
     const { repo, spies } = makeRepo();
-    const page = await repo.list({ limit: 20, offset: 0, search: 'acme' });
+    spies.findAndCount.mockResolvedValueOnce([[], 0]);
+    const page = await repo.listTenants({ limit: 20, offset: 0, search: 'acme' });
     const [entity, where, options] = spies.findAndCount.mock.calls[0] as [
       unknown,
       Record<string, unknown>,
       Record<string, unknown>,
     ];
-    expect(entity).toBe(Organization);
+    expect(entity).toBe(Tenant);
     expect(where).toEqual({
       $or: [{ name: { $ilike: '%acme%' } }, { slug: { $ilike: '%acme%' } }],
     });
@@ -102,28 +109,59 @@ describe('MikroOrganizationGovernanceRepository (S5 · FR-6 跨租户视图)', (
     expect(page.items).toEqual([]);
   });
 
-  it('findById() returns null when the row is absent', async () => {
+  it('findTenantDetail() returns null when the tenant is absent', async () => {
     const { repo, spies } = makeRepo();
     spies.findOne.mockResolvedValueOnce(null);
-    await expect(repo.findById('ghost')).resolves.toBeNull();
+    await expect(repo.findTenantDetail('ghost')).resolves.toBeNull();
   });
 
-  it('findById() issues a single organization lookup and maps the row (归列·无旁表二查)', async () => {
+  it('findTenantDetail() 折叠名下组织名册（1:1 骨架 + companion）·携 Odoo 绑定态·缺列兑底 active', async () => {
     const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce({ ...orgRow, status: ORGANIZATION_STATUS.SUSPENDED });
-    const row = await repo.findById('orgA');
+    spies.findOne.mockResolvedValueOnce({ ...tenantRow, status: ORGANIZATION_STATUS.SUSPENDED });
+    spies.find.mockResolvedValueOnce([
+      {
+        id: 't1',
+        name: 'Acme',
+        slug: 'acme',
+        status: undefined,
+        odooCompanyId: 10,
+        odooBindingStatus: 'ready',
+        odooCompanyName: 'Acme Co',
+      },
+      {
+        id: 'orgB',
+        name: 'Acme EU',
+        slug: 'acme-eu',
+        status: ORGANIZATION_STATUS.ACTIVE,
+        odooCompanyId: null,
+        odooBindingStatus: null,
+        odooCompanyName: null,
+      },
+    ]);
+    const detail = await repo.findTenantDetail('t1');
     expect(spies.findOne).toHaveBeenCalledTimes(1);
-    const [orgEntity, orgWhere] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(orgEntity).toBe(Organization);
-    expect(orgWhere).toEqual({ id: 'orgA' });
-    expect(row).toMatchObject({ organizationId: 'orgA', status: ORGANIZATION_STATUS.SUSPENDED });
-  });
-
-  it('findById() coerces a missing status column to active（defense-in-depth 兑底）', async () => {
-    const { repo, spies } = makeRepo();
-    spies.findOne.mockResolvedValueOnce({ ...orgRow, status: undefined });
-    const row = await repo.findById('orgA');
-    expect(row?.status).toBe(ORGANIZATION_STATUS.ACTIVE);
+    const [tenantEntity, tenantWhere] = spies.findOne.mock.calls[0] as [
+      unknown,
+      Record<string, unknown>,
+    ];
+    expect(tenantEntity).toBe(Tenant);
+    expect(tenantWhere).toEqual({ id: 't1' });
+    expect(detail).toMatchObject({ tenantId: 't1', status: ORGANIZATION_STATUS.SUSPENDED });
+    expect(detail?.organizations).toHaveLength(2);
+    expect(detail?.organizations[0]).toMatchObject({
+      organizationId: 't1',
+      // 缺 status 列兑底 active（组织自有态·非准入态）
+      status: ORGANIZATION_STATUS.ACTIVE,
+      odooCompanyId: 10,
+      odooBindingStatus: 'ready',
+      odooCompanyName: 'Acme Co',
+    });
+    expect(detail?.organizations[1]).toMatchObject({
+      organizationId: 'orgB',
+      odooCompanyId: null,
+      odooBindingStatus: null,
+      odooCompanyName: null,
+    });
   });
 
   it('diagnostics() returns null for an unknown tenant without counting', async () => {
@@ -301,25 +339,30 @@ describe('MikroOrganizationGovernanceRepository.exportOrganizationData (NFR-6)',
   });
 });
 
-describe('MikroOrganizationGovernanceRepository.destroy (NFR-6 硬删主行)', () => {
+describe('MikroOrganizationGovernanceRepository.destroyTenant (NFR-6 硬删连带)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('主行实删 → true（nativeDelete 单一卡点，子表由 DB FK cascade·不逐表删·不预查）', async () => {
+  it('租户连带硬删 → 先清名下所有组织（nativeDelete $in·子表 FK cascade）+ 租户本体（订阅随租户 FK cascade）·返 purgedOrgs', async () => {
     const { repo, spies } = makeRepo();
-    spies.nativeDelete.mockResolvedValueOnce(1);
-    await expect(repo.destroy('orgA')).resolves.toBe(true);
-    expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
-    const [entity, where] = spies.nativeDelete.mock.calls[0] as [unknown, Record<string, unknown>];
-    expect(entity).toBe(Organization);
-    expect(where).toEqual({ id: 'orgA' });
-    expect(spies.findOne).not.toHaveBeenCalled();
-    expect(spies.find).not.toHaveBeenCalled();
-    expect(spies.count).not.toHaveBeenCalled();
+    spies.find.mockResolvedValueOnce([{ id: 't1' }, { id: 'orgB' }]);
+    // 首个 nativeDelete（Organization）回 2 实删行→ purgedOrgs=2；后一删（本体）回 0（不取）。
+    spies.nativeDelete.mockResolvedValueOnce(2).mockResolvedValue(0);
+    await expect(repo.destroyTenant('t1')).resolves.toEqual({ purgedOrgs: 2 });
+    const calls = spies.nativeDelete.mock.calls as [unknown, Record<string, unknown>][];
+    expect(calls).toHaveLength(2);
+    expect(calls[0][0]).toBe(Organization);
+    expect(calls[0][1]).toEqual({ id: { $in: ['t1', 'orgB'] } });
+    expect(calls[1][0]).toBe(Tenant);
+    expect(calls[1][1]).toEqual({ id: 't1' });
   });
 
-  it('行不存在 → false（幂等·0 affected）', async () => {
+  it('名下无组织 → purgedOrgs 0（Organization nativeDelete 不触发·仅本体一删·订阅随 FK cascade）', async () => {
     const { repo, spies } = makeRepo();
-    spies.nativeDelete.mockResolvedValueOnce(0);
-    await expect(repo.destroy('ghost')).resolves.toBe(false);
+    spies.find.mockResolvedValueOnce([]);
+    spies.nativeDelete.mockResolvedValue(0);
+    await expect(repo.destroyTenant('ghost')).resolves.toEqual({ purgedOrgs: 0 });
+    expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
+    const entities = spies.nativeDelete.mock.calls.map((c) => c[0]);
+    expect(entities).toEqual([Tenant]);
   });
 });
