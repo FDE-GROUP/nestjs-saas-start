@@ -1,6 +1,7 @@
 import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
+import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
 
 /**
  * Better Auth 组织容器族实体（global-ba-entity-domain-placement 切片 B · 人裁 2026-10-20：
@@ -65,6 +66,9 @@ export const Organization = defineEntity({
     { name: 'organization_status_check', expression: STATUS_CHECK_EXPRESSION },
     { name: 'organization_odoo_binding_status_check', expression: BINDING_STATUS_CHECK_EXPRESSION },
   ],
+  // 行级隔离机制化（第三次复裁切片 1）：租内 org 升为可强制权限/机密维·在册过滤。BA adapter 走 raw
+  // SQL（filter 不适用于 execute）不受影响；租户派生解析/平台治理/跨租名册均无 ALS tenantId 上下文→恒真不筛。
+  filters: TENANT_ISOLATION_FILTERS,
 });
 
 export const Member = defineEntity({

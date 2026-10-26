@@ -1,5 +1,6 @@
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
+import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
 
 /**
  * `tenant_subscription` 表列元数据单源 + 运行时扁平实体（global-tenant-organization-rehierarchy 切片 B·
@@ -38,6 +39,9 @@ export const TENANT_SUBSCRIPTION_META: TableMeta = {
     { name: 'tenant_subscription_tenant_status_idx', properties: ['tenantId', 'status'] },
     { name: 'tenant_subscription_tenant_period_idx', properties: ['tenantId', 'periodStart'] },
   ],
+  // 行级隔离机制化（第三次复裁切片 1）：计费/订阅读本租户唯读·无活动 tenantId 上下文（bootstrap/converge
+  // 跨租流未绑 ALS）时恒真不筛。
+  filters: TENANT_ISOLATION_FILTERS,
 };
 
 export interface TenantSubscription {

@@ -1,4 +1,5 @@
 import { defineEntity, p } from '@mikro-orm/core';
+import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
 
 /**
  * posts 上下文的 **零装饰器** MikroORM v7 **物理数据实体**（module-posts-domain-entity-split：与
@@ -59,4 +60,7 @@ export const PostEntity = defineEntity({
     createdAt: p.datetime(),
     updatedAt: p.datetime(),
   },
+  // 行级隔离机制化（第三次复裁切片 1）：在册租户作用域业务实体·无活动 tenantId 上下文时恒真不筛
+  // （跨租治理/seed/saga 面无 ALS 租户上下文→天然惰性·存量仓储手写 `{tenantId}` where 保留作双保险）。
+  filters: TENANT_ISOLATION_FILTERS,
 });

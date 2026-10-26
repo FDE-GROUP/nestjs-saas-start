@@ -5,6 +5,7 @@ import { mikroAuthAdapter } from '@okee/ba-mikro-adapter/mikro-auth-adapter';
 import { TransactionScope } from '../eventing/transaction-scope';
 import { initMikroOrm } from './mikro-orm.factory';
 import { MIKRO_SYS_ENTITIES } from './sys-entities';
+import { applyTenantFilterParams, tenantFilterArgsFromScope } from './tenant-isolation-filter';
 
 /**
  * ORM 修宪案 B · 切片 2 —— app 侧 MikroORM v7 连接持有者（**懒建**）。
@@ -45,17 +46,26 @@ export class MikroOrmService implements OnModuleDestroy {
   /**
    * per-operation fork（读写各取独立 em·绝不共享全局 `orm.em`）。
    * ES Phase B 后半：活跃 UoW 事务内返回**事务 em**（域行/事件行同生共死）；事务外维持原样。
+   *
+   * 第三次复裁切片 1（行级隔离机制化）：默认 `scoped` 时从 ALS 派生租户/组织上下文注入全局 filter
+   * 参数（`tenant-isolation-filter`）——无 tenantId 上下文（跨租治理/seed/saga/迁移）自然不筛；
+   * `scoped:false` 显式绕过（传空参·供有上下文仍须跨租面）。
    */
-  async fork(): Promise<EntityManager> {
+  async fork(options?: { scoped?: boolean }): Promise<EntityManager> {
+    const scoped = options?.scoped !== false;
+    const args = scoped ? tenantFilterArgsFromScope() : {};
     const txEm = this.txScope?.current();
     if (txEm) {
+      applyTenantFilterParams(txEm, args);
       return txEm;
     }
     const orm = await this.ensure();
-    return orm.em.fork();
+    const em = orm.em.fork();
+    applyTenantFilterParams(em, args);
+    return em;
   }
 
-  /** `MikroUnitOfWork` 开事务专用：**绕过 ALS** 永远取全新 fork（防嵌套/防复用外层事务 em 重复 BEGIN）。 */
+  /** `MikroUnitOfWork` 开事务专用：**绕过 ALS** 永远取全新 fork（防嵌套/防复用外层事务 em 重复 BEGIN）。跨租 UoW·不装配租户 filter。 */
   async newTransactionEm(): Promise<EntityManager> {
     const orm = await this.ensure();
     return orm.em.fork();

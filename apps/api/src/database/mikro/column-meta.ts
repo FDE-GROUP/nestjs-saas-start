@@ -1,4 +1,4 @@
-import { defineEntity, type EntitySchema, p } from '@mikro-orm/core';
+import { type Dictionary, defineEntity, type EntitySchema, p } from '@mikro-orm/core';
 
 /**
  * ORM 修宪案 B · 切片 3c-ii（γ 抽列元数据单一源）—— 四表（`workspace`/`user_status`/
@@ -50,6 +50,18 @@ export interface TableMeta {
    * 生成（如 `TENANCY_STATUS`），枚举漂移由下次 `migration:generate` 非空 diff 捕获。
    */
   checks?: { name: string; expression: string }[];
+  /**
+   * MikroORM 全局 filter（第三次复裁切片 1·行级隔离机制化）：仅**运行时实体**消费（`buildRuntimeEntity`），
+   * 迁移实体不带（filter 系查询时谓词·零 DDL·不触恒等闸）。形如 `{ tenantIsolation: { name, cond, default } }`。
+   */
+  filters?: Record<
+    string,
+    {
+      name: string;
+      cond: (args: Dictionary, type: string, em: unknown) => unknown;
+      default?: boolean;
+    }
+  >;
 }
 
 type Cols = TableMeta['columns'];
@@ -134,12 +146,13 @@ export function buildMigrationEntity(meta: TableMeta, targets: Record<string, an
   } as any) as any as EntitySchema;
 }
 
-/** 从元数据构造运行时扁平实体（实例形状由 companion interface 提供）。 */
+/** 从元数据构造运行时扁平实体（实例形状由 companion interface 提供·切片 1 全局 filter 仅此装配）。 */
 export function buildRuntimeEntity(meta: TableMeta): EntitySchema {
   return defineEntity({
     name: meta.name,
     tableName: meta.tableName,
     properties: runtimeProps(meta.columns),
     ...tableLevel(meta),
+    ...(meta.filters ? { filters: meta.filters } : {}),
   } as any) as any as EntitySchema;
 }

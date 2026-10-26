@@ -1,5 +1,6 @@
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
+import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
 
 /**
  * `workspace` 表列元数据单源 + 运行时扁平实体（global-entity-context-placement 切片 B 归位：
@@ -33,6 +34,8 @@ export const WORKSPACE_META: TableMeta = {
   uniques: [{ name: 'workspace_org_slug_idx', properties: ['organizationId', 'slug'] }],
   // query 级 `where` 支下推的真实查询面（人裁④）。
   indexes: [{ name: 'workspace_org_owner_idx', properties: ['organizationId', 'ownerId'] }],
+  // 行级隔离机制化（第三次复裁切片 1）：在册租户作用域业务实体·无活动 tenantId 上下文时恒真不筛。
+  filters: TENANT_ISOLATION_FILTERS,
 };
 
 export interface Workspace {
