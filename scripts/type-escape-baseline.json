@@ -16,7 +16,7 @@
   "apps/api/src/modules/auth/infrastructure/session-reclaim.service.ts": 1,
   "apps/api/src/modules/auth/infrastructure/session-store.adapter.ts": 1,
   "apps/api/src/modules/organizations/infrastructure/mikro-organization-status.store.ts": 2,
-  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-governance.repository.ts": 15,
+  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-governance.repository.ts": 27,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-provisioning.repository.ts": 2,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-user-governance.repository.ts": 2,
   "apps/api/src/modules/posts/infrastructure/repositories/mikro-post.repository.ts": 4,
