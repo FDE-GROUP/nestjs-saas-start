@@ -25,14 +25,15 @@ role denies. The allow/deny decision itself is delegated to the core-owned
 rows (tenant_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
 auth / CASL impl (§9.5.4①B).</p>
 <p>换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚
-隔离<strong>主轴</strong> <code>tenantId</code>（同租跨组织互见·角色租级），缺租户上下文仍 403 同族错误码。</p>
+隔离<strong>主轴</strong> <code>tenantId</code>（角色目录租级），缺租户上下文仍 403 同族错误码。第三次复裁切片 2（D1）：
+守卫另透传 ALS 活动 <code>organizationId</code> 供适配侧裁 org-scoped grant（租级通配 ∪ 本 org）是否生效。</p>
 </div></div></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><span class="tsd-signature-type">CanActivate</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/717703d1a980da180aa1da7c3d2622993cd3d82b/libs/core/src/authorization/authorization.guard.ts#L34">libs/core/src/authorization/authorization.guard.ts:34</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0d744a07942fdf37eb1e7d8bc48d72bef4f41085/libs/core/src/authorization/authorization.guard.ts#L35">libs/core/src/authorization/authorization.guard.ts:35</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -67,7 +68,7 @@ auth / CASL impl (§9.5.4①B).</p>
 </div></div><aside class="tsd-sources">
 <p>Implementation of CanActivate.canActivate</p>
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/717703d1a980da180aa1da7c3d2622993cd3d82b/libs/core/src/authorization/authorization.guard.ts#L49">libs/core/src/authorization/authorization.guard.ts:49</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0d744a07942fdf37eb1e7d8bc48d72bef4f41085/libs/core/src/authorization/authorization.guard.ts#L50">libs/core/src/authorization/authorization.guard.ts:50</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
