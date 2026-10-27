@@ -1,5 +1,5 @@
 import { tenantIsolationStorage } from '@core/saas-kit/tenant-isolation/tenant-isolation-scope';
-import type { EntityManager } from '@mikro-orm/core';
+import type { EntityManager, EntityName } from '@mikro-orm/core';
 
 /**
  * MikroORM 全局行级隔离 filter（global-tenant-organization-rehierarchy 第三次复裁 · 切片 1）。
@@ -31,6 +31,15 @@ export interface TenantFilterArgs {
   orgIsolated?: boolean;
 }
 
+/**
+ * filter 判定的**实体维上下文**（P0 X3）：谓词除 ALS 参数外，须知道当前被筛实体是否为
+ * org-partitioned（携 `organizationId` 分区列）——据此在 `isolated + 无活动 org` 下决定收 fail-closed。
+ */
+export interface TenantFilterCtx {
+  /** 目标实体是否携带 `organizationId` 分区列（true 时 isolated 无 org 上下文收拒所有）。 */
+  orgPartitioned?: boolean;
+}
+
 /** 从 ALS 当前作用域派生 filter 参数（无上下文→全 undefined→`cond` 恒真不筛）。 */
 export function tenantFilterArgsFromScope(): TenantFilterArgs {
   const scope = tenantIsolationStorage.getStore();
@@ -45,20 +54,71 @@ export function tenantFilterArgsFromScope(): TenantFilterArgs {
 }
 
 /**
+ * P0 X3 拒所有哨兵值：`isolated + 无 org` 命中 org-partitioned 在册实体时挂于租户地板上，令
+ * `tenantId = <不可能 id>` → 空集。**仅对 org-partitioned 实体触发**，而此等实体皆为在册过滤实体
+ * （共享 filter 已按 `{tenantId}` 筛之，故必有 `tenantId` 列），此哨兵谓词类型安全且实体无关。
+ * 租户/组织 id 皆 `text` 列（见实体定义），故普通不可能字符串即安全拒所有——**切勿含 `\u0000`**：
+ * Postgres 文本协议在参数中带 null 字节会抛 `invalid message format`（真库 e2e 实测坐实）。
+ */
+const TENANT_ISOLATION_DENY_SENTINEL = '__tenant_isolation_deny__';
+
+/**
  * filter 条件工厂：有 tenantId 恒挂 `tenantId=:t`；isolated 且有活动 org 追加 `organizationId=:org`。
  * 无 tenantId 上下文 → `{}`（不筛·豁免/跨租面无 ALS 租户上下文时命中此支）。
+ *
+ * P0 X3：`isolated 且无活动 org`（显式激活租·未选 org）下——
+ *  - org-partitioned 实体（`ctx.orgPartitioned`）→ **fail-closed 拒所有**（不跨 org 泄露·绝不利弱租内机密维）；
+ *  - 租级根实体（无 org 维）→ 仅留租户地板（本无 org 可收窄·不受累）。
  */
-export function tenantIsolationCondition(args: TenantFilterArgs = {}): Record<string, unknown> {
+export function tenantIsolationCondition(
+  args: TenantFilterArgs = {},
+  ctx: TenantFilterCtx = {},
+): Record<string, unknown> {
   if (!args.tenantId) return {};
-  const cond: Record<string, unknown> = { tenantId: args.tenantId };
-  if (args.orgIsolated && args.organizationId) cond.organizationId = args.organizationId;
-  return cond;
+  if (args.orgIsolated) {
+    // 有活动 org：追加 org 收窄（AND 叠加·不做包含校验·越界即空）。
+    if (args.organizationId) {
+      return { tenantId: args.tenantId, organizationId: args.organizationId };
+    }
+    // 无活动 org：org-partitioned 实体收拒所有；租级根实体仅留租户地板。
+    if (ctx.orgPartitioned) return { tenantId: TENANT_ISOLATION_DENY_SENTINEL };
+  }
+  return { tenantId: args.tenantId };
 }
 
-/** 实体 `defineEntity({ filters })` 复用的单例定义（`default:true` 使常规 fork 默认生效）。 */
+/**
+ * 判定目标实体是否 org-partitioned（携 `organizationId` 分区列）——经 em 元数据自持解析（零手维护登记表）。
+ * 元数据 API 缺位/异常 → false（保守：宁退化为仅租户地板·不误伤租级读面；真库 e2e 锁 Workspace/Post 实拒）。
+ */
+export function isOrgPartitionedEntity(
+  em: EntityManager | undefined,
+  entityName?: string,
+): boolean {
+  if (!em || !entityName) return false;
+  try {
+    const meta = em.getMetadata().find(entityName as unknown as EntityName<object>) as
+      | { properties?: Record<string, unknown> }
+      | undefined;
+    return meta?.properties ? 'organizationId' in meta.properties : false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 实体 `defineEntity({ filters })` 复用的单例定义（`default:true` 使常规 fork 默认生效）。
+ * MikroORM v7 动态 cond 五元形 `(args, op, em, options, entityName)`——借 em/entityName 定
+ * org-partitioned 维（P0 X3），shared 与无 org 实体路径与原谓词逐字等价。
+ */
 export const TENANT_ISOLATION_ENTITY_FILTER = {
   name: TENANT_ISOLATION_FILTER,
-  cond: (args: TenantFilterArgs) => tenantIsolationCondition(args),
+  cond: (
+    args: TenantFilterArgs,
+    _op: 'read' | 'update' | 'delete',
+    em: EntityManager,
+    _options?: unknown,
+    entityName?: string,
+  ) => tenantIsolationCondition(args, { orgPartitioned: isOrgPartitionedEntity(em, entityName) }),
   default: true,
 } as const;
 

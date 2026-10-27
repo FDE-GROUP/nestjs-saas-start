@@ -173,6 +173,24 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
     expect(visibleB).toEqual([wsB]);
   }, 60000);
 
+  it('P0 X3：isolated 租 + 活动仅租（无 org）→ org-partitioned 读面 fail-closed 空集（不跨 org 泄露）', async () => {
+    // 复刻中间件「显式激活租·未选 org」态：ALS 绑 tenantId + orgVisibility=isolated 但 organizationId 缺省。
+    // 旧 best-effort filter 退化到仅剩租户地板 → 见 wsA+wsB（跨 org 泄露）；X3 对 org-partitioned 实体（Workspace）收拒所有。
+    const isolatedNoOrg = await readVisible({
+      userId: uuidv7(),
+      tenantId,
+      orgVisibility: 'isolated',
+    } as TenantIsolationScope);
+    expect(isolatedNoOrg).toEqual([]);
+    // 对照：同「无 org」态但 shared → 仅租户地板·同租跨 org 互见（零行为变更·不受累）。
+    const sharedNoOrg = await readVisible({
+      userId: uuidv7(),
+      tenantId,
+      orgVisibility: 'shared',
+    } as TenantIsolationScope);
+    expect(sharedNoOrg).toEqual([wsA, wsB].sort());
+  }, 60000);
+
   it('安全底线：任一租内上下文恒读不见跨租数据（tenantId 硬地板）', async () => {
     // shared 与 isolated 两态下，T 内上下文都读不见 T2 的 wsC；反之 T2 只见 wsC。
     for (const vis of ['shared', 'isolated'] as const) {

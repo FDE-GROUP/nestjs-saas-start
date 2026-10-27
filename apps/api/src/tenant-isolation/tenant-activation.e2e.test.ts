@@ -215,12 +215,14 @@ gated('租户激活解绑端到端（D7·设活动租/清活动 org/跨租 fail-
         }[];
         return rows.map((r) => r.id);
       });
-    // T 上下文（shared·无 org）：见本租 wsA，读不见跨租 wsC。
+    // T 上下文（shared·无 org）：见本租 wsA，读不见跨租 wsC（shared 仅租户地板）。
     const inT = await readVisible({ userId: u1, tenantId, orgVisibility: 'shared' });
     expect(inT).toContain(wsA);
     expect(inT).not.toContain(wsC);
-    // T2 上下文（isolated·无 org）：见本租 wsC，读不见跨租 wsA——跨租切换无须先选 org。
+    // T2 上下文（isolated·无 org）：P0 X3 收紧——org-partitioned 读面（Workspace）无活动 org 时
+    // fail-closed 拒所有（宁不读也不跨 org 泄露），故空集：既不含跨租 wsA，亦不含本租 wsC。
+    // 硬地板恒成立（绝不见他租）；要读本租 org-partitioned 内容须先激活某 org（隔离租户机密维）。
     const inT2 = await readVisible({ userId: u2, tenantId: tenant2, orgVisibility: 'isolated' });
-    expect(inT2).toEqual([wsC]);
+    expect(inT2).toEqual([]);
   }, 60000);
 });

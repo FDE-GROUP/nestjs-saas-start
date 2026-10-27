@@ -7,6 +7,7 @@ import { TenantSubscription } from '../../modules/subscriptions/infrastructure/e
 import { Workspace } from '../../modules/workspaces/infrastructure/entities/workspace.entity';
 import {
   applyTenantFilterParams,
+  isOrgPartitionedEntity,
   TENANT_ISOLATION_FILTER,
   tenantFilterArgsFromScope,
   tenantIsolationCondition,
@@ -20,7 +21,8 @@ import {
  *  1. **跨租地板恒在**：有 tenantId 上下文即必挂 `tenantId=:t`（永不因 org 缺省而放宽跨租）。
  *  2. **fail-open 豁免**：无 ALS 租户上下文（平台治理/租户目录/seed/saga/迁移）→ `cond` 返回 `{}` 恒真不筛。
  *  3. **isolated 有 org → 追加 `organizationId`（AND 叠加·不做包含校验·越界即空）**；
- *     **isolated 无 org → fail-closed 不放宽**（只留租户地板·org 头不可伪造扩权）；
+ *     **isolated 无 org（P0 X3）→ org-partitioned 在册实体收 fail-closed 拒所有**（不跨 org 泄露·
+ *     经 em 元数据 `organizationId` 列自持判定 Workspace/Post），**租级根实体仅留租户地板**（不受累）；
  *     **shared → 零 org 收窄**（存量默认互见·零行为变更）。
  *  4. **在册实体皆被机制覆盖**（「有列即被机制过滤」）：post/workspace/organization/tenant_subscription 四表
  *     运行实体登记同名 filter·`default:true`。
@@ -47,10 +49,25 @@ describe('MikroORM 全局租户隔离 filter（切片 1 机制化）', () => {
       ).toEqual({ tenantId: 't1', organizationId: 'orgA' });
     });
 
-    it('isolated + 无 org → fail-closed 不放宽（只留租户地板·绝不因缺 org 而跨租或通配）', () => {
+    it('isolated + 无 org + 租级根实体 → 仅留租户地板（无 org 维可收窄·不受累·X3 零行为变更）', () => {
+      // 无 ctx（实体维未知）保守取「非 org-partitioned」→ 与历史谓词逐字等价（不误伤无上下文调用面）。
       expect(tenantIsolationCondition({ tenantId: 't1', orgIsolated: true })).toEqual({
         tenantId: 't1',
       });
+      expect(
+        tenantIsolationCondition({ tenantId: 't1', orgIsolated: true }, { orgPartitioned: false }),
+      ).toEqual({ tenantId: 't1' });
+    });
+
+    it('P0 X3：isolated + 无 org + org-partitioned 实体 → fail-closed 拒所有（不跨 org 泄露）', () => {
+      const deny = tenantIsolationCondition(
+        { tenantId: 't1', orgIsolated: true },
+        { orgPartitioned: true },
+      );
+      // 哨兵令 tenantId 取不可能值 → `tenantId=t1` 的行一律不匹配（拒所有·空集）。
+      expect(deny).not.toEqual({ tenantId: 't1' });
+      expect(typeof deny.tenantId).toBe('string');
+      expect(deny.tenantId).not.toBe('t1');
     });
   });
 
@@ -79,6 +96,44 @@ describe('MikroORM 全局租户隔离 filter（切片 1 机制化）', () => {
       tenantIsolationStorage.run(scope, () => {
         expect(tenantFilterArgsFromScope().orgIsolated).toBe(true);
       });
+    });
+  });
+
+  describe('isOrgPartitionedEntity · em 元数据自持判定', () => {
+    const fakeEm = (props: (name: string) => Record<string, unknown> | undefined) =>
+      ({
+        getMetadata: () => ({
+          find: (name: string) => {
+            const p = props(name);
+            return p ? { properties: p } : undefined;
+          },
+        }),
+      }) as unknown as EntityManager;
+
+    it('Workspace/Post 携 organizationId → true；Organization/Tenant 无 → false；未知实体/无 em → false', () => {
+      const em = fakeEm((name) =>
+        name === 'Workspace' || name === 'Post'
+          ? { organizationId: {}, tenantId: {}, id: {} }
+          : name === 'Organization' || name === 'Tenant'
+            ? { tenantId: {}, id: {} }
+            : undefined,
+      );
+      expect(isOrgPartitionedEntity(em, 'Workspace')).toBe(true);
+      expect(isOrgPartitionedEntity(em, 'Post')).toBe(true);
+      expect(isOrgPartitionedEntity(em, 'Organization')).toBe(false);
+      expect(isOrgPartitionedEntity(em, 'Tenant')).toBe(false);
+      expect(isOrgPartitionedEntity(em, 'NoSuchEntity')).toBe(false);
+      expect(isOrgPartitionedEntity(undefined, 'Workspace')).toBe(false);
+      expect(isOrgPartitionedEntity(em, undefined)).toBe(false);
+    });
+
+    it('元数据访问抛错 → 保守 false（不误伤租级读面）', () => {
+      const boom = {
+        getMetadata: () => {
+          throw new Error('no meta');
+        },
+      } as unknown as EntityManager;
+      expect(isOrgPartitionedEntity(boom, 'Workspace')).toBe(false);
     });
   });
 
