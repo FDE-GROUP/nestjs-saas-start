@@ -9,6 +9,7 @@ const whole = (subject: string, action: string): TenantRoleGrantView => ({
   subject: subject as TenantRoleGrantView['subject'],
   action: action as TenantRoleGrantView['action'],
   conditions: null,
+  organizationId: null,
 });
 
 describe('RbacMatrix（6x5 grid · checked 判定 · toggle 回调）', () => {
@@ -26,7 +27,14 @@ describe('RbacMatrix（6x5 grid · checked 判定 · toggle 回调）', () => {
   it('instance-level 行（conditions 非空）→ 不计入勾选（本片仅管理 whole-subject）', () => {
     render(
       <RbacMatrix
-        grants={[{ subject: 'Workspace', action: 'update', conditions: { ownerId: 'u1' } }]}
+        grants={[
+          {
+            subject: 'Workspace',
+            action: 'update',
+            conditions: { ownerId: 'u1' },
+            organizationId: null,
+          },
+        ]}
         pendingCell={null}
         onToggle={vi.fn()}
       />,

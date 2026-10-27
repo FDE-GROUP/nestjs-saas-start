@@ -20,7 +20,7 @@ import type { RoleAssignabilityReader } from '../domain/ports/role-assignability
 import {
   TENANT_RBAC_REPOSITORY,
   type TenantRbacRepository,
-  type TenantRoleGrantView,
+  type TenantRoleGrantAdminView,
   type TenantRoleView,
 } from '../domain/repositories/organization-rbac.repository';
 
@@ -57,14 +57,15 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
   }
 
   /**
-   * 某角色的授权行（查无角色 → 404·供管理面回显勾选态）。
+   * 某角色的全量授权行（查无角色 → 404·供管理面回显勾选态 + org 归属·P0 X6）。
+   * 走 `listAllGrantsForRole`（不加 org 过滤·全行回显 `organizationId`）而非 `findGrants`（后者为 CASL 适用集裁决）。
    * @param roleKey - 角色 key。
-   * @returns 授权行读模型列表。
+   * @returns 授权行读模型列表（带回显 `organizationId`）。
    *
    * @throws {NotFoundException} 指定 roleKey 的角色不存在时。
    */
-  async getGrants(roleKey: string): Promise<TenantRoleGrantView[]> {
-    const grants = await this.rbac.findGrants(this.tenantId(), roleKey);
+  async getGrants(roleKey: string): Promise<TenantRoleGrantAdminView[]> {
+    const grants = await this.rbac.listAllGrantsForRole(this.tenantId(), roleKey);
     if (grants === null) {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
         errorCode: ERROR_CODES.ROLE_NOT_FOUND,
@@ -145,6 +146,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
       subject: AuthorizationSubject;
       action: AuthorizationAction;
       conditions: Record<string, unknown> | null;
+      organizationId?: string | null;
     },
   ): Promise<void> {
     const tenantId = this.tenantId();
@@ -181,6 +183,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
     subject: AuthorizationSubject,
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
+    scopeOrgId?: string | null,
   ): Promise<void> {
     const tenantId = this.tenantId();
     const result = await this.rbac.revoke(
@@ -191,6 +194,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
       action,
       conditions,
       this.actor(),
+      scopeOrgId,
     );
     if (result === 'roleNotFound') {
       throw new NotFoundException(`Role not found: ${roleKey}`, {

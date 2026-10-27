@@ -980,6 +980,8 @@ export interface components {
             conditions: {
                 [key: string]: unknown;
             } | null;
+            /** @description 组织收窄 scope；null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效。 */
+            organizationId: string | null;
         };
         PlatformTenantRowResponse: {
             /** @description tenant 主键。 */
@@ -1786,6 +1788,7 @@ export interface operations {
                     conditions?: {
                         [key: string]: unknown;
                     };
+                    organizationId?: string | null;
                 };
             };
         };
@@ -1844,6 +1847,7 @@ export interface operations {
                     conditions?: {
                         [key: string]: unknown;
                     };
+                    organizationId?: string | null;
                 };
             };
         };

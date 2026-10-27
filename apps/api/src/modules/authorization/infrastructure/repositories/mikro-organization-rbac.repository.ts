@@ -22,6 +22,7 @@ import type {
   TenantRbacRepository,
   TenantRoleAuditAction,
   TenantRoleCreateResult,
+  TenantRoleGrantAdminView,
   TenantRoleGrantResult,
   TenantRoleGrantView,
   TenantRoleMutationResult,
@@ -129,6 +130,21 @@ export class MikroTenantRbacRepository implements TenantRbacRepository {
       ? { roleId: role.id, $or: [{ organizationId: null }, { organizationId: activeOrgId }] }
       : { roleId: role.id, organizationId: null };
     const rows = await em.find(TenantRoleGrant, where);
+    return rows.map(toGrantView);
+  }
+
+  /**
+   * P0 X6 管理面全量回显：**不加 org 过滤**取该角色名下所有 grant 行（租级通配 ∪ 任意 org 收窄），
+   * 经 `toGrantView` 回显 `organizationId`（null=通配）。CASL 适用集裁决仍走 `findGrants`（本法仅供管理面看归属）。
+   */
+  async listAllGrantsForRole(
+    tenantId: string,
+    roleKey: string,
+  ): Promise<TenantRoleGrantAdminView[] | null> {
+    const em = await this.mikro.fork();
+    const role = await em.findOne(TenantRole, { tenantId, key: roleKey });
+    if (!role) return null;
+    const rows = await em.find(TenantRoleGrant, { roleId: role.id });
     return rows.map(toGrantView);
   }
 
@@ -336,11 +352,13 @@ function toView(row: TenantRoleRow): TenantRoleView {
   return { id: row.id, key: row.key, name: row.name, isSystem: row.isSystem };
 }
 
-function toGrantView(row: TenantRoleGrantRow): TenantRoleGrantView {
+function toGrantView(row: TenantRoleGrantRow): TenantRoleGrantAdminView {
   return {
     subject: row.subject,
     action: row.action,
     conditions: row.conditions ?? null,
+    // P0 X6：一律回显 org scope（null=租级通配·非 null=仅该 org）；CASL 投影消费侧忽略此字段。
+    organizationId: row.organizationId ?? null,
   };
 }
 

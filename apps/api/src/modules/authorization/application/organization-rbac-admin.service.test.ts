@@ -20,6 +20,7 @@ function makeHarness() {
     listRoleKeys: vi.fn().mockResolvedValue(['editor']),
     findRole: vi.fn().mockResolvedValue(null),
     findGrants: vi.fn().mockResolvedValue([]),
+    listAllGrantsForRole: vi.fn().mockResolvedValue([]),
     createRole: vi.fn().mockResolvedValue('created'),
     renameRole: vi.fn().mockResolvedValue('ok'),
     deleteRole: vi.fn().mockResolvedValue('ok'),
@@ -103,10 +104,47 @@ describe('TenantRbacAdminService', () => {
     expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
-  it('getGrants 查无角色（null）→ 404', async () => {
+  it('getGrants 走 listAllGrantsForRole（全量回显·含 org-scoped 行）·查无角色（null）→ 404', async () => {
     const h = makeHarness();
-    h.rbac.findGrants.mockResolvedValueOnce(null);
+    h.rbac.listAllGrantsForRole.mockResolvedValueOnce([
+      { subject: 'Workspace', action: 'read', conditions: null, organizationId: null },
+      { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+    ]);
+    const grants = await h.svc.getGrants('editor');
+    // P0 X6：管理面回显含 org-scoped 行 + organizationId（非仅通配行）。
+    expect(grants).toHaveLength(2);
+    expect(grants.map((g) => g.organizationId)).toEqual([null, 'orgX']);
+    expect(h.rbac.listAllGrantsForRole).toHaveBeenCalledWith('tenantA', 'editor');
+    h.rbac.listAllGrantsForRole.mockResolvedValueOnce(null);
     await expect(h.svc.getGrants('ghost')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('grant/revoke 透传 organizationId（P0 X6·org scope → repo）', async () => {
+    const h = makeHarness();
+    await h.svc.grant('editor', {
+      subject: 'Workspace',
+      action: 'update',
+      conditions: null,
+      organizationId: 'orgX',
+    });
+    expect(h.rbac.grant).toHaveBeenCalledWith(
+      'tenantA',
+      'orgA',
+      'editor',
+      { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+      'u1',
+    );
+    await h.svc.revoke('editor', 'Workspace', 'update', null, 'orgX');
+    expect(h.rbac.revoke).toHaveBeenCalledWith(
+      'tenantA',
+      'orgA',
+      'editor',
+      'Workspace',
+      'update',
+      null,
+      'u1',
+      'orgX',
+    );
   });
 
   it('isRoleAssignable：系统 key 短路（不查库）·自定义 key 查库 fail-closed', async () => {

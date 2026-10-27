@@ -81,6 +81,9 @@ export const grantRolePermissionSchema = strictObject({
   conditions: z
     .record(z.string(), z.unknown(), { error: 'validate.grantConditions.object' })
     .optional(),
+  // P0 X6：grant 行组织 scope（管理面透传）。缺省/`null` = 租级通配（跨 org 生效·存量默认），
+  // 字符串 = 仅该 org 生效。与写侧 repo `entry.organizationId` 同义。
+  organizationId: z.string().min(1).nullable().optional(),
 });
 export type GrantRolePermission = z.infer<typeof grantRolePermissionSchema>;
 

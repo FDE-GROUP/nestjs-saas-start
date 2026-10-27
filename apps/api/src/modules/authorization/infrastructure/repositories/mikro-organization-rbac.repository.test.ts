@@ -103,17 +103,44 @@ describe('MikroTenantRbacRepository', () => {
       await expect(h.repo.findGrants('tenantA', 'ghost')).resolves.toBeNull();
     });
 
-    it('findGrants 映射 grant 行为端口视形（conditions 缺省归一 null）', async () => {
+    it('findGrants 映射 grant 行为端口视形（conditions 缺省归一 null·P0 X6 一律回显 organizationId）', async () => {
       const h = makeHarness();
       h.spies.findOne.mockResolvedValueOnce(roleRow());
       h.spies.find.mockResolvedValueOnce([
-        { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
+        {
+          subject: 'Workspace',
+          action: 'update',
+          conditions: { ownerId: '{{userId}}' },
+          organizationId: 'orgX',
+        },
         { subject: 'Member', action: 'read', conditions: null },
       ]);
       await expect(h.repo.findGrants('tenantA', 'editor')).resolves.toEqual([
-        { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
-        { subject: 'Member', action: 'read', conditions: null },
+        {
+          subject: 'Workspace',
+          action: 'update',
+          conditions: { ownerId: '{{userId}}' },
+          organizationId: 'orgX',
+        },
+        { subject: 'Member', action: 'read', conditions: null, organizationId: null },
       ]);
+    });
+
+    it('listAllGrantsForRole 查无角色 → null；命中→**不加 org 过滤**全行回显 organizationId（P0 X6）', async () => {
+      const h = makeHarness();
+      h.spies.findOne.mockResolvedValueOnce(null);
+      await expect(h.repo.listAllGrantsForRole('tenantA', 'ghost')).resolves.toBeNull();
+      // 命中角色：where 仅 {roleId}（无 organizationId 通配/收窄筛选）·与管理面回显一致。
+      h.spies.findOne.mockResolvedValueOnce(roleRow());
+      h.spies.find.mockResolvedValueOnce([
+        { subject: 'Workspace', action: 'read', conditions: null },
+        { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+      ]);
+      await expect(h.repo.listAllGrantsForRole('tenantA', 'editor')).resolves.toEqual([
+        { subject: 'Workspace', action: 'read', conditions: null, organizationId: null },
+        { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+      ]);
+      expect(h.spies.find).toHaveBeenCalledWith(TenantRoleGrant, { roleId: 'role-1' });
     });
 
     it('findGrants 无活动 org ⇒ 仅取租级通配行（organizationId:null·D1 fail-closed）', async () => {

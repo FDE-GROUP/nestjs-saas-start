@@ -1,6 +1,10 @@
 import 'reflect-metadata';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import {
+  TENANT_RBAC_REPOSITORY,
+  type TenantRbacRepository,
+} from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
+import {
   TenantRole,
   TenantRoleGrant,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
@@ -44,6 +48,7 @@ gated('RBAC grant 组织收窄端到端（D1·org-scoped grant vs 租级通配 �
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
   let checker: PermissionChecker;
+  let rbac: TenantRbacRepository;
 
   const stamp = Date.now();
   const tenantId = uuidv7();
@@ -58,6 +63,7 @@ gated('RBAC grant 组织收窄端到端（D1·org-scoped grant vs 租级通配 �
     await app.init();
     mikro = app.get(MikroOrmService);
     checker = app.get<PermissionChecker>(PERMISSION_CHECKER);
+    rbac = app.get<TenantRbacRepository>(TENANT_RBAC_REPOSITORY);
   }, 120000);
 
   afterAll(async () => {
@@ -197,5 +203,18 @@ gated('RBAC grant 组织收窄端到端（D1·org-scoped grant vs 租级通配 �
         organizationId: org1,
       }),
     ).resolves.toBe(false);
+
+    // — P0 X6 管理面全量回显：`listAllGrantsForRole` 不加 org 过滤·取该角色名下**全部**行并回显 organizationId。
+    //   （区别于 `findGrants` 无活动 org 时仅回通配行·此处应见两行：通配 read(null) + org 收窄 update(org1)。）
+    const adminGrants = await rbac.listAllGrantsForRole(tenantId, 'orgadmin');
+    expect(adminGrants).not.toBeNull();
+    const byOrg = new Map(adminGrants?.map((g) => [g.action, g.organizationId]));
+    expect(byOrg.get('read')).toBeNull(); // 租级通配行回显 null
+    expect(byOrg.get('update')).toBe(org1); // org 收窄行回显归属 org1
+    expect(adminGrants).toHaveLength(2);
+    // 对照：CASL 适用集 `findGrants`（无活动 org）仅取通配行——org 收窄行不参与租级裁决（fail-closed）。
+    const caslGrants = await rbac.findGrants(tenantId, 'orgadmin');
+    expect(caslGrants).toHaveLength(1);
+    expect(caslGrants?.[0]?.action).toBe('read');
   }, 60000);
 });
