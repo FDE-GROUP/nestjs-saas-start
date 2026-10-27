@@ -23,13 +23,19 @@ import type {
  * `as never` 仅系调用边界 cast（`mikro-orm.factory.ts` 以 `entities as never` 装配致 `FilterQuery`/`fields`
  * 宽化不匹配·不改运行时谓词）。expand 段未盖章增量的组织（`tenantId` 缺席）回落自身 id 作 1:1 租户替身，
  * 绝不误并他租。
+ *
+ * **P0 修复 X1（锁死链）· scoped:false 必守**：本读面是**按 `userId` 收敛的天然跨租名册**（非租户自服务面），
+ * 须 `fork({ scoped: false })` 绕 tenantId 全局 filter——否则带会话打 `/tenants` 时 ALS 已绑活动租 → `Organization`
+ * 被过滤到本租 → 多租用户目录丢他租 org → `setActiveTenant` 成员闸（复用本读面）切他租恒 403 → 锁死。安全不降级：
+ * 可见集仍由 `userId` 命中 `member` 行界定，无跨用户泄露。
  */
 @Injectable()
 export class MikroTenantDirectoryRepository implements TenantDirectoryRepository {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
   async listForUser(userId: string): Promise<TenantDirectoryEntry[]> {
-    const em = await this.mikro.fork();
+    // P0 修复 X1：跨租名册须 scoped:false 绕 tenantId 全局 filter（详见类注），否则带会话请求只回本租 org。
+    const em = await this.mikro.fork({ scoped: false });
     const members = await em.find(Member, { userId } as never, {
       fields: ['organizationId'] as never,
     });

@@ -58,7 +58,9 @@ export const Organization = defineEntity({
     { name: 'organization_odoo_binding_status_check', expression: BINDING_STATUS_CHECK_EXPRESSION },
   ],
   // 行级隔离机制化（第三次复裁切片 1）：租内 org 升为可强制权限/机密维·在册过滤。BA adapter 走 raw
-  // SQL（filter 不适用于 execute）不受影响；租户派生解析/平台治理/跨租名册均无 ALS tenantId 上下文→恒真不筛。
+  // SQL（filter 不适用于 execute）不受影响；无 ALS tenantId 上下文的读写（跨租治理/seed/saga/迁移）恒真不筛。
+  // ⚠ 但**带会话的跨租名册**（如 `MikroTenantDirectoryRepository.listForUser`·P0 X1）确有 ALS tenantId 上下文——
+  // 此类天然跨租读面须显式 `fork({ scoped: false })` 绕筛，不能依赖“无上下文”假设（见该仓储注）。
   filters: TENANT_ISOLATION_FILTERS,
 });
 
