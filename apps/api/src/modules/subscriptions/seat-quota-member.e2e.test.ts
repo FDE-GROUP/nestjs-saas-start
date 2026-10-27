@@ -258,4 +258,76 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     );
     expect(row?.status).toBe('pending');
   }, 120000);
+
+  // ── 第三批 X8 追加：换组织恒等（证 X8-1 触发器 UPDATE OF organizationId 支）+ doctor 对拍自愈（X8-2）──
+
+  /** 种独立租户行（tenant.id 自定·slug 唯一），登记清理；须早于任何 org 盖租（relink 触发器需租户在场才 +N）。 */
+  async function seedTenant(tenantId: string, tag: string): Promise<void> {
+    const em = await mikro.fork();
+    await em.insert(Tenant, {
+      id: tenantId,
+      name: `E2E X8 Tenant ${tag}`,
+      slug: `e2e-x8-t-${tag}-${stamp}`,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    createdTenantIds.push(tenantId);
+  }
+
+  /** 建组织（owner auto-join 1 member）并盖租到指定 tenantId（经 relink 触发器补计），返回 org/member id。 */
+  async function seedOrgUnderTenant(
+    tenantId: string,
+    tag: string,
+  ): Promise<{ orgId: string; memberId: string }> {
+    const owner = await signUpThenSignIn(tag);
+    const created = await authApi().createOrganization({
+      body: { name: `E2E X8 Org ${tag}`, slug: `e2e-x8-o-${tag}-${stamp}`, userId: owner.userId },
+    });
+    const orgId = String((created as { id?: unknown }).id);
+    if (!orgId || orgId === 'undefined') throw new Error(`createOrganization(${tag}) 无 id`);
+    createdOrgIds.push(orgId);
+    const em = await mikro.fork();
+    await em.nativeUpdate(Organization, { id: orgId } as never, { tenantId } as never);
+    const member = (await em.findOne(Member, { organizationId: orgId } as never)) as {
+      id: string;
+    } | null;
+    if (!member) throw new Error(`seedOrgUnderTenant(${tag}) owner member 未落行`);
+    return { orgId, memberId: member.id };
+  }
+
+  it('member 跨租换组织：旧租 −1 / 新租 +1 物化恒等（证 X8-1 触发器 UPDATE 支）', async () => {
+    const tA = `x8a-${stamp}`;
+    const tB = `x8b-${stamp}`;
+    await seedTenant(tA, 'a');
+    await seedTenant(tB, 'b');
+    const orgA = await seedOrgUnderTenant(tA, 'a');
+    const orgB = await seedOrgUnderTenant(tB, 'b');
+    await assertSeatIdentity(tA, 1);
+    await assertSeatIdentity(tB, 1);
+
+    // 跨租迁移：仅改 organizationId（无 member 增删行）→ UPDATE OF organizationId 触发器须 −旧租 +新租；
+    // 若漏本支（切片 5 原状）则物化不动而联表实数已变 → assertSeatIdentity 物化≡联表红（少算侧 fail-open 隐患）。
+    const em = await mikro.fork();
+    await em.nativeUpdate(
+      Member,
+      { id: orgA.memberId } as never,
+      { organizationId: orgB.orgId } as never,
+    );
+    await assertSeatIdentity(tA, 0);
+    await assertSeatIdentity(tB, 2);
+
+    // 同租换组织净 0：两组织共一租、成员在两组织间迁移 → 本租总数不变（防误加/误减双计）。
+    const tS = `x8s-${stamp}`;
+    await seedTenant(tS, 's');
+    const sA = await seedOrgUnderTenant(tS, 's-a');
+    const sB = await seedOrgUnderTenant(tS, 's-b');
+    await assertSeatIdentity(tS, 2);
+    await em.nativeUpdate(
+      Member,
+      { id: sA.memberId } as never,
+      { organizationId: sB.orgId } as never,
+    );
+    await assertSeatIdentity(tS, 2);
+  }, 120000);
 });
