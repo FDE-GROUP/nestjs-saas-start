@@ -4,7 +4,7 @@
  * @remarks
  * 生命周期真相源 = **`tenant.status`**（global-tenant-organization-rehierarchy 片一改锚·人裁 2026-10-26
  * 「一租户多组织」层级 Tenant ⊃ Organization ⊃ Workspace·治理态上移租户级）；`organization.status` 已降为租内
- * 自有轻量态（片二 K1·死服务 `OrganizationStatusService` 退役·不再作治理真相）。本枚举名 `TENANCY_STATUS`（片三
+ * 自有轻量态（片二 K1·死服务 `OrganizationStatusService` 退役·不再作治理真相）。本枚举名 `TENANT_STATUS`（片三
  * 词汇复裁·旧名 `ORGANIZATION_STATUS`·**值域/wire 冻结不变**）；历史曾寄居 `organization.metadata` jsonb/自有旁表
  * 的裁定均已修订（BA 缩回宪法「纯认证与成员数据源」定位）。持久化原语经状态存储端口倒置（治理侧 `TenantStatusStore`·本文件只留纯态判定）。
  * S4 落地 `pending_approval → active`（审批制准入）；`suspended`/`deleted` 迁移由 S5/S6
@@ -12,15 +12,15 @@
  *
  * @public
  */
-export const TENANCY_STATUS = {
+export const TENANT_STATUS = {
   PENDING: 'pending_approval',
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
   DELETED: 'deleted',
 } as const;
 
-/** 租户生命周期状态的字面量联合（自 `TENANCY_STATUS` 派生·契约详见该常量）。 @public */
-export type TenancyStatus = (typeof TENANCY_STATUS)[keyof typeof TENANCY_STATUS];
+/** 租户生命周期状态的字面量联合（自 `TENANT_STATUS` 派生·契约详见该常量）。 @public */
+export type TenantStatus = (typeof TENANT_STATUS)[keyof typeof TENANT_STATUS];
 
 /**
  * 拦截判定（S4 中间件失能卡点·deny-list 语义）：仅显式处于失能态时拦截。
@@ -34,11 +34,11 @@ export type TenancyStatus = (typeof TENANCY_STATUS)[keyof typeof TENANCY_STATUS]
  * @returns 命中失能态返回 `true`；否则 `false`
  * @public
  */
-export function isTenancyBlocked(status: TenancyStatus | undefined): boolean {
+export function isTenantBlocked(status: TenantStatus | undefined): boolean {
   return (
-    status === TENANCY_STATUS.PENDING ||
-    status === TENANCY_STATUS.SUSPENDED ||
-    status === TENANCY_STATUS.DELETED
+    status === TENANT_STATUS.PENDING ||
+    status === TENANT_STATUS.SUSPENDED ||
+    status === TENANT_STATUS.DELETED
   );
 }
 
@@ -49,15 +49,11 @@ export function isTenancyBlocked(status: TenancyStatus | undefined): boolean {
  * - suspended → active（恢复）/ deleted；deleted 终态（硬删留运维）
  * 无状态记录（存量/seeded·旧无户籍行）按 active 对待（与中间件 deny-list 同口径）。
  */
-const TRANSITIONS: Record<TenancyStatus, readonly TenancyStatus[]> = {
-  [TENANCY_STATUS.PENDING]: [TENANCY_STATUS.ACTIVE, TENANCY_STATUS.DELETED],
-  [TENANCY_STATUS.ACTIVE]: [
-    TENANCY_STATUS.ACTIVE,
-    TENANCY_STATUS.SUSPENDED,
-    TENANCY_STATUS.DELETED,
-  ],
-  [TENANCY_STATUS.SUSPENDED]: [TENANCY_STATUS.ACTIVE, TENANCY_STATUS.DELETED],
-  [TENANCY_STATUS.DELETED]: [],
+const TRANSITIONS: Record<TenantStatus, readonly TenantStatus[]> = {
+  [TENANT_STATUS.PENDING]: [TENANT_STATUS.ACTIVE, TENANT_STATUS.DELETED],
+  [TENANT_STATUS.ACTIVE]: [TENANT_STATUS.ACTIVE, TENANT_STATUS.SUSPENDED, TENANT_STATUS.DELETED],
+  [TENANT_STATUS.SUSPENDED]: [TENANT_STATUS.ACTIVE, TENANT_STATUS.DELETED],
+  [TENANT_STATUS.DELETED]: [],
 };
 
 /**
@@ -68,6 +64,6 @@ const TRANSITIONS: Record<TenancyStatus, readonly TenancyStatus[]> = {
  * @returns 合法迁移边返回 `true`；否则 `false`
  * @public
  */
-export function canTransition(from: TenancyStatus | undefined, to: TenancyStatus): boolean {
-  return TRANSITIONS[from ?? TENANCY_STATUS.ACTIVE].includes(to);
+export function canTransition(from: TenantStatus | undefined, to: TenantStatus): boolean {
+  return TRANSITIONS[from ?? TENANT_STATUS.ACTIVE].includes(to);
 }

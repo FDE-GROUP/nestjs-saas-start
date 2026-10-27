@@ -6,7 +6,8 @@ import {
   type OrganizationGovernanceRepository,
 } from '@app/modules/organizations/domain/repositories/organization-governance.repository';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   canUseOdoo,
   ORGANIZATION_ODOO_BINDING_STATUS,
@@ -91,11 +92,15 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
       odooCompanyId: companySuspended,
       odooCompanyName: 'D 公司（暂停）',
     });
-    await em.nativeUpdate(
-      Organization,
-      { id: orgSuspended } as never,
-      { status: TENANCY_STATUS.SUSPENDED } as never,
-    );
+    // 切片 6（D3）：`organization.status` 列已 DROP——暂停态改住租户维。orgSuspended 携空 tenantId，
+    // 其 1:1 骨架租户即同 id 行（`org.tenantId ?? org.id` 解析命中），插一行 SUSPENDED 租户令准入态生效。
+    await em.insert(Tenant, {
+      id: orgSuspended,
+      name: `RDP tenant ${orgSuspended}`,
+      slug: `rdp-t-d-${stamp}`,
+      status: TENANT_STATUS.SUSPENDED,
+      createdAt: new Date(),
+    } as never);
   }, 120000);
 
   afterAll(async () => {
@@ -104,6 +109,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
     await em.nativeDelete(Organization, {
       id: { $in: [orgA, orgB, orgNoBinding, orgSuspended] },
     } as never);
+    await em.nativeDelete(Tenant, { id: orgSuspended } as never);
     await app.close();
   });
 
@@ -113,7 +119,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
     if (!row) return;
     expect(row.odooCompanyId).toBe(companyA);
     expect(row.odooBindingStatus).toBe(ORGANIZATION_ODOO_BINDING_STATUS.READY);
-    expect(row.organizationStatus).toBe(TENANCY_STATUS.ACTIVE);
+    expect(row.organizationStatus).toBe(TENANT_STATUS.ACTIVE);
     expect(
       canUseOdoo({
         status: row.organizationStatus,
@@ -146,7 +152,7 @@ gated('租户↔Odoo 绑定读取端口库语义（映射切片 B · env-gated�
   it('④暂停租户携 ready 绑定：organizationStatus=suspended → canUseOdoo 假（治理态透传·防字段错位漏检）', async () => {
     const row = await reader.read(orgSuspended);
     expect(row?.odooBindingStatus).toBe(ORGANIZATION_ODOO_BINDING_STATUS.READY);
-    expect(row?.organizationStatus).toBe(TENANCY_STATUS.SUSPENDED);
+    expect(row?.organizationStatus).toBe(TENANT_STATUS.SUSPENDED);
     if (!row) return;
     expect(
       canUseOdoo({

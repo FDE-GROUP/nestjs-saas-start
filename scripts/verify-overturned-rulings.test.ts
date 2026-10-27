@@ -78,9 +78,11 @@ describe('findViolations — 失实现态断言拦截 + 框定豁免', () => {
 });
 
 describe('登记表漂移守卫', () => {
-  it('当前登记三条有据反悔·supersededBy 齐备', () => {
+  it('当前登记五条有据反悔·supersededBy 齐备', () => {
     expect(OVERTURNED_RULINGS.map((r) => r.plan).sort()).toEqual([
+      'global-organization-status-comment-sync',
       'global-organization-vocabulary-pivot',
+      'global-tenancy-status-vocabulary',
       'global-tenant-entity-reclamation',
       'module-org-odoo-company-mapping',
     ]);

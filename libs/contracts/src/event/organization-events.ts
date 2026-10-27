@@ -10,12 +10,12 @@ import { strictObject } from '../strict';
  * `@core/saas-kit`（领域形态），两侧一致性由 apps/api 对拍测锁定
  * （`organization-event-contract.test.ts`·双向赋值锁先例）。
  *
- * wire enum 内联纪律（contracts 零依赖 `@core`·见 index.ts 头注）：`TENANCY_STATUS_WIRE`
- * 值集与 `@core` 的 `TENANCY_STATUS` 一致性由对拍测锁漂移，非 import。
+ * wire enum 内联纪律（contracts 零依赖 `@core`·见 index.ts 头注）：`TENANT_STATUS_WIRE`
+ * 值集与 `@core` 的 `TENANT_STATUS` 一致性由对拍测锁漂移，非 import。
  *
  * @public
  */
-export const TENANCY_STATUS_WIRE = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
+export const TENANT_STATUS_WIRE = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
 
 /**
  * tenant 流事件名 wire 单源（与 `@core` 的 `DOMAIN_EVENTS` 三键一致性由对拍测锁）。
@@ -34,8 +34,8 @@ export const ORGANIZATION_EVENT_TYPES_WIRE = {
  * @public
  */
 export const organizationStatusTransitionedPayloadSchema = strictObject({
-  from: z.union([z.enum(TENANCY_STATUS_WIRE), z.null()]),
-  to: z.enum(TENANCY_STATUS_WIRE),
+  from: z.union([z.enum(TENANT_STATUS_WIRE), z.null()]),
+  to: z.enum(TENANT_STATUS_WIRE),
   actorId: z.string().optional(),
   reason: z.string().optional(),
 });
@@ -60,7 +60,7 @@ export type OrganizationRejectedEventPayload = z.infer<typeof organizationReject
  * @public
  */
 export const organizationBootstrappedPayloadSchema = strictObject({
-  status: z.enum(TENANCY_STATUS_WIRE),
+  status: z.enum(TENANT_STATUS_WIRE),
   actorId: z.string().optional(),
 });
 export type OrganizationBootstrappedEventPayload = z.infer<

@@ -1,14 +1,14 @@
 import { OrganizationBootstrappedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-bootstrapped.event';
 import { OrganizationRejectedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-rejected.event';
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { DOMAIN_EVENTS } from '@core/saas-kit/shared-kernel/domain/domain-event-names';
 import {
   ORGANIZATION_EVENT_TYPES_WIRE,
   organizationBootstrappedPayloadSchema,
   organizationRejectedPayloadSchema,
   organizationStatusTransitionedPayloadSchema,
-  TENANCY_STATUS_WIRE,
+  TENANT_STATUS_WIRE,
 } from '@saas/contracts';
 import { describe, expect, it } from 'vitest';
 
@@ -28,9 +28,9 @@ describe('tenant 流事件契约 ⇄ 事件类 对拍（ES R1a · 裁⑥甲）',
     expect(ORGANIZATION_EVENT_TYPES_WIRE.bootstrapped).toBe(DOMAIN_EVENTS.organizationBootstrapped);
   });
 
-  it('治理态 wire enum 值集 ⇄ TENANCY_STATUS 单源一致（contracts 内联防漂移）', () => {
-    expect([...TENANCY_STATUS_WIRE].sort()).toEqual(
-      [...Object.values(TENANCY_STATUS)].map(String).sort(),
+  it('治理态 wire enum 值集 ⇄ TENANT_STATUS 单源一致（contracts 内联防漂移）', () => {
+    expect([...TENANT_STATUS_WIRE].sort()).toEqual(
+      [...Object.values(TENANT_STATUS)].map(String).sort(),
     );
   });
 

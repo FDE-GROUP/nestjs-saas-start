@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TENANCY_STATUS_VALUES } from './organizations';
+import { TENANT_STATUS_VALUES } from './organizations';
 
 /**
  * 租户目录响应契约（global-tenant-organization-rehierarchy 切片 E-F·前端双层切换器数据源）。
@@ -33,8 +33,8 @@ export const tenantDirectoryEntryViewSchema = z.object({
   tenantId: z.string(),
   name: z.string(),
   slug: z.string(),
-  /** 租户准入态（治理权威已上移归位 tenant.status·沿 TENANCY_STATUS 值域）。 */
-  status: z.enum(TENANCY_STATUS_VALUES),
+  /** 租户准入态（治理权威已上移归位 tenant.status·沿 TENANT_STATUS 值域）。 */
+  status: z.enum(TENANT_STATUS_VALUES),
   /** 该租户下当前用户可见的组织集合（同租跨组织默认互见）。 */
   organizations: z.array(tenantDirectoryOrganizationViewSchema),
 });

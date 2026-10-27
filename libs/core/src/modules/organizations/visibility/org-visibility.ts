@@ -12,7 +12,7 @@
  * `isolated` 绝不放松跨租 fail-closed，仅在已激活组织时于租内追加组织维过滤。
  *
  * 持久化落点 = `tenant.orgVisibility`（本租户根表列·值域由 `ORG_VISIBILITY` 单源经 DB CHECK 防线守护·
- * 沿 `TENANCY_STATUS` 同构）；运行期经中间件解析链「顺带读回」注入 ALS 作用域供 filter 消费。
+ * 沿 `TENANT_STATUS` 同构）；运行期经中间件解析链「顺带读回」注入 ALS 作用域供 filter 消费。
  *
  * @public
  */

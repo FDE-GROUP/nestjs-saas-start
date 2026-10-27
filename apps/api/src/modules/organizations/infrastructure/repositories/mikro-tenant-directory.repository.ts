@@ -4,7 +4,10 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import {
+  TENANT_STATUS,
+  type TenantStatus,
+} from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   TenantDirectoryEntry,
@@ -36,10 +39,12 @@ export class MikroTenantDirectoryRepository implements TenantDirectoryRepository
     if (orgIds.length === 0) return [];
 
     const orgs = (await em.find(Organization, { id: { $in: orgIds } } as never, {
-      fields: ['id', 'name', 'slug', 'tenantId', 'status'] as never,
-    })) as { id: string; name: string; slug: string; tenantId: string | null; status: string }[];
+      fields: ['id', 'name', 'slug', 'tenantId'] as never,
+    })) as { id: string; name: string; slug: string; tenantId: string | null }[];
 
-    const tenantIds = [...new Set(orgs.map((o) => o.tenantId).filter((id): id is string => !!id))];
+    // 准入态单一锥归位 `tenant.status`（切片 6 D3）：解析租户 id 集时按「org.tenantId ?? org.id」取
+    //——1:1 骨架（tenantId 缺席）以 org.id 命中同键替身租户行，避免回落无租户态默认。
+    const tenantIds = [...new Set(orgs.map((o) => o.tenantId ?? o.id))];
     const tenants = tenantIds.length
       ? ((await em.find(Tenant, { id: { $in: tenantIds } } as never, {
           fields: ['id', 'name', 'slug', 'status'] as never,
@@ -53,7 +58,7 @@ export class MikroTenantDirectoryRepository implements TenantDirectoryRepository
         tenantId: string;
         name: string;
         slug: string;
-        status: TenancyStatus;
+        status: TenantStatus;
         organizations: { organizationId: string; name: string; slug: string }[];
       }
     >();
@@ -66,7 +71,9 @@ export class MikroTenantDirectoryRepository implements TenantDirectoryRepository
           tenantId,
           name: tenant?.name ?? org.name,
           slug: tenant?.slug ?? org.slug,
-          status: (tenant?.status ?? org.status) as TenancyStatus,
+          // 切片 6（D3）：`organization.status` 列已 DROP·准入态单一锥归位 `tenant.status`；1:1 骨架未盖租
+          // （tenant 行缺席）回落 active（与 deny-list / canTransition 缺省同口径）。
+          status: (tenant?.status ?? TENANT_STATUS.ACTIVE) as TenantStatus,
           organizations: [],
         };
         grouped.set(tenantId, entry);

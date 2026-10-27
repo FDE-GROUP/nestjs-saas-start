@@ -1,4 +1,4 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
@@ -64,7 +64,7 @@ export const User = defineEntity({
       .default('USER'),
     // global-governance-lifecycle-consolidation 切片 C：用户治理生命周期态归 user 真列
     //（原 `user_status` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·deny-list 兑底转真列）。
-    status: p.text().default(TENANCY_STATUS.ACTIVE),
+    status: p.text().default(TENANT_STATUS.ACTIVE),
     statusReason: p.text().nullable(),
     createdAt: tsNow(),
     updatedAt: ts(),
@@ -75,9 +75,9 @@ export const User = defineEntity({
     {
       name: 'user_status_check',
       expression: `status IN (${[
-        TENANCY_STATUS.ACTIVE,
-        TENANCY_STATUS.SUSPENDED,
-        TENANCY_STATUS.DELETED,
+        TENANT_STATUS.ACTIVE,
+        TENANT_STATUS.SUSPENDED,
+        TENANT_STATUS.DELETED,
       ]
         .map((v) => `'${v}'`)
         .join(', ')})`,
@@ -161,28 +161,24 @@ export const Organization = defineEntity({
     // schema.ts：organization.updatedAt 无 .notNull() ⇒ 可空（与其它表不同·忠实复刻）
     updatedAt: ts().nullable(),
     metadata: p.json<Record<string, any>>().nullable(),
-    // global-governance-lifecycle-consolidation 切片 B：租户治理生命周期态归 organization 真列
-    //（原 `tenant` 旁表 DROP）·NOT NULL DEFAULT 'active'（缺席态消失·堵 O1）。
-    status: p.text().default(TENANCY_STATUS.ACTIVE),
     // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A）：与运行时 `ba-org.entities.ts`
     // 同列集同式（本集不导入运行时实体，双写漂移由 generate 非空 diff + gated e2e 库语义测捕获）。
     // 公司 id 为跨库弱引用列（无 FK）；unique=一组织一公司双射的库级兜底。
+    // ⚠ `status` 列已随第三次复裁切片 6（D3）DROP（治理真相单一锥 tenant.status·租内 org 不再持有准入态）。
     odooCompanyId: p.integer().nullable().unique(),
     odooBindingStatus: p.text().nullable(),
     odooCompanyName: p.text().nullable(),
     odooBoundAt: p.datetime().columnType('timestamp').nullable(),
     odooFailureReason: p.text().nullable(),
   },
-  uniques: [{ name: 'organization_odooCompanyId_unique', properties: ['odooCompanyId'] }],
-  // 值域自 `TENANCY_STATUS`/`ORGANIZATION_ODOO_BINDING_STATUS` 单源生成·与运行时
-  // ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
+  uniques: [
+    { name: 'organization_odooCompanyId_unique', properties: ['odooCompanyId'] },
+    // 租内 slug 唯一（第三次复裁切片 6·D5）：跨租同名 slug 不再互斥，仅同一租户内唯一。
+    // 注：`tenantId` 可空（BA 建 org 时尚未盖租），PG 对 NULL 视为互异 ⇒ NULL-tenantId 行不参与本约束去重。
+    { name: 'organization_tenantId_slug_unique', properties: ['tenantId', 'slug'] },
+  ],
+  // 值域自 `ORGANIZATION_ODOO_BINDING_STATUS` 单源生成·与运行时 ba-org.entities 同表达式（枚举漂移由下次 generate 非空 diff 捕获）。
   checks: [
-    {
-      name: 'organization_status_check',
-      expression: `status IN (${Object.values(TENANCY_STATUS)
-        .map((v) => `'${v}'`)
-        .join(', ')})`,
-    },
     {
       name: 'organization_odoo_binding_status_check',
       // 列名必引号：驼峰列经 EntityCaseNamingStrategy 实存为 "odooBindingStatus"，裸写会被 PG

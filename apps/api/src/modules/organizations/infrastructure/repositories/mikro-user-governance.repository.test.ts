@@ -1,6 +1,6 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { EntityManager } from '@mikro-orm/core';
 import { QueryOrder } from '@mikro-orm/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,7 +34,7 @@ describe('MikroUserGovernanceRepository (S6 · FR-6/FR-10 跨平台用户视图�
         id: 'u1',
         name: 'Ann',
         email: 'ann@x.com',
-        status: TENANCY_STATUS.ACTIVE,
+        status: TENANT_STATUS.ACTIVE,
         createdAt: new Date('2026-01-01'),
       },
     ];
@@ -45,7 +45,7 @@ describe('MikroUserGovernanceRepository (S6 · FR-6/FR-10 跨平台用户视图�
       userId: 'u1',
       name: 'Ann',
       email: 'ann@x.com',
-      status: TENANCY_STATUS.ACTIVE,
+      status: TENANT_STATUS.ACTIVE,
     });
     expect(page).toMatchObject({ limit: 20, offset: 0 });
   });
@@ -56,13 +56,13 @@ describe('MikroUserGovernanceRepository (S6 · FR-6/FR-10 跨平台用户视图�
         id: 'u2',
         name: 'Bob',
         email: 'bob@x.com',
-        status: TENANCY_STATUS.SUSPENDED,
+        status: TENANT_STATUS.SUSPENDED,
         createdAt: new Date('2026-02-01'),
       },
     ];
     const { repo } = makeRepo({ users, total: 1 });
     const page = await repo.list({ limit: 10, offset: 0, search: 'bob' });
-    expect(page.items[0].status).toBe(TENANCY_STATUS.SUSPENDED);
+    expect(page.items[0].status).toBe(TENANT_STATUS.SUSPENDED);
   });
 
   it('list() builds the $ilike search predicate over name/email and projects the read-face columns incl. status (R-B1)', async () => {

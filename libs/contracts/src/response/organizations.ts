@@ -4,23 +4,18 @@ import { z } from 'zod';
  * 租户生命周期状态 wire 值集（**传输层内联单源**）。
  *
  * @remarks
- * ⚠ 状态值域 SSOT 在 `@core` TENANCY_STATUS·此处内联字面量由 contracts-vocab-parity 对拍锁漂移。
+ * ⚠ 状态值域 SSOT 在 `@core` TENANT_STATUS·此处内联字面量由 contracts-vocab-parity 对拍锁漂移。
  *
  * @public
  */
-export const TENANCY_STATUS_VALUES = [
-  'pending_approval',
-  'active',
-  'suspended',
-  'deleted',
-] as const;
+export const TENANT_STATUS_VALUES = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
 
 /**
  * 租内跨组织可见性策略 wire 值集（**传输层内联单源**·第三次复裁切片 3）。
  *
  * @remarks
  * ⚠ 值域 SSOT 在 `@core` ORG_VISIBILITY·此处内联字面量由 contracts-vocab-parity 对拍锁漂移（沿
- * `TENANCY_STATUS_VALUES` 同法）。`shared`=同租内跨组织默认互见（缺省·零行为变更）·`isolated`=租内互不可见。
+ * `TENANT_STATUS_VALUES` 同法）。`shared`=同租内跨组织默认互见（缺省·零行为变更）·`isolated`=租内互不可见。
  *
  * @public
  */
@@ -35,7 +30,7 @@ export const ORG_VISIBILITY_VALUES = ['shared', 'isolated'] as const;
 export const organizationApplicationViewSchema = z.object({
   /** organization 主键（= 租户 id）。 */
   organizationId: z.string(),
-  status: z.enum(TENANCY_STATUS_VALUES),
+  status: z.enum(TENANT_STATUS_VALUES),
 });
 export type OrganizationApplicationView = z.infer<typeof organizationApplicationViewSchema>;
 
@@ -44,7 +39,7 @@ export type OrganizationApplicationView = z.infer<typeof organizationApplication
  *
  * @remarks
  * ⚠ 状态值域 SSOT 在 `@core` ORGANIZATION_ODOO_BINDING_STATUS·此处内联字面量由
- * contracts-vocab-parity 对拍锁漂移（沿 `TENANCY_STATUS_VALUES` 同法）。
+ * contracts-vocab-parity 对拍锁漂移（沿 `TENANT_STATUS_VALUES` 同法）。
  *
  * @public
  */

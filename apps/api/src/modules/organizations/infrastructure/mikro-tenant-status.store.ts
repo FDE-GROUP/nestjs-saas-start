@@ -1,6 +1,6 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { TenantStatusStore } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.store';
 import { Inject, Injectable } from '@nestjs/common';
 
@@ -19,10 +19,10 @@ import { Inject, Injectable } from '@nestjs/common';
 export class MikroTenantStatusStore implements TenantStatusStore {
   constructor(@Inject(MikroOrmService) private readonly mikro: MikroOrmService) {}
 
-  async readStatus(tenantId: string): Promise<TenancyStatus | undefined> {
+  async readStatus(tenantId: string): Promise<TenantStatus | undefined> {
     const em = await this.mikro.fork();
     const row = await em.findOne(Tenant, { id: tenantId } as never);
-    return row ? (row.status as TenancyStatus) : undefined;
+    return row ? (row.status as TenantStatus) : undefined;
   }
 
   async tenantExists(tenantId: string): Promise<boolean> {
@@ -30,7 +30,7 @@ export class MikroTenantStatusStore implements TenantStatusStore {
     return (await em.findOne(Tenant, tenantId as never)) !== null;
   }
 
-  async upsert(tenantId: string, status: TenancyStatus): Promise<void> {
+  async upsert(tenantId: string, status: TenantStatus): Promise<void> {
     const em = await this.mikro.fork();
     // 迁移即变更：盖 updatedAt；`transition` 已先卡存本体，恒为 UPDATE。
     await em.nativeUpdate(Tenant, { id: tenantId } as never, {

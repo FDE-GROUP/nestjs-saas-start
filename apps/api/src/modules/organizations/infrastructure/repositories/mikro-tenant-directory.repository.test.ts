@@ -71,19 +71,12 @@ describe('MikroTenantDirectoryRepository · listForUser 归组语义', () => {
     expect(find).toHaveBeenCalledTimes(1);
   });
 
-  it('expand 段未盖章组织（tenantId 缺席）回落自身 id 作 1:1 租户替身', async () => {
+  it('expand 段未盖章组织（tenantId 缺席）回落自身 id 作 1:1 租户替身·准入态取自租户行', async () => {
     const { repo } = makeRepo({
       members: [{ organizationId: 'oNew' }],
-      orgs: [
-        {
-          id: 'oNew',
-          name: 'Fresh Org',
-          slug: 'fresh',
-          tenantId: null,
-          status: 'pending_approval',
-        },
-      ],
-      tenants: [],
+      orgs: [{ id: 'oNew', name: 'Fresh Org', slug: 'fresh', tenantId: null, status: 'active' }],
+      // 切片 6 D3：组织自有态列已 DROP，准入态单一锥归位 `tenant.status`——1:1 骨架经 org.id 命中租户行取态。
+      tenants: [{ id: 'oNew', name: 'Fresh Org', slug: 'fresh', status: 'pending_approval' }],
     });
     const result = await repo.listForUser('u1');
     expect(result).toHaveLength(1);

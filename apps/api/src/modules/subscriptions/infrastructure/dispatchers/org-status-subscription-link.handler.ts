@@ -1,5 +1,5 @@
 import { OrganizationStatusTransitionedEvent } from '@core/saas-kit/modules/organizations/lifecycle/events/organization-status-transitioned.event';
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   SUBSCRIPTION_LIFECYCLE,
   type SubscriptionLifecycle,
@@ -30,7 +30,7 @@ export class OrganizationStatusSubscriptionLinkHandler
   async handle(event: OrganizationStatusTransitionedEvent): Promise<void> {
     const organizationId = event.aggregateId;
     const to = event.payload.to;
-    if (to === TENANCY_STATUS.SUSPENDED) {
+    if (to === TENANT_STATUS.SUSPENDED) {
       const changed = await this.lifecycle.convergeStatus(
         organizationId,
         SUBSCRIPTION_STATUS.ACTIVE,
@@ -41,7 +41,7 @@ export class OrganizationStatusSubscriptionLinkHandler
       );
       return;
     }
-    if (to === TENANCY_STATUS.ACTIVE) {
+    if (to === TENANT_STATUS.ACTIVE) {
       // resume/approve：仅回收**本次治理挂起**的可恢复行；不回溯历史 cancelled/expired（1:N 历史纪律）
       const changed = await this.lifecycle.convergeStatus(
         organizationId,

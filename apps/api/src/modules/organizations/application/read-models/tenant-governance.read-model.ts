@@ -1,4 +1,4 @@
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 
 /**
@@ -12,7 +12,7 @@ export interface TenantGovernanceResult {
   /** 目标租户 id。 */
   tenantId: string;
   /** 迁移后的租户准入态。 */
-  status: TenancyStatus;
+  status: TenantStatus;
 }
 
 /**

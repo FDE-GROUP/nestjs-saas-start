@@ -10,8 +10,8 @@ import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.enti
 import { TenantSubscription } from '@app/modules/subscriptions/infrastructure/entities/tenant-subscription.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import {
-  TENANCY_STATUS,
-  type TenancyStatus,
+  TENANT_STATUS,
+  type TenantStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   ORGANIZATION_ODOO_BINDING_STATUS,
@@ -24,7 +24,7 @@ import type {
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-writer';
 import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
-import { type InferEntity, QueryOrder } from '@mikro-orm/core';
+import { type EntityManager, type InferEntity, QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   BindOdooCompanyOutcome,
@@ -38,15 +38,6 @@ import type {
   PlatformTenantPage,
   TenantOrganizationEntry,
 } from '../../domain/repositories/organization-governance.repository';
-
-/**
- * 兼容兼底（defense-in-depth）：`organization.status` 列（片二 K1 语义收口为组织自有轻量态）经列化后为 NOT NULL 真列（本体存在即有值），
- * 本兑底仅在极端读不到列值时生效——与 `canTransition` 缺省/middleware deny-list 同口径
- *（治理生命周期权威态已上移归位 `tenant.status`）。
- */
-function effectiveStatus(status: TenancyStatus | undefined): TenancyStatus {
-  return status ?? TENANCY_STATUS.ACTIVE;
-}
 
 /**
  * ORM 修宪案 B · 切片 3c-ii-B —— 平台租户治理读面 + 运营硬删的 **MikroORM 适配**（`ORGANIZATION_GOVERNANCE_REPOSITORY` 绑定改指本类·MikroORM 为唯一实现）。
@@ -72,16 +63,35 @@ export class MikroOrganizationGovernanceRepository
 
   // entities.ts 的 `defineEntity` 结果只有值、无 companion interface，实例类型经 `InferEntity` 提取。
   /**
-   * 组织实体 → org 级下钻行（诊断快照用·展 org 自有态；租户准入态另在租户行/详情体现）。
+   * 组织实体 → org 级下钻行（诊断快照用）。切片 6（D3）后组织不再持有准入态，`status` 展**所属租户准入态**
+   *（治理真相单一锥归位 `tenant.status`·经 `tenantAdmission` 解析后传入）。
    */
-  private toDrillRow(entity: InferEntity<typeof Organization>): PlatformOrganizationDrillRow {
+  private toDrillRow(
+    entity: InferEntity<typeof Organization>,
+    admission: TenantStatus,
+  ): PlatformOrganizationDrillRow {
     return {
       organizationId: entity.id,
       name: entity.name,
       slug: entity.slug,
-      status: effectiveStatus(entity.status as TenancyStatus),
+      status: admission,
       createdAt: entity.createdAt,
     };
+  }
+
+  /**
+   * 解析组织所属租户的准入态（第三次复裁切片 6·D3：`organization.status` 已 DROP·治理真相单一锥归位
+   * `tenant.status`）：经 `organization.tenantId ?? id` 定位租户行读回 status；无租户行（极端防御）回落 active
+   *（与 `canTransition` 缺省 / middleware deny-list 同口径）。
+   */
+  private async tenantAdmission(
+    em: EntityManager,
+    org: { id: string; tenantId: string | null },
+  ): Promise<TenantStatus> {
+    const tenant = (await em.findOne(Tenant, { id: org.tenantId ?? org.id } as never, {
+      fields: ['status'] as never,
+    })) as { status: string } | null;
+    return (tenant?.status ?? TENANT_STATUS.ACTIVE) as TenantStatus;
   }
 
   /**
@@ -126,7 +136,7 @@ export class MikroOrganizationGovernanceRepository
         tenantId: t.id,
         name: t.name,
         slug: t.slug,
-        status: t.status as TenancyStatus,
+        status: t.status as TenantStatus,
         organizationCount: countByTenant.get(t.id) ?? 0,
         createdAt: t.createdAt,
       })),
@@ -154,7 +164,6 @@ export class MikroOrganizationGovernanceRepository
         'id',
         'name',
         'slug',
-        'status',
         'odooCompanyId',
         'odooBindingStatus',
         'odooCompanyName',
@@ -163,16 +172,16 @@ export class MikroOrganizationGovernanceRepository
       id: string;
       name: string;
       slug: string;
-      status: string;
       odooCompanyId: number | null;
       odooBindingStatus: string | null;
       odooCompanyName: string | null;
     }[];
+    // 切片 6（D3）：组织自有态列已 DROP，名下组织准入态统一展所属租户 `tenant.status`（单一锥）。
     const organizations: TenantOrganizationEntry[] = orgs.map((o) => ({
       organizationId: o.id,
       name: o.name,
       slug: o.slug,
-      status: effectiveStatus(o.status as TenancyStatus),
+      status: tenant.status as TenantStatus,
       odooCompanyId: o.odooCompanyId ?? null,
       odooBindingStatus: (o.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
       odooCompanyName: o.odooCompanyName ?? null,
@@ -181,7 +190,7 @@ export class MikroOrganizationGovernanceRepository
       tenantId: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      status: tenant.status as TenancyStatus,
+      status: tenant.status as TenantStatus,
       createdAt: tenant.createdAt,
       organizations,
     };
@@ -191,7 +200,10 @@ export class MikroOrganizationGovernanceRepository
     const em = await this.mikro.fork();
     const entity = await em.findOne(Organization, { id: organizationId } as never);
     if (!entity) return null;
-    const organization = this.toDrillRow(entity);
+    const organization = this.toDrillRow(
+      entity,
+      await this.tenantAdmission(em, entity as { id: string; tenantId: string | null }),
+    );
     const [memberCount, invitationCount, workspaceCount, postCount] = await Promise.all([
       em.count(Member, { organizationId } as never),
       em.count(Invitation, { organizationId } as never),
@@ -203,8 +215,8 @@ export class MikroOrganizationGovernanceRepository
 
   async exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null> {
     const em = await this.mikro.fork();
-    // 租户本体（BA 面全列 + 自有 `status` 真列）；**不按 status 过滤**——
-    // deleted 终态可导（S5 软删取证用途·NFR-6）。片二 K1：治理生命周期权威态已上移归位 tenant.status，organization.status 降为组织自有轻量态。
+    // 组织本体（BA 面全列）；**不按准入态过滤**——
+    // deleted 终态可导（S5 软删取证用途·NFR-6）。切片 6 D3：organization.status 列已 DROP，准入态单一锥归位 tenant.status。
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return null;
     const organization: OrganizationDataExport['organization'] = {
@@ -212,7 +224,8 @@ export class MikroOrganizationGovernanceRepository
       name: org.name,
       slug: org.slug,
       logo: org.logo ?? null,
-      status: effectiveStatus(org.status as TenancyStatus),
+      // 切片 6（D3）：`organization.status` 列已 DROP，导出面准入态改展所属租户 `tenant.status`（单一锥）。
+      status: await this.tenantAdmission(em, org as { id: string; tenantId: string | null }),
       metadata: org.metadata,
       createdAt: org.createdAt,
       updatedAt: org.updatedAt ?? null,
@@ -341,20 +354,15 @@ export class MikroOrganizationGovernanceRepository
 
   /**
    * 组织准入态读取（bind 门槛·rehierarchy 片一修读侧叠加键）：经 `organization.tenantId ?? id` 解析所属
-   * 租户的 `tenant.status`（准入态归位·companion org 正确取租户态）；无租户行（防御）回落组织自有态。
+   * 租户的 `tenant.status`（准入态归位·companion org 正确取租户态·切片 6 D3 后组织自有态列已 DROP·无租户行防御回落 active）。
    */
-  async findOrganizationAdmission(organizationId: string): Promise<TenancyStatus | null> {
+  async findOrganizationAdmission(organizationId: string): Promise<TenantStatus | null> {
     const em = await this.mikro.fork();
-    const org = (await em.findOne(Organization, { id: organizationId } as never)) as {
-      id: string;
-      tenantId: string | null;
-      status: string;
-    } | null;
+    const org = (await em.findOne(Organization, { id: organizationId } as never, {
+      fields: ['id', 'tenantId'] as never,
+    })) as { id: string; tenantId: string | null } | null;
     if (!org) return null;
-    const tenant = (await em.findOne(Tenant, {
-      id: org.tenantId ?? org.id,
-    } as never)) as { status: string } | null;
-    return tenant ? (tenant.status as TenancyStatus) : effectiveStatus(org.status as TenancyStatus);
+    return this.tenantAdmission(em, org);
   }
 
   async bindOdooCompany(
@@ -419,7 +427,11 @@ export class MikroOrganizationGovernanceRepository
       odooBindingStatus: (org.odooBindingStatus ?? null) as OrganizationOdooBindingStatus | null,
       odooCompanyName: org.odooCompanyName ?? null,
       odooBoundAt: org.odooBoundAt ? new Date(org.odooBoundAt) : null,
-      organizationStatus: org.status as TenancyStatus,
+      // 切片 6（D3）：组织自有态列已 DROP，绑定行治理态改展所属租户准入态（喂 `canUseOdoo` 门禁）。
+      organizationStatus: await this.tenantAdmission(
+        em,
+        org as { id: string; tenantId: string | null },
+      ),
     };
   }
 

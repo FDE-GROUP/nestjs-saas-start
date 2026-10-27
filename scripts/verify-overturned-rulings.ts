@@ -113,6 +113,51 @@ export const OVERTURNED_RULINGS: readonly OverturnedRuling[] = [
       '一组织一公司',
     ],
   },
+  {
+    // 租内组织态：K1（global-organization-status-comment-sync）裁 `organization.status` 降为**组织自有轻量态真列**
+    // （死服务 OrganizationStatusService 退役·仍留列）→ 第三次层级复裁切片 6（D3）复裁：该自撰域列**整列 DROP**，
+    // 准入态单一锥彻底归位 `tenant.status`（租内 org 不再持有任何态）。凡「organization.status 仍存」的现态断言皆失实。
+    plan: 'global-organization-status-comment-sync',
+    supersededBy: 'global-tenant-organization-rehierarchy',
+    bannedTokens: [/organization\.status\b/],
+    framingMarkers: [
+      '原',
+      '旧',
+      '曾',
+      '首用',
+      '当时',
+      '归位',
+      'DROP',
+      '退场',
+      '退役',
+      '寄居',
+      '反悔',
+      '历史',
+      '已撤',
+      '修订',
+      '旁表',
+      '旁列',
+      '上移',
+      '搬入',
+      '降为',
+      '收口',
+      '回填',
+      '存量',
+      '死列',
+      '消解',
+      '复裁',
+      'K1',
+    ],
+  },
+  {
+    // 枚举符号名：片三词汇复裁定名 `TENANCY_STATUS`/`TenancyStatus`/`isTenancyBlocked` → 第三次层级复裁切片 6（D4）
+    // 全仓改名 `TENANT_STATUS`/`TenantStatus`/`isTenantBlocked`（**值域/wire 冻结不变**·仅符号标识随动）。
+    // 旧符号名在代码/注释复现即失实（现态单源=`TENANT_STATUS`）；历史指称须带框定词（旧名·复裁·改名…）。
+    plan: 'global-tenancy-status-vocabulary',
+    supersededBy: 'global-tenant-organization-rehierarchy',
+    bannedTokens: [/TENANCY_STATUS/, /\bTenancyStatus\b/, /isTenancyBlocked/],
+    framingMarkers: ['原', '旧', '曾', '改名', '复裁', '历史', '修订', '旧名', '当时'],
+  },
 ];
 
 export interface CommentUnit {

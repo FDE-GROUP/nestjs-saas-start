@@ -1,4 +1,4 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import type { DomainEvent } from '@core/saas-kit/shared-kernel/domain/domain-event';
@@ -35,7 +35,7 @@ function makeHandler(
 
 describe('RejectOrganizationCommandHandler (S4/S5 · FR-1 仅 pending 可驳回 · FR-6 审计)', () => {
   it('deletes an explicit pending organization and audits the transition', async () => {
-    const read = vi.fn().mockResolvedValue(TENANCY_STATUS.PENDING);
+    const read = vi.fn().mockResolvedValue(TENANT_STATUS.PENDING);
     const remove = vi.fn().mockResolvedValue(true);
     const { handler, audit, published } = makeHandler(read, remove);
     await expect(handler.execute(new RejectOrganizationCommand('org-1', 'op-1'))).resolves.toBe(
@@ -43,8 +43,8 @@ describe('RejectOrganizationCommandHandler (S4/S5 · FR-1 仅 pending 可驳回 
     );
     expect(remove).toHaveBeenCalledWith('org-1');
     expect(audit.logOrganizationGovernance).toHaveBeenCalledWith('reject', 'org-1', 'op-1', {
-      from: TENANCY_STATUS.PENDING,
-      to: TENANCY_STATUS.DELETED,
+      from: TENANT_STATUS.PENDING,
+      to: TENANT_STATUS.DELETED,
       error: undefined,
     });
     // ES 第四切片：硬删成功产出唯一耐久痕迹（org 行消失后「存在过并被驳回」）
@@ -69,7 +69,7 @@ describe('RejectOrganizationCommandHandler (S4/S5 · FR-1 仅 pending 可驳回 
     );
     expect(audit.logOrganizationGovernance).toHaveBeenCalledWith('reject', 'ghost', 'op-1', {
       from: undefined,
-      to: TENANCY_STATUS.DELETED,
+      to: TENANT_STATUS.DELETED,
       error: 'not_found',
     });
     // 无事实不发：未命中行零事件
@@ -77,7 +77,7 @@ describe('RejectOrganizationCommandHandler (S4/S5 · FR-1 仅 pending 可驳回 
   });
 
   it('rejects a non-pending (e.g. active) tenant with 409 without deleting', async () => {
-    const read = vi.fn().mockResolvedValue(TENANCY_STATUS.ACTIVE);
+    const read = vi.fn().mockResolvedValue(TENANT_STATUS.ACTIVE);
     const remove = vi.fn();
     const { handler, audit, published } = makeHandler(read, remove);
     await expect(
@@ -85,14 +85,14 @@ describe('RejectOrganizationCommandHandler (S4/S5 · FR-1 仅 pending 可驳回 
     ).rejects.toBeInstanceOf(ConflictException);
     expect(remove).not.toHaveBeenCalled();
     expect(audit.logOrganizationGovernance).toHaveBeenCalledWith('reject', 'org-1', 'op-1', {
-      from: TENANCY_STATUS.ACTIVE,
+      from: TENANT_STATUS.ACTIVE,
       error: 'not_pending',
     });
     expect(published).toHaveLength(0);
   });
 
   it('fails loud when publishing fails after hard delete（宁缺勿错发·错误不吞）', async () => {
-    const read = vi.fn().mockResolvedValue(TENANCY_STATUS.PENDING);
+    const read = vi.fn().mockResolvedValue(TENANT_STATUS.PENDING);
     const remove = vi.fn().mockResolvedValue(true);
     const { handler } = makeHandler(read, remove, { publishError: new Error('append blew up') });
     await expect(handler.execute(new RejectOrganizationCommand('org-1', 'op-1'))).rejects.toThrow(

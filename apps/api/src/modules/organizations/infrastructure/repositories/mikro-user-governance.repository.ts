@@ -1,8 +1,8 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import {
-  TENANCY_STATUS,
-  type TenancyStatus,
+  TENANT_STATUS,
+  type TenantStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { createPage } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { QueryOrder } from '@mikro-orm/core';
@@ -50,7 +50,7 @@ export class MikroUserGovernanceRepository implements UserGovernanceRepository {
       name: u.name,
       email: u.email,
       // `user.status` 为 NOT NULL 真列（列默认 'active'·旧旁表无行兑底已物化入列）。
-      status: (u.status ?? TENANCY_STATUS.ACTIVE) as TenancyStatus,
+      status: (u.status ?? TENANT_STATUS.ACTIVE) as TenantStatus,
       createdAt: u.createdAt,
     }));
     return createPage(items, total, opts);

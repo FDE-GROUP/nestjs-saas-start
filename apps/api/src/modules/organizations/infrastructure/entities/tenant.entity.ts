@@ -1,4 +1,4 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
@@ -11,14 +11,14 @@ import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/c
  * DROP 的「组织 id 同键旁表」（`tenant.id → organization.id` FK·status 寄居表）复活——那是组织的旁表，
  * 本表是**组织之父行**（organization.tenantId FK 指向此·多组织共一租户），语义与形状均不同，勿对拍旧工件。
  * 属主=`organizations`（`table-ownership.ts` 恒等闸口径）；治理态 `status` 值域沿
- * `TENANCY_STATUS` 单源（租户准入态 pending_approval→active·生命周期真相源自 rehierarchy 片一改锚本列·片三 V 词汇复裁定名·旧名 `ORGANIZATION_STATUS`）。
+ * `TENANT_STATUS` 单源（租户准入态 pending_approval→active·生命周期真相源自 rehierarchy 片一改锚本列·片三 V 词汇复裁定名·旧名 `ORGANIZATION_STATUS`）。
  *
  * 列律：L1 createdAt 必有；**新表遵 L2 `updatedAt` nullable**（建后未改即 NULL·不入棘轮豁免）。
  * ⚠ tsx 消费链（迁移装配）文件一律**相对导入**（`@app` 别名 tsx 不解析）。
  */
 
-/** 值域 = `TENANCY_STATUS` 声明序单源（同 `ba-org.entities.ts` 漂移闸口径：枚举变动由下次 generate 非空 diff 捕获）。 */
-const TENANT_STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANCY_STATUS)
+/** 值域 = `TENANT_STATUS` 声明序单源（同 `ba-org.entities.ts` 漂移闸口径：枚举变动由下次 generate 非空 diff 捕获）。 */
+const TENANT_STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANT_STATUS)
   .map((v) => `'${v}'`)
   .join(', ')})`;
 
@@ -40,7 +40,7 @@ export const TENANT_META: TableMeta = {
     ['slug', { k: 'text' }],
     // 租户治理生命周期态（准入闸·切片 D provisioning.submit 申请对象改本列）：NOT NULL DEFAULT 'active'，
     // 回填期存量经 1:1 骨架自 organization.status 搬入（backfill 工件语义等价律注）。
-    ['status', { k: 'text', default: TENANCY_STATUS.ACTIVE }],
+    ['status', { k: 'text', default: TENANT_STATUS.ACTIVE }],
     // 租内跨组织可见性策略（第三次复裁切片 3·D2）：NOT NULL DEFAULT 'shared'——存量逐字节等价（互见），
     // isolated 为显式 opt-in 经全局 filter 追加组织收窄（切片 1 消费）；跨租硬地板 tenantId 不受本列影响。
     ['orgVisibility', { k: 'text', default: ORG_VISIBILITY.SHARED }],
@@ -51,8 +51,9 @@ export const TENANT_META: TableMeta = {
     ['createdAt', { k: 'datetime', defaultNow: true }],
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
-  // slug 唯一性不在 expand 段预支：存量 organization.slug 无库级全局 unique（BA 仅租内核验），
-  // 1:1 骨架回填碰 duplicate 即炸——收紧（unique + 清洗）留 contract 段随 NOT NULL 一并裁。
+  // slug 全局唯一（第三次复裁切片 6·D5 contract 段）：早先 expand 段不预支（存量 organization.slug 无库级
+  // 全局 unique·1:1 骨架回填碰 duplicate 即炸）；本段迁移先清洗存量 duplicate 再加 global unique 约束。
+  uniques: [{ name: 'tenant_slug_unique', properties: ['slug'] }],
   checks: [
     { name: 'tenant_status_check', expression: TENANT_STATUS_CHECK_EXPRESSION },
     { name: 'tenant_org_visibility_check', expression: TENANT_ORG_VISIBILITY_CHECK_EXPRESSION },

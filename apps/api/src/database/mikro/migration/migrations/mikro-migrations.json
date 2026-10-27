@@ -1457,23 +1457,6 @@
           "enumItems": [],
           "mappedType": "text"
         },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": "'active'",
-          "comment": null,
-          "collation": null,
-          "enumItems": ["pending_approval", "active", "suspended", "deleted"],
-          "mappedType": "enum"
-        },
         "tenantId": {
           "name": "tenantId",
           "type": "text",
@@ -1481,7 +1464,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": true,
-          "unique": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -1526,6 +1509,15 @@
           "keyName": "organization_pkey",
           "primary": true,
           "unique": true
+        },
+        {
+          "columnNames": ["tenantId", "slug"],
+          "composite": true,
+          "constraint": true,
+          "keyName": "organization_tenantId_slug_unique",
+          "primary": false,
+          "unique": true,
+          "expression": "CREATE UNIQUE INDEX \"organization_tenantId_slug_unique\" ON public.organization USING btree (\"tenantId\", slug)"
         }
       ],
       "checks": [
@@ -1534,12 +1526,6 @@
           "expression": "\"odooBindingStatus\" in ('pending', 'provisioning', 'ready', 'failed')",
           "definition": "check (\"odooBindingStatus\" in ('pending', 'provisioning', 'ready', 'failed'))",
           "columnName": "odooBindingStatus"
-        },
-        {
-          "name": "organization_status_check",
-          "expression": "\"status\" in ('pending_approval', 'active', 'suspended', 'deleted')",
-          "definition": "check (\"status\" in ('pending_approval', 'active', 'suspended', 'deleted'))",
-          "columnName": "status"
         }
       ],
       "triggers": [
@@ -2108,7 +2094,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": false,
+          "unique": true,
           "length": null,
           "precision": null,
           "scale": null,
@@ -2160,6 +2146,14 @@
           "constraint": true,
           "keyName": "tenant_pkey",
           "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": ["slug"],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tenant_slug_unique",
+          "primary": false,
           "unique": true
         }
       ],

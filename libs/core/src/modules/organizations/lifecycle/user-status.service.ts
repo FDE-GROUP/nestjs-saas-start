@@ -6,7 +6,7 @@ import {
 } from '../../../shared-kernel/domain/event-publisher.port';
 import { UNIT_OF_WORK, type UnitOfWork } from '../../../shared-kernel/domain/unit-of-work.port';
 import { UserStatusTransitionedEvent } from './events/user-status-transitioned.event';
-import { canTransition, TENANCY_STATUS, type TenancyStatus } from './organization-lifecycle';
+import { canTransition, TENANT_STATUS, type TenantStatus } from './organization-lifecycle';
 import { USER_STATUS_STORE, type UserStatusStore } from './user-status.store';
 
 /**
@@ -17,7 +17,7 @@ import { USER_STATUS_STORE, type UserStatusStore } from './user-status.store';
  *
  * @public
  */
-export type UserStatus = TenancyStatus;
+export type UserStatus = TenantStatus;
 
 /**
  * 用户生命周期状态词汇（从租户状态机择取用户侧合法子集）。
@@ -25,9 +25,9 @@ export type UserStatus = TenancyStatus;
  * @public
  */
 export const USER_STATUS = {
-  ACTIVE: TENANCY_STATUS.ACTIVE,
-  SUSPENDED: TENANCY_STATUS.SUSPENDED,
-  DELETED: TENANCY_STATUS.DELETED,
+  ACTIVE: TENANT_STATUS.ACTIVE,
+  SUSPENDED: TENANT_STATUS.SUSPENDED,
+  DELETED: TENANT_STATUS.DELETED,
 } as const;
 
 /**

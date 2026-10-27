@@ -1,10 +1,10 @@
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ApiProperty } from '@nestjs/swagger';
 import type { OrganizationApplicationView } from '@saas/contracts/index';
 import type { OrganizationApplicationReadModel } from '../../application/read-models/organization-application.read-model';
 
-/** 生命周期状态机取值（SSOT = `@core` TENANCY_STATUS·枚举形为文档投影·与字段 union 同文法）。 @public */
-export const TENANCY_STATUS_ENUM = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
+/** 生命周期状态机取值（SSOT = `@core` TENANT_STATUS·枚举形为文档投影·与字段 union 同文法）。 @public */
+export const TENANT_STATUS_ENUM = ['pending_approval', 'active', 'suspended', 'deleted'] as const;
 
 /**
  * 租户申请/生命周期响应契约（F1 甲①）——真相源 = `OrganizationApplicationReadModel`。
@@ -19,8 +19,8 @@ export class OrganizationApplicationResponse {
   organizationId!: string;
 
   /** 租户生命周期状态。 */
-  @ApiProperty({ enum: TENANCY_STATUS_ENUM, description: '生命周期状态。' })
-  status!: TenancyStatus;
+  @ApiProperty({ enum: TENANT_STATUS_ENUM, description: '生命周期状态。' })
+  status!: TenantStatus;
 }
 
 // —— 编译期双向对拍：response 类与真相源结构恒等，任一侧漂移则 tsc 红。——

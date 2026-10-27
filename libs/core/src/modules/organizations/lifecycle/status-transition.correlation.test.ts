@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { requestStorage } from '../../../shared-kernel/context/request-context';
 import type { DomainEventPublisher } from '../../../shared-kernel/domain/event-publisher.port';
-import { TENANCY_STATUS } from './organization-lifecycle';
+import { TENANT_STATUS } from './organization-lifecycle';
 import { TenantStatusService } from './tenant-status.service';
 import type { TenantStatusStore } from './tenant-status.store';
 import { UserStatusService } from './user-status.service';
@@ -30,7 +30,7 @@ describe('TenantStatusService.transition 构造点', () => {
   // `TenantStatusService`（`tenant.status`），FR-4 correlationId 穿透样本随之改锚租户服务。
   const makeTenantStore = (): TenantStatusStore => ({
     async readStatus() {
-      return TENANCY_STATUS.PENDING;
+      return TENANT_STATUS.PENDING;
     },
     async tenantExists() {
       return true;
@@ -44,7 +44,7 @@ describe('TenantStatusService.transition 构造点', () => {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
     await requestStorage.run({ requestId: 'rq-9' }, () =>
-      svc.transition('tenant-1', TENANCY_STATUS.ACTIVE),
+      svc.transition('tenant-1', TENANT_STATUS.ACTIVE),
     );
     expect(rec.captured).toHaveLength(1);
     expect(rec.captured[0]?.correlationId).toBe('rq-9');
@@ -55,7 +55,7 @@ describe('TenantStatusService.transition 构造点', () => {
     const svc = new TenantStatusService(makeTenantStore(), rec as unknown as DomainEventPublisher, {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
-    await svc.transition('tenant-1', TENANCY_STATUS.ACTIVE);
+    await svc.transition('tenant-1', TENANT_STATUS.ACTIVE);
     expect(rec.captured[0]?.correlationId).toBeUndefined();
   });
 });
@@ -77,7 +77,7 @@ describe('UserStatusService.transition 构造点', () => {
       run: <T>(fn: () => Promise<T>) => fn(),
     });
     await requestStorage.run({ requestId: 'rq-u1' }, () =>
-      svc.transition('u-1', TENANCY_STATUS.SUSPENDED),
+      svc.transition('u-1', TENANT_STATUS.SUSPENDED),
     );
     expect(rec.captured).toHaveLength(1);
     expect(rec.captured[0]?.correlationId).toBe('rq-u1');

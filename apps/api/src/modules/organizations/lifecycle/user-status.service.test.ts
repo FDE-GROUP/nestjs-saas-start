@@ -1,4 +1,4 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import {
   USER_STATUS,
   UserStatusService,
@@ -61,12 +61,12 @@ describe('UserStatusService.transition (S6 · FR-10 用户暂停单点)', () => 
   it('returns illegal without writing when the edge is disallowed (deleted is terminal)', async () => {
     const { svc, upsert, published } = makeService({
       exists: true,
-      status: TENANCY_STATUS.DELETED,
+      status: TENANT_STATUS.DELETED,
     });
     const result = await svc.transition('u1', USER_STATUS.SUSPENDED);
     expect(result).toEqual({
       kind: 'illegal',
-      from: TENANCY_STATUS.DELETED,
+      from: TENANT_STATUS.DELETED,
       to: USER_STATUS.SUSPENDED,
     });
     expect(upsert).not.toHaveBeenCalled();

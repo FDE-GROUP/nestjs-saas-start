@@ -1,4 +1,4 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { Inject } from '@nestjs/common';
@@ -38,7 +38,7 @@ export class SuspendOrganizationCommandHandler
         action: 'suspend',
         tenantId: command.tenantId,
         operatorId: command.operatorId,
-        target: TENANCY_STATUS.SUSPENDED,
+        target: TENANT_STATUS.SUSPENDED,
       },
     );
   }

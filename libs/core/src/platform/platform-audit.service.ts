@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import type { TenancyStatus } from '../modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '../modules/organizations/lifecycle/organization-lifecycle';
 import { AUDIT_LOG_STORE, type AuditLogStore } from '../shared-kernel/audit/audit-log.store';
 import { currentRequestId } from '../shared-kernel/context/request-context';
 
@@ -37,9 +37,9 @@ export type PlatformUserAction = 'suspend' | 'resume' | 'delete';
  */
 export interface GovernanceAuditDetail {
   /** 迁移前的原状态。 */
-  readonly from?: TenancyStatus;
+  readonly from?: TenantStatus;
   /** 迁移后的目标状态。 */
-  readonly to?: TenancyStatus;
+  readonly to?: TenantStatus;
   /** 错误信息。 */
   readonly error?: string;
   /** 治理迁移原因（审计记录）。 */

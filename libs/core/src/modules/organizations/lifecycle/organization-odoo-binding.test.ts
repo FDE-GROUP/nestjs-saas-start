@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TENANCY_STATUS } from './organization-lifecycle';
+import { TENANT_STATUS } from './organization-lifecycle';
 import {
   canUseOdoo,
   ORGANIZATION_ODOO_BINDING_STATUS,
@@ -13,7 +13,7 @@ import {
  */
 describe('canUseOdoo · Odoo 可用性单源裁决', () => {
   const ready = {
-    status: TENANCY_STATUS.ACTIVE,
+    status: TENANT_STATUS.ACTIVE,
     odooBindingStatus: ORGANIZATION_ODOO_BINDING_STATUS.READY as OrganizationOdooBindingStatus,
     odooCompanyId: 7,
   };
@@ -23,7 +23,7 @@ describe('canUseOdoo · Odoo 可用性单源裁决', () => {
   });
 
   it('未绑定（binding 缺席/null）→ 拒——存量 org 即使 active 也不可用 Odoo', () => {
-    expect(canUseOdoo({ status: TENANCY_STATUS.ACTIVE })).toBe(false);
+    expect(canUseOdoo({ status: TENANT_STATUS.ACTIVE })).toBe(false);
     expect(canUseOdoo({ ...ready, odooBindingStatus: null, odooCompanyId: null })).toBe(false);
   });
 
@@ -39,9 +39,9 @@ describe('canUseOdoo · Odoo 可用性单源裁决', () => {
 
   it('治理态非 active（pending_approval/suspended/deleted）→ 拒，即使绑定 ready', () => {
     for (const st of [
-      TENANCY_STATUS.PENDING,
-      TENANCY_STATUS.SUSPENDED,
-      TENANCY_STATUS.DELETED,
+      TENANT_STATUS.PENDING,
+      TENANT_STATUS.SUSPENDED,
+      TENANT_STATUS.DELETED,
     ] as const) {
       expect(canUseOdoo({ ...ready, status: st })).toBe(false);
     }

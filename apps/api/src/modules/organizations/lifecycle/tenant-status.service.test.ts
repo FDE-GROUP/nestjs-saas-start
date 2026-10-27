@@ -1,6 +1,6 @@
 import {
-  TENANCY_STATUS,
-  type TenancyStatus,
+  TENANT_STATUS,
+  type TenantStatus,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { TenantStatusStore } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.store';
@@ -16,10 +16,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * 读侧（isActive/isBlocked）+ 发布失败 loud（宁缺勿错发）。
  */
 function makeService(
-  opts: { tenantExists?: boolean; status?: TenancyStatus },
+  opts: { tenantExists?: boolean; status?: TenantStatus },
   publishError?: Error,
 ) {
-  const upsert = vi.fn(async (_id: string, _status: TenancyStatus) => {});
+  const upsert = vi.fn(async (_id: string, _status: TenantStatus) => {});
   const readStatus = vi.fn(async (_id: string) => opts.status);
   const tenantExists = vi.fn(async (_id: string) => opts.tenantExists ?? true);
   const store = { readStatus, tenantExists, upsert } as unknown as TenantStatusStore;
@@ -45,20 +45,20 @@ describe('TenantStatusService.transition (治理换轴 E-F · §9.4 严格迁移
   beforeEach(() => vi.clearAllMocks());
 
   it('pending_approval → active：写回 tenant.status 并回 previous', async () => {
-    const { svc, upsert } = makeService({ status: TENANCY_STATUS.PENDING });
-    const result = await svc.transition('tenantA', TENANCY_STATUS.ACTIVE);
+    const { svc, upsert } = makeService({ status: TENANT_STATUS.PENDING });
+    const result = await svc.transition('tenantA', TENANT_STATUS.ACTIVE);
     expect(result).toEqual({
       kind: 'ok',
-      previous: TENANCY_STATUS.PENDING,
-      status: TENANCY_STATUS.ACTIVE,
+      previous: TENANT_STATUS.PENDING,
+      status: TENANT_STATUS.ACTIVE,
     });
     expect(upsert).toHaveBeenCalledTimes(1);
-    expect(upsert.mock.calls[0]).toEqual(['tenantA', TENANCY_STATUS.ACTIVE]);
+    expect(upsert.mock.calls[0]).toEqual(['tenantA', TENANT_STATUS.ACTIVE]);
   });
 
   it('租户本体不存在 → not-found（不写、不发事件）', async () => {
     const { svc, upsert, published } = makeService({ tenantExists: false });
-    const result = await svc.transition('ghost', TENANCY_STATUS.ACTIVE);
+    const result = await svc.transition('ghost', TENANT_STATUS.ACTIVE);
     expect(result).toEqual({ kind: 'not-found' });
     expect(upsert).not.toHaveBeenCalled();
     expect(published).toHaveLength(0);
@@ -66,18 +66,18 @@ describe('TenantStatusService.transition (治理换轴 E-F · §9.4 严格迁移
 
   it('not-found 键在租户本体，短路先于读态', async () => {
     const { svc, readStatus, upsert } = makeService({ tenantExists: false, status: undefined });
-    await svc.transition('ghost', TENANCY_STATUS.ACTIVE);
+    await svc.transition('ghost', TENANT_STATUS.ACTIVE);
     expect(readStatus).not.toHaveBeenCalled();
     expect(upsert).not.toHaveBeenCalled();
   });
 
   it('非法迁移（deleted 终态）→ illegal（不写、不发）', async () => {
-    const { svc, upsert, published } = makeService({ status: TENANCY_STATUS.DELETED });
-    const result = await svc.transition('tenantA', TENANCY_STATUS.ACTIVE);
+    const { svc, upsert, published } = makeService({ status: TENANT_STATUS.DELETED });
+    const result = await svc.transition('tenantA', TENANT_STATUS.ACTIVE);
     expect(result).toEqual({
       kind: 'illegal',
-      from: TENANCY_STATUS.DELETED,
-      to: TENANCY_STATUS.ACTIVE,
+      from: TENANT_STATUS.DELETED,
+      to: TENANT_STATUS.ACTIVE,
     });
     expect(upsert).not.toHaveBeenCalled();
     expect(published).toHaveLength(0);
@@ -85,11 +85,11 @@ describe('TenantStatusService.transition (治理换轴 E-F · §9.4 严格迁移
 
   it('无状态记录（readStatus → undefined）视同 active（deny-list 同口径）', async () => {
     const { svc, published } = makeService({ status: undefined });
-    const result = await svc.transition('tenantA', TENANCY_STATUS.SUSPENDED);
+    const result = await svc.transition('tenantA', TENANT_STATUS.SUSPENDED);
     expect(result).toEqual({
       kind: 'ok',
       previous: undefined,
-      status: TENANCY_STATUS.SUSPENDED,
+      status: TENANT_STATUS.SUSPENDED,
     });
     expect((published[0].payload as { from: unknown }).from).toBeNull();
   });
@@ -99,8 +99,8 @@ describe('TenantStatusService 事件产出 + fail-closed 读', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('合法迁移后产一封 faithful tenant.status.transitioned（aggregateType=tenant·aggregateId=tenantId）', async () => {
-    const { svc, published } = makeService({ status: TENANCY_STATUS.PENDING });
-    await svc.transition('tenantA', TENANCY_STATUS.ACTIVE, {
+    const { svc, published } = makeService({ status: TENANT_STATUS.PENDING });
+    await svc.transition('tenantA', TENANT_STATUS.ACTIVE, {
       actorId: 'op-1',
       reason: 'approved',
     });
@@ -115,22 +115,22 @@ describe('TenantStatusService 事件产出 + fail-closed 读', () => {
   });
 
   it('isActive：仅显式 active 为真（fail-closed）', async () => {
-    const { svc } = makeService({ status: TENANCY_STATUS.PENDING });
+    const { svc } = makeService({ status: TENANT_STATUS.PENDING });
     expect(await svc.isActive('tenantA')).toBe(false);
   });
 
   it('isBlocked：pending/suspended/deleted 拦、无记录不拦', async () => {
-    expect(await makeService({ status: TENANCY_STATUS.PENDING }).svc.isBlocked('t')).toBe(true);
-    expect(await makeService({ status: TENANCY_STATUS.SUSPENDED }).svc.isBlocked('t')).toBe(true);
+    expect(await makeService({ status: TENANT_STATUS.PENDING }).svc.isBlocked('t')).toBe(true);
+    expect(await makeService({ status: TENANT_STATUS.SUSPENDED }).svc.isBlocked('t')).toBe(true);
     expect(await makeService({ status: undefined }).svc.isBlocked('t')).toBe(false);
   });
 
   it('发布失败 loud（写先行、发布在后·错误不吞）', async () => {
     const { svc, upsert } = makeService(
-      { status: TENANCY_STATUS.ACTIVE },
+      { status: TENANT_STATUS.ACTIVE },
       new Error('append blew up'),
     );
-    await expect(svc.transition('tenantA', TENANCY_STATUS.SUSPENDED)).rejects.toThrow(
+    await expect(svc.transition('tenantA', TENANT_STATUS.SUSPENDED)).rejects.toThrow(
       'append blew up',
     );
     expect(upsert).toHaveBeenCalledTimes(1);

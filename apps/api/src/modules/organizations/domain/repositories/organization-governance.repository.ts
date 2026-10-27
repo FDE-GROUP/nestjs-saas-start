@@ -1,4 +1,4 @@
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { OrganizationOdooBindingStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
 import type { Page, PageRequest } from '@core/saas-kit/shared-kernel/domain/pagination';
@@ -21,7 +21,7 @@ export interface PlatformTenantRow {
   /** URL 友好的短标识。 */
   slug: string;
   /** 租户准入生命周期态（无记录视同 active·与 canTransition/deny-list 同口径）。 */
-  status: TenancyStatus;
+  status: TenantStatus;
   /** 该租户名下组织数量（一租多组织可见）。 */
   organizationCount: number;
   /** 创建时间。 */
@@ -37,8 +37,8 @@ export interface TenantOrganizationEntry {
   organizationId: string;
   name: string;
   slug: string;
-  /** 组织自有轻量态（canUseOdoo 裁决用·非准入态）。 */
-  status: TenancyStatus;
+  /** 所属租户准入态（切片 6 D3 起租内组织不再持有自有态·单一锥归位 `tenant.status`·喂 `canUseOdoo`）。 */
+  status: TenantStatus;
   odooCompanyId: number | null;
   odooBindingStatus: OrganizationOdooBindingStatus | null;
   odooCompanyName: string | null;
@@ -52,7 +52,7 @@ export interface PlatformTenantDetail {
   tenantId: string;
   name: string;
   slug: string;
-  status: TenancyStatus;
+  status: TenantStatus;
   createdAt: Date;
   organizations: TenantOrganizationEntry[];
 }
@@ -73,7 +73,7 @@ export interface PlatformOrganizationDrillRow {
   organizationId: string;
   name: string;
   slug: string;
-  status: TenancyStatus;
+  status: TenantStatus;
   createdAt: Date;
 }
 
@@ -144,8 +144,8 @@ export interface OrganizationDataExport {
     name: string;
     slug: string;
     logo: string | null;
-    /** 组织自有态（`organization.status` 真列·列缺省兑底 active·与列表行同口径）。 */
-    status: TenancyStatus;
+    /** 准入态（切片 6 D3 起 `organization.status` 列已 DROP·导出面改展所属租户 `tenant.status`·单一锥归位）。 */
+    status: TenantStatus;
     metadata: unknown;
     createdAt: Date;
     updatedAt: Date | null;
@@ -265,7 +265,7 @@ export interface OrganizationGovernanceRepository {
    * @param organizationId - 目标组织 id。
    * @returns 所属租户准入态；组织查无时为 `null`。
    */
-  findOrganizationAdmission(organizationId: string): Promise<TenancyStatus | null>;
+  findOrganizationAdmission(organizationId: string): Promise<TenantStatus | null>;
   /**
    * bind-existing 回填（module-org-odoo-company-mapping 切片 A）：把现存 Odoo 公司绑定到组织，
    * 绑定态直落 `ready`（回填系人工确认动作，无 provisioning 中间态）。
@@ -299,7 +299,7 @@ export interface OrganizationOdooBindingRecord {
   /** 绑定确立时间。 */
   odooBoundAt: Date | null;
   /** 租户治理态（可选携·供 `@core` reader 端口转形与 `canUseOdoo` 裁决；bind 回执不填）。 */
-  organizationStatus?: TenancyStatus;
+  organizationStatus?: TenantStatus;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { TenantStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import type { TenantStatusService } from '@core/saas-kit/modules/organizations/lifecycle/tenant-status.service';
 import type { PlatformAuditService } from '@core/saas-kit/platform/platform-audit.service';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
@@ -34,7 +34,7 @@ export interface GovernedTransitionInput {
   /** 操作者 id（会话主体·审计用）。 */
   readonly operatorId: string;
   /** 迁移目标（状态/对象）。 */
-  readonly target: TenancyStatus;
+  readonly target: TenantStatus;
 }
 
 /**

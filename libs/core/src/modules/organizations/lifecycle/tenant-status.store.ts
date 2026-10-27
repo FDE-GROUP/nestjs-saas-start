@@ -1,4 +1,4 @@
-import type { TenancyStatus } from './organization-lifecycle';
+import type { TenantStatus } from './organization-lifecycle';
 
 /**
  * 租户状态存储端口的 DI 注入 token（global-tenant-organization-rehierarchy 切片 E-F · 治理换轴·
@@ -30,7 +30,7 @@ export interface TenantStatusStore {
    * @param tenantId - 目标租户 id。
    * @returns 状态列值；无本体返回 `undefined`。
    */
-  readStatus(tenantId: string): Promise<TenancyStatus | undefined>;
+  readStatus(tenantId: string): Promise<TenantStatus | undefined>;
   /**
    * 租户本体是否存在（`tenant` 行命中）——不存在则 transition 报 not-found。
    * @param tenantId - 目标租户 id。
@@ -42,5 +42,5 @@ export interface TenantStatusStore {
    * @param tenantId - 目标租户 id。
    * @param status - 迁移后状态。
    */
-  upsert(tenantId: string, status: TenancyStatus): Promise<void>;
+  upsert(tenantId: string, status: TenantStatus): Promise<void>;
 }

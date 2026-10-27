@@ -1,4 +1,3 @@
-import { TENANCY_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
@@ -9,21 +8,16 @@ import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isol
  *
  * 形状受 **BA 接口契约约束**（列律 `BA_CONTRACT_TABLES` 登账）。按 global-governance-lifecycle-
  * consolidation 修宪（人裁 2026-10-23）：BA 表**非专用·系共享表**——本域可按需 additive 增自撰域列，
- * 优先数据建模范式合理性；红线仅为「不删/不改 BA 约定字段及其数据类型」。`Organization.status` 即
- * 此类自撰域列（租户治理生命周期态归真列·原 `tenant` 旁表随本案 DROP），对 `mikro-auth-adapter` raw SQL
- * 寻址的 BA 必需列为纯 additive·零冲突。上游变更随 BA org 插件族演进，落点即本文件。操作面走 BA
- * `auth.api.*` 工具面（**拥有表 ≠ 接管操作**——成员/邀请机器不重实现）。形态沿 ORM 修宪案 B 切片 1 裁决：
- * 零装饰器 `defineEntity`/`p`·扁平标量列·`EntityCaseNamingStrategy`（camelCase 属性名原样作列名·与 BA 字段
+ * 优先数据建模范式合理性；红线仅为「不删/不改 BA 约定字段及其数据类型」。`Organization.tenantId` /
+ * `Organization.odooCompanyId` 即此类自撰域列（对新层级 Tenant ⊃ Organization 的边 / Odoo 公司映射载体）。
+ * 对 `mikro-auth-adapter` raw SQL 寻址的 BA 必需列为纯 additive·零冲突。上游变更随 BA org 插件族演进，落点即本
+ * 文件。操作面走 BA `auth.api.*` 工具面（**拥有表 ≠ 接管操作**——成员/邀请机器不重实现）。形态沿 ORM 修宪案 B
+ * 切片 1 裁决：零装饰器 `defineEntity`/`p`·扁平标量列·`EntityCaseNamingStrategy`（camelCase 属性名原样作列名·与 BA 字段
  * 直接对齐）。历史自 `database/ba/entities.ts` 迁入（经 global-ba-contract-surface 成区·本案再裁决归域·
  * ba/ 区随本片消解）。
  */
 
-/** 值域 = `TENANCY_STATUS` 声明序单源（与迁移工件 `organization_status_check` 同表达式·枚举漂移由下次 generate 非空 diff 捕获）。 */
-const STATUS_CHECK_EXPRESSION = `status IN (${Object.values(TENANCY_STATUS)
-  .map((v) => `'${v}'`)
-  .join(', ')})`;
-
-/** 绑定态值域 = `ORGANIZATION_ODOO_BINDING_STATUS` 声明序单源（同上漂移闸；NULL=未绑定，CHECK 对 NULL 恒通过·不越「列缺席」语义）。列名必引号：驼峰列实存带引号，裸写会被 PG 折叠小写（errorMissingColumn）。 */
+/** 绑定态值域 = `ORGANIZATION_ODOO_BINDING_STATUS` 声明序单源（与迁移工件同表达式·枚举漂移由下次 generate 非空 diff 捕获；NULL=未绑定，CHECK 对 NULL 恒通过·不越「列缺席」语义）。列名必引号：驼峰列实存带引号，裸写会被 PG 折叠小写（errorMissingColumn）。 */
 const BINDING_STATUS_CHECK_EXPRESSION = `"odooBindingStatus" IN (${Object.values(
   ORGANIZATION_ODOO_BINDING_STATUS,
 )
@@ -44,15 +38,11 @@ export const Organization = defineEntity({
     slug: p.string(),
     logo: p.string().nullable(),
     metadata: p.json<Record<string, any>>().nullable(),
-    // 租户治理生命周期态（global-governance-lifecycle-consolidation 切片 B·原 tenant.status 旁列归位）：
-    // NOT NULL DEFAULT 'active'——缺席态消失（堵 O1 fail-open），BA 系统动作直建 org（seed/内部）落 'active'，
-    // 自助建租经 provisioning.submit 显式覆写 'pending_approval'（S4 审批制）。
-    status: p.string().default(TENANCY_STATUS.ACTIVE),
-    // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A·自撰域列·同 `status` 受列律 L1/L2 约束）：
+    // —— Odoo 公司绑定列组（module-org-odoo-company-mapping 切片 A·自撰域列·受列律 L1/L2 约束）：
     // 双库物理隔离下的平行映射载体（vision v0.10.0 §4.8/§6）；`odooCompanyId` 唯一=一组织一公司
     // 双射的库级兜底（应用层预检查前置，本约束是并发竞争终防线）；公司 id 为跨库弱引用列，无 FK。
     odooCompanyId: p.integer().nullable().unique(),
-    // 值域词汇仅在应用层持型（`p.string()` 不支持泛型参数·同 `status` 列裸 text 先例），
+    // 值域词汇仅在应用层持型（`p.string()` 不支持泛型参数·同驼峰列裸 text 先例），
     // CHECK 约束守住库级值域。
     odooBindingStatus: p.string().nullable(),
     /** 公司名快照（denormalize·provisioning/doctor 刷新·不做实时跨库拼装）。 */
@@ -62,8 +52,9 @@ export const Organization = defineEntity({
     createdAt: p.datetime(),
     updatedAt: p.datetime().nullable(),
   },
+  // 与迁移实体 `migration-entities.ts` Organization 同 uniques（租内 slug 唯一·切片 6 D5）。
+  uniques: [{ name: 'organization_tenantId_slug_unique', properties: ['tenantId', 'slug'] }],
   checks: [
-    { name: 'organization_status_check', expression: STATUS_CHECK_EXPRESSION },
     { name: 'organization_odoo_binding_status_check', expression: BINDING_STATUS_CHECK_EXPRESSION },
   ],
   // 行级隔离机制化（第三次复裁切片 1）：租内 org 升为可强制权限/机密维·在册过滤。BA adapter 走 raw
