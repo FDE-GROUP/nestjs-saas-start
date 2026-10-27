@@ -15,7 +15,7 @@
 <div class="tsd-comment tsd-typography"><p>授权行响应契约（与域内 <code>TenantRoleGrantView</code> 同形·编译期锁防漂移）。</p>
 </div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/authorization/api/response/role.response.ts#L50">apps/api/src/modules/authorization/api/response/role.response.ts:50</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/authorization/api/response/role.response.ts#L50">apps/api/src/modules/authorization/api/response/role.response.ts:50</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -25,7 +25,6 @@
 <h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-index-list"><a href="#action" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>action</span></a>
 <a href="#conditions" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>conditions</span></a>
-<a href="#organizationid" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a>
 <a href="#subject" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>subject</span></a>
 </div></section></div></details></section></section>
 <details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -37,28 +36,21 @@
 <div class="tsd-comment tsd-typography"><p>授权动作（CASL can 第一元组参）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/authorization/api/response/role.response.ts#L57">apps/api/src/modules/authorization/api/response/role.response.ts:57</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/authorization/api/response/role.response.ts#L57">apps/api/src/modules/authorization/api/response/role.response.ts:57</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="conditions"><span>conditions</span><a href="#conditions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">conditions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>授权条件（ABAC 谓词·平铺等值/$in）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/authorization/api/response/role.response.ts#L66">apps/api/src/modules/authorization/api/response/role.response.ts:66</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member">
-<h3 class="tsd-anchor-link" id="organizationid"><span>organization<wbr/>Id</span><a href="#organizationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
-<div class="tsd-comment tsd-typography"><p>组织收窄 scope（P0 X6 管理面回显）：null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效的收窄行。</p>
-</div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/authorization/api/response/role.response.ts#L76">apps/api/src/modules/authorization/api/response/role.response.ts:76</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/authorization/api/response/role.response.ts#L66">apps/api/src/modules/authorization/api/response/role.response.ts:66</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="subject"><span>subject</span><a href="#subject" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">subject</span><span class="tsd-signature-symbol">:</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Organization&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Member&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Invitation&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Workspace&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Role&quot;</span><br/>    <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;RoleGrant&quot;</span></div>
 <div class="tsd-comment tsd-typography"><p>被授权资源主体。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/authorization/api/response/role.response.ts#L53">apps/api/src/modules/authorization/api/response/role.response.ts:53</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/authorization/api/response/role.response.ts#L53">apps/api/src/modules/authorization/api/response/role.response.ts:53</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -74,7 +66,7 @@
 <h3>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
-<div><a href="#action"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>action</span></a><a href="#conditions"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>conditions</span></a><a href="#organizationid"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>organization<wbr/>Id</span></a><a href="#subject"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>subject</span></a></div></details></div></details></div>
+<div><a href="#action"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>action</span></a><a href="#conditions"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>conditions</span></a><a href="#subject"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>subject</span></a></div></details></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../index.html">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
 <ul class="tsd-small-nested-navigation" id="tsd-nav-container">

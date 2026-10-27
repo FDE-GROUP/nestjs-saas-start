@@ -12,18 +12,19 @@
 <li><a href="" aria-current="page">OrganizationsOrgAdminController</a></li></ul>
 <h1>Class OrganizationsOrgAdminController</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>租户成员/邀请<strong>管理门面</strong>（module-rbac-casl §2.3.1·甲裁严格拆）。</p>
+<div class="tsd-comment tsd-typography"><p>租户成员/邀请<strong>管理门面</strong>（global-role-membership-tenantization 切片 D·租级化）。</p>
 </div>
 <div class="tsd-comment tsd-typography">
 <div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>新宪落点：授权裁决 = <code>@Can</code> + CASL（authorization-rules 单源·经 AuthorizationGuard 判定），
-数据操作 = BA <code>auth.api.*</code> <strong>服务端直调</strong>（认证·membership 数据域，不经被封堵的
-BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验与 seats 配额 hook——
-门面是「授权在我、数据在 BA」的收口点，不是重实现。</p>
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>新宪落点：授权裁决 = <code>@Can</code> + CASL（authorization-rules 单源·经 <code>AuthorizationGuard</code> 判定）；
+数据操作 = 自有租级 SSOT（<code>tenant_membership</code>/<code>tenant_role_assignment</code>/<code>tenant_invitation</code>）经
+<a href="apps_api_src_modules_organizations_application_tenant-member-facade.service.TenantMemberFacadeService.html" class="tsd-kind-class">TenantMemberFacadeService</a> 编排——<strong>替代此前 BA <code>auth.api.*</code> org 维 passthrough</strong>
+（成员/邀请整轴上收租户维·org 降为纯数据分组）。角色可挂载校验、last-owner / self-removal 守卫、
+席位卡点均在门面/领域侧重建（fail-closed·不再依赖 BA 内置数据守卫）。</p>
 <p>租户作用域路由：不豁免（S11 全局墙 fail-closed），guard 组合沿用 workspaces 先例。</p>
 </div></div></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L72">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:72</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L41">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:41</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -45,128 +46,98 @@ BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验�
 <h3 class="tsd-anchor-link" id="cancelinvitation"><span>cancel<wbr/>Invitation</span><a href="#cancelinvitation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="cancelinvitation-1"><span class="tsd-kind-call-signature">cancelInvitation</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">invitationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#cancelinvitation-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="cancelinvitation-1"><span class="tsd-kind-call-signature">cancelInvitation</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">invitationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span><a href="#cancelinvitation-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>取消邀请（owner/admin·CASL cancel）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li>
 <li><span><span class="tsd-kind-parameter">dto</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">invitationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span></span>
 <div class="tsd-comment tsd-typography"><p>邀请 id 载荷。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 取消结果；不可取消拒经 <code>mapBaError</code> 归一。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span></h4><p>空体（无 pending 行经门面译 404）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L256">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:256</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L162">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:162</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="createinvitation"><span>create<wbr/>Invitation</span><a href="#createinvitation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="createinvitation-1"><span class="tsd-kind-call-signature">createInvitation</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">email</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#createinvitation-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="createinvitation-1"><span class="tsd-kind-call-signature">createInvitation</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">email</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span><a href="#createinvitation-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>邀请成员加入 active 租户（租级通配 owner/admin·CASL create·D6 席位治理）。</p>
+<div class="tsd-comment tsd-typography"><p>邀请成员加入活动租户（owner/admin·CASL create·席位在接受时点卡·非发邀）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li>
 <li><span><span class="tsd-kind-parameter">dto</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">email</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span></span>
 <div class="tsd-comment tsd-typography"><p>邮箱 + 角色载荷。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 邀请结果；角色不可挂载先 400，CASL 拒经 <code>mapBaError</code> 归一。</p>
-
-<div class="tsd-comment tsd-typography">
-<div class="tsd-tag-remarks">
-<h4 class="tsd-anchor-link" id="remarks-1">Remarks<a href="#remarks-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>发邀终将消耗<strong>租席位</strong>（accept 时 member 行落），故需 actor 持<strong>租级通配</strong> <code>Invitation create</code>
-grant（org=NULL）——<code>@Can(..., { tenantWildcardOnly: true })</code> 令裁决忽略活动 org，org-scoped 子管理员
-默认不可加席（可配 per-org 席位上限留后）。</p>
-</div></div><aside class="tsd-sources">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span></h4><p>空体（角色不可挂载/重复 pending 邀经门面译 400）。</p>
+<aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L227">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:227</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L140">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:140</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="listinvitations"><span>list<wbr/>Invitations</span><a href="#listinvitations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="listinvitations-1"><span class="tsd-kind-call-signature">listInvitations</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#listinvitations-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="listinvitations-1"><span class="tsd-kind-call-signature">listInvitations</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_ports_tenant-invitation.port.TenantInvitationView.html" class="tsd-signature-type tsd-kind-interface">TenantInvitationView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listinvitations-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>列出 active 租户的待处理邀请（全角色·CASL read）。</p>
+<div class="tsd-comment tsd-typography"><p>列出活动租户的待处理邀请（全角色·CASL read）。</p>
 </div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 邀请列表。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_ports_tenant-invitation.port.TenantInvitationView.html" class="tsd-signature-type tsd-kind-interface">TenantInvitationView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>租级邀请列表（<code>tenant_invitation</code>）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L195">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:195</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L119">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:119</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="listmembers"><span>list<wbr/>Members</span><a href="#listmembers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="listmembers-1"><span class="tsd-kind-call-signature">listMembers</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#listmembers-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="listmembers-1"><span class="tsd-kind-call-signature">listMembers</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_ports_tenant-membership.port.TenantMemberView.html" class="tsd-signature-type tsd-kind-interface">TenantMemberView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><a href="#listmembers-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>列出 active 租户的成员（全角色·CASL read）。</p>
+<div class="tsd-comment tsd-typography"><p>列出活动租户的成员（全角色·CASL read）。</p>
 </div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 成员列表。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_authorization_domain_ports_tenant-membership.port.TenantMemberView.html" class="tsd-signature-type tsd-kind-interface">TenantMemberView</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4><p>租级成员列表（<code>tenant_membership</code> ⋈ <code>tenant_role_assignment</code> ⋈ user）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L115">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:115</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L58">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:58</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="removemember"><span>remove<wbr/>Member</span><a href="#removemember" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="removemember-1"><span class="tsd-kind-call-signature">removeMember</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#removemember-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="removemember-1"><span class="tsd-kind-call-signature">removeMember</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span><a href="#removemember-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>移除成员（owner/admin·CASL delete）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li>
 <li><span><span class="tsd-kind-parameter">dto</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span></span>
-<div class="tsd-comment tsd-typography"><p>成员 id 载荷。</p>
+<div class="tsd-comment tsd-typography"><p>目标成员用户 id 载荷。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 移除结果；自移除等数据守卫拒经 <code>mapBaError</code> 归一。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span></h4><p>空体（自移/最后属主拒经门面译 403）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L169">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:169</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L100">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:100</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="updatememberrole"><span>update<wbr/>Member<wbr/>Role</span><a href="#updatememberrole" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
-<div class="tsd-signature tsd-anchor-link" id="updatememberrole-1"><span class="tsd-kind-call-signature">updateMemberRole</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">headers</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span><a href="#updatememberrole-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-signature tsd-anchor-link" id="updatememberrole-1"><span class="tsd-kind-call-signature">updateMemberRole</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">dto</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span><a href="#updatememberrole-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>更新成员角色（owner/admin·CASL update）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
-<li><span><span class="tsd-kind-parameter">headers</span>: <span class="tsd-signature-type">Record</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></span>
-<div class="tsd-comment tsd-typography"><p>透传 BA 的请求头。</p>
-</div></li>
 <li><span><span class="tsd-kind-parameter">dto</span>: <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">memberId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">role</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">}</span></span>
-<div class="tsd-comment tsd-typography"><p>成员 id + 新角色载荷。</p>
+<div class="tsd-comment tsd-typography"><p>目标成员用户 id（<code>memberId</code>·租级以 userId 定位）+ 新角色载荷。</p>
 </div></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4><p>BA 更新结果；角色不可挂载先 400，CASL/last-owner 拒经 <code>mapBaError</code> 归一。</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ok</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol">&gt;</span></h4><p>空体（守卫拒经门面译 400/403/404）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L140">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:140</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts#L79">apps/api/src/modules/organizations/api/organizations-org-admin.controller.ts:79</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

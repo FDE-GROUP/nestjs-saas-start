@@ -16,7 +16,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">QuotaStore</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-call-signature" href="#countmembers-1">countMembers</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#currentactivesubscription-1">currentActiveSubscription</a><span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_subscriptions_quota_quota.store.ActiveSubscriptionView.html" class="tsd-signature-type tsd-kind-interface">ActiveSubscriptionView</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#reconcilemembers-1">reconcileMembers</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/libs/core/src/modules/subscriptions/quota/quota.store.ts#L35">libs/core/src/modules/subscriptions/quota/quota.store.ts:35</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/libs/core/src/modules/subscriptions/quota/quota.store.ts#L35">libs/core/src/modules/subscriptions/quota/quota.store.ts:35</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -37,8 +37,9 @@
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="countmembers-1"><span class="tsd-kind-call-signature">countMembers</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#countmembers-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>该租户成员数（第三次复裁切片 5·D6/pt10：读物化列 <code>tenant.memberCount</code>·O(1)·
-由 <code>member</code> 表库级触发器增量维护）。一租多组织下席位数 = 租内总量。</p>
+<div class="tsd-comment tsd-typography"><p>该租户成员数（X7 R2 换锚·global-role-membership-tenantization 切片 D：读自有租级成员 SSOT
+<code>tenant_membership</code> live count）。一租多组织下席位数 = 租内租成员总量（不再读物化列 <code>tenant.memberCount</code>/BA member
+轴——否则新邀请入租者不计→超卖）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -49,7 +50,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>成员数量</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/libs/core/src/modules/subscriptions/quota/quota.store.ts#L50">libs/core/src/modules/subscriptions/quota/quota.store.ts:50</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/libs/core/src/modules/subscriptions/quota/quota.store.ts#L51">libs/core/src/modules/subscriptions/quota/quota.store.ts:51</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="currentactivesubscription"><span>current<wbr/>Active<wbr/>Subscription</span><a href="#currentactivesubscription" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -67,15 +68,15 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="libs_core_src_modules_subscriptions_quota_quota.store.ActiveSubscriptionView.html" class="tsd-signature-type tsd-kind-interface">ActiveSubscriptionView</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4><p>生效订阅视图；无 active 行返回 <code>null</code></p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/libs/core/src/modules/subscriptions/quota/quota.store.ts#L42">libs/core/src/modules/subscriptions/quota/quota.store.ts:42</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/libs/core/src/modules/subscriptions/quota/quota.store.ts#L42">libs/core/src/modules/subscriptions/quota/quota.store.ts:42</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="reconcilemembers"><span>reconcile<wbr/>Members</span><a href="#reconcilemembers" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
 <li class="">
 <div class="tsd-signature tsd-anchor-link" id="reconcilemembers-1"><span class="tsd-kind-call-signature">reconcileMembers</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><a href="#reconcilemembers-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
 <div class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>联表实数（<strong>对拍/doctor 原语</strong>·非热路径）：经 <code>organization.tenantId → member</code> 两跳联表
-求成员总数，用作物化列 <code>countMembers</code> 的<strong>恒等校验</strong>（漂移即报警）。</p>
+<div class="tsd-comment tsd-typography"><p>联表实数（<strong>BA 轴过渡观测原语</strong>·非热路径·非席位真相）：经 <code>organization.tenantId → member</code> 两跳
+联表求 BA 成员总数，供 member-count-doctor 对拍遗留脏写（其存废随 X8 契约段裁定）。</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -86,7 +87,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>联表实数成员数量</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/c75cfa833ac1d332d4c18edca7946903af1893e0/libs/core/src/modules/subscriptions/quota/quota.store.ts#L58">libs/core/src/modules/subscriptions/quota/quota.store.ts:58</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e4b8638349fe3f50f201558d3f48585297c47310/libs/core/src/modules/subscriptions/quota/quota.store.ts#L59">libs/core/src/modules/subscriptions/quota/quota.store.ts:59</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
