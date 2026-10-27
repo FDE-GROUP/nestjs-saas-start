@@ -6,19 +6,23 @@ import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-iso
 import { describe, expect, it } from 'vitest';
 
 /**
- * S11 补遗 · 「会话+租户」复合全局的**务实收口**形态（高危#4·经人裁采回归防线而非全局 `TenantIsolationGuard`）。
+ * 租户守卫接线回归防线（S11 补遗 · 高危#4）。
  *
- * 会话墙已全局化（S11 deny-by-default `SessionGuard`）；但**租户层不接全局 `TenantIsolationGuard`**——
- * 因租户隔离的实际强制点已在**仓储 `requireActiveTenantId()` 卡点** fail-closed（隔离主轴·切片 C 换轴
- * 由组织轴升租户轴·仓储层唯一隔离卡点），而全局化会锁死所有「已认证但无 active 租户」的合法流（建租申请 / 平台治理 / 个人 PIPL / 未选组织），
- * 需另开一整套 `@TenantIsolationExempt` 豁免轴（维护负担 + 漏标即死锁）。故本片的真实收益（路由层更早统一 403）
- * 以**回归防线**取得：锁死「凡后端触及租户自服务仓储（`requireActiveTenantId`）的 @Controller，每条路由都挂
- * `TenantIsolationGuard`」，一旦有人新散点漏挂或移除守卫，此矩阵即红。
+ * **事实订正**：`TenantIsolationGuard` 已注册为全局 `APP_GUARD`（`TenantIsolationModule`·deny-by-default
+ * 租户墙·见 tenant-isolation.module.ts 的 `{ provide: APP_GUARD, useExisting: TenantIsolationGuard }`），
+ * 运行于全局 `SessionGuard` 之后（401 先于 403）。所有路由默认要求已绑 active 租户，唯 `@Public()` /
+ * `@TenantIsolationExempt()` 两轴旁路。**此前本文件头注「租户层不接全局 TenantIsolationGuard」为失真陈述
+ * （P0 评审 X·守卫矩阵矛盾·曾误导审计），现予订正。**
+ *
+ * 本矩阵保留的价值是**纵深防御的接线对拍**：凡后端触及租户自服务仓储（`requireActiveTenantId()` 卡点·
+ * 隔离主轴）的 @Controller，其每条路由仍应**显式**挂 `TenantIsolationGuard`（与全局并存·幂等），一旦有人
+ * 新散点漏挂或错误移除显式挂载/放宽豁免，此矩阵即红。行级隔离本身由全局 MikroORM filter（切片 1）兜底。
  *
  * **SSOT 真相源**：租户自服务仓储 = `{ post, workspace, subscription }`（`grep requireActiveTenantId()` 坐实·
  * 隔离主轴）；`requireActiveOrganizationId()` 系写归属/派生的**次轴**（散布 odoo/storage/governance 等非隔离点），
  * 不属本防线。平台/跨租仓储按**参数** `tenantId` 而非 ALS 卡点，其治理由 `PlatformOperatorGuard` 承担。
  * **维护铁律**：新增走 `requireActiveTenantId()` 仓储的 @Controller 必须并入下方清单，否则其无守卫路由不被覆盖。
+ * 跨租 exempt 名册读面（如租户目录）须 `fork({ scoped: false })` 绕全局 filter（P0 X1）——该接线恒等由目录仓储测锁定。
  */
 
 const GUARDS_METADATA = '__guards__';
@@ -54,7 +58,7 @@ const TENANT_SCOPED_CONTROLLERS: [string, new (...args: never[]) => unknown][] =
   ['SubscriptionsController', SubscriptionsController],
 ];
 
-describe('租户作用域守卫接线回归防线（务实收口·不接全局 TenantIsolationGuard·防散点漏挂）', () => {
+describe('租户作用域守卫接线回归防线（全局 deny-by-default + 逐路由显式纵深·防散点漏挂）', () => {
   it('租户自服务仓储卡点确为 { post, workspace, subscription }·清单同步', () => {
     expect(TENANT_SCOPED_CONTROLLERS.map(([n]) => n).sort()).toEqual([
       'PostsController',

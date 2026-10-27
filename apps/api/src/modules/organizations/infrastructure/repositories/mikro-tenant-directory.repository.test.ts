@@ -27,7 +27,7 @@ function makeRepo(handlers: {
   const em = { find } as unknown as EntityManager;
   const fork = vi.fn().mockResolvedValue(em);
   const mikro = { fork } as unknown as MikroOrmService;
-  return { repo: new MikroTenantDirectoryRepository(mikro), find };
+  return { repo: new MikroTenantDirectoryRepository(mikro), find, fork };
 }
 
 describe('MikroTenantDirectoryRepository · listForUser 归组语义', () => {
@@ -86,5 +86,13 @@ describe('MikroTenantDirectoryRepository · listForUser 归组语义', () => {
       status: 'pending_approval',
     });
     expect(result[0]?.organizations[0]).toMatchObject({ organizationId: 'oNew' });
+  });
+
+  it('P0 X1 接线恒等：跨租名册必以 fork({ scoped: false }) 绕 tenantId 全局 filter', async () => {
+    // 锁死修复回归防线：若有人改回默认 scoped fork()，带会话打 /tenants 时 Organization 会被 ALS 活动租
+    // 过滤 → 多租用户丢他租 org → setActiveTenant 成员闸恒 403 锁死。本断言钉住名册永远走 scoped:false。
+    const { repo, fork } = makeRepo({ members: [] });
+    await repo.listForUser('u1');
+    expect(fork).toHaveBeenCalledWith({ scoped: false });
   });
 });
