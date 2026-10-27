@@ -493,7 +493,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List members of the active organization (all roles · CASL read) */
+        /** List members of the active tenant (all roles · CASL read) */
         get: operations["OrganizationsOrgAdminController_listMembers_v1"];
         put?: never;
         post?: never;
@@ -544,10 +544,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List pending invitations of the active organization (all roles) */
+        /** List pending invitations of the active tenant (all roles) */
         get: operations["OrganizationsOrgAdminController_listInvitations_v1"];
         put?: never;
-        /** Invite a member to the active organization (owner/admin · CASL create) */
+        /** Invite a member to the active tenant (owner/admin · CASL create) */
         post: operations["OrganizationsOrgAdminController_createInvitation_v1"];
         delete?: never;
         options?: never;
@@ -980,8 +980,6 @@ export interface components {
             conditions: {
                 [key: string]: unknown;
             } | null;
-            /** @description 组织收窄 scope；null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效。 */
-            organizationId: string | null;
         };
         PlatformTenantRowResponse: {
             /** @description tenant 主键。 */
@@ -1788,7 +1786,6 @@ export interface operations {
                     conditions?: {
                         [key: string]: unknown;
                     };
-                    organizationId?: string | null;
                 };
             };
         };
@@ -1847,7 +1844,6 @@ export interface operations {
                     conditions?: {
                         [key: string]: unknown;
                     };
-                    organizationId?: string | null;
                 };
             };
         };
@@ -2819,7 +2815,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Member list (membership data from Better Auth)（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Member list (tenant-level membership SSOT)（透传面·形参真相源 = tenant_membership + tenant_role_assignment（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2832,7 +2828,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active organization / CASL deny / not a member. */
+            /** @description No active tenant / CASL deny / not a member. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2859,7 +2855,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Updated member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Updated member（透传面·形参真相源 = tenant_role_assignment（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2872,7 +2868,16 @@ export interface operations {
                     };
                 };
             };
-            /** @description CASL deny (member role) / last-owner guard (BA). */
+            /** @description Role not assignable. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description CASL deny (member role) / last-owner guard. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2898,7 +2903,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Removed member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Removed member（透传面·形参真相源 = tenant_membership（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2911,7 +2916,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description CASL deny (member role) / self-removal guard (BA). */
+            /** @description CASL deny (member role) / self-removal / last-owner guard. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2931,7 +2936,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Invitation list (data from Better Auth)（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 = tenant_invitation（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2944,7 +2949,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description No active organization / CASL deny / not a member. */
+            /** @description No active tenant / CASL deny / not a member. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2971,7 +2976,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Created invitation（透传面·形参真相源 = tenant_invitation（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2982,6 +2987,15 @@ export interface operations {
                             [key: string]: unknown;
                         };
                     };
+                };
+            };
+            /** @description Role not assignable / duplicate pending invitation. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description CASL deny (member role). */
@@ -3010,7 +3024,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Cancelled invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Cancelled invitation（透传面·形参真相源 = tenant_invitation（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3023,8 +3037,17 @@ export interface operations {
                     };
                 };
             };
-            /** @description CASL deny (member role) / not cancellable (BA). */
+            /** @description CASL deny (member role). */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Pending invitation not found. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3178,7 +3201,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Invitation accepted; membership created（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Invitation accepted; tenant-level membership created（透传面·形参真相源 = tenant_invitation + tenant_membership（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3191,8 +3214,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Invitation not found/expired/not the invitee/seat cap (BA guards + hooks). */
-            400: {
+            /** @description Missing or invalid session. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3200,8 +3223,26 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Missing or invalid session. */
-            401: {
+            /** @description Seat quota exceeded (checked at accept time). */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Session email does not match the invitee (fail-closed). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Pending invitation not found or expired. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3226,7 +3267,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Invitation rejected（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Invitation rejected（透传面·形参真相源 = tenant_invitation（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3239,8 +3280,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Invitation not found/expired/not the invitee (BA). */
-            400: {
+            /** @description Missing or invalid session. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3248,8 +3289,8 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Missing or invalid session. */
-            401: {
+            /** @description Invitation not found/expired/not the invitee. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3268,7 +3309,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Invitation list (data from Better Auth)（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 = tenant_invitation（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;

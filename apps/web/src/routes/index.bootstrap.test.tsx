@@ -17,12 +17,13 @@ import { routeTree } from '../routeTree.gen';
 const mocks = vi.hoisted(() => ({
   GET: vi.fn(),
   POST: vi.fn(),
+  PUT: vi.fn(),
   requireSession: vi.fn(),
 }));
 
 vi.mock('../lib/session', () => ({ requireSession: mocks.requireSession }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: mocks.POST, PATCH: vi.fn(), DELETE: vi.fn() },
+  api: { GET: mocks.GET, POST: mocks.POST, PUT: mocks.PUT, PATCH: vi.fn(), DELETE: vi.fn() },
 }));
 
 const activeSub = {
@@ -67,8 +68,10 @@ function renderAt(path: string) {
 beforeEach(() => {
   mocks.GET.mockReset();
   mocks.POST.mockReset();
+  mocks.PUT.mockReset();
   mocks.requireSession.mockReset();
   mocks.POST.mockResolvedValue({ data: {}, error: null });
+  mocks.PUT.mockResolvedValue({ data: {}, error: null });
 });
 
 afterEach(cleanup);
@@ -189,6 +192,44 @@ describe('dashboard loader 引导落租', () => {
     await vi.waitFor(() =>
       expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/active', {
         body: { organizationId: 'org-b' },
+      }),
+    );
+  });
+
+  it('顶层租户「切换到此租户」→ PUT /tenants/active（写会话 activeTenantId·X7 租级激活）', async () => {
+    mocks.requireSession.mockResolvedValue(session('org-a'));
+    mocks.GET.mockImplementation((path: string) => {
+      if (path === '/api/v1/organizations')
+        return Promise.resolve({
+          data: { data: [{ id: 'org-a', name: 'Acme' }] },
+          error: null,
+        });
+      if (path === '/api/v1/tenants')
+        return Promise.resolve({
+          data: {
+            data: {
+              tenants: [
+                {
+                  tenantId: 't1',
+                  name: 'Acme Holdings',
+                  status: 'active',
+                  organizations: [{ organizationId: 'org-a', name: 'Acme' }],
+                },
+              ],
+            },
+          },
+          error: null,
+        });
+      if (path === '/api/v1/subscriptions/current')
+        return Promise.resolve({ data: { data: activeSub }, error: null });
+      return Promise.resolve({ data: null, error: null });
+    });
+    renderAt('/');
+    await vi.waitFor(() => expect(screen.getByText('租户：Acme Holdings')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: '切换到此租户' }));
+    await vi.waitFor(() =>
+      expect(mocks.PUT).toHaveBeenCalledWith('/api/v1/tenants/active', {
+        body: { tenantId: 't1' },
       }),
     );
   });

@@ -444,11 +444,6 @@ paths:
                 conditions:
                   type: object
                   additionalProperties: {}
-                organizationId:
-                  type:
-                    - string
-                    - 'null'
-                  minLength: 1
               required:
                 - roleKey
                 - subject
@@ -512,11 +507,6 @@ paths:
                 conditions:
                   type: object
                   additionalProperties: {}
-                organizationId:
-                  type:
-                    - string
-                    - 'null'
-                  minLength: 1
               required:
                 - roleKey
                 - subject
@@ -1472,8 +1462,8 @@ paths:
       responses:
         '200':
           description: >-
-            Member list (membership data from Better Auth)（透传面·形参真相源 = Better
-            Auth auth.api.*（服务端直调透传））
+            Member list (tenant-level membership SSOT)（透传面·形参真相源 =
+            tenant_membership + tenant_role_assignment（自有租级表））
           content:
             application/json:
               schema:
@@ -1485,12 +1475,12 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: No active organization / CASL deny / not a member.
+          description: No active tenant / CASL deny / not a member.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List members of the active organization (all roles · CASL read)
+      summary: List members of the active tenant (all roles · CASL read)
       tags: &ref_11
         - organizations
   /api/v1/organizations/members/role:
@@ -1518,7 +1508,7 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Updated member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: Updated member（透传面·形参真相源 = tenant_role_assignment（自有租级表））
           content:
             application/json:
               schema:
@@ -1529,8 +1519,14 @@ paths:
                       data:
                         type: object
                         additionalProperties: true
+        '400':
+          description: Role not assignable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
         '403':
-          description: CASL deny (member role) / last-owner guard (BA).
+          description: CASL deny (member role) / last-owner guard.
           content:
             application/json:
               schema:
@@ -1557,7 +1553,7 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Removed member（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: Removed member（透传面·形参真相源 = tenant_membership（自有租级表））
           content:
             application/json:
               schema:
@@ -1569,7 +1565,7 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: CASL deny (member role) / self-removal guard (BA).
+          description: CASL deny (member role) / self-removal / last-owner guard.
           content:
             application/json:
               schema:
@@ -1583,8 +1579,8 @@ paths:
       responses:
         '200':
           description: >-
-            Invitation list (data from Better Auth)（透传面·形参真相源 = Better Auth
-            auth.api.*（服务端直调透传））
+            Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 =
+            tenant_invitation（自有租级表））
           content:
             application/json:
               schema:
@@ -1596,12 +1592,12 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: No active organization / CASL deny / not a member.
+          description: No active tenant / CASL deny / not a member.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List pending invitations of the active organization (all roles)
+      summary: List pending invitations of the active tenant (all roles)
       tags: *ref_11
     post:
       operationId: OrganizationsOrgAdminController_createInvitation_v1
@@ -1627,7 +1623,7 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Created invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: Created invitation（透传面·形参真相源 = tenant_invitation（自有租级表））
           content:
             application/json:
               schema:
@@ -1638,13 +1634,19 @@ paths:
                       data:
                         type: object
                         additionalProperties: true
+        '400':
+          description: Role not assignable / duplicate pending invitation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
         '403':
           description: CASL deny (member role).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Invite a member to the active organization (owner/admin · CASL create)
+      summary: Invite a member to the active tenant (owner/admin · CASL create)
       tags: *ref_11
   /api/v1/organizations/invitations/cancel:
     post:
@@ -1666,7 +1668,7 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Cancelled invitation（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: Cancelled invitation（透传面·形参真相源 = tenant_invitation（自有租级表））
           content:
             application/json:
               schema:
@@ -1678,7 +1680,13 @@ paths:
                         type: object
                         additionalProperties: true
         '403':
-          description: CASL deny (member role) / not cancellable (BA).
+          description: CASL deny (member role).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Pending invitation not found.
           content:
             application/json:
               schema:
@@ -1826,8 +1834,8 @@ paths:
       responses:
         '200':
           description: >-
-            Invitation accepted; membership created（透传面·形参真相源 = Better Auth
-            auth.api.*（服务端直调透传））
+            Invitation accepted; tenant-level membership created（透传面·形参真相源 =
+            tenant_invitation + tenant_membership（自有租级表））
           content:
             application/json:
               schema:
@@ -1838,16 +1846,26 @@ paths:
                       data:
                         type: object
                         additionalProperties: true
-        '400':
-          description: >-
-            Invitation not found/expired/not the invitee/seat cap (BA guards +
-            hooks).
+        '401':
+          description: Missing or invalid session.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-        '401':
-          description: Missing or invalid session.
+        '402':
+          description: Seat quota exceeded (checked at accept time).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Session email does not match the invitee (fail-closed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Pending invitation not found or expired.
           content:
             application/json:
               schema:
@@ -1874,7 +1892,7 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Invitation rejected（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: Invitation rejected（透传面·形参真相源 = tenant_invitation（自有租级表））
           content:
             application/json:
               schema:
@@ -1885,14 +1903,14 @@ paths:
                       data:
                         type: object
                         additionalProperties: true
-        '400':
-          description: Invitation not found/expired/not the invitee (BA).
+        '401':
+          description: Missing or invalid session.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-        '401':
-          description: Missing or invalid session.
+        '404':
+          description: Invitation not found/expired/not the invitee.
           content:
             application/json:
               schema:
@@ -1906,8 +1924,8 @@ paths:
       responses:
         '200':
           description: >-
-            Invitation list (data from Better Auth)（透传面·形参真相源 = Better Auth
-            auth.api.*（服务端直调透传））
+            Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 =
+            tenant_invitation（自有租级表））
           content:
             application/json:
               schema:
@@ -2554,16 +2572,10 @@ components:
             - 'null'
           additionalProperties: true
           description: CASL 条件（白名单字段）；null = 无约束。
-        organizationId:
-          type:
-            - string
-            - 'null'
-          description: 组织收窄 scope；null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效。
       required:
         - subject
         - action
         - conditions
-        - organizationId
     PlatformTenantRowResponse:
       type: object
       properties:

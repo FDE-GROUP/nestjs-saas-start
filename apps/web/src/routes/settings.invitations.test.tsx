@@ -62,7 +62,7 @@ describe('邀请管理（路由级 · loader 分支 + 表单）', () => {
 
   it('loader ok 有行 → 邮箱 + 撤回动作', async () => {
     mocks.GET.mockResolvedValue({
-      data: { data: [{ id: 'i1', email: 'pending@x.com', role: 'member', status: 'pending' }] },
+      data: { data: [{ id: 'i1', email: 'pending@x.com', roleKey: 'member', status: 'pending' }] },
       error: null,
     });
     renderAt('/settings/invitations');

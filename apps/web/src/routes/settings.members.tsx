@@ -10,11 +10,12 @@ import { useAction } from '../lib/mutation';
 import { probeOrganizationContext } from '../lib/organization-context-guide';
 import { requireSession } from '../lib/session';
 
-/** Better Auth `auth.api.listMembers` 透传成员项（非 Nest 契约类型·形参真相源见下）。 */
+/** 租级成员视图（对齐后端 `TenantMemberView`：userId/email/name/roleKey·无独立 id）。 */
 interface MemberRow {
-  id?: string;
   userId?: string;
-  role?: string;
+  email?: string;
+  name?: string;
+  roleKey?: string;
 }
 
 export const Route = createFileRoute('/settings/members')({
@@ -71,7 +72,7 @@ function MembersPage() {
         <section className="flex flex-col gap-3">
           <SectionHeading>成员操作</SectionHeading>
           {members.map((m) => (
-            <MemberActions key={m.id ?? m.userId} member={m} />
+            <MemberActions key={m.userId} member={m} />
           ))}
         </section>
       )}
@@ -89,7 +90,7 @@ function MembersPage() {
 
 /** 单成员改角色/移除操作。 */
 function MemberActions({ member }: { member: MemberRow }) {
-  const [role, setRole] = useState(member.role ?? 'member');
+  const [role, setRole] = useState(member.roleKey ?? 'member');
   const roleAction = useAction();
   const removeAction = useAction();
 
@@ -102,7 +103,7 @@ function MemberActions({ member }: { member: MemberRow }) {
       successMessage: `${member.userId} 角色已更新`,
       thunk: () =>
         api.POST('/api/v1/organizations/members/role', {
-          body: { memberId: member.id ?? '', role },
+          body: { memberId: member.userId ?? '', role },
         }),
     });
   }
@@ -115,7 +116,7 @@ function MemberActions({ member }: { member: MemberRow }) {
       successMessage: `${member.userId} 已移除`,
       thunk: () =>
         api.POST('/api/v1/organizations/members/remove', {
-          body: { memberId: member.id ?? '' },
+          body: { memberId: member.userId ?? '' },
         }),
     });
   }
@@ -123,7 +124,7 @@ function MemberActions({ member }: { member: MemberRow }) {
   return (
     <div className="flex items-center gap-3 rounded border border-slate-200 p-3 text-sm dark:border-slate-700">
       <span className="w-32 truncate text-slate-600 dark:text-slate-300">
-        {member.userId ?? member.id}
+        {member.email ?? member.userId ?? '—'}
       </span>
       <FormWrap onSubmit={handleChangeRole} className="flex items-center gap-2">
         <Select label="角色" name="role" options={ROLES} value={role} onChange={setRole} />
@@ -141,6 +142,8 @@ function MemberActions({ member }: { member: MemberRow }) {
 }
 
 function extractMembers(raw: unknown): MemberRow[] {
+  // 租级 SSOT 端点返回扁平数组（经信封 data:[]）；保留 {members} 兼容形以防过渡期旧透传面。
+  if (Array.isArray(raw)) return raw as MemberRow[];
   if (raw && typeof raw === 'object' && 'members' in raw) {
     const list = (raw as { members?: unknown }).members;
     if (Array.isArray(list)) return list as MemberRow[];
@@ -150,8 +153,8 @@ function extractMembers(raw: unknown): MemberRow[] {
 
 /**
  * 纯展示（成员只读表）。
- * 注意：GET /organizations/members 系 Better Auth 服务端直调**透传面**（F1 诚实降档·非 Nest 契约类型），
- * 故此处据运行时 `{ members: [...] }` 形防御性取值，不假称 typed 字段。
+ * 数据来源 = 租级成员 SSOT（`GET /organizations/members` → tenant_membership ⋈ tenant_role_assignment ⋈ user），
+ * 响应项携 userId/email/name/roleKey（切片 D 起·非旧 Better Auth 透传形）。
  */
 export function MembersView({ raw }: { raw?: unknown }) {
   const members = extractMembers(raw);
@@ -159,26 +162,25 @@ export function MembersView({ raw }: { raw?: unknown }) {
     <section className="flex flex-col gap-4">
       <SectionHeading>成员</SectionHeading>
       <p className="text-xs text-slate-400 dark:text-slate-500">
-        数据来源：Better Auth membership 透传面（非 Nest 契约类型）。
+        数据来源：租级成员 SSOT（tenant_membership ⋈ tenant_role_assignment ⋈ user）。
       </p>
       {members.length === 0 ? (
-        <EmptyPanel label="当前组织暂无成员数据。" />
+        <EmptyPanel label="当前租户暂无成员。" />
       ) : (
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              <th className="py-2 pr-4 font-medium">用户 ID</th>
+              <th className="py-2 pr-4 font-medium">成员</th>
               <th className="py-2 font-medium">角色</th>
             </tr>
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr
-                key={m.id ?? m.userId}
-                className="border-b border-slate-100 dark:border-slate-800"
-              >
-                <td className="py-2 pr-4 text-slate-800 dark:text-slate-100">{m.userId ?? '—'}</td>
-                <td className="py-2 text-slate-600 dark:text-slate-300">{m.role ?? '—'}</td>
+              <tr key={m.userId} className="border-b border-slate-100 dark:border-slate-800">
+                <td className="py-2 pr-4 text-slate-800 dark:text-slate-100">
+                  {m.name ?? m.email ?? m.userId ?? '—'}
+                </td>
+                <td className="py-2 text-slate-600 dark:text-slate-300">{m.roleKey ?? '—'}</td>
               </tr>
             ))}
           </tbody>

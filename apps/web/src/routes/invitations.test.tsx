@@ -64,7 +64,7 @@ describe('我的邀请（路由级 · loader 三分支）', () => {
 
   it('loader ok 有行 → 渲染组织名/角色 + 接受/拒绝动作', async () => {
     mocks.GET.mockResolvedValue({
-      data: { data: [{ id: 'i1', email: 'x@y.z', role: 'admin', organizationName: 'Acme' }] },
+      data: { data: [{ id: 'i1', email: 'x@y.z', roleKey: 'admin', organizationName: 'Acme' }] },
       error: null,
     });
     renderAt('/invitations');

@@ -188,9 +188,10 @@ export function SubscriptionView({ subscription }: { subscription?: Subscription
   );
 }
 
-/** 双层切换器（顶层租户上下文 · 二级组织选择·rehierarchy 切片 E-F）。 */
+/** 双层切换器（顶层租级激活 · 二级组织选择·X7 租级化：顶层点击写会话 activeTenantId）。 */
 function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
   const switchAction = useAction();
+  const tenantAction = useAction();
 
   async function handleSwitch(orgId: string, orgName: string) {
     await switchAction.run({
@@ -202,6 +203,17 @@ function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
         api.POST('/api/v1/organizations/active', {
           body: { organizationId: orgId },
         }),
+    });
+  }
+
+  // 顶层租级激活（X7·PUT /tenants/active）：写会话 activeTenantId，后续租级端点（计费/席位/成员）据此作用域。非本租成员后端 403（fail-closed）。
+  async function handleSwitchTenant(tenantId: string, tenantName: string) {
+    await tenantAction.run({
+      path: '/api/v1/tenants/active',
+      method: 'PUT',
+      scope: 'tenant.switch',
+      successMessage: `已切换到租户「${tenantName}」`,
+      thunk: () => api.PUT('/api/v1/tenants/active', { body: { tenantId } }),
     });
   }
 
@@ -220,9 +232,20 @@ function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
               <span className="font-semibold text-slate-800 dark:text-slate-100">
                 租户：{tenant.name ?? tenant.tenantId}
               </span>
-              <span className="text-slate-500 dark:text-slate-400">
-                {TENANT_STATUS_LABEL[tenant.status ?? ''] ?? tenant.status}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-slate-500 dark:text-slate-400">
+                  {TENANT_STATUS_LABEL[tenant.status ?? ''] ?? tenant.status}
+                </span>
+                <SubmitButton
+                  pending={tenantAction.pending}
+                  onClick={() =>
+                    tenant.tenantId &&
+                    handleSwitchTenant(tenant.tenantId, tenant.name ?? tenant.tenantId)
+                  }
+                >
+                  切换到此租户
+                </SubmitButton>
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               {(tenant.organizations ?? []).map((org) => (
@@ -248,7 +271,10 @@ function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
           </div>
         ))}
       </div>
-      <Feedback error={switchAction.error} success={switchAction.success} />
+      <Feedback
+        error={switchAction.error ?? tenantAction.error}
+        success={switchAction.success ?? tenantAction.success}
+      />
     </section>
   );
 }

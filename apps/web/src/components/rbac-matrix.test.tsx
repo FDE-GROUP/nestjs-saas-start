@@ -9,7 +9,6 @@ const whole = (subject: string, action: string): TenantRoleGrantView => ({
   subject: subject as TenantRoleGrantView['subject'],
   action: action as TenantRoleGrantView['action'],
   conditions: null,
-  organizationId: null,
 });
 
 describe('RbacMatrix（6x5 grid · checked 判定 · toggle 回调）', () => {
@@ -32,7 +31,6 @@ describe('RbacMatrix（6x5 grid · checked 判定 · toggle 回调）', () => {
             subject: 'Workspace',
             action: 'update',
             conditions: { ownerId: 'u1' },
-            organizationId: null,
           },
         ]}
         pendingCell={null}

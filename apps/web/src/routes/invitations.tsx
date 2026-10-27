@@ -13,7 +13,7 @@ import { requireSession } from '../lib/session';
 interface MyInvitationRow {
   id?: string;
   email?: string;
-  role?: string;
+  roleKey?: string;
   organizationName?: string;
 }
 
@@ -98,7 +98,7 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
       <span className="flex-1 text-slate-800 dark:text-slate-100">
         {invitation.organizationName ?? invitation.email}
         <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">
-          ({invitation.role ?? '—'})
+          ({invitation.roleKey ?? '—'})
         </span>
       </span>
       <SubmitButton pending={accept.pending} onClick={handleAccept}>
