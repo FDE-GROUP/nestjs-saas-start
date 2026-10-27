@@ -1,4 +1,3 @@
-import type { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import { Logger } from '@nestjs/common';
 import {
   BetterAuthError,
@@ -21,7 +20,6 @@ import { parseTrustedProxies } from '../../../common/trusted-proxies';
 import type { ConfigService } from '../../../config/config.service';
 import type { MikroOrmService } from '../../../database/mikro/mikro-orm.service';
 import type { MailerService } from '../../../mailer/mailer.service';
-import { createSeatsQuotaPlugin } from './seats-quota.hook';
 
 export type AuthRequest = FastifyRequest & { originalUrl?: string; url?: string };
 export type AuthResponse = FastifyReply;
@@ -105,7 +103,6 @@ export async function CreateAuth(
   genericConfigs: GenericOAuthConfig[],
   mikroOrmService: MikroOrmService,
   configService: ConfigService,
-  quota: Pick<QuotaService, 'checkSeats'>,
   mailer: MailerService,
 ): Promise<CreateAuthResult> {
   const appConfig = configService.getAppConfig();
@@ -234,10 +231,9 @@ export async function CreateAuth(
       organization({
         allowUserToCreateOrganization: false,
       }),
-      // S7 收尾（vision §7 阶段 2 商业闭环）：成员增量端点（accept-invitation 为现网唯一真实
-      // HTTP 通道）经插件级 before-hook 走 seats 配额前置校验，超限 402（详 seats-quota.hook.ts）。
-      // ORM 修宪案 B 切片 3d（S-d3）：invitation 读改走 Mikro（懒 fork·DB-free 不变量保持）。
-      createSeatsQuotaPlugin({ quota, mikro: mikroOrmService }),
+      // R6（global-role-membership-tenantization X7 收口）：原 S7 seats 配额 before-hook
+      // （seats-quota.hook.ts）已退役——席位卡点上移至租级门面 `acceptInvitation`
+      // （tenant-member-facade.service·超限 402），BA 旧 org 通道不再设席（遗留观测轴）。
       // module-auth-magic-link + module-auth-magic-link-production（人令「你自行裁定」·§2 auth
       // 高危问责归签核人）：免密邮件登录**无条件挂载**（含生产）。形态采**乙·仅存量用户登录**
       // （`disableSignUp:true`·better-auth@1.7.7 源码坐实默认 false→陌生邮箱 verify 时自动
@@ -328,7 +324,7 @@ export async function CreateAuth(
 
       // module-rbac-casl 甲裁（严格拆）：BA org 内置 HTTP 端点面封堵（谓词见 isSealedOrgHttpPath）。
       // 授权/成员/邀请管理收归我方门面（@Can·CASL 裁决）；服务端 auth.api.*
-      // 直调（门面/e2e 编排/seats hook）不经 HTTP，不受封堵影响。
+      // 直调（门面/e2e 编排）不经 HTTP，不受封堵影响。
       if (isSealedOrgHttpPath(url)) {
         return res.code(404).send({ message: 'Not Found' });
       }

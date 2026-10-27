@@ -4,7 +4,6 @@ import { ConfigService } from '@app/config/config.service';
 // 切片 3b：S9 铁律——构造注入的类必**值导入** + 显式 @Inject（`MikroOrmService` 经 @Global `MikroOrmModule` 可达）。
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { MailerService } from '@app/mailer/mailer.service';
-import { QuotaService } from '@core/saas-kit/modules/subscriptions/quota/quota.service';
 import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import type { BetterAuthOptions } from 'better-auth';
@@ -39,7 +38,6 @@ export class AuthBootstrapService implements OnApplicationBootstrap {
   constructor(
     @Inject(ConfigService) private readonly configService: ConfigService,
     @Inject(MikroOrmService) private readonly mikroOrmService: MikroOrmService,
-    @Inject(QuotaService) private readonly quotaService: QuotaService,
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
     @Inject(HttpAdapterHost) private readonly httpAdapterHost: HttpAdapterHost,
     @Inject(MailerService) private readonly mailerService: MailerService,
@@ -51,7 +49,6 @@ export class AuthBootstrapService implements OnApplicationBootstrap {
       this.buildGenericConfigs(),
       this.mikroOrmService,
       this.configService,
-      this.quotaService,
       this.mailerService,
     );
     this.authInstance.set(auth);

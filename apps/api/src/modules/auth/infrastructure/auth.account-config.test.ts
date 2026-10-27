@@ -25,7 +25,6 @@ const createAuthWithOptions = () =>
     [],
     { createAuthAdapter: async () => () => ({ id: 'test-adapter' }) } as never,
     minimalConfigService(),
-    { checkSeats: async () => {} } as never,
     { sendMagicLinkEmail: async () => {} } as never,
   );
 

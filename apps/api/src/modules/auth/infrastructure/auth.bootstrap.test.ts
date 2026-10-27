@@ -37,7 +37,6 @@ const makeService = (overrides?: Record<string, unknown>) => {
     // 本测只验 bootstrap 装配（不真查库），`createAuthAdapter` 返回**适配器工厂函数**（`database`
     // 为 function → BA 走自定义 adapter 分支，不触 Kysely 初始化），避免无真库时的异步拒绝。
     { createAuthAdapter: async () => () => ({ id: 'test-adapter' }) } as never,
-    { checkSeats: async () => {} } as never,
     authInstance as never,
     httpAdapterHost as never,
     // AuthBootstrapService 第 6 依赖 mailerService（auth 接入邮件/magic-link 时新增）：

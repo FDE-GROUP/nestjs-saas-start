@@ -48,7 +48,7 @@ export interface SeatQuotaSnapshot {
  * 一租多组织后席位/配额按租户总量聚合才是正当语义（生效订阅读 `tenant_subscription`·member 按 tenantId 计数）。
  *
  * 架构精度修宪 S2：**裁决不再抛 HTTP**（原 `assertSeats` 402 已删）——本服务属 kit 的
- * 领域/应用面，402 翻译归适配器角色消费点（`QuotaGuard` / auth `seats-quota.hook`），
+ * 领域/应用面，402 翻译归适配器角色消费点（`QuotaGuard` / 租级门面 `acceptInvitation`），
  * 由其消费 `checkSeats` 判别结果后自行抛（P1 result-union 范式）。限额经 `Quota` VO
  * 摄入（存储/档位两源统一 fail-loud 防护，P2）。与 `UserStatusService`/`TenantStatusService`
  * 同层，禁散点。

@@ -25,7 +25,6 @@ import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/organizati
 import { QUOTA_STORE } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { APIError } from 'better-auth/api';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   healMemberCountDrift,
@@ -41,9 +40,11 @@ import { AppModule } from '../../app.module';
  *    租级邀请端点（`POST /organizations/invitations` → `POST /organizations/invitations/accept`）
  *    逐个 accept 塞满免费档（`FREE_PLAN.seatsLimit`）后，第 N+1 人 accept → **402**（门面守卫）·
  *    live 计数零增长·超限邀请保持 pending（拒绝≠消费）。creator-join 沿生产 R1 写链同形补建。
- * 2. **旧 BA 通道 hook 仍守卫（过渡双保险·直至 R6 退役）**：seats hook matcher 实证命中真实派发
- *    path `/organization/accept-invitation`；计数现读 SSOT——租级席位灌满后 BA accept 仍被拒 **402**
- *    且 BA member 行零增长（旧通道不旁路新真相）。
+ * 2. **旧 BA 通道 hook 已退役（R6·席位守卫单点归新轴门面）**：BA `seats-quota.hook` 删线后，
+ *    直接打 `/organization/accept-invitation` **不再**于 accept 时点设席——本段钉锁退役边界：租级
+ *    席位灌满后 BA accept **放行**（落 BA member 行·触发器补计观测轴），但 live SSOT
+ *    （`tenant_membership`）零增长（BA 通道不写租级真相）。残留旁路=已知可接受（BA 旧 org
+ *    通道属遗留面·新轴门面 `acceptInvitation` 为唯一卡点）。
  * 3. **X8 物化列/触发器/doctor（BA 轴过渡观测）**：`tenant.memberCount` 由库级触发器对 **BA member
  *    写入链**维护（含 `organization.tenantId` relink 补计与 UPDATE 支）——本文件恒等对拍改**直读物化列
  *    ≡ BA 两跳联表实数**（不再经 `store.countMembers`·后者已换租级 SSOT）；其最终存废随 **X8 契约段**
@@ -52,10 +53,10 @@ import { AppModule } from '../../app.module';
  * 旧 BA 通道走服务端编排网关（`authApi().createInvitation/acceptInvitation`·S9 补遗同款范式）：
  * Test harness 不复现 main.ts 前缀/版本化装配，BA HTTP 端点在测试里无匹配 Nest 路由→中间件不触发
  *（tenant-isolation.e2e.test.ts 同因）；而 dispatch.mjs 明笔 auth.api.* 与 router 走同一 hooks
- * pipeline——服务端调用同样过 seats hook，证效与生产 HTTP 通道等价。
+ * pipeline——R6 后该 pipeline 已不含 seats before-hook，故 BA accept 放行，本段据此钉锁退役边界。
  *
  * 换轴夹具注：BA `createOrganization` 不盖 `organization.tenantId`——沿生产写链补建 1:1 专属租户行
- * （tenant.id=org.id）并盖 tenantId + creator-join（R1 同形），否则 hook/门面解析不到目标租户→
+ * （tenant.id=org.id）并盖 tenantId + creator-join（R1 同形），否则门面解析不到目标租户→
  * 402 永不触发（实跑自捕）。
  *
  * **默认跳过**：需已建 schema 的真实 Postgres，仅 `E2E_DATABASE_URL` 存在时运行（开关），
@@ -82,7 +83,7 @@ interface Actor {
   readonly cookie: string;
 }
 
-gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 守卫 + X8 过渡观测 · env-gated）', () => {
+gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 退役边界 + X8 过渡观测 · env-gated）', () => {
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
 
@@ -309,13 +310,13 @@ gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 守卫 + X8 过
     expect(row?.status).toBe('pending');
   }, 120000);
 
-  it('旧 BA 通道 hook 仍守卫（过渡双保险·直至 R6 退役）：租级席位塞满后 BA accept-invitation 拒 402·BA member 零增长', async () => {
+  it('旧 BA 通道 hook 已退役（R6 退役边界钉锁）：租级席位塞满后 BA accept-invitation 放行·BA member +1 但 live SSOT 零增长', async () => {
     const owner = await signUpThenSignIn('h-owner');
     const tenantId = await createOrgFor(owner, 'hook');
     const store = app.get<MikroQuotaStore>(QUOTA_STORE);
     const limit = FREE_PLAN.seatsLimit.value;
 
-    // 直插租级成员灌满席位（模拟租级入组已达限；BA 轴 member 行仍仅 owner auto-join 1 条）。
+    // 直插租级成员灌满 live SSOT 至限（模拟租级入组已达限；BA 轴 member 行仍仅 owner auto-join 1 条）。
     const em = await mikro.fork({ scoped: false });
     for (let i = 1; i < limit; i++) {
       const u = await signUpThenSignIn(`h-m${i}`);
@@ -330,27 +331,15 @@ gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 守卫 + X8 过
     expect(await store.countMembers(tenantId)).toBe(limit);
     expect(await countMembersBA(tenantId)).toBe(1);
 
-    // BA invite→accept：hook matcher 命中真实派发 path `/organization/accept-invitation`，
-    // 计数现读 SSOT（live `tenant_membership`）→ 402。实测服务端通道行为：hook 抛的 APIError
-    // 在 auth.api.* 调用面直接冒泡（asResponse 不拦），生产 HTTP 面则由 BA handler 层转 402
-    // 响应——两态都接，断言 status/message 同口径。
+    // R6 退役 seats hook 后，BA invite→accept 不再于 accept 时点设席——放行落 BA member 行。
+    // 钉锁退役边界：BA 通道不写租级真相（live SSOT `tenant_membership` 零增长），席位守卫
+    // 单点归新轴门面（测 1 实证 402）。残留旁路为已知可接受（BA 旧 org 通道属遗留面）。
     const extra = await signUpThenSignIn('h-overflow');
     const invitationId = await inviteMember(owner, tenantId, extra.email);
-    let rejectedStatus: number;
-    let rejectedText: string;
-    try {
-      const rejected = await acceptInvitation(extra, invitationId);
-      rejectedStatus = rejected.status;
-      rejectedText = await rejected.text();
-    } catch (error) {
-      expect(error).toBeInstanceOf(APIError);
-      rejectedStatus = (error as APIError).status;
-      rejectedText = (error as APIError).message ?? String(error);
-    }
-    expect(rejectedStatus).toBe(402);
-    expect(rejectedText).toContain('Seat quota exceeded');
-    // 被 hook 拒的 accept 不落 BA 行、不推高 SSOT（fail-closed 无侧效）。
-    expect(await countMembersBA(tenantId)).toBe(1);
+    const accepted = await acceptInvitation(extra, invitationId);
+    const body = await accepted.text();
+    expect(accepted.status, `BA accept 应放行（hook 已退役·body=${body}）`).toBeLessThan(400);
+    expect(await countMembersBA(tenantId)).toBe(2);
     expect(await store.countMembers(tenantId)).toBe(limit);
   }, 120000);
 

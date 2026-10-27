@@ -44,7 +44,6 @@ const createAuthWithOptions = () =>
     [],
     { createAuthAdapter: async () => () => ({ id: 'test-adapter' }) } as never,
     minimalConfigService(),
-    { checkSeats: async () => {} } as never,
     // magic-link 无条件挂载（含生产）：sendMagicLink 闭包仅运行期触达、挂载不求解，此处桩仅为签名完备。
     { sendMagicLinkEmail: async () => {} } as never,
   );

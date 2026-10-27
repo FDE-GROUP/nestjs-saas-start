@@ -33,7 +33,7 @@ const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
  * 机制层提纯（未决项 4·module-tenancy-lifecycle-quota-relocation）：席位配额
  * （`QuotaService`/`QuotaGuard` + `QUOTA_STORE` Mikro 适配）由 TenantIsolationModule 归位本上下文
  * （配额是订阅域策略·FR-7）；沿 Authorization/Platform 先例升 `@Global` 保持原可见性语义
- * （auth `seats-quota.hook` 与路由 opt-in 消费面零行为变更）。
+ * （席位裁决现由租级门面 `acceptInvitation`（`checkSeats`·R6 后唯一卡点）与路由 `@Quota` opt-in 消费）。
  */
 @Global()
 @Module({
@@ -63,7 +63,7 @@ const EventHandlers = [OrganizationStatusSubscriptionLinkHandler];
     { provide: QUOTA_STORE, useClass: MikroQuotaStore },
   ],
   exports: [
-    // 随 @Global 导出：跨上下文消费面（auth seats-quota.hook·路由 @Quota opt-in）保形。
+    // 随 @Global 导出：跨上下文消费面（租级门面 `acceptInvitation`·路由 @Quota opt-in）保形。
     QuotaService,
     QuotaGuard,
     QUOTA_STORE,
