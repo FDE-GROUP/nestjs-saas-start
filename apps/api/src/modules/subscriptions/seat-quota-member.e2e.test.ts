@@ -22,6 +22,11 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Test } from '@nestjs/testing';
 import { APIError } from 'better-auth/api';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  healMemberCountDrift,
+  type MemberCountDrift,
+  scanMemberCountDrift,
+} from '../../../../../scripts/member-count-doctor';
 import { AppModule } from '../../app.module';
 
 /**
@@ -329,5 +334,33 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
       { organizationId: sB.orgId } as never,
     );
     await assertSeatIdentity(tS, 2);
+  }, 120000);
+
+  it('member-count doctor：scan 检出遗留漂移 → heal 回写联表真相 → 复扫为空（X8-2 全链）', async () => {
+    const tId = `x8doc-${stamp}`;
+    await seedTenant(tId, 'doc');
+    await seedOrgUnderTenant(tId, 'doc');
+    await assertSeatIdentity(tId, 1);
+
+    const em = await mikro.fork();
+    // 造遗留漂移：直写物化列为错误值（绕过 member/org 触发器——模拟历史脏写/漏路径存量）。
+    await em.nativeUpdate(Tenant, { id: tId } as never, { memberCount: 7 } as never);
+
+    const drift = await scanMemberCountDrift(em);
+    const hit = drift.find((d) => d.id === tId);
+    expect(hit, 'scan 应检出被直写脏化的租户').toBeTruthy();
+    expect(hit?.materialized).toBe(7);
+    expect(hit?.truth).toBe(1);
+
+    const healed = await healMemberCountDrift(em, [hit as MemberCountDrift]);
+    expect(healed).toBe(1);
+
+    const rescan = await scanMemberCountDrift(em);
+    expect(
+      rescan.find((d) => d.id === tId),
+      'heal 后复扫不应再含该租',
+    ).toBeUndefined();
+    // heal 写值=联表真相 → 物化恒等复原（scan/heal 全链自证）。
+    await assertSeatIdentity(tId, 1);
   }, 120000);
 });
