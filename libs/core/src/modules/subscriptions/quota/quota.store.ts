@@ -41,16 +41,17 @@ export interface QuotaStore {
    */
   currentActiveSubscription(tenantId: string): Promise<ActiveSubscriptionView | null>;
   /**
-   * 该租户成员数（第三次复裁切片 5·D6/pt10：读物化列 `tenant.memberCount`·O(1)·
-   * 由 `member` 表库级触发器增量维护）。一租多组织下席位数 = 租内总量。
+   * 该租户成员数（X7 R2 换锚·global-role-membership-tenantization 切片 D：读自有租级成员 SSOT
+   * `tenant_membership` live count）。一租多组织下席位数 = 租内租成员总量（不再读物化列 `tenant.memberCount`/BA member
+   * 轴——否则新邀请入租者不计→超卖）。
    *
    * @param tenantId - 目标租户 id（计费主轴）
    * @returns 成员数量
    */
   countMembers(tenantId: string): Promise<number>;
   /**
-   * 联表实数（**对拍/doctor 原语**·非热路径）：经 `organization.tenantId → member` 两跳联表
-   * 求成员总数，用作物化列 `countMembers` 的**恒等校验**（漂移即报警）。
+   * 联表实数（**BA 轴过渡观测原语**·非热路径·非席位真相）：经 `organization.tenantId → member` 两跳
+   * 联表求 BA 成员总数，供 member-count-doctor 对拍遗留脏写（其存废随 X8 契约段裁定）。
    *
    * @param tenantId - 目标租户 id（计费主轴）
    * @returns 联表实数成员数量

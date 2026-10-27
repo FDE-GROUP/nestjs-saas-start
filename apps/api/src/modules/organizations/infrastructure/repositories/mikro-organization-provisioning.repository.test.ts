@@ -1,5 +1,6 @@
 import type { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import type { TenantMembershipManager } from '@app/modules/authorization/domain/ports/tenant-membership.port';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
@@ -42,8 +43,11 @@ function makeDeps(deletedCount = 1) {
   em.transactional = vi.fn((cb: (trx: unknown) => Promise<unknown>) => cb(em));
   const fork = vi.fn().mockResolvedValue(em);
   const mikro = { fork } as unknown as MikroOrmService;
+  // X7 creator-join（R1）：租级成员/角色写侧经 published port 委托——镜像以 manager 桩捕调用。
+  const ensureMembership = vi.fn().mockResolvedValue(undefined);
+  const memberships = { ensureMembership } as unknown as TenantMembershipManager;
   return {
-    repo: new MikroOrganizationProvisioningRepository(mikro, authInstance),
+    repo: new MikroOrganizationProvisioningRepository(mikro, authInstance, memberships),
     spies: {
       createOrganization,
       nativeDelete,
@@ -53,6 +57,7 @@ function makeDeps(deletedCount = 1) {
       flush,
       fork,
       created,
+      ensureMembership,
     },
   };
 }
@@ -82,6 +87,9 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     expect(data).toEqual({ tenantId: 'org-new' });
     expect(receipt).toEqual({ organizationId: 'org-new', status: TENANT_STATUS.PENDING });
     expect(spies.nativeDelete).not.toHaveBeenCalled();
+    // X7 creator-join（R1）：建租事务落成正后经 published port 补写建租者租成员 + owner 角色（与 expand 回填同词汇）。
+    expect(spies.ensureMembership).toHaveBeenCalledTimes(1);
+    expect(spies.ensureMembership).toHaveBeenCalledWith('org-new', 'user-1', 'owner');
     // 治理换轴（E-F）：专属租户行携 pending_approval（审批对象）·id=orgId（1:1 骨架）。
     const tenantRows = spies.created.filter((c) => c.entity === Tenant);
     expect(tenantRows).toHaveLength(1);
@@ -98,6 +106,8 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     spies.createOrganization.mockResolvedValueOnce(undefined as never);
     await expect(repo.submit('u', 'n', 's')).rejects.toThrow(/no organization id/);
     expect(spies.nativeUpdate).not.toHaveBeenCalled();
+    // 无本体 → creator-join 不应触发（在建租事务之后）。
+    expect(spies.ensureMembership).not.toHaveBeenCalled();
   });
 
   it('submit() throws when the auth instance is not yet initialized', async () => {
@@ -106,7 +116,9 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
       set: () => {},
     } as InjectAuthInstance;
     const mikro = { fork: vi.fn() } as unknown as MikroOrmService;
-    const repo = new MikroOrganizationProvisioningRepository(mikro, coldAuth);
+    const repo = new MikroOrganizationProvisioningRepository(mikro, coldAuth, {
+      ensureMembership: vi.fn(),
+    } as unknown as TenantMembershipManager);
     await expect(repo.submit('u', 'n', 's')).rejects.toThrow(/Auth instance not initialized/);
   });
 
@@ -160,6 +172,16 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     const { repo, spies } = makeDeps();
     spies.flush.mockRejectedValueOnce(new Error('connection reset'));
     await expect(repo.submit('u', 'Acme', 'acme')).rejects.toThrow(/connection reset/);
+    const entities = spies.nativeDelete.mock.calls.map((c) => c[0]);
+    expect(entities).toEqual([Organization, Tenant]);
+    // creator-join 在建租事务之后·事务抛错则不补写角色（避免给已回滚租户赋主）。
+    expect(spies.ensureMembership).not.toHaveBeenCalled();
+  });
+
+  it('submit() creator-join 失败 → saga 补偿删孤儿 org + 上抛（不给无角色残留租户）', async () => {
+    const { repo, spies } = makeDeps();
+    spies.ensureMembership.mockRejectedValueOnce(new Error('membership write failed'));
+    await expect(repo.submit('u', 'Acme', 'acme')).rejects.toThrow(/membership write failed/);
     const entities = spies.nativeDelete.mock.calls.map((c) => c[0]);
     expect(entities).toEqual([Organization, Tenant]);
   });

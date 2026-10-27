@@ -1,6 +1,10 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import {
+  TENANT_MEMBERSHIP_MANAGER,
+  type TenantMembershipManager,
+} from '@app/modules/authorization/domain/ports/tenant-membership.port';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
@@ -37,12 +41,19 @@ import type {
  * org 行 `status` 落 DB 默认 'active'·不再手覆 pending），申请准入态**上移 `tenant.status`**——本链
  * 为新建**租户**盖 `pending_approval` 并盖 `organization.tenantId`（1:1 骨架沿回填同式·`tenant.id = org.id`）。
  * 缺租户盖章则新 org 无主轴归属·隔离 guard fail-closed 全量 403。
+ *
+ * X7 creator-join（global-role-membership-tenantization 切片 D·R1 锁死修复）：BA `createOrganization` 的
+ * auto-join 只写 BA `member`（org 维），会话角色自切片 C 改读自有 `tenant_role_assignment`——若建租不补写
+ * 租成员/角色，则新建租户创建者无角色→`@Can` 全 403（P0 锁死）。本链在租户事务落成正后、经 `TENANT_MEMBERSHIP_MANAGER`
+ * published port（表属 authorization·organizations 不直写他属表·遵 domain-layout）委托 `ensureMembership(…,'owner')`
+ * 补写 `(tenantId,userId)` 租成员 + owner 角色分配（roleKey 词汇与 expand 回填一致·系统键小写）；失败走下方 saga 补偿。
  */
 @Injectable()
 export class MikroOrganizationProvisioningRepository implements OrganizationProvisioningRepository {
   constructor(
     @Inject(MikroOrmService) private readonly mikro: MikroOrmService,
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
+    @Inject(TENANT_MEMBERSHIP_MANAGER) private readonly memberships: TenantMembershipManager,
   ) {}
 
   async submit(
@@ -91,6 +102,10 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
           tenantId: organizationId,
         });
       });
+      // X7 creator-join（R1）：租户事务落成正后补写建租者租成员 + owner 角色分配（经 published port
+      // 委托 authorization 属主写侧·自带 scoped:false 锚定·system 动作无活动租上下文中得）。与 BA auto-join
+      //（仅写 org 维 member）互补：会话角色自此有 `tenant_role_assignment` 可解。失败交由下方 catch  saga 补偿。
+      await this.memberships.ensureMembership(organizationId, userId, 'owner');
     } catch (err) {
       // P0 D3·③ 孤儿补偿：事务已回滚我方 Tenant 插行，但 BA 建的 org（tenantId NULL）仍在——
       // 必回收（nativeDelete org·FK cascade 清子表·幂等兼删可能的租户父行），防半途异常遗留无归属孤儿 org。
