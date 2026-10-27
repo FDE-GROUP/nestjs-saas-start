@@ -24,7 +24,7 @@
   "apps/api/src/modules/storage/infrastructure/alioss-storage.provider.ts": 2,
   "apps/api/src/modules/storage/infrastructure/s3-storage.provider.ts": 2,
   "apps/api/src/modules/storage/infrastructure/tencentcos-storage.provider.ts": 1,
-  "apps/api/src/modules/subscriptions/infrastructure/mikro-quota.store.ts": 3,
+  "apps/api/src/modules/subscriptions/infrastructure/mikro-quota.store.ts": 5,
   "apps/api/src/modules/subscriptions/infrastructure/mikro-subscription.lifecycle.ts": 8,
   "apps/api/src/modules/subscriptions/infrastructure/repositories/mikro-subscription.repository.ts": 1,
   "apps/api/src/modules/users/application/queries/handlers/export-user-data.query-handler.ts": 4,

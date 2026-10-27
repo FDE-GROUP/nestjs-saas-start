@@ -15,7 +15,9 @@ import {
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
+import type { MikroQuotaStore } from '@app/modules/subscriptions/infrastructure/mikro-quota.store';
 import { FREE_PLAN } from '@core/saas-kit/modules/subscriptions/quota/organization-plans';
+import { QUOTA_STORE } from '@core/saas-kit/modules/subscriptions/quota/quota.store';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { APIError } from 'better-auth/api';
@@ -31,6 +33,10 @@ import { AppModule } from '../../app.module';
  *    将成功 2xx，测试即红——本文件就是 DoD「path 实证 + matcher 收紧」的载体。
  * 2. **商业闭环**：免费档（无订阅行回落 `FREE_PLAN.seatsLimit`）下 creator 占 1 席，
  *    invite→accept 塞满至限后，超出的 accept 被 hook 拒 **402** 且 member 行零增长。
+ * 3. **计数换形恒等对拍**（第三次复裁切片 5·D6/pt10）：席位读侧已改读物化列 `tenant.memberCount`
+ *    （库级触发器增量维护），本文件在真·BA 写入链（建租者 auto-join 早于盖租·accept 落行·超限拒绝不落行）
+ *    各关键点断言 **物化读数 ≡ 两跳联表实数 ≡ 真实 member 行数**——证触发器（含 `organization.tenantId` 重链
+ *    补计建租者）在实下常正确，且被 hook 拒的 accept **不推高**物化计数（fail-closed 无侧效）。
  *
  * 走服务端编排网关（`authApi().createInvitation/acceptInvitation`·S9 补遗同款范式）：Test harness
  * 不复现 main.ts 的前缀/版本化装配，BA HTTP 端点在测试里无匹配 Nest 路由→中间件不触发→404
@@ -163,6 +169,20 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     return em.count(Member, { organizationId: orgId } as never);
   };
 
+  /**
+   * 席位计数**恒等对拍**（切片 5·D6/pt10）：物化列读数（`store.countMembers`·O(1)）≡
+   * 两跳联表实数（`store.reconcileMembers`）≡ 期望值。本文件为 1:1 租户替身（tenant.id = org.id），
+   * 三值应在真·BA 写入链各节点逐字相等（触发器常正确不变式）。
+   */
+  const assertSeatIdentity = async (tenantId: string, expected: number) => {
+    const store = app.get<MikroQuotaStore>(QUOTA_STORE);
+    const materialized = await store.countMembers(tenantId);
+    const joined = await store.reconcileMembers(tenantId);
+    expect(materialized, `物化 tenant.memberCount(${tenantId})`).toBe(expected);
+    expect(joined, `联表实数(${tenantId})`).toBe(expected);
+    expect(materialized, '物化 ≡ 联表（漂移即触发器失真）').toBe(joined);
+  };
+
   it('免费档塞满后 accept-invitation 被 hook 拒 402，member 行零增长（path 实证 + 商业闭环）', async () => {
     const owner = await signUpThenSignIn('owner');
     const created = await authApi().createOrganization({
@@ -191,6 +211,8 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     // creator 已占 1 席；免费档限额 = FREE_PLAN.seatsLimit
     const limit = FREE_PLAN.seatsLimit.value; // S2：OrganizationPlan.seatsLimit 已 Quota VO 化
     expect(await countMembers(orgId)).toBe(1);
+    // 物化恒等：盖租（nativeUpdate tenantId）经 org-relink 触发器补计建租者→ 1（写入顺序隐患治理坐实）。
+    await assertSeatIdentity(orgId, 1);
 
     // 塞满：再入 (limit - 1) 人，逐个 invite→accept，全部应成功（未超限零误伤）
     for (let i = 1; i < limit; i++) {
@@ -203,6 +225,7 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
       ).toBeLessThan(400);
     }
     expect(await countMembers(orgId)).toBe(limit);
+    await assertSeatIdentity(orgId, limit);
 
     // 超限：第 limit+1 人 accept → hook 拒 402（S7 语义=需升级档位），member 不增。
     // 实测服务端通道行为：hook 抛的 APIError 在 auth.api.* 调用面直接冒泡（asResponse 不拦），
@@ -223,6 +246,8 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     expect(rejectedStatus).toBe(402);
     expect(rejectedText).toContain('Seat quota exceeded');
     expect(await countMembers(orgId)).toBe(limit);
+    // 被 hook 拒的 accept 不落 member 行→触发器不fire→物化不推高（仍 = limit·fail-closed 无侧效）。
+    await assertSeatIdentity(orgId, limit);
 
     // 超限邀请保持 pending（hook 拒绝不等于消费）
     const em = await mikro.fork();

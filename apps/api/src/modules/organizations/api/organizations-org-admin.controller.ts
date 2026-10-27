@@ -201,13 +201,18 @@ export class OrganizationsOrgAdminController {
   }
 
   /**
-   * 邀请成员加入 active 租户（owner/admin·CASL create）。
+   * 邀请成员加入 active 租户（租级通配 owner/admin·CASL create·D6 席位治理）。
+   *
+   * @remarks
+   * 发邀终将消耗**租席位**（accept 时 member 行落），故需 actor 持**租级通配** `Invitation create`
+   * grant（org=NULL）——`@Can(..., { tenantWildcardOnly: true })` 令裁决忽略活动 org，org-scoped 子管理员
+   * 默认不可加席（可配 per-org 席位上限留后）。
    * @param headers - 透传 BA 的请求头。
    * @param dto - 邮箱 + 角色载荷。
    * @returns BA 邀请结果；角色不可挂载先 400，CASL 拒经 `mapBaError` 归一。
    */
   @Post('invitations')
-  @Can('create', 'Invitation')
+  @Can('create', 'Invitation', { tenantWildcardOnly: true })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Invite a member to the active organization (owner/admin · CASL create)',

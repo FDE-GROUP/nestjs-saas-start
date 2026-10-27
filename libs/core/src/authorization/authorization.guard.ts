@@ -67,11 +67,16 @@ export class AuthorizationGuard implements CanActivate {
     // S2（module-rbac-dynamic-roles）：规则源 = 租户 DB grant 行，裁决异步（适配内版本缓存·
     // 热路径命中不查库）。rehierarchy 切片 C：tenantId 为规则分区键（租级角色），同 key 角色跨租互不串形。
     // 第三次复裁切片 2（D1）：透传活动 org——决定 org-scoped grant 是否纳入（租级通配 ∪ 本 org）。
+    // 第三次复裁切片 5（D6）：`tenantWildcardOnly` 路由强制忽略活动 org（传 undefined）→ 仅租级通配
+    // grant（org=NULL）生效——消耗租席位的发邀/加成员职权不向 org-scoped admin 开放。
+    const { action, subject, tenantWildcardOnly, ...rest } = requirement;
     const allowed = await this.checker.can({
       tenantId,
       role,
-      organizationId: this.tenantContext.organizationId,
-      ...requirement,
+      organizationId: tenantWildcardOnly ? undefined : this.tenantContext.organizationId,
+      ...rest,
+      action,
+      subject,
     });
     if (!allowed) {
       throw new ForbiddenException(

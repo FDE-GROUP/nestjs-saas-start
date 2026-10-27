@@ -65,6 +65,9 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
         status: TENANCY_STATUS.PENDING,
         // 新建专属租户骨架取缺省可见性策略 shared（零行为变更·租内跨组织互见·切片 3 D2）。
         orgVisibility: ORG_VISIBILITY.SHARED,
+        // 席位物化计数初值 0：建租者 member 已随 BA auto-join 落行但 `organization.tenantId` 尚未盖章（NULL），
+        // 下方 `nativeUpdate` 盖租时 `organization_tenant_relink_count_sync` 触发器按当前成员数 +N 补计（→ 1）。
+        memberCount: 0,
         createdAt: new Date(),
         updatedAt: null,
       });

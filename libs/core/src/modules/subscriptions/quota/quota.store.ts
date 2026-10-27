@@ -41,10 +41,19 @@ export interface QuotaStore {
    */
   currentActiveSubscription(tenantId: string): Promise<ActiveSubscriptionView | null>;
   /**
-   * 该租户成员数（`COUNT(member where tenantId)`·一租多组织下跨租内组织聚合）。
+   * 该租户成员数（第三次复裁切片 5·D6/pt10：读物化列 `tenant.memberCount`·O(1)·
+   * 由 `member` 表库级触发器增量维护）。一租多组织下席位数 = 租内总量。
    *
    * @param tenantId - 目标租户 id（计费主轴）
    * @returns 成员数量
    */
   countMembers(tenantId: string): Promise<number>;
+  /**
+   * 联表实数（**对拍/doctor 原语**·非热路径）：经 `organization.tenantId → member` 两跳联表
+   * 求成员总数，用作物化列 `countMembers` 的**恒等校验**（漂移即报警）。
+   *
+   * @param tenantId - 目标租户 id（计费主轴）
+   * @returns 联表实数成员数量
+   */
+  reconcileMembers(tenantId: string): Promise<number>;
 }

@@ -44,6 +44,10 @@ export const TENANT_META: TableMeta = {
     // 租内跨组织可见性策略（第三次复裁切片 3·D2）：NOT NULL DEFAULT 'shared'——存量逐字节等价（互见），
     // isolated 为显式 opt-in 经全局 filter 追加组织收窄（切片 1 消费）；跨租硬地板 tenantId 不受本列影响。
     ['orgVisibility', { k: 'text', default: ORG_VISIBILITY.SHARED }],
+    // 租成员数**物化计数**（第三次复裁切片 5·D6/pt10）：NOT NULL DEFAULT 0——由 `member` 表上的 AFTER
+    // INSERT/DELETE **库级触发器**增量维护（唯一能覆盖 BA 直写 member 全路径·含建租者 auto-join 的物化器）。
+    // 读侧 `countMembers` 走本列 O(1)；两跳联表（organization.tenantId→member）降为 doctor/对拍校验（不为本列真相）。
+    ['memberCount', { k: 'integer', default: 0 }],
     ['createdAt', { k: 'datetime', defaultNow: true }],
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
@@ -61,6 +65,7 @@ export interface Tenant {
   slug: string;
   status: string;
   orgVisibility: string;
+  memberCount: number;
   createdAt: Date;
   updatedAt: Date | null;
 }

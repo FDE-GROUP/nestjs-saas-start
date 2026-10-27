@@ -22,16 +22,18 @@ function makeContext(): ExecutionContext {
 function makeGuard({
   tenantId,
   role,
+  organizationId,
   requirement,
   allowed,
 }: {
   tenantId?: string;
   role?: 'owner' | 'admin' | 'member';
+  organizationId?: string;
   requirement?: CanRequirement;
   allowed?: boolean;
 }) {
   const reflector = { getAllAndOverride: vi.fn().mockReturnValue(requirement) };
-  const tenantContext = { tenantId, role } as never;
+  const tenantContext = { tenantId, role, organizationId } as never;
   const can = vi.fn().mockResolvedValue(allowed ?? false);
   const checker = { can } as unknown as PermissionChecker;
   const guard = new AuthorizationGuard(reflector as never, tenantContext, checker);
@@ -80,6 +82,43 @@ describe('AuthorizationGuard（CASL 换形）', () => {
       allowed: false,
     });
     await expect(guard.canActivate(makeContext())).rejects.toThrow(ForbiddenException);
+  });
+
+  it('第三次复裁切片 2（D1）：常规路由透传 ALS 活动 org（租级通配 ∪ 本 org）', async () => {
+    const { guard, can } = makeGuard({
+      tenantId: 'tenant_1',
+      role: 'admin',
+      organizationId: 'org_1',
+      requirement: { action: 'read', subject: 'Member' },
+      allowed: true,
+    });
+    await expect(guard.canActivate(makeContext())).resolves.toBe(true);
+    expect(can).toHaveBeenCalledWith({
+      tenantId: 'tenant_1',
+      role: 'admin',
+      organizationId: 'org_1',
+      action: 'read',
+      subject: 'Member',
+    });
+  });
+
+  it('第三次复裁切片 5（D6）：tenantWildcardOnly 路由强制忽略活动 org（传 undefined→仅租级通配 grant）', async () => {
+    const { guard, can } = makeGuard({
+      tenantId: 'tenant_1',
+      role: 'admin',
+      organizationId: 'org_1',
+      requirement: { action: 'create', subject: 'Invitation', tenantWildcardOnly: true },
+      allowed: true,
+    });
+    await expect(guard.canActivate(makeContext())).resolves.toBe(true);
+    // 即便 ALS 有活动 org，裁决仍以 organizationId=undefined 传入 → 仅 org=NULL 通配 grant 生效。
+    expect(can).toHaveBeenCalledWith({
+      tenantId: 'tenant_1',
+      role: 'admin',
+      organizationId: undefined,
+      action: 'create',
+      subject: 'Invitation',
+    });
   });
 
   it('缺角色（ALS 未注入）以 role=undefined 交端口 → 桩拒 → 403（fail-closed 贯通）', async () => {

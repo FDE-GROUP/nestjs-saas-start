@@ -192,9 +192,15 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
       scope({ tenantId, organizationId: orgA, orgVisibility: 'isolated' }),
       async () => {
         const em = await mikro.fork({ scoped: false });
-        const rows = (await em.find(Workspace, {} as never, { fields: ['id'] as never })) as {
-          id: string;
-        }[];
+        // 查询边界限定本文件自有两租户（scoped:false 不加全局 filter·亦不加 org 收窄）：证明即便处于
+        // isolated 的 orgA 上下文，scoped:false 仍见两租全部工作区（wsA+wsB+wsC·跨租且不受 org 窄化）。
+        // 不按「全库 workspace 恰等于自有三条」断言——多 gated 文件并发共享同一 Testcontainers 库时，
+        // 他文件在别租户的存活工作区会污染全局集（时序相关·非产品缺陷）。
+        const rows = (await em.find(
+          Workspace,
+          { tenantId: { $in: [tenantId, tenant2] } } as never,
+          { fields: ['id'] as never },
+        )) as { id: string }[];
         return rows.map((r) => r.id).sort();
       },
     );

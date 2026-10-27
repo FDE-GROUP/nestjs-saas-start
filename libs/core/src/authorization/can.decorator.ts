@@ -18,6 +18,12 @@ export interface CanRequirement {
   readonly action: AuthorizationAction;
   /** 被授权资源主体。 */
   readonly subject: AuthorizationSubject;
+  /**
+   * 租级通配限定（第三次复裁切片 5·D6）：置 `true` 时守卫以 `organizationId=undefined` 裁决，
+   * 仅**租级通配 grant（org=NULL）**生效·org-scoped grant 不参与——用于「消耗租席位」的发邀/加成员
+   * 等租级职权（子公司 org-scoped admin 默认不可加席）。缺省 `false` = 沿常规「租级通配 ∪ 本 org」。
+   */
+  readonly tenantWildcardOnly?: boolean;
 }
 
 /**
@@ -32,9 +38,19 @@ export interface CanRequirement {
  *
  * @param action - 动作（`AuthorizationAction` 词汇）
  * @param subject - 资源（`AuthorizationSubject` 词汇·PascalCase）
+ * @param options - 可选修饰（第三次复裁切片 5·D6）：`{ tenantWildcardOnly: true }` 令裁决忽略活动 org，
+ *   仅租级通配 grant（org=NULL）生效（用于消耗租席位的发邀/加成员职权）。
  * @returns 挂 `CAN_KEY` 元数据的 Nest 路由装饰器
- * @example `@Can('read', 'Workspace')`
+ * @example `@Can('read', 'Workspace')` · `@Can('create', 'Invitation', { tenantWildcardOnly: true })`
  * @public
  */
-export const Can = (action: AuthorizationAction, subject: AuthorizationSubject) =>
-  SetMetadata(CAN_KEY, { action, subject } satisfies CanRequirement);
+export const Can = (
+  action: AuthorizationAction,
+  subject: AuthorizationSubject,
+  options?: { readonly tenantWildcardOnly?: boolean },
+) =>
+  SetMetadata(CAN_KEY, {
+    action,
+    subject,
+    ...(options?.tenantWildcardOnly ? { tenantWildcardOnly: true } : {}),
+  } satisfies CanRequirement);
