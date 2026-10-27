@@ -1,0 +1,59 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ORG_VISIBILITY | 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</title><meta name="description" content="Documentation for 公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script><link rel="stylesheet" href="../assets/rhineai-style.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="../modules/libs_core_src_modules_organizations_visibility_org-visibility.html">libs/core/src/modules/organizations/visibility/org-visibility</a></li>
+<li><a href="" aria-current="page">ORG_VISIBILITY</a></li></ul>
+<h1>Variable ORG_VISIBILITY<code class="tsd-tag">Const</code></h1></div>
+<div class="tsd-signature"><span class="tsd-kind-variable">ORG_VISIBILITY</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{</span> <span class="tsd-kind-property">ISOLATED</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;isolated&quot;</span><span class="tsd-signature-symbol">;</span> <span class="tsd-kind-property">SHARED</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;shared&quot;</span> <span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p>每租户租内跨组织可见性策略词汇（第三次复裁 · 切片 3 · D2/评审 pt1）·纯函数·零框架依赖。</p>
+</div>
+<div class="tsd-type-declaration">
+<h4>Type Declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5 id="isolated"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">ISOLATED</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;isolated&quot;</span></h5>
+<div class="tsd-comment tsd-typography"><p>租内跨组织互不可见（opt-in·激活全局 filter 组织收窄）。</p>
+</div></li>
+<li class="tsd-parameter">
+<h5 id="shared"><code class="tsd-tag">Readonly</code><span class="tsd-kind-property">SHARED</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">&quot;shared&quot;</span></h5>
+<div class="tsd-comment tsd-typography"><p>同租内跨组织默认互见（存量语义·缺省值）。</p>
+</div></li></ul></div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-remarks">
+<h4 class="tsd-anchor-link" id="remarks">Remarks<a href="#remarks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><p>三级结构 <strong>Tenant ⊃ Organization ⊃ Workspace</strong> 不变；本枚举把「租内跨组织可见性」从上一轮 vision
+的<strong>静态默认互见</strong>升为<strong>每租户可强制的策略维</strong>：</p>
+<ul>
+<li><code>shared</code>（缺省）：同租内跨组织默认互见——与存量行为<strong>逐字节等价</strong>（零行为变更·expand 段安全垫）。</li>
+<li><code>isolated</code>：租内跨组织互不可见（防火墙/子公司隔离场景）——读路径经全局 filter 追加 <code>organizationId</code>
+收窄（见 <code>tenant-isolation-filter.ts</code> 切片 1）。</li>
+</ul>
+<p><strong>安全底线不动摇</strong>：本策略只在<strong>租内</strong>收紧可见性，<code>tenantId</code> 仍是永不放松的跨租硬隔离地板；
+<code>isolated</code> 绝不放松跨租 fail-closed，仅在已激活组织时于租内追加组织维过滤。</p>
+<p>持久化落点 = <code>tenant.orgVisibility</code>（本租户根表列·值域由 <code>ORG_VISIBILITY</code> 单源经 DB CHECK 防线守护·
+沿 <code>TENANT_STATUS</code> 同构）；运行期经中间件解析链「顺带读回」注入 ALS 作用域供 filter 消费。</p>
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/27bcaa80c9baa79f2cce3908ea68b2274ad6607c/libs/core/src/modules/organizations/visibility/org-visibility.ts#L19">libs/core/src/modules/organizations/visibility/org-visibility.ts:19</a></li></ul></aside></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../index.html">公共 API 参考（@saas/contracts + @core/saas-kit + apps/api 对外接口）</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer></footer>
+<div class="overlay"></div></body></html>
