@@ -58,6 +58,8 @@ export class TenantIsolationMiddleware implements NestMiddleware {
 
         const organizationId = view.activeOrganizationId;
         const userId = view.userId;
+        // 第三次复裁切片 4·D7：显式租级激活位（无活动组织也可建立租上下文·解「org 绑架」）。
+        const explicitTenantId = view.activeTenantId;
         // module-rbac-casl 丙裁：会话解析点预注入的成员角色（BA 数据面事实·CASL 裁决输入）。
         const role = view.role;
         // S3 · workspace 二级边界 (D2/§9.2): the active workspace is a per-request
@@ -104,6 +106,19 @@ export class TenantIsolationMiddleware implements NestMiddleware {
           // `TENANT_SCOPE_RESOLVER` 把活动组织升为主轴 tenantId，再对**租户**判失能：显式 pending_approval /
           // suspended / deleted 的租户 → bind 清空（guard fail-closed 403）。无租户归属（expand 段未盖章增量）
           // → 不绑主轴（403）；租户无状态记录（存量/seeded·视同 active）→ 放行，绝不误锁既有 dev 租户。
+          // 第三次复裁切片 4·D7（租户激活解绑）解析序：**显式 activeTenantId 优先** → 回落 activeOrganizationId 派生。
+          // 显式租轴经「设活动租户」端点校验成员资格后才落 session（本处不再校·与 BA 信任 activeOrganizationId 同模），
+          // 但仍过租户失能卡点（deny-list）。无活动组织时组织轴留空（role 随之缺省·org 级 @Can fail-closed）。
+          if (explicitTenantId) {
+            return this.tenantStatus.isBlocked(explicitTenantId).then((blocked) => {
+              if (blocked) return bind(undefined, userId);
+              return this.tenantScope
+                .readOrgVisibility(explicitTenantId)
+                .then((vis) => bind(organizationId, userId, explicitTenantId, vis))
+                .catch(() => bind(organizationId, userId, explicitTenantId));
+            });
+          }
+          // 回落：无显式激活租 → 经活动组织派生主轴 tenantId（rehierarchy 切片 C 换轴·向后兼容）。
           if (!organizationId) {
             bind(undefined, userId);
             return;

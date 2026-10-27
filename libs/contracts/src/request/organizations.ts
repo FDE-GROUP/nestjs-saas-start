@@ -84,6 +84,18 @@ export const setActiveOrganizationSchema = strictObject({
 export type SetActiveOrganization = z.infer<typeof setActiveOrganizationSchema>;
 
 /**
+ * 设置会话活动租户入参（第三次层级复裁 切片 4·D7 租户激活解绑）：选租**不依赖先选活动组织**，
+ * 令租成员在无活动 org 时亦可建立租上下文以达租级端点（计费/席位/目录）。服务端写前必校目标租户
+ * 成员资格（防跨租提权）·契约仅收敛入参形状。
+ *
+ * @public
+ */
+export const setActiveTenantSchema = strictObject({
+  tenantId: reqStringMax('validate.tenantId.required', 64),
+});
+export type SetActiveTenant = z.infer<typeof setActiveTenantSchema>;
+
+/**
  * bind-existing 入参（module-org-odoo-company-mapping 切片 A·平台回填通道）：
  * 把**现存** Odoo 公司绑定到指定组织（存量/演示解堵·与 provisioning 自动建司互斥入口）。
  *

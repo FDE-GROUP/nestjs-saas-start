@@ -97,13 +97,23 @@ export class AuthSessionReader implements RequestSessionReader {
 
     const userId = result.user?.id ? String(result.user.id) : undefined;
     const activeOrganizationId = result.session?.activeOrganizationId ?? undefined;
-    if (!activeOrganizationId) return { userId };
-
+    // 切片 4·D7：BA getSession 依声明的 session additionalField 自动回读 `activeTenantId`（服务端写·客户端不可塞）。
+    const activeTenantId =
+      (result.session as { activeTenantId?: string | null } | undefined)?.activeTenantId ??
+      undefined;
+    // 既无活动组织也无显式激活租 → 仅回身份（无租户上下文·下游 fail-closed）。有其一即继续。
+    if (!activeOrganizationId && !activeTenantId) return { userId, activeTenantId };
     // 有活动租户才付 membership 角色读（按请求记忆·has() 判命中避免与 undefined 值混淆）。
-    if (!roleCache.has(req)) {
+    // 角色是 org 级事实（getActiveMemberRole 按 activeOrganizationId 取）；仅有 activeTenantId 无 org → role 缺省。
+    if (activeOrganizationId && !roleCache.has(req)) {
       const role = await resolveActiveRole(auth, req).catch(() => undefined);
       roleCache.set(req, role);
     }
-    return { userId, activeOrganizationId, role: roleCache.get(req) };
+    return {
+      userId,
+      activeOrganizationId,
+      activeTenantId,
+      role: activeOrganizationId ? roleCache.get(req) : undefined,
+    };
   }
 }

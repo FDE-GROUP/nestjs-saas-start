@@ -25,14 +25,20 @@ function makeMiddleware(opts: {
   resolvedTenantId?: string | null;
   /** 派生作用域顺带读回的租内可见性策略（切片 3·默认 undefined=shared）。 */
   resolvedOrgVisibility?: string;
+  /** 切片 4·D7：会话携显式租级激活位（无活动组织也可绑租上下文）。 */
+  activeTenantId?: string;
+  /** 切片 4·D7：显式租路径 `readOrgVisibility` 桩返回值。 */
+  explicitOrgVisibility?: string;
 }) {
-  const read = vi
-    .fn()
-    .mockResolvedValue(
-      opts.noSession
-        ? null
-        : { activeOrganizationId: opts.activeOrganizationId, userId: opts.userId ?? 'u1' },
-    );
+  const read = vi.fn().mockResolvedValue(
+    opts.noSession
+      ? null
+      : {
+          activeOrganizationId: opts.activeOrganizationId,
+          userId: opts.userId ?? 'u1',
+          activeTenantId: opts.activeTenantId,
+        },
+  );
   const session = { read } as unknown as RequestSessionReader;
 
   const isBlocked =
@@ -53,13 +59,16 @@ function makeMiddleware(opts: {
         : (opts.resolvedTenantId ?? `tenant-${opts.activeOrganizationId}`);
     return tenantId ? { tenantId, orgVisibility: opts.resolvedOrgVisibility } : undefined;
   });
-  const tenantScope = { resolveTenantScopeOf } as unknown as TenantScopeResolver;
+  // 切片 4·D7：显式租激活路径的可见性直读桩。
+  const readOrgVisibility = vi.fn(async () => opts.explicitOrgVisibility);
+  const tenantScope = { resolveTenantScopeOf, readOrgVisibility } as unknown as TenantScopeResolver;
 
   return {
     mw: new TenantIsolationMiddleware(session, status, userStatus, tenantScope),
     isBlocked,
     userIsBlocked,
     resolveTenantScopeOf,
+    readOrgVisibility,
     read,
   };
 }
@@ -172,5 +181,51 @@ describe('TenantIsolationMiddleware · S6 user suspension fail-closed (deny-list
     const store = await run(mw, reqWith());
     expect(store?.organizationId).toBe('orgA');
     expect(store?.userId).toBe('u1');
+  });
+});
+
+describe('TenantIsolationMiddleware · 切片 4 D7 租级激活解绑（显式 activeTenantId 优先·无 org 亦绑租）', () => {
+  it('显式 activeTenantId·无活动组织：绑主轴 tenantId（组织轴/role 留空·解 org 绑架）', async () => {
+    const { mw, isBlocked, readOrgVisibility, resolveTenantScopeOf } = makeMiddleware({
+      activeTenantId: 'tenantX',
+      blocked: false,
+    });
+    const store = await run(mw, reqWith());
+    expect(isBlocked).toHaveBeenCalledWith('tenantX');
+    expect(readOrgVisibility).toHaveBeenCalledWith('tenantX');
+    expect(resolveTenantScopeOf).not.toHaveBeenCalled(); // 显式优先·不再走 org 派生
+    expect(store?.tenantId).toBe('tenantX');
+    expect(store?.organizationId).toBeUndefined();
+    expect(store?.role).toBeUndefined();
+  });
+
+  it('显式优先于 org 派生（两者皆在·tenantId 取 activeTenantId·组织轴仍绑供归属面）', async () => {
+    const { mw, resolveTenantScopeOf } = makeMiddleware({
+      activeOrganizationId: 'orgA',
+      activeTenantId: 'tenantX',
+      blocked: false,
+    });
+    const store = await run(mw, reqWith());
+    expect(resolveTenantScopeOf).not.toHaveBeenCalled();
+    expect(store?.tenantId).toBe('tenantX');
+    expect(store?.organizationId).toBe('orgA');
+  });
+
+  it('显式租被失能 → 不绑主轴（guard fail-closed 403）·保留身份', async () => {
+    const { mw } = makeMiddleware({ activeTenantId: 'tenantS', blocked: true });
+    const store = await run(mw, reqWith());
+    expect(store?.tenantId).toBeUndefined();
+    expect(store?.userId).toBe('u1');
+  });
+
+  it('向后兼容：无 activeTenantId 仍经 org 派生绑租（既有流不回归）', async () => {
+    const { mw, readOrgVisibility, resolveTenantScopeOf } = makeMiddleware({
+      activeOrganizationId: 'orgA',
+      blocked: false,
+    });
+    const store = await run(mw, reqWith());
+    expect(resolveTenantScopeOf).toHaveBeenCalledWith('orgA');
+    expect(readOrgVisibility).not.toHaveBeenCalled();
+    expect(store?.tenantId).toBe('tenant-orgA');
   });
 });

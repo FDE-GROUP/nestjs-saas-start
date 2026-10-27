@@ -34,4 +34,17 @@ export class MikroTenantScopeResolver implements TenantScopeResolver {
     });
     return { tenantId, orgVisibility: tenant?.orgVisibility };
   }
+
+  /**
+   * 直读给定租户的 `orgVisibility`（第三次复裁切片 4·D7 显式租级激活路径：会话携 activeTenantId
+   * 但无活动组织时·中间件据此读回可见性供切片 1 filter 消费）。Tenant 根表无隔离 filter·纯读无副作用；
+   * 本体缺失/读不回 → undefined（视同 shared）。
+   */
+  async readOrgVisibility(tenantId: string): Promise<string | undefined> {
+    const em = await this.mikro.fork();
+    const tenant = await em.findOne(Tenant, { id: tenantId } as never, {
+      fields: ['id', 'orgVisibility'] as never,
+    });
+    return tenant?.orgVisibility;
+  }
 }

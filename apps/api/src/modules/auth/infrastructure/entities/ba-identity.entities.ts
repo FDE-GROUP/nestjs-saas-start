@@ -95,6 +95,10 @@ export const Session = defineEntity({
     // session additionalFields（provider / activeOrganizationId / ipAddress / userAgent）
     provider: p.string().nullable(),
     activeOrganizationId: p.string().nullable(),
+    // 第三次层级复裁 切片 4（D7·租户激活解绑）：独立**租级**激活位（nullable·NULL=未显式选租·
+    // 回落 activeOrganizationId 派生）。BA 服务端 additionalField（`input:false`·客户端不可写），
+    // 仅经「设活动租户」端点校验成员资格后由本域适配器直落真列（沿 user-store.adapter 写自身 owned 表纪律）。
+    activeTenantId: p.string().nullable(),
     ipAddress: p.string().nullable(),
     userAgent: p.string().nullable(),
     createdAt: p.datetime(),

@@ -708,6 +708,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tenants/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the active tenant of the current session (tenant activation) */
+        put: operations["TenantsController_setActiveTenant_v1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/subscriptions/current": {
         parameters: {
             query?: never;
@@ -1210,6 +1227,10 @@ export interface components {
         TenantDirectoryResponse: {
             /** @description 当前用户可见的租户目录（每租携其下组织集合）。 */
             tenants: components["schemas"]["TenantDirectoryEntryResponse"][];
+        };
+        ActiveTenantResponse: {
+            /** @description 已激活的租级租户 id（写入会话 activeTenantId）。 */
+            tenantId: string;
         };
         SubscriptionResponse: {
             /** @description 是否已有生效订阅。 */
@@ -3320,6 +3341,61 @@ export interface operations {
             };
             /** @description Missing or invalid session. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    TenantsController_setActiveTenant_v1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    tenantId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The activated tenant id written to the session. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiEnvelope"] & {
+                        data?: components["schemas"]["ActiveTenantResponse"];
+                    };
+                };
+            };
+            /** @description Session id missing on the authenticated principal. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Missing or invalid session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Not a member of the target tenant. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

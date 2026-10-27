@@ -115,6 +115,8 @@ export const Session = defineEntity({
     userId: p.manyToOne(User).mapToPk().deleteRule('cascade'),
     provider: p.text().nullable(),
     activeOrganizationId: p.text().nullable(),
+    // 第三次层级复裁 切片 4（D7）：独立租级激活位（与运行时 ba-identity.entities.Session 同列集·双写）。
+    activeTenantId: p.text().nullable(),
     ipAddress: p.text().nullable(),
     userAgent: p.text().nullable(),
     createdAt: tsNow(),

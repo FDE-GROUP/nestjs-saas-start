@@ -12,6 +12,7 @@
   "invitationId.required": "请输入邀请 ID",
   "memberId.required": "请输入成员 ID",
   "organizationId.required": "请输入组织 ID",
+  "tenantId.required": "请输入租户 ID",
   "odooCompanyId.required": "请输入 Odoo 公司 ID",
   "odooCompanyName.required": "请输入 Odoo 公司名称",
   "role.required": "请输入角色",

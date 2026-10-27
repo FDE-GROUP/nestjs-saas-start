@@ -277,6 +277,19 @@ export async function CreateAuth(
     },
     appName: appConfig.name || 'NestJS SaaS Start',
     secret: authConfig.jwt.secret,
+    // 第三次层级复裁 切片 4（D7·租户激活解绑）：session 增独立租级激活位 `activeTenantId`。
+    // `input:false` 令客户端 sign-in/更新无法塞值（仅服务端「设活动租户」端点校验成员资格后经
+    // 本域适配器直写真列）；`required:false` 保存量会话 NULL（回落 activeOrganizationId 派生·向后兼容）。
+    // getSession 依声明的 additionalFields 自动回读该列→中间件据此绑主轴 tenantId。
+    session: {
+      additionalFields: {
+        activeTenantId: {
+          type: 'string',
+          required: false,
+          input: false,
+        },
+      },
+    },
     user: {
       additionalFields: {
         isOwner: {

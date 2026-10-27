@@ -1967,8 +1967,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: List tenant directory of the current user (tenants → organizations)
-      tags:
+      tags: &ref_13
         - tenants
+  /api/v1/tenants/active:
+    put:
+      operationId: TenantsController_setActiveTenant_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: The activated tenant id written to the session.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ActiveTenantResponse'
+        '400':
+          description: Session id missing on the authenticated principal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: Missing or invalid session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Not a member of the target tenant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: Set the active tenant of the current session (tenant activation)
+      tags: *ref_13
   /api/v1/subscriptions/current:
     get:
       operationId: SubscriptionsController_getCurrent_v1
@@ -1994,7 +2044,7 @@ paths:
       summary: >-
         Current organization subscription: plan, seat quota, usage, customer
         mapping
-      tags: &ref_13
+      tags: &ref_14
         - subscriptions
   /api/v1/subscriptions:
     post:
@@ -2061,7 +2111,7 @@ paths:
       summary: >-
         Provision/upgrade the organization subscription (creates the provider
         customer)
-      tags: *ref_13
+      tags: *ref_14
   /api/v1/storage/upload:
     post:
       operationId: StorageController_uploadFile_v1
@@ -2090,7 +2140,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/FileUploadResultDto'
       summary: Upload a single file
-      tags: &ref_14
+      tags: &ref_15
         - storage
   /api/v1/storage/{key}:
     delete:
@@ -2115,7 +2165,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/StorageDeleteResponse'
       summary: Delete a file
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/storage/{key}/url:
     get:
       operationId: StorageController_getFileUrl_v1
@@ -2145,7 +2195,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/StorageUrlResponse'
       summary: Get a signed URL for a file
-      tags: *ref_14
+      tags: *ref_15
   /api/v1/payment/test:
     get:
       operationId: PaymentController_test_v1
@@ -2163,7 +2213,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/PaymentStatusResponse'
       summary: Payment integration status
-      tags: &ref_15
+      tags: &ref_16
         - payment
   /api/v1/payment/customers:
     post:
@@ -2204,7 +2254,7 @@ paths:
                       data:
                         $ref: '#/components/schemas/PaymentCustomerRefResponse'
       summary: Create a payment customer
-      tags: *ref_15
+      tags: *ref_16
   /api/v1/payment/checkouts:
     post:
       operationId: PaymentController_createCheckout_v1
@@ -2253,7 +2303,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Create a checkout (payment intent)
-      tags: *ref_15
+      tags: *ref_16
   /api/v1/payment/checkouts/{id}:
     get:
       operationId: PaymentController_retrieveCheckout_v1
@@ -2283,7 +2333,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Retrieve a checkout
-      tags: *ref_15
+      tags: *ref_16
   /api/v1/payment/refunds:
     post:
       operationId: PaymentController_refund_v1
@@ -2327,7 +2377,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Refund a checkout
-      tags: *ref_15
+      tags: *ref_16
   /api/v1/payment/webhooks:
     post:
       operationId: PaymentController_handleWebhook_v1
@@ -2357,7 +2407,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Handle payment webhook events
-      tags: *ref_15
+      tags: *ref_16
 info:
   title: NestJS SaaS Start API
   description: NestJS SaaS Start API documentation
@@ -2510,7 +2560,7 @@ components:
           type: string
         status:
           type: string
-          enum: &ref_16
+          enum: &ref_17
             - pending_approval
             - active
             - suspended
@@ -2562,7 +2612,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 组织自有态。
         odooCompanyId:
           type:
@@ -2599,7 +2649,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 准入态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2627,7 +2677,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 组织态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2671,7 +2721,7 @@ components:
           description: 目标 tenant 主键。
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 迁移后的准入态。
       required:
         - tenantId
@@ -2719,7 +2769,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 治理状态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2759,7 +2809,7 @@ components:
           description: 用户主键。
         status:
           type: string
-          enum: *ref_16
+          enum: *ref_17
           description: 迁移后的新状态。
       required:
         - userId
@@ -2877,7 +2927,7 @@ components:
           description: organization 主键。
         status:
           type: string
-          enum: &ref_17
+          enum: &ref_18
             - pending_approval
             - active
             - suspended
@@ -2976,7 +3026,7 @@ components:
           description: 租户 slug。
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 租户准入态。
         organizations:
           description: 该租户下当前用户可见的组织集合。
@@ -2999,6 +3049,14 @@ components:
             $ref: '#/components/schemas/TenantDirectoryEntryResponse'
       required:
         - tenants
+    ActiveTenantResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: 已激活的租级租户 id（写入会话 activeTenantId）。
+      required:
+        - tenantId
     SubscriptionResponse:
       type: object
       properties:
@@ -3082,7 +3140,7 @@ components:
           description: 集成状态恒 "ok"。
         selected:
           type: string
-          enum: &ref_18
+          enum: &ref_19
             - stripe
             - alipay
             - wechat_pay
@@ -3092,7 +3150,7 @@ components:
           description: 可用通道集合。
           items:
             type: string
-            enum: *ref_18
+            enum: *ref_19
       required:
         - status
         - selected
@@ -3105,7 +3163,7 @@ components:
           description: 通道侧 customer id。
         providerId:
           type: string
-          enum: *ref_18
+          enum: *ref_19
           description: 所属通道。
         email:
           type: string
@@ -3126,7 +3184,7 @@ components:
           description: checkout / payment intent id。
         providerId:
           type: string
-          enum: *ref_18
+          enum: *ref_19
           description: 所属通道。
         status:
           type: string
@@ -3150,7 +3208,7 @@ components:
           description: refund id。
         providerId:
           type: string
-          enum: *ref_18
+          enum: *ref_19
           description: 所属通道。
         status:
           type: string

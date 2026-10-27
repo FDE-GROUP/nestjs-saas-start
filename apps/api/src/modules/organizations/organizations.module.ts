@@ -18,6 +18,7 @@ import { DeleteOrganizationPermanentlyCommandHandler } from './application/comma
 import { RejectOrganizationCommandHandler } from './application/commands/handlers/reject-organization.command-handler';
 import { ResumeOrganizationCommandHandler } from './application/commands/handlers/resume-organization.command-handler';
 import { ResumeUserCommandHandler } from './application/commands/handlers/resume-user.command-handler';
+import { SetSessionActiveTenantCommandHandler } from './application/commands/handlers/set-session-active-tenant.command-handler';
 import { SetTenantOrgVisibilityCommandHandler } from './application/commands/handlers/set-tenant-org-visibility.command-handler';
 import { SubmitOrganizationApplicationCommandHandler } from './application/commands/handlers/submit-organization-application.command-handler';
 import { SuspendOrganizationCommandHandler } from './application/commands/handlers/suspend-organization.command-handler';
@@ -51,6 +52,8 @@ const CommandHandlers = [
   BindOrganizationOdooCompanyCommandHandler,
   // 第三次复裁切片 3：租内跨组织可见性策略设置（平台级·每租户机密维开关）。
   SetTenantOrgVisibilityCommandHandler,
+  // 第三次复裁切片 4·D7：会话活动租户设置（用户级·租激活解绑·写前校成员资格 fail-closed）。
+  SetSessionActiveTenantCommandHandler,
   SuspendUserCommandHandler,
   ResumeUserCommandHandler,
 ];

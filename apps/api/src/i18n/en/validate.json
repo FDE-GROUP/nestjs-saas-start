@@ -12,6 +12,7 @@
   "invitationId.required": "Please enter the invitation ID",
   "memberId.required": "Please enter the member ID",
   "organizationId.required": "Please enter the organization ID",
+  "tenantId.required": "Please enter the tenant ID",
   "odooCompanyId.required": "Please enter the Odoo company ID",
   "odooCompanyName.required": "Please enter the Odoo company name",
   "role.required": "Please enter the role",

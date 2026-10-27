@@ -49,3 +49,16 @@ export const tenantDirectoryViewSchema = z.object({
   tenants: z.array(tenantDirectoryEntryViewSchema),
 });
 export type TenantDirectoryView = z.infer<typeof tenantDirectoryViewSchema>;
+
+/**
+ * 会话活动租户设置回执（`PUT /tenants/active`·第三次层级复裁 切片 4·D7）。
+ *
+ * @remarks
+ * 仅回执已激活的租户 id（会话真列新值）——前端据此重拉目录/租级端点。不回放成员资格/计费明细（各走其面）。
+ * @public
+ */
+export const activeTenantResultSchema = z.object({
+  /** 已激活的租级租户 id（写入会话 `activeTenantId`）。 */
+  tenantId: z.string(),
+});
+export type ActiveTenantResult = z.infer<typeof activeTenantResultSchema>;

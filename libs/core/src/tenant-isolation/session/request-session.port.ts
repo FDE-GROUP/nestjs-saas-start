@@ -43,6 +43,11 @@ export interface SessionView {
   /** 当前活动租户 id。 */
   readonly activeOrganizationId?: string;
   /**
+   * 显式激活的**租级**租户 id（第三次复裁切片 4·D7·BA session additionalField `activeTenantId`）。独立于
+   * `activeOrganizationId`：可无活动组织而有租上下文（租级端点解绑）。undefined = 未显式选租→回落 org 派生。
+   */
+  readonly activeTenantId?: string;
+  /**
    * 当前用户在 `activeOrganizationId` 租户内的成员角色（module-rbac-casl 丙裁：会话解析点
    * 预注入）。来自 BA membership **数据面**（认证域事实）；词汇外/无活动租户 → undefined，
    * 消费侧（AuthorizationGuard）据此 fail-closed。裁决不在本层。

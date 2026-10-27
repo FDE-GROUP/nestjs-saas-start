@@ -27,6 +27,11 @@ export interface SessionUser {
   id: string;
   /** 邮箱地址。 */
   email: string;
+  /**
+   * 当前会话主键 id（第三次层级复裁 切片 4·D7·由 `SessionGuard` 从已验签 BA 会话挂上·与 user.id 同可信度）。
+   * 供「设活动租户」端点定位待写 session 行（不重签会话·仅改其真列）。无会话行 id（极端读不到）→ undefined。
+   */
+  sessionId?: string;
 }
 
 /**
@@ -102,7 +107,12 @@ export class SessionGuard implements CanActivate {
         errorCode: ERROR_CODES.AUTH_ACCOUNT_SUSPENDED,
       });
 
-    req.sessionUser = { id: userId, email: String(result.user.email ?? '') };
+    req.sessionUser = {
+      id: userId,
+      email: String(result.user.email ?? ''),
+      // 切片 4·D7：携已验签会话主键（与 user.id 同可信度）供租级激活写点定位。
+      sessionId: result.session?.id ? String(result.session.id) : undefined,
+    };
     return true;
   }
 }

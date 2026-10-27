@@ -32,4 +32,10 @@ export interface TenantScopeResolver {
    * 无归属/本体缺失 → `undefined`（fail-closed·与旧 `resolveTenantIdOf` 同契约）。
    */
   resolveTenantScopeOf(organizationId: string): Promise<TenantScopeResolution | undefined>;
+  /**
+   * 直读给定租户的租内跨组织可见性策略（第三次复裁切片 4·D7 显式租级激活路径）：会话携
+   * `activeTenantId`（无活动组织）时，中间件据此读 `orgVisibility` 供切片 1 全局 filter 消费。
+   * 本体缺失/读不回 → `undefined`（视同 shared）。纯读、无副作用。
+   */
+  readOrgVisibility(tenantId: string): Promise<string | undefined>;
 }

@@ -22,4 +22,13 @@ export interface AuthSessionStore {
    * @returns 删除行数。
    */
   deleteAllForUser(userId: string): Promise<number>;
+  /**
+   * 写会话的租级激活位 `activeTenantId`（第三次层级复裁 切片 4·D7 租户激活解绑）：
+   * 按会话主键 `sessionId` 直写单行真列（不依赖 ALS 租户上下文·租级激活面本身尚无活动租）。
+   * 调用方（设活动租户 handler）**必须先校成员资格**（防跨租提权）·本端口只负责受控写入。
+   * @param sessionId - 会话主键（由已验签会话派生·可信）。
+   * @param tenantId - 目标租户 id（已验成员资格）。
+   * @returns 受影响行数（0 → 会话不存在）。
+   */
+  setActiveTenant(sessionId: string, tenantId: string): Promise<number>;
 }

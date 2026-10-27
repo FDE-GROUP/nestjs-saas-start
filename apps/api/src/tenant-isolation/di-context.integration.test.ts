@@ -79,6 +79,8 @@ function tenantScopeStub(
 ): TenantScopeResolver {
   return {
     resolveTenantScopeOf: async () => (tenantId ? { tenantId, orgVisibility } : undefined),
+    // 切片 4·D7：显式租激活路径的可见性直读桩（本组测试走 org 派生·不触此支）。
+    readOrgVisibility: async () => orgVisibility,
   } as unknown as TenantScopeResolver;
 }
 

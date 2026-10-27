@@ -1,6 +1,10 @@
 import type { TenancyStatus } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ApiProperty } from '@nestjs/swagger';
-import type { TenantDirectoryEntryView, TenantDirectoryView } from '@saas/contracts/index';
+import type {
+  ActiveTenantResult,
+  TenantDirectoryEntryView,
+  TenantDirectoryView,
+} from '@saas/contracts/index';
 import type {
   TenantDirectoryEntry,
   TenantDirectoryOrganization,
@@ -52,6 +56,15 @@ export class TenantDirectoryResponse {
   tenants!: TenantDirectoryEntryResponse[];
 }
 
+/**
+ * 会话活动租户设置回执响应（`PUT /tenants/active`·第三次层级复裁 切片 4·D7）。
+ * @public
+ */
+export class ActiveTenantResponse {
+  @ApiProperty({ description: '已激活的租级租户 id（写入会话 activeTenantId）。' })
+  tenantId!: string;
+}
+
 // —— 编译期双向对拍：response 类与真相源领域条目、contracts zod 单源输出型三者恒等，任一漂移 tsc 红。——
 const _d1: TenantDirectoryEntry = {} as TenantDirectoryEntryResponse;
 const _d2: TenantDirectoryEntryResponse = {} as TenantDirectoryEntry;
@@ -60,6 +73,9 @@ const _d4: TenantDirectoryOrganizationResponse = {} as TenantDirectoryOrganizati
 const _v1: TenantDirectoryView = {} as TenantDirectoryResponse;
 const _v2: TenantDirectoryResponse = {} as TenantDirectoryView;
 const _v3: TenantDirectoryEntryView = {} as TenantDirectoryEntry;
+// 第三次复裁切片 4·D7：活动租户回执与 contracts 单源型双向对拍。
+const _a1: ActiveTenantResult = {} as ActiveTenantResponse;
+const _a2: ActiveTenantResponse = {} as ActiveTenantResult;
 void _d1;
 void _d2;
 void _d3;
@@ -67,3 +83,5 @@ void _d4;
 void _v1;
 void _v2;
 void _v3;
+void _a1;
+void _a2;
