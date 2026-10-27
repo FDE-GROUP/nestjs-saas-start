@@ -65,6 +65,8 @@ const GATED_E2E_FILES = [
   'apps/api/src/tenant-isolation/org-visibility-isolation.e2e.test.ts',
   // 第三次层级复裁 切片 4（D7）·租户激活解绑真库 e2e：设活动租落 activeTenantId+清活动 org·跨租 fail-closed·租级可达不依赖 org。
   'apps/api/src/tenant-isolation/tenant-activation.e2e.test.ts',
+  // P0 安全缺陷修复·真 HTTP+ALS 反证 e2e：X1 多租目录含全租 + 切租可达（补 tenant-activation 直调 bus 的证明力错位）·X2 混态租借权读侧 fail-closed 403。
+  'apps/api/src/tenant-isolation/p0-lockout-escalation.e2e.test.ts',
   // 私有叠加层条目（module-odoo-rpc-frontend §4-3·高危#3 经人签核 2026-10-25）：登记随真源
   // 「在场即必须登记」，缺席态由下方 overlayAbsent 豁免判据放行——恒等闸两态全绿。
   'apps/api/src/features/odoo-rpc-api/api/odoo-rpc-live.e2e.test.ts',

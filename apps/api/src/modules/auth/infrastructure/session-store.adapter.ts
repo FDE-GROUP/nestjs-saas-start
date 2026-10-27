@@ -34,4 +34,14 @@ export class MikroSessionStoreAdapter implements AuthSessionStore {
       { activeTenantId: tenantId, activeOrganizationId: null } as never,
     );
   }
+
+  /**
+   * 清会话租级激活位（P0 修复 X2·双激活位互斥）：按 `id` 主键 UPDATE 将 `activeTenantId` 置 NULL。
+   * `session` 属 auth 上下文（无租户隔离 filter），nativeUpdate 纯 SQL 不受全局 filter 影响。调用方
+   * （切活动组织门面）在 BA 写 org 成功后调本方法，使 org/租二激活位不共存。
+   */
+  async clearActiveTenant(sessionId: string): Promise<number> {
+    const em = await this.mikro.fork({ scoped: false });
+    return em.nativeUpdate(Session, { id: sessionId } as never, { activeTenantId: null } as never);
+  }
 }

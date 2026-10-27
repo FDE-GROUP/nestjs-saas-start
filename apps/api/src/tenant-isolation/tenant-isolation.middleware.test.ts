@@ -199,15 +199,30 @@ describe('TenantIsolationMiddleware · 切片 4 D7 租级激活解绑（显式 a
     expect(store?.role).toBeUndefined();
   });
 
-  it('显式优先于 org 派生（两者皆在·tenantId 取 activeTenantId·组织轴仍绑供归属面）', async () => {
+  it('P0 X2 混态不一致（activeTenantId=T1·activeOrganizationId=O2∈T2）→ 读侧 fail-closed 不绑主轴', async () => {
+    // 桩把 orgA 解析为 tenant-orgA（≠ 显式 tenantX）→ 复刻跨租混态 → 绝不绑 tenantX（防借 O2 role 在 T1 行权）。
     const { mw, resolveTenantScopeOf } = makeMiddleware({
       activeOrganizationId: 'orgA',
       activeTenantId: 'tenantX',
       blocked: false,
     });
     const store = await run(mw, reqWith());
-    expect(resolveTenantScopeOf).not.toHaveBeenCalled();
-    expect(store?.tenantId).toBe('tenantX');
+    expect(resolveTenantScopeOf).toHaveBeenCalledWith('orgA');
+    expect(store?.tenantId).toBeUndefined();
+    expect(store?.organizationId).toBeUndefined();
+    expect(store?.userId).toBe('u1');
+  });
+
+  it('P0 X2 双轴一致（org 属显式租）→ 正常绑主轴 + 组织轴（供归属面）', async () => {
+    // 历史/手改态下二者一致：orgA 解析 tenant-orgA == 显式 tenantId → 一致放行·绑租与 org。
+    const { mw, resolveTenantScopeOf } = makeMiddleware({
+      activeOrganizationId: 'orgA',
+      activeTenantId: 'tenant-orgA',
+      blocked: false,
+    });
+    const store = await run(mw, reqWith());
+    expect(resolveTenantScopeOf).toHaveBeenCalledWith('orgA');
+    expect(store?.tenantId).toBe('tenant-orgA');
     expect(store?.organizationId).toBe('orgA');
   });
 

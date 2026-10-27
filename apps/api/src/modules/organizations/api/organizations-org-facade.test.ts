@@ -1,4 +1,5 @@
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import type { AuthSessionStore } from '@app/modules/auth/domain/ports/session-store.port';
 import type { RoleAssignabilityReader } from '@app/modules/authorization/domain/ports/role-assignability.port';
 import type {
   OrganizationOdooBindingReader,
@@ -40,6 +41,15 @@ function bindingsStub(
 /** 租户软读桩（缺省无活跃租户）。 @internal */
 function tenantStub(organizationId?: string): TenantIsolationService {
   return { organizationId } as unknown as TenantIsolationService;
+}
+
+/** 会话租位写端口桩（P0 X2 双激活位互斥·clearActiveTenant 缺省 no-op）。 @internal */
+function sessionsStub(): AuthSessionStore {
+  return {
+    deleteAllForUser: vi.fn().mockResolvedValue(0),
+    setActiveTenant: vi.fn().mockResolvedValue(0),
+    clearActiveTenant: vi.fn().mockResolvedValue(0),
+  } as unknown as AuthSessionStore;
 }
 
 describe('OrganizationsOrgAdminController（管理门面·委派 + BA 错误归一）', () => {
@@ -103,6 +113,7 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
       instanceWith({ listUserInvitations }),
       bindingsStub(),
       tenantStub(),
+      sessionsStub(),
     );
     await ctrl.listMyInvitations(HEADERS, { id: 'u1', email: 'me@acme.com' });
     expect(listUserInvitations).toHaveBeenCalledWith({
@@ -117,6 +128,7 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
       instanceWith({ acceptInvitation }),
       bindingsStub(),
       tenantStub(),
+      sessionsStub(),
     );
     await expect(ctrl.acceptInvitation(HEADERS, { invitationId: 'inv-1' })).resolves.toEqual({
       member: { id: 'm1' },
@@ -129,14 +141,56 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
 
   it('BA status 为字符串的 4xx（如 seats 402）同样归一透传', async () => {
     const apiError = Object.assign(new Error('Seat limit reached'), { status: '402' });
+    const sessions = sessionsStub();
     const ctrl = new OrganizationsSelfController(
       instanceWith({ setActiveOrganization: vi.fn().mockRejectedValue(apiError) }),
       bindingsStub(),
       tenantStub(),
+      sessions,
     );
-    await expect(ctrl.setActive(HEADERS, { organizationId: 'org_1' })).rejects.toMatchObject({
+    await expect(
+      ctrl.setActive(
+        HEADERS,
+        { organizationId: 'org_1' },
+        { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
+      ),
+    ).rejects.toMatchObject({
       status: 402,
     });
+    // BA 写失败 → 不得清租位（不产生 org 已切/租已清的半态）。
+    expect(sessions.clearActiveTenant).not.toHaveBeenCalled();
+  });
+
+  it('P0 X2 双激活位互斥：BA 切活动组织成功后清 activeTenantId（sessionId 取自可信会话）', async () => {
+    const setActiveOrganization = vi.fn().mockResolvedValue({ ok: true });
+    const clearActiveTenant = vi.fn().mockResolvedValue(1);
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({ setActiveOrganization }),
+      bindingsStub(),
+      tenantStub(),
+      { clearActiveTenant } as unknown as AuthSessionStore,
+    );
+    await expect(
+      ctrl.setActive(
+        HEADERS,
+        { organizationId: 'org_1' },
+        { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
+      ),
+    ).resolves.toEqual({ ok: true });
+    expect(clearActiveTenant).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('P0 X2 互斥：sessionId 缺位（旧会话）→ 跳过清位（中间件读侧 org∈tenant 校验兜底）', async () => {
+    const setActiveOrganization = vi.fn().mockResolvedValue({ ok: true });
+    const clearActiveTenant = vi.fn().mockResolvedValue(1);
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({ setActiveOrganization }),
+      bindingsStub(),
+      tenantStub(),
+      { clearActiveTenant } as unknown as AuthSessionStore,
+    );
+    await ctrl.setActive(HEADERS, { organizationId: 'org_1' }, { id: 'u1', email: 'me@acme.com' });
+    expect(clearActiveTenant).not.toHaveBeenCalled();
   });
 });
 
@@ -153,6 +207,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       instanceWith({}),
       bindingsStub(row),
       tenantStub('org-1'),
+      sessionsStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: true,
@@ -167,6 +222,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       instanceWith({}),
       { read } as unknown as OrganizationOdooBindingReader,
       tenantStub(),
+      sessionsStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,
@@ -181,6 +237,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       instanceWith({}),
       bindingsStub(null),
       tenantStub('org-1'),
+      sessionsStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,
@@ -201,6 +258,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       instanceWith({}),
       bindingsStub(row),
       tenantStub('org-1'),
+      sessionsStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,

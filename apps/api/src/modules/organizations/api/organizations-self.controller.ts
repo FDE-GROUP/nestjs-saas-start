@@ -3,6 +3,10 @@ import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import {
+  AUTH_SESSION_STORE,
+  type AuthSessionStore,
+} from '@app/modules/auth/domain/ports/session-store.port';
 import { canUseOdoo } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import {
   ORGANIZATION_ODOO_BINDING_READER,
@@ -83,6 +87,7 @@ export class OrganizationsSelfController {
     @Inject(ORGANIZATION_ODOO_BINDING_READER)
     private readonly bindings: OrganizationOdooBindingReader,
     @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
+    @Inject(AUTH_SESSION_STORE) private readonly sessions: AuthSessionStore,
   ) {}
 
   private ba(): OrganizationSelfApi {
@@ -118,9 +123,10 @@ export class OrganizationsSelfController {
   }
 
   /**
-   * 切换会话的 active 租户（须为其成员）。
+   * 切换会话的 active 组织（须为其成员）。
    * @param headers - 透传 BA 的请求头。
-   * @param dto - 目标租户 id 载荷。
+   * @param dto - 目标组织 id 载荷。
+   * @param user - 会话用户（携 sessionId·P0 X2 双激活位互斥写坐标）。
    * @returns BA 切换结果；非成员 403 经 `mapBaError` 归一。
    */
   @Post('active')
@@ -138,9 +144,17 @@ export class OrganizationsSelfController {
   async setActive(
     @Headers() headers: Record<string, unknown>,
     @Body({ schema: setActiveOrganizationSchema }) dto: SetActiveOrganization,
+    @CurrentUser() user: SessionUser,
   ): Promise<unknown> {
     try {
-      return await this.ba().setActiveOrganization({ headers, body: dto });
+      const result = await this.ba().setActiveOrganization({ headers, body: dto });
+      // P0 修复 X2（双激活位互斥）：BA 写完 activeOrganizationId 后清 activeTenantId（与 setActiveTenant
+      // 反向成对），杜绝 `{activeTenantId=T1, activeOrganizationId=O2∈T2}` 混态→租内跨租借权。sessionId 缺
+      // 位（旧会话）→ 跳过清位（仍有中间件读侧 org∈tenant 校验兜底）。
+      if (user?.sessionId) {
+        await this.sessions.clearActiveTenant(user.sessionId);
+      }
+      return result;
     } catch (err) {
       return mapBaError(err);
     }

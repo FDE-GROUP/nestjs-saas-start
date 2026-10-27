@@ -109,13 +109,27 @@ export class TenantIsolationMiddleware implements NestMiddleware {
           // 第三次复裁切片 4·D7（租户激活解绑）解析序：**显式 activeTenantId 优先** → 回落 activeOrganizationId 派生。
           // 显式租轴经「设活动租户」端点校验成员资格后才落 session（本处不再校·与 BA 信任 activeOrganizationId 同模），
           // 但仍过租户失能卡点（deny-list）。无活动组织时组织轴留空（role 随之缺省·org 级 @Can fail-closed）。
+          // P0 修复 X2（读侧 fail-closed 校验）：显式租 + 活动 org 同在时必校 org∈tenant——写侧双激活位互斥
+          // （setActiveOrganization 清租位/setActiveTenant 清 org）后二者不应共存；本校验兜历史/手改/服务端透传
+          // 未清位遗留的混态 `{activeTenantId=T1, activeOrganizationId=O2∈T2}`：不一致/解析不出 → 不绑主轴（guard 403），
+          // 绝不回退用他租 org 冒充租户轴（借该 org 的 membership role 在他租行权 = 租内提权泄露面）。
           if (explicitTenantId) {
             return this.tenantStatus.isBlocked(explicitTenantId).then((blocked) => {
               if (blocked) return bind(undefined, userId);
+              if (organizationId) {
+                return this.tenantScope
+                  .resolveTenantScopeOf(organizationId)
+                  .then((scope) => {
+                    if (!scope || scope.tenantId !== explicitTenantId)
+                      return bind(undefined, userId);
+                    return bind(organizationId, userId, explicitTenantId, scope.orgVisibility);
+                  })
+                  .catch(() => bind(undefined, userId)); // fail-closed: 校验不可得 → 不绑租户
+              }
               return this.tenantScope
                 .readOrgVisibility(explicitTenantId)
-                .then((vis) => bind(organizationId, userId, explicitTenantId, vis))
-                .catch(() => bind(organizationId, userId, explicitTenantId));
+                .then((vis) => bind(undefined, userId, explicitTenantId, vis))
+                .catch(() => bind(undefined, userId, explicitTenantId));
             });
           }
           // 回落：无显式激活租 → 经活动组织派生主轴 tenantId（rehierarchy 切片 C 换轴·向后兼容）。

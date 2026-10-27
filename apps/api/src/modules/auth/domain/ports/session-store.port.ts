@@ -31,4 +31,12 @@ export interface AuthSessionStore {
    * @returns 受影响行数（0 → 会话不存在）。
    */
   setActiveTenant(sessionId: string, tenantId: string): Promise<number>;
+  /**
+   * 清会话租级激活位 `activeTenantId`（P0 修复 X2·双激活位互斥）：与 `setActiveTenant` 反向成对。
+   * 切活动组织时调用——选 org 与选租互斥，不清则遗留 `{activeTenantId=T1, activeOrganizationId=O2∈T2}`
+   * 混态 → 中间件显式优先绑 T1、role 却取自 O2 membership → 租内跨租借权。本端口只负责受控写入（清为 NULL）。
+   * @param sessionId - 会话主键（由已验签会话派生·可信）。
+   * @returns 受影响行数（0 → 会话不存在）。
+   */
+  clearActiveTenant(sessionId: string): Promise<number>;
 }
