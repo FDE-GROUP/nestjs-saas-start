@@ -1,5 +1,11 @@
 import 'reflect-metadata';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
+import {
+  TenantInvitation,
+  TenantMembership,
+  TenantRoleAssignment,
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
@@ -46,6 +52,7 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
   const wsA = uuidv7();
   const wsB = uuidv7();
   const wsC = uuidv7();
+  const createdUserIds: string[] = [];
 
   const scope = (
     extra: Partial<TenantIsolationScope> & { tenantId: string; organizationId: string },
@@ -143,6 +150,10 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
     await em.nativeDelete(Workspace, { id: { $in: [wsA, wsB, wsC] } } as never);
     await em.nativeDelete(Organization, { id: { $in: [orgA, orgB, orgC] } } as never);
     await em.nativeDelete(Tenant, { id: { $in: [tenantId, tenant2] } } as never);
+    if (createdUserIds.length) {
+      // 租级三表行已随 Tenant FK cascade 清净，再收钉锁面自建的用户行。
+      await em.nativeDelete(User, { id: { $in: createdUserIds } } as never);
+    }
     await app.close();
   });
 
@@ -258,5 +269,112 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
     })) as { id: string }[];
     // orgC 属 tenant2·orgA/orgB 属 tenantId——装空参 scoped:false 跨租全见三组织（不抛）。
     expect(rows.map((r) => r.id).sort()).toEqual([orgA, orgB, orgC].sort());
+  }, 60000);
+
+  it('X7 close-mech：租级三表在册钉锁（ALS 租户地板·scoped:false 跨租全见·未装参 em 抛）', async () => {
+    // tenant_membership/tenant_role_assignment/tenant_invitation 入 `tenantIsolation` 在册集（纪律→机制）：
+    // 绑租 ALS 下 scoped fork 无手写 where 仍只落本租行（机制地板）；名册/计量/消费点等跨租面
+    // 显式 scoped:false 绕筛（双保险·沿 X1 教训）；未装参 em 读新在册实体同 P0 D2① 抛形。
+    const now = new Date();
+    const uidA = uuidv7();
+    const uidC = uuidv7();
+    const seedEm = await mikro.fork({ scoped: false });
+    await seedEm.insert(User, [
+      {
+        id: uidA,
+        name: 'Vis A',
+        email: `e2e-vis-a-${stamp}@example.com`,
+        emailVerified: false,
+        image: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: uidC,
+        name: 'Vis C',
+        email: `e2e-vis-c-${stamp}@example.com`,
+        emailVerified: false,
+        image: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ] as never);
+    createdUserIds.push(uidA, uidC);
+    await seedEm.insert(TenantMembership, [
+      { id: `tm-${tenantId}`, tenantId, userId: uidA, createdAt: now, updatedAt: null },
+      { id: `tm-${tenant2}`, tenantId: tenant2, userId: uidC, createdAt: now, updatedAt: null },
+    ] as never);
+    await seedEm.insert(TenantRoleAssignment, [
+      {
+        id: `tra-${tenantId}`,
+        tenantId,
+        userId: uidA,
+        roleKey: 'member',
+        createdAt: now,
+        updatedAt: null,
+      },
+      {
+        id: `tra-${tenant2}`,
+        tenantId: tenant2,
+        userId: uidC,
+        roleKey: 'owner',
+        createdAt: now,
+        updatedAt: null,
+      },
+    ] as never);
+    await seedEm.insert(TenantInvitation, [
+      {
+        id: `ti-${tenantId}`,
+        tenantId,
+        email: `e2e-vis-inv-${stamp}@example.com`,
+        roleKey: 'member',
+        invitorId: null,
+        status: 'pending',
+        token: `tok-vis-${stamp}-a`,
+        expiresAt: null,
+        createdAt: now,
+        updatedAt: null,
+      },
+      {
+        id: `ti-${tenant2}`,
+        tenantId: tenant2,
+        email: `e2e-vis-inv2-${stamp}@example.com`,
+        roleKey: 'member',
+        invitorId: null,
+        status: 'pending',
+        token: `tok-vis-${stamp}-c`,
+        expiresAt: null,
+        createdAt: now,
+        updatedAt: null,
+      },
+    ] as never);
+
+    // T1（shared）上下文零手写谓词：三表均只见本租一行——他租行经机制地板不可见。
+    const floored = await tenantIsolationStorage.run(
+      scope({ tenantId, organizationId: orgA }),
+      async () => {
+        const em = await mikro.fork();
+        return {
+          members: await em.find(TenantMembership, {} as never),
+          assignments: await em.find(TenantRoleAssignment, {} as never),
+          invitations: await em.find(TenantInvitation, {} as never),
+        };
+      },
+    );
+    expect(floored.members.map((r) => r.tenantId)).toEqual([tenantId]);
+    expect(floored.assignments.map((r) => r.tenantId)).toEqual([tenantId]);
+    expect(floored.invitations.map((r) => r.tenantId)).toEqual([tenantId]);
+
+    // scoped:false 治理/名册面：跨租全见（X1 目录/R3 切租面同口径）。
+    const govEm = await mikro.fork({ scoped: false });
+    expect(await govEm.count(TenantMembership, {} as never)).toBeGreaterThanOrEqual(2);
+    expect(await govEm.count(TenantRoleAssignment, {} as never)).toBeGreaterThanOrEqual(2);
+    expect(await govEm.count(TenantInvitation, {} as never)).toBeGreaterThanOrEqual(2);
+
+    // 未装参 em 读新在册实体 → v7 抛「No arguments provided」（P0 D2① 同形·防升级漂移）。
+    const rawEm = await mikro.newTransactionEm();
+    await expect(rawEm.find(TenantMembership, {} as never)).rejects.toThrow(
+      /No arguments provided for filter/,
+    );
   }, 60000);
 });

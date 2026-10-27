@@ -10,7 +10,9 @@ import {
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import {
+  TenantMembership,
   TenantRole,
+  TenantRoleAssignment,
   TenantRoleGrant,
   type TenantRoleRow,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
@@ -46,7 +48,10 @@ import { AppModule } from '../../app.module';
  * 夹具注记：B 以 em 直插 member 行（role 先 'member' 后改 'limited'——同表同列，BA set-active
  * 只校验成员身份不锁 role 值），grant 经 `tenant_role`/`tenant_role_grant` 真实行（与
  * dynamic-roles 片仓储视图同形·不自造通道）；`ensureSystemRoles` 由 A 首次 check 触发，
- * 自定义 key 不在其辖内·不播种不回收。
+ * 自定义 key 不在其辖内·不播种不回收。X7 换轴后同步镜像租级轴：创建者 A 落
+ * `tenant_membership`+`tenant_role_assignment(owner)`（R1 creator-join 生产链同形），B 入租落
+ * 成员行 + 分配（member→limited 与 BA 角色改写同步）——会话角色现从 `tenant_role_assignment`
+ * 按活动租户解析，仅 BA 行拿不到任何职权（实跑自捕 403）。
  *
  * **默认跳过**：仅 `E2E_DATABASE_URL` 存在时运行（开关），连接串取 `DATABASE_URL`——对齐
  * tenant-isolation.e2e.test.ts 的 gated 纪律；夹具 afterAll 清净，时间戳后缀保幂等。
@@ -194,6 +199,22 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
     } as never);
     await stampEm.nativeUpdate(Organization, { id: orgId } as never, { tenantId: orgId } as never);
     createdTenantIds.push(orgId);
+    // X7 R1 creator-join 镜像：A 建租即落租级成员 + owner 分配（会话角色现从租级解析）。
+    await stampEm.insert(TenantMembership, {
+      id: `${orgId}-${a.userId}-tm`,
+      tenantId: orgId,
+      userId: a.userId,
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await stampEm.insert(TenantRoleAssignment, {
+      id: `${orgId}-${a.userId}-tra`,
+      tenantId: orgId,
+      userId: a.userId,
+      roleKey: 'owner',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
 
     // A 也需 set-active（会话落 activeOrganizationId，否则租户墙 fail-closed 403·实跑自捕）。
     const actA = await authApi().setActiveOrganization({
@@ -213,6 +234,22 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
         `insert into "member" ("id", "organizationId", "userId", "role", "createdAt") values (?, ?, ?, ?, now())`,
         [uuidv7(), orgId, b.userId, 'member'],
       );
+    // B 入租：租级成员 + 初始 member 分配（后续随 BA 角色改写同步换 limited）。
+    await em.insert(TenantMembership, {
+      id: `${orgId}-${b.userId}-tm`,
+      tenantId: orgId,
+      userId: b.userId,
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await em.insert(TenantRoleAssignment, {
+      id: `${orgId}-${b.userId}-tra`,
+      tenantId: orgId,
+      userId: b.userId,
+      roleKey: 'member',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
 
     const act = await authApi().setActiveOrganization({
       body: { organizationId: orgId },
@@ -259,6 +296,12 @@ gated('Workspace 实例属主端到端（RBAC query 级 where 支真库兑现 ·
         `update "member" set "role" = 'limited' where "organizationId" = ? and "userId" = ?`,
         [orgId, b.userId],
       );
+    // 租级轴同步：B 的会话角色分配换 limited（guard 解析自本表·非 BA member.role）。
+    await em.nativeUpdate(
+      TenantRoleAssignment,
+      { tenantId: orgId, userId: b.userId } as never,
+      { roleKey: 'limited' } as never,
+    );
 
     // — 1. 盖章：A 创建 wA（ownerId 由 handler 从 ALS 取会话值·不经 body）。
 

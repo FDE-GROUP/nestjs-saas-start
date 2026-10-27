@@ -10,6 +10,11 @@ import {
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import {
+  TenantInvitation,
+  TenantMembership,
+  TenantRoleAssignment,
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
+import {
   Invitation,
   Member,
   Organization,
@@ -30,30 +35,32 @@ import {
 import { AppModule } from '../../app.module';
 
 /**
- * S7 收尾 · seats 配额 hook 接线的 **env-gated 全栈 e2e**（plan module-tenancy-quota-member-wiring）。
+ * 席位配额 **env-gated 全栈 e2e**（X7 租级化后的三段真相）：
  *
- * 证真事项（单测给不了的两条）：
- * 1. **path 实证**：matcher 命中的是真实 HTTP 派发路径——BA 剥掉 basePath(`/api/v1/auth`) 后
- *    `context.path = '/organization/accept-invitation'`。若实证失败（不命中），第 N+1 个 accept
- *    将成功 2xx，测试即红——本文件就是 DoD「path 实证 + matcher 收紧」的载体。
- * 2. **商业闭环**：免费档（无订阅行回落 `FREE_PLAN.seatsLimit`）下 creator 占 1 席，
- *    invite→accept 塞满至限后，超出的 accept 被 hook 拒 **402** 且 member 行零增长。
- * 3. **计数换形恒等对拍**（第三次复裁切片 5·D6/pt10）：席位读侧已改读物化列 `tenant.memberCount`
- *    （库级触发器增量维护），本文件在真·BA 写入链（建租者 auto-join 早于盖租·accept 落行·超限拒绝不落行）
- *    各关键点断言 **物化读数 ≡ 两跳联表实数 ≡ 真实 member 行数**——证触发器（含 `organization.tenantId` 重链
- *    补计建租者）在实下常正确，且被 hook 拒的 accept **不推高**物化计数（fail-closed 无侧效）。
+ * 1. **租级 SSOT 闭环（新轴主面）**：席位计量 = live `tenant_membership`（R2 换锚）——owner 经
+ *    租级邀请端点（`POST /organizations/invitations` → `POST /organizations/invitations/accept`）
+ *    逐个 accept 塞满免费档（`FREE_PLAN.seatsLimit`）后，第 N+1 人 accept → **402**（门面守卫）·
+ *    live 计数零增长·超限邀请保持 pending（拒绝≠消费）。creator-join 沿生产 R1 写链同形补建。
+ * 2. **旧 BA 通道 hook 仍守卫（过渡双保险·直至 R6 退役）**：seats hook matcher 实证命中真实派发
+ *    path `/organization/accept-invitation`；计数现读 SSOT——租级席位灌满后 BA accept 仍被拒 **402**
+ *    且 BA member 行零增长（旧通道不旁路新真相）。
+ * 3. **X8 物化列/触发器/doctor（BA 轴过渡观测）**：`tenant.memberCount` 由库级触发器对 **BA member
+ *    写入链**维护（含 `organization.tenantId` relink 补计与 UPDATE 支）——本文件恒等对拍改**直读物化列
+ *    ≡ BA 两跳联表实数**（不再经 `store.countMembers`·后者已换租级 SSOT）；其最终存废随 **X8 契约段**
+ *    （落库·须人签）裁定，在此之前观测链必须常绿（物化列若继续供给展示/诊断则触发器不可断）。
  *
- * 走服务端编排网关（`authApi().createInvitation/acceptInvitation`·S9 补遗同款范式）：Test harness
- * 不复现 main.ts 的前缀/版本化装配，BA HTTP 端点在测试里无匹配 Nest 路由→中间件不触发→404
- *（tenant-isolation.e2e.test.ts 同因）；而 dispatch.mjs 注释明笔 **auth.api.* 与 router 走同一
- * hooks pipeline**——服务端调用同样过 seats 配额 hook，ctx.path 仍为 `/organization/accept-invitation`，
- * 证效与生产 HTTP 通道等价（仅绕开测试未装配的中间件层）。accept-invitation 为现网唯一真实入组通道。
+ * 旧 BA 通道走服务端编排网关（`authApi().createInvitation/acceptInvitation`·S9 补遗同款范式）：
+ * Test harness 不复现 main.ts 前缀/版本化装配，BA HTTP 端点在测试里无匹配 Nest 路由→中间件不触发
+ *（tenant-isolation.e2e.test.ts 同因）；而 dispatch.mjs 明笔 auth.api.* 与 router 走同一 hooks
+ * pipeline——服务端调用同样过 seats hook，证效与生产 HTTP 通道等价。
  *
- * 超限断言用 `asResponse: true`：拿原生 Response（402）而非抛错，与 signUp/signIn 编排同款。
+ * 换轴夹具注：BA `createOrganization` 不盖 `organization.tenantId`——沿生产写链补建 1:1 专属租户行
+ * （tenant.id=org.id）并盖 tenantId + creator-join（R1 同形），否则 hook/门面解析不到目标租户→
+ * 402 永不触发（实跑自捕）。
  *
  * **默认跳过**：需已建 schema 的真实 Postgres，仅 `E2E_DATABASE_URL` 存在时运行（开关），
  * 连接串取 `DATABASE_URL`——对齐 tenant-isolation.e2e.test.ts 的 gated 纪律，不破默认 CI DB-free 不变量。
- * 夹具（用户/org/member/invitation）afterAll 清净，时间戳后缀保幂等。
+ * 夹具（用户/org/member/invitation/租级三表行）afterAll 清净（租级行随 Tenant FK cascade），时间戳后缀保幂等。
  */
 const E2E_DB = process.env.E2E_DATABASE_URL;
 const gated = E2E_DB ? describe : describe.skip;
@@ -75,7 +82,7 @@ interface Actor {
   readonly cookie: string;
 }
 
-gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）', () => {
+gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 守卫 + X8 过渡观测 · env-gated）', () => {
   let app: NestFastifyApplication;
   let mikro: MikroOrmService;
 
@@ -169,78 +176,170 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     });
   }
 
-  const countMembers = async (orgId: string) => {
+  const countMembersBA = async (orgId: string) => {
     const em = await mikro.fork();
     return em.count(Member, { organizationId: orgId } as never);
   };
 
   /**
-   * 席位计数**恒等对拍**（切片 5·D6/pt10）：物化列读数（`store.countMembers`·O(1)）≡
-   * 两跳联表实数（`store.reconcileMembers`）≡ 期望值。本文件为 1:1 租户替身（tenant.id = org.id），
-   * 三值应在真·BA 写入链各节点逐字相等（触发器常正确不变式）。
+   * X8 物化列恒等对拍（**BA 轴过渡观测**口径）：直读物化列 `tenant.memberCount`（O(1)·触发器维护）≡
+   * 两跳 BA 联表实数（`store.reconcileMembers`）≡ 期望值。本文件为 1:1 租户替身（tenant.id = org.id），
+   * 真·BA 写入链各节点三值逐字相等（触发器常正确不变式）。注：席位真相已另归 `store.countMembers`
+   * （live `tenant_membership`·R2 换锚），与本观测面正交。
    */
   const assertSeatIdentity = async (tenantId: string, expected: number) => {
     const store = app.get<MikroQuotaStore>(QUOTA_STORE);
-    const materialized = await store.countMembers(tenantId);
+    const em = await mikro.fork({ scoped: false });
+    const tenant = await em.findOne(Tenant, { id: tenantId } as never);
+    const materialized = (tenant as { memberCount?: number } | null)?.memberCount ?? null;
     const joined = await store.reconcileMembers(tenantId);
-    expect(materialized, `物化 tenant.memberCount(${tenantId})`).toBe(expected);
-    expect(joined, `联表实数(${tenantId})`).toBe(expected);
+    expect(materialized, `物化列 tenant.memberCount(${tenantId})`).toBe(expected);
+    expect(joined, `BA 联表实数(${tenantId})`).toBe(expected);
     expect(materialized, '物化 ≡ 联表（漂移即触发器失真）').toBe(joined);
   };
 
-  it('免费档塞满后 accept-invitation 被 hook 拒 402，member 行零增长（path 实证 + 商业闭环）', async () => {
-    const owner = await signUpThenSignIn('owner');
+  /**
+   * 建组织 + 补建 1:1 专属租户（tenant.id=org.id）+ creator-join（R1 生产写链同形：落租级成员
+   * + owner 分配）+ setActive（会话落 activeOrganizationId·ALS 经组织派生租户），返回 tenantId。
+   */
+  async function createOrgFor(actor: Actor, tag: string): Promise<string> {
     const created = await authApi().createOrganization({
-      body: { name: `E2E Seats Org ${stamp}`, slug: `e2e-seats-${stamp}`, userId: owner.userId },
+      body: {
+        name: `E2E Seat ${tag} ${stamp}`,
+        slug: `e2e-seat-o-${tag}-${stamp}`,
+        userId: actor.userId,
+      },
     });
     const orgId = String((created as { id?: unknown }).id);
-    if (!orgId || orgId === 'undefined') throw new Error(`createOrganization 无 id`);
+    if (!orgId || orgId === 'undefined') throw new Error(`createOrganization(${tag}) 无 id`);
     createdOrgIds.push(orgId);
-
-    // rehierarchy 切片 D：席位按租户聚合（经 `organization.tenantId` 派生·见 seats hook +
-    // mikro-quota.store.countMembers）。BA 原生 createOrganization 不盖 tenantId·此处沿生产
-    // 换轴写链（provisioning/seed）补建专属租户行并盖 organization.tenantId（1:1·tenant.id=org.id），
-    // 否则 hook 解析不到目标租户→放行→本文件 402 断言永不触发。
-    const stampEm = await mikro.fork();
-    await stampEm.insert(Tenant, {
+    const em = await mikro.fork({ scoped: false });
+    await em.insert(Tenant, {
       id: orgId,
-      name: `E2E Seats Tenant ${stamp}`,
-      slug: `e2e-seats-${stamp}`,
+      name: `E2E Seat T ${tag} ${stamp}`,
+      slug: `e2e-seat-t-${tag}-${stamp}`,
       status: 'active',
       createdAt: new Date(),
       updatedAt: null,
     } as never);
-    await stampEm.nativeUpdate(Organization, { id: orgId } as never, { tenantId: orgId } as never);
     createdTenantIds.push(orgId);
+    await em.nativeUpdate(Organization, { id: orgId } as never, { tenantId: orgId } as never);
+    await em.insert(TenantMembership, {
+      id: `${orgId}-${actor.userId}-tm`,
+      tenantId: orgId,
+      userId: actor.userId,
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await em.insert(TenantRoleAssignment, {
+      id: `${orgId}-${actor.userId}-tra`,
+      tenantId: orgId,
+      userId: actor.userId,
+      roleKey: 'owner',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    const act = await authApi().setActiveOrganization({
+      body: { organizationId: orgId },
+      headers: { cookie: actor.cookie },
+      asResponse: true,
+    });
+    if (act.status >= 400)
+      throw new Error(`setActiveOrganization(${tag}) ${act.status}: ${await act.text()}`);
+    return orgId;
+  }
 
-    // creator 已占 1 席；免费档限额 = FREE_PLAN.seatsLimit
+  it('租级席位闭环：tenant 邀请 accept 塞满免费档后第 N+1 人 402·live SSOT 零增长·超限邀请保持 pending', async () => {
+    const owner = await signUpThenSignIn('t-owner');
+    const tenantId = await createOrgFor(owner, 't');
+    const store = app.get<MikroQuotaStore>(QUOTA_STORE);
     const limit = FREE_PLAN.seatsLimit.value; // S2：OrganizationPlan.seatsLimit 已 Quota VO 化
-    expect(await countMembers(orgId)).toBe(1);
-    // 物化恒等：盖租（nativeUpdate tenantId）经 org-relink 触发器补计建租者→ 1（写入顺序隐患治理坐实）。
-    await assertSeatIdentity(orgId, 1);
+    // creator 占 1 席（R1 creator-join 镜像落租级表）。
+    expect(await store.countMembers(tenantId)).toBe(1);
 
-    // 塞满：再入 (limit - 1) 人，逐个 invite→accept，全部应成功（未超限零误伤）
-    for (let i = 1; i < limit; i++) {
-      const invitee = await signUpThenSignIn(`m${i}`);
-      const invitationId = await inviteMember(owner, orgId, invitee.email);
-      const res = await acceptInvitation(invitee, invitationId);
-      expect(
-        res.status,
-        `第 ${i} 人 accept 应成功（body=${await res.clone().text()}）`,
-      ).toBeLessThan(400);
+    /** owner 发租级邀请（真 HTTP·org-admin 端点·返空体）→ 受邀者经 mine 查回 id → accept 入租。 */
+    async function inviteAndAccept(tag: string): Promise<{ status: number; body: string }> {
+      const invitee = await signUpThenSignIn(tag);
+      const inv = await app.inject({
+        method: 'POST',
+        url: '/organizations/invitations',
+        headers: { cookie: owner.cookie, 'content-type': 'application/json' },
+        payload: JSON.stringify({ email: invitee.email, role: 'member' }),
+      });
+      if (inv.statusCode >= 400)
+        throw new Error(`createInvitation(${tag}) ${inv.statusCode}: ${inv.body}`);
+      // 发邀端点不带 id（生产口径）——受邀者跨租个人可见面 `invitations/mine` 查回。
+      const mine = await app.inject({
+        method: 'GET',
+        url: '/organizations/invitations/mine',
+        headers: { cookie: invitee.cookie },
+      });
+      if (mine.statusCode >= 400)
+        throw new Error(`invitations/mine(${tag}) ${mine.statusCode}: ${mine.body}`);
+      const rows = (mine.json() as { data?: { id?: string; tenantId?: string }[] }).data ?? [];
+      const invitationId = String(rows.find((r) => r.tenantId === tenantId)?.id);
+      if (!invitationId || invitationId === 'undefined')
+        throw new Error(`invitations/mine(${tag}) 未回本租邀请行: ${mine.body}`);
+      const acc = await app.inject({
+        method: 'POST',
+        url: '/organizations/invitations/accept',
+        headers: { cookie: invitee.cookie, 'content-type': 'application/json' },
+        payload: JSON.stringify({ invitationId }),
+      });
+      return { status: acc.statusCode, body: acc.body };
     }
-    expect(await countMembers(orgId)).toBe(limit);
-    await assertSeatIdentity(orgId, limit);
 
-    // 超限：第 limit+1 人 accept → hook 拒 402（S7 语义=需升级档位），member 不增。
-    // 实测服务端通道行为：hook 抛的 APIError 在 auth.api.* 调用面直接冒泡（asResponse 不拦），
-    // 生产 HTTP 面则由 BA handler 层转 402 响应——两态都接，断言 status/message 同口径。
-    const extra = await signUpThenSignIn('overflow');
-    const overflowInvitationId = await inviteMember(owner, orgId, extra.email);
+    // 塞满：(limit-1) 人逐个 accept 成功（未超限零误伤），live 席位达限。
+    for (let i = 1; i < limit; i++) {
+      const r = await inviteAndAccept(`m${i}`);
+      expect(r.status, `第 ${i} 人 accept 应成功（body=${r.body}）`).toBeLessThan(400);
+    }
+    expect(await store.countMembers(tenantId)).toBe(limit);
+
+    // 超限：第 N+1 人 accept → 门面守卫拒 402·席位零增长·邀请保持 pending（拒绝≠消费）。
+    const over = await inviteAndAccept('overflow');
+    expect(over.status).toBe(402);
+    expect(over.body).toContain('Seat quota exceeded');
+    expect(await store.countMembers(tenantId)).toBe(limit);
+    const em = await mikro.fork({ scoped: false });
+    const row = await em.findOne(TenantInvitation, {
+      tenantId,
+      email: `e2e-seat-overflow-${stamp}@example.com`,
+    } as never);
+    expect(row?.status).toBe('pending');
+  }, 120000);
+
+  it('旧 BA 通道 hook 仍守卫（过渡双保险·直至 R6 退役）：租级席位塞满后 BA accept-invitation 拒 402·BA member 零增长', async () => {
+    const owner = await signUpThenSignIn('h-owner');
+    const tenantId = await createOrgFor(owner, 'hook');
+    const store = app.get<MikroQuotaStore>(QUOTA_STORE);
+    const limit = FREE_PLAN.seatsLimit.value;
+
+    // 直插租级成员灌满席位（模拟租级入组已达限；BA 轴 member 行仍仅 owner auto-join 1 条）。
+    const em = await mikro.fork({ scoped: false });
+    for (let i = 1; i < limit; i++) {
+      const u = await signUpThenSignIn(`h-m${i}`);
+      await em.insert(TenantMembership, {
+        id: `${tenantId}-${u.userId}-tm`,
+        tenantId,
+        userId: u.userId,
+        createdAt: new Date(),
+        updatedAt: null,
+      } as never);
+    }
+    expect(await store.countMembers(tenantId)).toBe(limit);
+    expect(await countMembersBA(tenantId)).toBe(1);
+
+    // BA invite→accept：hook matcher 命中真实派发 path `/organization/accept-invitation`，
+    // 计数现读 SSOT（live `tenant_membership`）→ 402。实测服务端通道行为：hook 抛的 APIError
+    // 在 auth.api.* 调用面直接冒泡（asResponse 不拦），生产 HTTP 面则由 BA handler 层转 402
+    // 响应——两态都接，断言 status/message 同口径。
+    const extra = await signUpThenSignIn('h-overflow');
+    const invitationId = await inviteMember(owner, tenantId, extra.email);
     let rejectedStatus: number;
     let rejectedText: string;
     try {
-      const rejected = await acceptInvitation(extra, overflowInvitationId);
+      const rejected = await acceptInvitation(extra, invitationId);
       rejectedStatus = rejected.status;
       rejectedText = await rejected.text();
     } catch (error) {
@@ -250,18 +349,9 @@ gated('seats 配额 hook 全栈 e2e（真·BA HTTP 入组通道 · env-gated）'
     }
     expect(rejectedStatus).toBe(402);
     expect(rejectedText).toContain('Seat quota exceeded');
-    expect(await countMembers(orgId)).toBe(limit);
-    // 被 hook 拒的 accept 不落 member 行→触发器不fire→物化不推高（仍 = limit·fail-closed 无侧效）。
-    await assertSeatIdentity(orgId, limit);
-
-    // 超限邀请保持 pending（hook 拒绝不等于消费）
-    const em = await mikro.fork();
-    const row = await em.findOne(
-      Invitation,
-      { id: overflowInvitationId, organizationId: orgId } as never,
-      { fields: ['status'] },
-    );
-    expect(row?.status).toBe('pending');
+    // 被 hook 拒的 accept 不落 BA 行、不推高 SSOT（fail-closed 无侧效）。
+    expect(await countMembersBA(tenantId)).toBe(1);
+    expect(await store.countMembers(tenantId)).toBe(limit);
   }, 120000);
 
   // ── 第三批 X8 追加：换组织恒等（证 X8-1 触发器 UPDATE OF organizationId 支）+ doctor 对拍自愈（X8-2）──

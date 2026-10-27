@@ -1241,7 +1241,7 @@
         {
           "name": "member_tenant_count_sync",
           "timing": "after",
-          "events": ["delete", "insert"],
+          "events": ["delete", "insert", "update"],
           "forEach": "row",
           "body": ""
         }
@@ -2176,6 +2176,361 @@
       "comment": null
     },
     {
+      "name": "tenant_invitation",
+      "schema": "public",
+      "columns": {
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "invitorId": {
+          "name": "invitorId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "roleKey": {
+          "name": "roleKey",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'pending'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": ["id"],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tenant_invitation_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": ["tenantId", "email"],
+          "composite": true,
+          "constraint": true,
+          "keyName": "tenant_invitation_tenant_email_idx",
+          "primary": false,
+          "unique": true,
+          "expression": "CREATE UNIQUE INDEX tenant_invitation_tenant_email_idx ON public.tenant_invitation USING btree (\"tenantId\", email)"
+        },
+        {
+          "columnNames": ["token"],
+          "composite": false,
+          "constraint": false,
+          "keyName": "tenant_invitation_token_idx",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [],
+      "triggers": [],
+      "foreignKeys": {
+        "tenant_invitation_invitorId_foreign": {
+          "columnNames": ["invitorId"],
+          "constraintName": "tenant_invitation_invitorId_foreign",
+          "localTableName": "public.tenant_invitation",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.user",
+          "deleteRule": "set null"
+        },
+        "tenant_invitation_tenantId_foreign": {
+          "columnNames": ["tenantId"],
+          "constraintName": "tenant_invitation_tenantId_foreign",
+          "localTableName": "public.tenant_invitation",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.tenant",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
+      "name": "tenant_membership",
+      "schema": "public",
+      "columns": {
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": ["id"],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tenant_membership_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": ["tenantId", "userId"],
+          "composite": true,
+          "constraint": true,
+          "keyName": "tenant_membership_tenant_user_idx",
+          "primary": false,
+          "unique": true,
+          "expression": "CREATE UNIQUE INDEX tenant_membership_tenant_user_idx ON public.tenant_membership USING btree (\"tenantId\", \"userId\")"
+        }
+      ],
+      "checks": [],
+      "triggers": [],
+      "foreignKeys": {
+        "tenant_membership_tenantId_foreign": {
+          "columnNames": ["tenantId"],
+          "constraintName": "tenant_membership_tenantId_foreign",
+          "localTableName": "public.tenant_membership",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.tenant",
+          "deleteRule": "cascade"
+        },
+        "tenant_membership_userId_foreign": {
+          "columnNames": ["userId"],
+          "constraintName": "tenant_membership_userId_foreign",
+          "localTableName": "public.tenant_membership",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "tenant_role",
       "schema": "public",
       "columns": {
@@ -2333,6 +2688,154 @@
       "comment": null
     },
     {
+      "name": "tenant_role_assignment",
+      "schema": "public",
+      "columns": {
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "roleKey": {
+          "name": "roleKey",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "tenantId": {
+          "name": "tenantId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": ["id"],
+          "composite": false,
+          "constraint": true,
+          "keyName": "tenant_role_assignment_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": ["tenantId", "userId"],
+          "composite": true,
+          "constraint": true,
+          "keyName": "tenant_role_assignment_tenant_user_idx",
+          "primary": false,
+          "unique": true,
+          "expression": "CREATE UNIQUE INDEX tenant_role_assignment_tenant_user_idx ON public.tenant_role_assignment USING btree (\"tenantId\", \"userId\")"
+        }
+      ],
+      "checks": [],
+      "triggers": [],
+      "foreignKeys": {
+        "tenant_role_assignment_tenantId_foreign": {
+          "columnNames": ["tenantId"],
+          "constraintName": "tenant_role_assignment_tenantId_foreign",
+          "localTableName": "public.tenant_role_assignment",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.tenant",
+          "deleteRule": "cascade"
+        },
+        "tenant_role_assignment_userId_foreign": {
+          "columnNames": ["userId"],
+          "constraintName": "tenant_role_assignment_userId_foreign",
+          "localTableName": "public.tenant_role_assignment",
+          "referencedColumnNames": ["id"],
+          "referencedTableName": "public.user",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "tenant_role_audit",
       "schema": "public",
       "columns": {
@@ -2444,7 +2947,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "unique": false,
           "length": null,
           "precision": null,
@@ -2611,23 +3114,6 @@
           "enumItems": [],
           "mappedType": "bigint"
         },
-        "organizationId": {
-          "name": "organizationId",
-          "type": "text",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": null,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "text"
-        },
         "roleId": {
           "name": "roleId",
           "type": "text",
@@ -2665,15 +3151,6 @@
       },
       "indexes": [
         {
-          "columnNames": ["roleId", "organizationId"],
-          "composite": true,
-          "constraint": false,
-          "keyName": "tenant_role_grant_org_idx",
-          "primary": false,
-          "unique": false,
-          "expression": "CREATE INDEX tenant_role_grant_org_idx ON public.tenant_role_grant USING btree (\"roleId\", \"organizationId\")"
-        },
-        {
           "columnNames": ["id"],
           "composite": false,
           "constraint": true,
@@ -2694,14 +3171,6 @@
       "checks": [],
       "triggers": [],
       "foreignKeys": {
-        "tenant_role_grant_organizationId_foreign": {
-          "columnNames": ["organizationId"],
-          "constraintName": "tenant_role_grant_organizationId_foreign",
-          "localTableName": "public.tenant_role_grant",
-          "referencedColumnNames": ["id"],
-          "referencedTableName": "public.organization",
-          "deleteRule": "cascade"
-        },
         "tenant_role_grant_roleId_foreign": {
           "columnNames": ["roleId"],
           "constraintName": "tenant_role_grant_roleId_foreign",

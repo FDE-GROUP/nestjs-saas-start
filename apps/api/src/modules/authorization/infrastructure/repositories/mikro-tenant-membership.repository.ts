@@ -17,9 +17,10 @@ import { TenantMembership, TenantRoleAssignment } from '../entities/rbac.entitie
  * @remarks
  * 表属主纪律：`tenant_membership`/`tenant_role_assignment` 属 `authorization`（table-ownership），
  * 本类在自身 owned 表内读写（写侧合规）。每操作 `fork()` 独立 em（V4 串租户教训·沿 RBAC 仓储同律）。
- * 此二表携 `tenantId` 主轴但**不入全局 `tenantIsolation` filter 注册集**（同 `tenant_role*` 目录表口径·
- * 见 rbac.entities 注），故统一以 `fork({ scoped:false })` 绕 ALS 派生 filter、经显式 `where{tenantId}`
- * 锚定隔离边界（无租户上下文亦不误筛·跨租治理面同律）。谓词一律简单等值（沿 `MikroTenantRbacRepository`
+ * 此二表携 `tenantId` 主轴且**已入全局 `tenantIsolation` filter 在册集**（X7 close-mech·见 rbac.entities
+ * 注），本类跨租/无上下文面仍统一以 `fork({ scoped:false })` 绕 ALS 派生 filter、经显式 `where{tenantId}`
+ * 锚定隔离边界（机制地板 + 手写锚定双保险并存·沿 X1 教训：名册/计量/消费点本就跨租，不可依赖
+ * 「无上下文天然不筛」的巧合）。谓词一律简单等值（沿 `MikroTenantRbacRepository`
  * 同律·无投影/无 `$in` 边界 cast）。
  *
  * `email`/`name` 展示走**跨上下文纯读**（user 表属 auth·读侧宽松·table-ownership 注）：成员数受席位

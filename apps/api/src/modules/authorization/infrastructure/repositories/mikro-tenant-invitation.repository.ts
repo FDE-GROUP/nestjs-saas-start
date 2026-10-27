@@ -21,7 +21,8 @@ const CANCELLED = 'cancelled';
  *
  * @remarks
  * 表属主：`tenant_invitation` 属 `authorization`（table-ownership）·本类在 owned 表内读写（写侧合规）。
- * 每操作 `fork({ scoped:false })` 独立 em（不入全局 filter 注册集·显式 `where{tenantId}` 锚界·同成员面同律）。
+ * 每操作 `fork({ scoped:false })` 独立 em（表已入全局 filter 在册集·X7 close-mech·本类跨租消费点——
+ * 按 id/token 定位受邀行先于租上下文——显式绕筛 + `where{tenantId}` 锚界·同成员面同律）。
  * 谓词一律简单等值（无投影/无 `$in`/无 `$or` 边界 cast·过期判定在内存做·规模受邀请量约束）。
  * `unique(tenantId,email)` 为库级硬约束（expand 段建）：同邮箱重投（曾 cancelled/accepted）走**复位**
  * 而非新行，避免撞 unique；pending 期重复投 → `duplicate`。

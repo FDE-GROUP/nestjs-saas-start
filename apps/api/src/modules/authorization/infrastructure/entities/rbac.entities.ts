@@ -4,6 +4,7 @@ import type {
 } from '@core/saas-kit/authorization/authorization-rules';
 import type { EntitySchema } from '@mikro-orm/core';
 import { buildRuntimeEntity, type TableMeta } from '../../../../database/mikro/column-meta';
+import { TENANT_ISOLATION_FILTERS } from '../../../../database/mikro/tenant-isolation-filter';
 
 /**
  * 租户 RBAC 动态化三表（module-rbac-dynamic-roles §2.2·甲裁「行式 grant + 审计表」·rehierarchy 片二 K4
@@ -128,8 +129,10 @@ export const TenantRoleAudit: EntitySchema<TenantRoleAuditRow> = buildRuntimeEnt
 
 // —— X7 租级成员/角色分配/邀请三表（global-role-membership-tenantization 切片 B）——
 // 把「成员关系 + 角色分配 + 邀请入租」从 BA org 维上收为自有租级 SSOT·org 降为纯数据分组（数据可见性
-// 仍由 `orgVisibility` 行级 filter 管·与授权轴正交）。此三表携 `tenantId` 主轴·读面以显式 `where{tenantId}`
-// + `fork({ scoped:false })` 锚定·不入全局 `tenantIsolation` filter 注册集（同 `tenant_role*` 目录表口径）。
+// 仍由 `orgVisibility` 行级 filter 管·与授权轴正交）。此三表携 `tenantId` 主轴·**已入全局 `tenantIsolation`
+// filter 在册集**（close-mech 纪律→机制：ALS 租户上下文内跨租读经硬地板自动收口·同 Workspace/Organization
+// 口径）；跨租面（名册目录/计量/邀请消费点/中间件锚解析）仍须显式 `fork({ scoped:false })` + `where{tenantId}`
+// 锚定（双保险·沿 X1 教训）；非 org-partitioned 表·isolated 租无 org 下不触 X3 拒所有哨兵（仅租户地板）。
 
 /**
  * `tenant_membership`：user × tenant 租级成员关系（唯一 SSOT·`unique(tenantId,userId)`）。
@@ -146,6 +149,8 @@ export const TENANT_MEMBERSHIP_META: TableMeta = {
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
   uniques: [{ name: 'tenant_membership_tenant_user_idx', properties: ['tenantId', 'userId'] }],
+  // X7 close-mech：入 `tenantIsolation` 在册集（ALS 有租上下文内跨租读自动地板收口）。
+  filters: TENANT_ISOLATION_FILTERS,
 };
 
 /**
@@ -165,6 +170,8 @@ export const TENANT_ROLE_ASSIGNMENT_META: TableMeta = {
     ['updatedAt', { k: 'datetime', nullable: true }],
   ],
   uniques: [{ name: 'tenant_role_assignment_tenant_user_idx', properties: ['tenantId', 'userId'] }],
+  // X7 close-mech：入 `tenantIsolation` 在册集；中间件锚解析面经显式 `scoped:false` 绕筛（它先于 ALS 绑定）。
+  filters: TENANT_ISOLATION_FILTERS,
 };
 
 /**
@@ -188,6 +195,8 @@ export const TENANT_INVITATION_META: TableMeta = {
   ],
   uniques: [{ name: 'tenant_invitation_tenant_email_idx', properties: ['tenantId', 'email'] }],
   indexes: [{ name: 'tenant_invitation_token_idx', properties: ['token'] }],
+  // X7 close-mech：入 `tenantIsolation` 在册集；受邀者 mine/accept 消费点跨租定位行经 `scoped:false` 锚定。
+  filters: TENANT_ISOLATION_FILTERS,
 };
 
 export interface TenantMembershipRow {

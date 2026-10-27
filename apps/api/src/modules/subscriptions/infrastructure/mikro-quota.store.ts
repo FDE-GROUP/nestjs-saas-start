@@ -50,8 +50,9 @@ export class MikroQuotaStore implements QuotaStore {
    * @remarks
    * 席位计量锚从 BA `member` 轴的物化计数（库级 `member` 触发器维护）**上收至自有租级成员 SSOT
    * `tenant_membership`**——否则经 `tenant_invitation`/admin 流入的新租级成员不写 BA member、不被物化
-   * 触发器计数 → 席位少算 → **超卖（X8 在新轴重开·R2 计费 fail-open）**。`tenant_membership` 不入全局
-   * filter 注册集·显式 `where{tenantId}` 锚定 + `scoped:false` 绕环境 ALS 筛（跨租计量面免误筛）。缺租
+   * 触发器计数 → 席位少算 → **超卖（X8 在新轴重开·R2 计费 fail-open）**。`tenant_membership` 已入全局
+   * filter 在册集（X7 close-mech）·本跨租计量面仍显式 `where{tenantId}` 锚定 + `scoped:false` 绕环境 ALS 筛
+   * （机制地板 + 手写锚定双保险·免误筛）。缺租
    * 成员行→ 0（fail-safe·配额卡点自会据 seatsLimit 拒加席）。物化列 `tenant.memberCount` 与 BA 触发器降为
    * 过渡观测事实·其最终存废随 **X8 契约段**（落库·须人签）一并裁定（口径取 plan L50「live count 免触发器迁移」）。
    */

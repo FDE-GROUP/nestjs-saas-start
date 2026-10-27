@@ -10,6 +10,10 @@ import {
   User,
 } from '@app/modules/auth/infrastructure/entities/ba-identity.entities';
 import {
+  TenantMembership,
+  TenantRoleAssignment,
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
+import {
   Member,
   Organization,
 } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
@@ -41,7 +45,9 @@ import { AppModule } from '../app.module';
  *
  * 换轴夹具注：BA `createOrganization` 不盖 `organization.tenantId`，隔离主轴经活动组织派生租户
  * （`TENANT_SCOPE_RESOLVER` 查 `organization.tenantId`）——故沿生产写链补建 1:1 专属租户行（tenant.id=org.id）
- * 并盖 tenantId，否则真 cookie 打租户级端点会被 fail-closed 403。
+ * 并盖 tenantId，否则真 cookie 打租户级端点会被 fail-closed 403。X7 换轴后同链补建 **R1 creator-join**
+ * （`tenant_membership` + `tenant_role_assignment(roleKey=owner)`）：会话角色现从租级分配解析（切片 C），
+ * 仅 BA 行的创建者拿不到任何职权（guard deny→403），须与生产 provisioning 写链同形。
  *
  * **默认跳过**：仅 `E2E_DATABASE_URL` 存在时运行·夹具 afterAll 清净·时间戳后缀保幂等。
  */
@@ -160,6 +166,23 @@ gated('P0 修复反证 e2e（X1 锁死 + X2 提权 · 真 HTTP+ALS · env-gated�
     } as never);
     createdTenantIds.push(tenantId);
     await em.nativeUpdate(Organization, { id: orgId } as never, { tenantId } as never);
+    // X7 R1 语义镜像（生产 provisioning 写链 creator-join）：创建者落租级成员 + owner 分配，
+    // 会话角色/席位/目录自此解析（仅 BA 行的创建者在换轴后拿不到职权·实跑自捕 403）。
+    await em.insert(TenantMembership, {
+      id: `${tenantId}-${actor.userId}-tm`,
+      tenantId,
+      userId: actor.userId,
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
+    await em.insert(TenantRoleAssignment, {
+      id: `${tenantId}-${actor.userId}-tra`,
+      tenantId,
+      userId: actor.userId,
+      roleKey: 'owner',
+      createdAt: new Date(),
+      updatedAt: null,
+    } as never);
 
     if (activate) {
       const act = await authApi().setActiveOrganization({

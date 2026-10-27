@@ -53,11 +53,13 @@ export class MikroTenantScopeResolver implements TenantScopeResolver {
   /**
    * 按**活动租户**读自有 `tenant_role_assignment` 解析会话角色（global-role-membership-tenantization
    * 切片 C 换源·弃 BA `getActiveMemberRole` org 维）：`unique(tenantId,userId)` 至多一行，取 `roleKey`。
-   * `tenant_role_assignment` 不入全局 `tenantIsolation` filter 注册集（同 `tenant_role*` 目录表口径）·
-   * 故经显式 `where{tenantId,userId}` 锚定即可·无分配行 → `undefined`（中间件/守卫 fail-closed）。纯读、无副作用。
+   * X7 close-mech：本表已入全局 `tenantIsolation` 在册集，而**本解析器是隔离机制锚自身**——运行于 ALS
+   * 绑定之前/可与目标租户不同（切租态），故须显式 `fork({ scoped:false })` 绕筛（沿 X1 目录面同律·
+   * 同文件 `resolveTenantScopeOf` 的 scoped 形在此不成立），经显式 `where{tenantId,userId}` 锚定；
+   * 无分配行 → `undefined`（中间件/守卫 fail-closed）。纯读、无副作用。
    */
   async resolveTenantRole(tenantId: string, userId: string): Promise<TenantRole | undefined> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const row = await em.findOne(TenantRoleAssignment, { tenantId, userId });
     const roleKey = row?.roleKey;
     return typeof roleKey === 'string' && roleKey.length > 0 ? roleKey : undefined;
