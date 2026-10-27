@@ -22,6 +22,7 @@ import { Tenant } from '../modules/organizations/infrastructure/entities/tenant.
 import { PostEntity } from '../modules/posts/infrastructure/entities/post.entity';
 import { initMikroOrm } from './mikro/mikro-orm.factory';
 import { MIKRO_SYS_ENTITIES } from './mikro/sys-entities';
+import { applyTenantFilterParams } from './mikro/tenant-isolation-filter';
 
 /**
  * ORM 修宪案 B · 切片 4-α（S-d6）——seed 数据面由旧 ORM 换轨为 **MikroORM**（只换通道·不改行为）。
@@ -550,7 +551,12 @@ async function main() {
   const orm = await initMikroOrm(process.env.DATABASE_URL as string, MIKRO_SYS_ENTITIES);
   const auth = createLoginableAuth(orm);
   try {
-    await runSeed(orm.em.fork(), options, auth);
+    const em = orm.em.fork();
+    // seed 是跨租治理面（按 slug 全局查组织·撒贴跨租户）：须显式装空 filter 参——
+    // 与 `MikroOrmService.fork({ scoped: false })` 同式（读在册过滤实体 Organization/Post 时
+    // 无参在 MikroORM v7 抛 `No arguments provided for filter 'tenantIsolation'`·空参令 cond 恒真不筛）。
+    applyTenantFilterParams(em, {});
+    await runSeed(em, options, auth);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`✅ Database seeding completed successfully in ${duration}s!`);
