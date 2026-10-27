@@ -22,18 +22,16 @@ function makeContext(): ExecutionContext {
 function makeGuard({
   tenantId,
   role,
-  organizationId,
   requirement,
   allowed,
 }: {
   tenantId?: string;
   role?: 'owner' | 'admin' | 'member';
-  organizationId?: string;
   requirement?: CanRequirement;
   allowed?: boolean;
 }) {
   const reflector = { getAllAndOverride: vi.fn().mockReturnValue(requirement) };
-  const tenantContext = { tenantId, role, organizationId } as never;
+  const tenantContext = { tenantId, role } as never;
   const can = vi.fn().mockResolvedValue(allowed ?? false);
   const checker = { can } as unknown as PermissionChecker;
   const guard = new AuthorizationGuard(reflector as never, tenantContext, checker);
@@ -84,41 +82,24 @@ describe('AuthorizationGuard（CASL 换形）', () => {
     await expect(guard.canActivate(makeContext())).rejects.toThrow(ForbiddenException);
   });
 
-  it('第三次复裁切片 2（D1）：常规路由透传 ALS 活动 org（租级通配 ∪ 本 org）', async () => {
+  it('X7 切片 C（推翻 D1・废 D6）：即便会话有活动 org，裁决仍只按活动租传（不再透传 org）', async () => {
+    // 旧 D1「常规路由透传活动 org」/ 旧 D6「tenantWildcardOnly 强制忽略 org」皆已随组织收窄维废除——
+    // 守卫对 PermissionChecker 的入参形不再含任何 org 字段（授权只锤活动租裁决）。
     const { guard, can } = makeGuard({
       tenantId: 'tenant_1',
       role: 'admin',
-      organizationId: 'org_1',
-      requirement: { action: 'read', subject: 'Member' },
+      requirement: { action: 'create', subject: 'Invitation' },
       allowed: true,
     });
     await expect(guard.canActivate(makeContext())).resolves.toBe(true);
     expect(can).toHaveBeenCalledWith({
       tenantId: 'tenant_1',
       role: 'admin',
-      organizationId: 'org_1',
-      action: 'read',
-      subject: 'Member',
-    });
-  });
-
-  it('第三次复裁切片 5（D6）：tenantWildcardOnly 路由强制忽略活动 org（传 undefined→仅租级通配 grant）', async () => {
-    const { guard, can } = makeGuard({
-      tenantId: 'tenant_1',
-      role: 'admin',
-      organizationId: 'org_1',
-      requirement: { action: 'create', subject: 'Invitation', tenantWildcardOnly: true },
-      allowed: true,
-    });
-    await expect(guard.canActivate(makeContext())).resolves.toBe(true);
-    // 即便 ALS 有活动 org，裁决仍以 organizationId=undefined 传入 → 仅 org=NULL 通配 grant 生效。
-    expect(can).toHaveBeenCalledWith({
-      tenantId: 'tenant_1',
-      role: 'admin',
-      organizationId: undefined,
       action: 'create',
       subject: 'Invitation',
     });
+    // 反钉：传入对象不得再携 organizationId 键（废维彻底·非仅传 undefined）。
+    expect(can.mock.calls[0]?.[0]).not.toHaveProperty('organizationId');
   });
 
   it('缺角色（ALS 未注入）以 role=undefined 交端口 → 桩拒 → 403（fail-closed 贯通）', async () => {

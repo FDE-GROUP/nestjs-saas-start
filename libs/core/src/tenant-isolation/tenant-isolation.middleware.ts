@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, type NestMiddleware } from '@nestjs/common';
+import type { TenantRole } from '../authorization/authorization-rules';
 import { TenantStatusService } from '../modules/organizations/lifecycle/tenant-status.service';
 import { UserStatusService } from '../modules/organizations/lifecycle/user-status.service';
 import { type RequestSessionReader, SESSION_READER } from './session/request-session.port';
@@ -60,8 +61,6 @@ export class TenantIsolationMiddleware implements NestMiddleware {
         const userId = view.userId;
         // 第三次复裁切片 4·D7：显式租级激活位（无活动组织也可建立租上下文·解「org 绑架」）。
         const explicitTenantId = view.activeTenantId;
-        // module-rbac-casl 丙裁：会话解析点预注入的成员角色（BA 数据面事实·CASL 裁决输入）。
-        const role = view.role;
         // S3 · workspace 二级边界 (D2/§9.2): the active workspace is a per-request
         // selector read from the `x-workspace-id` header (header may override — §9.2).
         // OPTIONAL: absent → request runs at tenant scope. Cross-tenant safety never
@@ -71,11 +70,23 @@ export class TenantIsolationMiddleware implements NestMiddleware {
         const workspaceId =
           typeof wsHeader === 'string' && wsHeader.length > 0 ? wsHeader : undefined;
 
+        // global-role-membership-tenantization 切片 C 换源：会话角色不再随会话携带（已从 SessionView 删），
+        // 改在**活动租户解析后**经 `TENANT_SCOPE_RESOLVER.resolveTenantRole` 从自有 `tenant_role_assignment`
+        // 按租户解析（角色只随活动租户·切 org 不翻角色）。解析失败/非成员 → undefined（守卫 fail-closed 403）。
+        const resolveRole = (
+          tenantId: string,
+          boundUser?: string,
+        ): Promise<TenantRole | undefined> =>
+          boundUser
+            ? this.tenantScope.resolveTenantRole(tenantId, boundUser).catch(() => undefined)
+            : Promise.resolve(undefined);
+
         const bind = (
           boundOrganizationId: string | undefined,
           boundUserId?: string,
           boundTenantId?: string,
           boundOrgVisibility?: string,
+          boundRole?: TenantRole,
         ): void => {
           const ctx: TenantIsolationScope = {
             // 主轴（隔离硬边界）：无封禁组织才解析得出租户；封禁/失能路径下一并清空。
@@ -83,8 +94,8 @@ export class TenantIsolationMiddleware implements NestMiddleware {
             organizationId: boundOrganizationId,
             workspaceId,
             userId: boundUserId,
-            // 无租户则无角色：封禁/失能路径下 role 一并清空（与「既不绑租户也不绑身份」同构）。
-            role: boundOrganizationId ? role : undefined,
+            // X7 换轴：角色只随**活动租户**解析（弃 org 维）；无租户则无角色·封禁/失能路径下留空。
+            role: boundTenantId ? boundRole : undefined,
             // 租内跨组织可见性策略（第三次复裁切片 3）：仅随主轴租户一同绑定；封禁/无租户路径下留空。
             orgVisibility: boundTenantId ? boundOrgVisibility : undefined,
           };
@@ -122,13 +133,19 @@ export class TenantIsolationMiddleware implements NestMiddleware {
                   .then((scope) => {
                     if (!scope || scope.tenantId !== explicitTenantId)
                       return bind(undefined, userId);
-                    return bind(organizationId, userId, explicitTenantId, scope.orgVisibility);
+                    return resolveRole(explicitTenantId, userId).then((r) =>
+                      bind(organizationId, userId, explicitTenantId, scope.orgVisibility, r),
+                    );
                   })
                   .catch(() => bind(undefined, userId)); // fail-closed: 校验不可得 → 不绑租户
               }
               return this.tenantScope
                 .readOrgVisibility(explicitTenantId)
-                .then((vis) => bind(undefined, userId, explicitTenantId, vis))
+                .then((vis) =>
+                  resolveRole(explicitTenantId, userId).then((r) =>
+                    bind(undefined, userId, explicitTenantId, vis, r),
+                  ),
+                )
                 .catch(() => bind(undefined, userId, explicitTenantId));
             });
           }
@@ -144,7 +161,9 @@ export class TenantIsolationMiddleware implements NestMiddleware {
               if (!scope) return bind(organizationId, userId);
               return this.tenantStatus.isBlocked(scope.tenantId).then((blocked) => {
                 if (blocked) return bind(undefined, userId);
-                return bind(organizationId, userId, scope.tenantId, scope.orgVisibility);
+                return resolveRole(scope.tenantId, userId).then((r) =>
+                  bind(organizationId, userId, scope.tenantId, scope.orgVisibility, r),
+                );
               });
             })
             .catch(() => bind(undefined, userId)); // fail-closed: 解析/状态不可得 → 不绑租户

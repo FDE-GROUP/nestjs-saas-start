@@ -78,12 +78,14 @@ describe('findViolations — 失实现态断言拦截 + 框定豁免', () => {
 });
 
 describe('登记表漂移守卫', () => {
-  it('当前登记五条有据反悔·supersededBy 齐备', () => {
+  it('当前登记六条有据反悔·supersededBy 齐备', () => {
     expect(OVERTURNED_RULINGS.map((r) => r.plan).sort()).toEqual([
       'global-organization-status-comment-sync',
       'global-organization-vocabulary-pivot',
       'global-tenancy-status-vocabulary',
       'global-tenant-entity-reclamation',
+      // X7（global-role-membership-tenantization 切片 C 落地）推翻第三次层级复裁租级⇄组织轴裁定·登记在册。
+      'global-tenant-organization-rehierarchy',
       'module-org-odoo-company-mapping',
     ]);
     for (const r of OVERTURNED_RULINGS) {

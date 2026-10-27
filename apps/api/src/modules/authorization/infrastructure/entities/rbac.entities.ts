@@ -47,21 +47,15 @@ export const TENANT_ROLE_GRANT_META: TableMeta = {
   columns: [
     ['id', { k: 'bigintAutoPk' }],
     ['roleId', { k: 'fk', target: 'TenantRole', onDelete: 'cascade' }],
-    // 组织收窄 scope（第三次复裁切片 2·D1）：grant 行可依组织收窄——NULL=**租级通配**（跨 org 生效·
-    // 存量 seed/旧行回填皆 NULL→零行为变更），非 NULL=仅在该 org 生效（子公司管理员）。角色目录仍
-    // 租级 `unique(tenantId,key)`（见 `TENANT_ROLE_META`·K5 塌缩不动），org 维**唯一落本 grant 列**。
-    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade', nullable: true }],
+    // X7（global-role-membership-tenantization 切片 C）：**废 grant 组织收窄维**（原 D1 `organizationId` 列已推翻）——
+    // grant 行仅经 `roleId`→`tenant_role(tenantId,key)` 链归属租户·跨 org 通配生效。
     ['subject', { k: 'text' }],
     ['action', { k: 'text' }],
     // CASL mongo conditions 形（{ ownerId: '{{userId}}' } 模板·S4 解析）；NULL = 整 subject 级。
     ['conditions', { k: 'json', nullable: true }],
     ['createdAt', { k: 'datetime', defaultNow: true }],
   ],
-  indexes: [
-    { name: 'tenant_role_grant_role_subject_idx', properties: ['roleId', 'subject'] },
-    // org-scope 读侧索引（findGrants 按 `(roleId, organizationId)` 过滤·NULL 通配 ∪ 本 org 收窄）。
-    { name: 'tenant_role_grant_org_idx', properties: ['roleId', 'organizationId'] },
-  ],
+  indexes: [{ name: 'tenant_role_grant_role_subject_idx', properties: ['roleId', 'subject'] }],
 };
 
 export const TENANT_ROLE_AUDIT_META: TableMeta = {
@@ -69,9 +63,10 @@ export const TENANT_ROLE_AUDIT_META: TableMeta = {
   tableName: 'tenant_role_audit',
   columns: [
     ['id', { k: 'bigintAutoPk' }],
-    // 租级留痕冗余列（同上·切片 C 换轴后审计读锚本列）。
+    // 租级留痕主轴（切片 C 换轴后审计读锚本列）。
     ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade', nullable: true }],
-    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade' }],
+    // X7（切片 C）：授权上收租级·审计改按租户盖章·`organizationId` 降 **nullable**（写侧留 NULL·仅供历史行兼容）。
+    ['organizationId', { k: 'fk', target: 'Organization', onDelete: 'cascade', nullable: true }],
     // 操作者可删：set null 留审计行本体（留痕不因 actor 消亡而丢）。
     ['actorId', { k: 'fk', target: 'User', onDelete: 'set null', nullable: true }],
     ['action', { k: 'text' }],
@@ -107,8 +102,6 @@ export const TenantRole: EntitySchema<TenantRoleRow> = buildRuntimeEntity(
 export interface TenantRoleGrantRow {
   id: number;
   roleId: string;
-  /** 组织收窄 scope（第三次复裁切片 2·D1）：NULL=租级通配（跨 org 生效），非 NULL=仅该 org 生效。 */
-  organizationId?: string | null;
   subject: AuthorizationSubject;
   action: AuthorizationAction;
   conditions?: Record<string, unknown> | null;
@@ -121,7 +114,7 @@ export const TenantRoleGrant: EntitySchema<TenantRoleGrantRow> = buildRuntimeEnt
 export interface TenantRoleAuditRow {
   id: number;
   tenantId?: string | null;
-  organizationId: string;
+  organizationId: string | null;
   actorId: string | null;
   action: string;
   roleKey: string;
@@ -133,4 +126,114 @@ export const TenantRoleAudit: EntitySchema<TenantRoleAuditRow> = buildRuntimeEnt
   TENANT_ROLE_AUDIT_META,
 ) as EntitySchema<TenantRoleAuditRow>;
 
-export const MIKRO_RBAC_TABLE_ENTITIES = [TenantRole, TenantRoleGrant, TenantRoleAudit];
+// —— X7 租级成员/角色分配/邀请三表（global-role-membership-tenantization 切片 B）——
+// 把「成员关系 + 角色分配 + 邀请入租」从 BA org 维上收为自有租级 SSOT·org 降为纯数据分组（数据可见性
+// 仍由 `orgVisibility` 行级 filter 管·与授权轴正交）。此三表携 `tenantId` 主轴·读面以显式 `where{tenantId}`
+// + `fork({ scoped:false })` 锚定·不入全局 `tenantIsolation` filter 注册集（同 `tenant_role*` 目录表口径）。
+
+/**
+ * `tenant_membership`：user × tenant 租级成员关系（唯一 SSOT·`unique(tenantId,userId)`）。
+ * BA `member`（org 多对多）降为「组织存在/数据分组」事实·不再作成员 SSOT（沿硬假设不动 BA schema）。
+ */
+export const TENANT_MEMBERSHIP_META: TableMeta = {
+  name: 'TenantMembership',
+  tableName: 'tenant_membership',
+  columns: [
+    ['id', { k: 'text', primary: true }],
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade' }],
+    ['userId', { k: 'fk', target: 'User', onDelete: 'cascade' }],
+    ['createdAt', { k: 'datetime', defaultNow: true }],
+    ['updatedAt', { k: 'datetime', nullable: true }],
+  ],
+  uniques: [{ name: 'tenant_membership_tenant_user_idx', properties: ['tenantId', 'userId'] }],
+};
+
+/**
+ * `tenant_role_assignment`：(user, tenant) 单角色租级分配·`unique(tenantId,userId)`（一人一租一角色）。
+ * `roleKey` 逻辑关联 `tenant_role(tenantId,key)`（不建跨上下文 FK·沿本仓普通 string 列惯例）。
+ * 会话角色即自此按**活动租户**解析（弃 BA `getActiveMemberRole` org 维）。
+ */
+export const TENANT_ROLE_ASSIGNMENT_META: TableMeta = {
+  name: 'TenantRoleAssignment',
+  tableName: 'tenant_role_assignment',
+  columns: [
+    ['id', { k: 'text', primary: true }],
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade' }],
+    ['userId', { k: 'fk', target: 'User', onDelete: 'cascade' }],
+    ['roleKey', { k: 'text' }],
+    ['createdAt', { k: 'datetime', defaultNow: true }],
+    ['updatedAt', { k: 'datetime', nullable: true }],
+  ],
+  uniques: [{ name: 'tenant_role_assignment_tenant_user_idx', properties: ['tenantId', 'userId'] }],
+};
+
+/**
+ * `tenant_invitation`：租级邀请（受邀邮箱 → 接受后建 `tenant_membership`+`tenant_role_assignment`）。
+ * 席位/配额计量按 `tenant_membership` 计·邀请预占口径沿用既有 seat hook（切片 D 收口）。
+ */
+export const TENANT_INVITATION_META: TableMeta = {
+  name: 'TenantInvitation',
+  tableName: 'tenant_invitation',
+  columns: [
+    ['id', { k: 'text', primary: true }],
+    ['tenantId', { k: 'fk', target: 'Tenant', onDelete: 'cascade' }],
+    ['email', { k: 'text' }],
+    ['roleKey', { k: 'text' }],
+    ['invitorId', { k: 'fk', target: 'User', onDelete: 'set null', nullable: true }],
+    ['status', { k: 'text', default: 'pending' }],
+    ['token', { k: 'text' }],
+    ['expiresAt', { k: 'datetime', nullable: true }],
+    ['createdAt', { k: 'datetime', defaultNow: true }],
+    ['updatedAt', { k: 'datetime', nullable: true }],
+  ],
+  uniques: [{ name: 'tenant_invitation_tenant_email_idx', properties: ['tenantId', 'email'] }],
+  indexes: [{ name: 'tenant_invitation_token_idx', properties: ['token'] }],
+};
+
+export interface TenantMembershipRow {
+  id: string;
+  tenantId: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date | null;
+}
+export const TenantMembership: EntitySchema<TenantMembershipRow> = buildRuntimeEntity(
+  TENANT_MEMBERSHIP_META,
+) as EntitySchema<TenantMembershipRow>;
+
+export interface TenantRoleAssignmentRow {
+  id: string;
+  tenantId: string;
+  userId: string;
+  roleKey: string;
+  createdAt: Date;
+  updatedAt: Date | null;
+}
+export const TenantRoleAssignment: EntitySchema<TenantRoleAssignmentRow> = buildRuntimeEntity(
+  TENANT_ROLE_ASSIGNMENT_META,
+) as EntitySchema<TenantRoleAssignmentRow>;
+
+export interface TenantInvitationRow {
+  id: string;
+  tenantId: string;
+  email: string;
+  roleKey: string;
+  invitorId: string | null;
+  status: string;
+  token: string;
+  expiresAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date | null;
+}
+export const TenantInvitation: EntitySchema<TenantInvitationRow> = buildRuntimeEntity(
+  TENANT_INVITATION_META,
+) as EntitySchema<TenantInvitationRow>;
+
+export const MIKRO_RBAC_TABLE_ENTITIES = [
+  TenantRole,
+  TenantRoleGrant,
+  TenantRoleAudit,
+  TenantMembership,
+  TenantRoleAssignment,
+  TenantInvitation,
+];

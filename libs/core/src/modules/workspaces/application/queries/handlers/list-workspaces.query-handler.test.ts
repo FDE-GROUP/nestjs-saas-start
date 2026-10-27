@@ -43,7 +43,6 @@ describe('ListWorkspacesQueryHandler · listPredicate 三分支下推（切片 C
       tenantId: 'tenantA',
       role: 'editor',
       userId: 'u1',
-      organizationId: 'orgA',
       action: 'read',
       subject: 'Workspace',
     });

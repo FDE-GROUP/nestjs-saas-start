@@ -47,6 +47,11 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   tenantRole: 'authorization',
   tenantRoleGrant: 'authorization',
   tenantRoleAudit: 'authorization',
+  // X7 租级成员/角色分配/邀请（global-role-membership-tenantization 切片 B）·同属 authorization 自有表·
+  // 唯一写通道 = 租级成员/角色仓储（门面皆经端口读写·禁散点直访）。
+  tenantMembership: 'authorization',
+  tenantRoleAssignment: 'authorization',
+  tenantInvitation: 'authorization',
   // database 基础设施：ES 端口（原事件存储适配）独占写面，业务仓储不得直写 event（§6-丙）
   event: 'database',
 };

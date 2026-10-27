@@ -2,7 +2,6 @@ import type {
   TenantRbacRepository,
   TenantRoleGrantView,
 } from '@app/modules/authorization/domain/repositories/organization-rbac.repository';
-import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { describe, expect, it, vi } from 'vitest';
 import { CaslPermissionChecker } from './casl-permission.checker';
 
@@ -10,7 +9,7 @@ import { CaslPermissionChecker } from './casl-permission.checker';
  * CASL 裁决适配（module-rbac-dynamic-roles S2·DB 规则源落形·rehierarchy 切片 C 换租级轴）的行为测。
  * 锁 checker 自身契约（投影机制由工厂测·端口形状由守卫测分别覆盖）：
  *  ① fail-closed：无租户/无角色不触规则源；查无角色(null)/零授权([]) 皆 deny；
- *  ② lazy-ensure + 进程内缓存：miss 触发 ensure→findGrants，同 (tenant,key) 复用只查一次（ensure 携活动组织盖章）；
+ *  ② lazy-ensure + 进程内缓存：miss 触发 ensure→findGrants，同 (tenant,key) 复用只查一次（X7 切片 C：缓存键不含 org 轴）；
  *  ③ over-grant 防线：带 conditions 的 grant 行不参与类型级判定；
  *  ④ 跨租隔离：同 key 不同租户投影独立；
  *  ⑤ invalidate 失效后重查（热改生效面）；
@@ -23,9 +22,7 @@ const grant = (
   conditions: Record<string, unknown> | null = null,
 ) => ({ subject, action, conditions }) as unknown as TenantRoleGrantView;
 
-// 活动组织（写路径归属盖章）·从 ALS 读——镜测以固定租户轴桩提供（与分区键 tenantId 解耦）。
-const activeOrg = (): TenantIsolationService =>
-  ({ organizationId: 'orgA-active' }) as unknown as TenantIsolationService;
+// 活动组织盖章已随 X7 切片 C 废除（授权只锈活动租·缓存键=(tenant,role) 二元组）。
 
 function makeChecker(grantsFor: (tenant: string, key: string) => TenantRoleGrantView[] | null) {
   const ensureSystemRoles = vi.fn().mockResolvedValue(undefined);
@@ -34,7 +31,7 @@ function makeChecker(grantsFor: (tenant: string, key: string) => TenantRoleGrant
   ) as unknown as ReturnType<typeof vi.fn>;
   const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
   return {
-    checker: new CaslPermissionChecker(rbac, activeOrg()),
+    checker: new CaslPermissionChecker(rbac),
     ensureSystemRoles,
     findGrants,
   };
@@ -179,7 +176,7 @@ describe('CaslPermissionChecker（DB 规则源·S2）', () => {
       .fn()
       .mockResolvedValue([grant('Member', 'read')]) as unknown as ReturnType<typeof vi.fn>;
     const rbac = { ensureSystemRoles, findGrants } as unknown as TenantRbacRepository;
-    const checker = new CaslPermissionChecker(rbac, activeOrg());
+    const checker = new CaslPermissionChecker(rbac);
     await expect(
       checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }),
     ).resolves.toBe(false);
@@ -362,11 +359,9 @@ describe('CaslPermissionChecker（query 级列表过滤·listPredicate 切片 B�
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants: vi.fn().mockRejectedValue(new Error('db down')),
     } as unknown as TenantRbacRepository;
-    await expect(new CaslPermissionChecker(rbac, activeOrg()).listPredicate(base)).resolves.toEqual(
-      {
-        kind: 'none',
-      },
-    );
+    await expect(new CaslPermissionChecker(rbac).listPredicate(base)).resolves.toEqual({
+      kind: 'none',
+    });
   });
 });
 
@@ -511,116 +506,70 @@ describe('人裁 A1 read/write 分治（module-rbac-guard-instance-read·守卫�
   });
 });
 
-describe('CaslPermissionChecker（第三次复裁 切片 2·D1·org-scoped grant 轴）', () => {
-  it('check.organizationId 存在 → findGrants 携活动 org 第三参；缺省则不传（向后兼容两参契约）', async () => {
+describe('CaslPermissionChecker（X7 切片 C·租级单轴缓存）', () => {
+  it('同 (tenant,role) 不随活动 org 变适用集（废 D1 缓存 org 轴）', async () => {
     const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
     await checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' });
-    expect(findGrants).toHaveBeenCalledWith('orgA', 'member'); // 无 org → 仅两参
-    await checker.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org1',
-    });
-    expect(findGrants).toHaveBeenCalledWith('orgA', 'member', 'org1'); // 有 org → 三参
+    await checker.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' });
+    // 缓存键 = (tenant,role) 二元组：第二次命中同一条目·findGrants 仍只调一次（不再按 org 分轴）。
+    expect(findGrants).toHaveBeenCalledTimes(1);
   });
 
-  it('同 (tenant,role) 不同活动 org → 各自独立缓存条目（各查一次·D1 缓存键加 org 轴）', async () => {
-    const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
-    await checker.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org1',
-    });
-    await checker.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org2',
-    });
-    expect(findGrants).toHaveBeenCalledTimes(2); // org1/org2 各自 miss
-  });
-
-  it('invalidate(tenant) 清该租户全部活动 org 缓存（前缀仍盖 org 轴）', async () => {
+  it('invalidate(tenant) 清该租户缓存→下次重建（热改生效面）', async () => {
     const { checker, findGrants } = makeChecker(() => [grant('Member', 'read')]);
     const c = checker as CaslPermissionChecker;
-    await c.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org1',
-    });
+    await c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' });
     expect(findGrants).toHaveBeenCalledTimes(1);
-    await c.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org1',
-    }); // 命中缓存
+    await c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' }); // 命中缓存
     expect(findGrants).toHaveBeenCalledTimes(1);
     c.invalidate('orgA');
-    await c.can({
-      tenantId: 'orgA',
-      role: 'member',
-      action: 'read',
-      subject: 'Member',
-      organizationId: 'org1',
-    });
+    await c.can({ tenantId: 'orgA', role: 'member', action: 'read', subject: 'Member' });
     expect(findGrants).toHaveBeenCalledTimes(2);
   });
 
-  it('实例判定解 {{organizationId}} 为活动 org 实值（命中 allow·失配 deny）', async () => {
-    const findGrants = vi.fn().mockResolvedValue([
-      {
-        subject: 'Workspace',
-        action: 'update',
-        conditions: { organizationId: '{{organizationId}}' },
-      },
-    ]);
+  it('实例判定仅解 {{userId}}（X7 废 {{organizationId}} 解析·模板留字面→mongo 落空 deny）', async () => {
+    const findGrants = vi
+      .fn()
+      .mockResolvedValue([
+        { subject: 'Workspace', action: 'update', conditions: { ownerId: '{{userId}}' } },
+      ]);
     const rbac = {
       ensureSystemRoles: vi.fn().mockResolvedValue(undefined),
       findGrants,
     } as unknown as TenantRbacRepository;
-    const orgScoped = new CaslPermissionChecker(rbac, activeOrg());
-    // grants 回形带 conditions={{organizationId}}·checker 按活动 org 解析后交 CASL mongo 匹配 resource。
+    const instance = new CaslPermissionChecker(rbac);
+    // 命中：resource.ownerId === 操作者 userId → allow。
     await expect(
-      orgScoped.can({
+      instance.can({
         tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
-        resource: { organizationId: 'orgX' },
+        resource: { ownerId: 'u1' },
         userId: 'u1',
-        organizationId: 'orgX',
       }),
     ).resolves.toBe(true);
+    // 失配：他人资源 → deny（fail-closed）。
     await expect(
-      orgScoped.can({
+      instance.can({
         tenantId: 'orgA',
         role: 'editor',
         action: 'update',
         subject: 'Workspace',
-        resource: { organizationId: 'orgY' },
+        resource: { ownerId: 'u2' },
         userId: 'u1',
-        organizationId: 'orgX',
       }),
     ).resolves.toBe(false);
   });
 
-  it('列表面解 {{organizationId}} 为活动 org 实值（受限行 → where）', async () => {
+  it('列表面解 {{userId}} 为操者实值（受限行 → where）', async () => {
     const { checker } = makeChecker(
       () =>
         [
           {
             subject: 'Workspace',
             action: 'read',
-            conditions: { organizationId: '{{organizationId}}' },
+            conditions: { ownerId: '{{userId}}' },
           },
         ] as unknown as TenantRoleGrantView[],
     );
@@ -630,9 +579,9 @@ describe('CaslPermissionChecker（第三次复裁 切片 2·D1·org-scoped grant
         role: 'editor',
         action: 'read',
         subject: 'Workspace',
-        organizationId: 'orgZ',
+        userId: 'uZ',
       }),
-    ).resolves.toEqual({ kind: 'where', where: { organizationId: 'orgZ' } });
+    ).resolves.toEqual({ kind: 'where', where: { ownerId: 'uZ' } });
   });
 });
 

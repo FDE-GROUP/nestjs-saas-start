@@ -1,3 +1,5 @@
+import type { TenantRole } from '../authorization/authorization-rules';
+
 /**
  * 租户派生解析端口（global-tenant-organization-rehierarchy 切片 C · 换轴派生链）。
  *
@@ -38,4 +40,12 @@ export interface TenantScopeResolver {
    * 本体缺失/读不回 → `undefined`（视同 shared）。纯读、无副作用。
    */
   readOrgVisibility(tenantId: string): Promise<string | undefined>;
+  /**
+   * 按**活动租户**解析当前用户的会话角色（global-role-membership-tenantization 切片 C 换源）：
+   * 读自有 `tenant_role_assignment`（租级成员角色分配 SSOT·`unique(tenantId,userId)`），
+   * 弃 BA `getActiveMemberRole` 的 org 维取法——角色从此只随活动租户解析，切 org 不翻角色。
+   * fail-closed 契约：无分配行 / 本体缺失 / 读不回 → `undefined`，下游 `@Can` 守卫据此 403，
+   * 绝不回退用他轴角色冒充。纯读、无副作用（适配侧 `fork({ scoped:false })` 读目录表）。
+   */
+  resolveTenantRole(tenantId: string, userId: string): Promise<TenantRole | undefined>;
 }

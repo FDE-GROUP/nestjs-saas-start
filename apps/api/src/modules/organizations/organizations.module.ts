@@ -28,6 +28,7 @@ import { GetOrganizationDiagnosticsQueryHandler } from './application/queries/ha
 import { GetPlatformTenantQueryHandler } from './application/queries/handlers/get-platform-tenant.query-handler';
 import { ListPlatformTenantsQueryHandler } from './application/queries/handlers/list-platform-tenants.query-handler';
 import { ListPlatformUsersQueryHandler } from './application/queries/handlers/list-platform-users.query-handler';
+import { TenantMemberFacadeService } from './application/tenant-member-facade.service';
 import { ORGANIZATION_GOVERNANCE_REPOSITORY } from './domain/repositories/organization-governance.repository';
 import { ORGANIZATION_PROVISIONING_REPOSITORY } from './domain/repositories/organization-provisioning.repository';
 import { TENANT_DIRECTORY_REPOSITORY } from './domain/repositories/tenant-directory.repository';
@@ -129,6 +130,9 @@ const QueryHandlers = [
     { provide: AUDIT_LOG_STORE, useClass: MikroAuditLogStore },
     // 领域细化重构 A3：RBAC 仓储绑定与 TenantRbacAdminService 已迁 AuthorizationModule
     // （tenants 经全局 ROLE_ASSIGNABILITY_READER published port 消费角色可挂载判定）。
+    // X7 切片 D：租级成员/邀请门面（组合 authorization owned 三表的读写端口 + QuotaService 席位闸
+    //  + ROLE_ASSIGNABILITY_READER·org-admin HTTP 门面委托本服务替代此前 BA passthrough）。
+    TenantMemberFacadeService,
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
     // handlers·闸门/审计单点由 PlatformModule @Global 供给）；命令/查询 handlers 与读模型
     // 留 tenants（租户生命周期写能力是核心域本体）。

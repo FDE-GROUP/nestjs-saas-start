@@ -79,44 +79,9 @@ describe('AuthSessionReader (P1b · 会话端口适配)', () => {
     expect(getActiveMemberRole).not.toHaveBeenCalled();
   });
 
-  it('有活动租户时从 BA 数据面预注入成员角色（module-rbac-casl 丙裁）', async () => {
-    const { reader } = readerWith(
-      { user: { id: 'u1' }, session: { activeOrganizationId: 'org_1' } },
-      { memberRole: 'admin' },
-    );
-    await expect(
-      reader.read({ headers: { cookie: 'session=abc' }, url: '/posts' }),
-    ).resolves.toEqual({ userId: 'u1', activeOrganizationId: 'org_1', role: 'admin' });
-  });
-
-  it('角色透传归一（丙裁：DB 运行时词汇·自定义 key 合法）；非法值/读取失败 → role 缺省 fail-closed', async () => {
-    // 'wizard' 不再是「词汇外拒入」——自定义角色 key 合法透传，存在性/授权由投影侧查 DB 裁决。
-    const { reader } = readerWith(
-      { user: { id: 'u1' }, session: { activeOrganizationId: 'org_1' } },
-      { memberRole: 'wizard' },
-    );
-    await expect(
-      reader.read({ headers: { cookie: 'session=abc' }, url: '/posts' }),
-    ).resolves.toEqual({ userId: 'u1', activeOrganizationId: 'org_1', role: 'wizard' });
-
-    // 非法值（空串）仍归一 undefined（消费侧 fail-closed）。
-    const empty = readerWith(
-      { user: { id: 'u1' }, session: { activeOrganizationId: 'org_1' } },
-      { memberRole: '' },
-    );
-    await expect(
-      empty.reader.read({ headers: { cookie: 'session=abc' }, url: '/posts' }),
-    ).resolves.toEqual({ userId: 'u1', activeOrganizationId: 'org_1', role: undefined });
-
-    const failing = readerWith(
-      { user: { id: 'u1' }, session: { activeOrganizationId: 'org_1' } },
-      { memberRole: 'member' },
-    );
-    failing.getActiveMemberRole.mockRejectedValue(new Error('not a member'));
-    await expect(
-      failing.reader.read({ headers: { cookie: 'session=abc' }, url: '/posts' }),
-    ).resolves.toEqual({ userId: 'u1', activeOrganizationId: 'org_1', role: undefined });
-  });
+  // X7 切片 C 换源：reader 不再从 BA 数据面（getActiveMemberRole org 维）预注入成员角色——
+  // 会话角色改由中间件在活动租户解析后经 `TENANT_SCOPE_RESOLVER.resolveTenantRole` 供（见
+  // tenant-isolation.middleware.test 的租级角色绑定测）；故本文件不再测 reader 携 role。
 
   it('normalizes an unresolved session (null) to no tenant context', async () => {
     const { reader } = readerWith(null);

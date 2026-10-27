@@ -10,8 +10,8 @@ import { TenantRbacAdminService } from './organization-rbac-admin.service';
  * 锁三件事：① 领域结果码 → HTTP 语义转译（invalidKey→400/duplicate→409/notFound→404/
  * systemRoleProtected→409/invalidConditions→400）；② **写成功后才失效投影缓存**（热改生效面·
  * 失败不失效）；③ 成员挂载存在性闸（系统 key 短路不查库·自定义查库 fail-closed）。
- * rehierarchy 切片 C 换轴：分区键/失效锁主轴 `tenantId`（租级角色）·写路径双盖章携 `organizationId`。
- * @Can 授权裁决归守卫链（另片锁测），本测只覆盖服务自身的转译与失效编排。
+ * X7 切片 C 换轴：分区键/失效锁单锄主轴 `tenantId`（租级角色·废 D1 组织收窄维）——角色/授权 CRUD
+ * 不再携活动组织盖章，审计按租户留痕。@Can 授权裁决归守卫链（另片锁测），本测只覆盖服务自身的转译与失效编排。
  */
 
 function makeHarness() {
@@ -20,7 +20,6 @@ function makeHarness() {
     listRoleKeys: vi.fn().mockResolvedValue(['editor']),
     findRole: vi.fn().mockResolvedValue(null),
     findGrants: vi.fn().mockResolvedValue([]),
-    listAllGrantsForRole: vi.fn().mockResolvedValue([]),
     createRole: vi.fn().mockResolvedValue('created'),
     renameRole: vi.fn().mockResolvedValue('ok'),
     deleteRole: vi.fn().mockResolvedValue('ok'),
@@ -54,7 +53,7 @@ describe('TenantRbacAdminService', () => {
     });
     const view = await h.svc.createRole('editor', 'Editor');
     expect(view).toMatchObject({ key: 'editor', isSystem: false });
-    expect(h.rbac.createRole).toHaveBeenCalledWith('tenantA', 'orgA', 'editor', 'Editor', 'u1');
+    expect(h.rbac.createRole).toHaveBeenCalledWith('tenantA', 'editor', 'Editor', 'u1');
     expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
@@ -104,46 +103,38 @@ describe('TenantRbacAdminService', () => {
     expect(h.invalidate).toHaveBeenCalledWith('tenantA');
   });
 
-  it('getGrants 走 listAllGrantsForRole（全量回显·含 org-scoped 行）·查无角色（null）→ 404', async () => {
+  it('getGrants 走 findGrants（本租全部行·无 org 过滤）·查无角色（null）→ 404', async () => {
     const h = makeHarness();
-    h.rbac.listAllGrantsForRole.mockResolvedValueOnce([
-      { subject: 'Workspace', action: 'read', conditions: null, organizationId: null },
-      { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+    h.rbac.findGrants.mockResolvedValueOnce([
+      { subject: 'Workspace', action: 'read', conditions: null },
+      { subject: 'Workspace', action: 'update', conditions: null },
     ]);
     const grants = await h.svc.getGrants('editor');
-    // P0 X6：管理面回显含 org-scoped 行 + organizationId（非仅通配行）。
+    // X7 切片 C：授权上收租级后 findGrants 即本角色全部行·组织收窄维（org 列）已废。
     expect(grants).toHaveLength(2);
-    expect(grants.map((g) => g.organizationId)).toEqual([null, 'orgX']);
-    expect(h.rbac.listAllGrantsForRole).toHaveBeenCalledWith('tenantA', 'editor');
-    h.rbac.listAllGrantsForRole.mockResolvedValueOnce(null);
+    expect(grants[0]).not.toHaveProperty('organizationId');
+    expect(h.rbac.findGrants).toHaveBeenCalledWith('tenantA', 'editor');
+    h.rbac.findGrants.mockResolvedValueOnce(null);
     await expect(h.svc.getGrants('ghost')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('grant/revoke 透传 organizationId（P0 X6·org scope → repo）', async () => {
+  it('X7 切片 C：grant/revoke 只锁租级（废 org 透传）', async () => {
     const h = makeHarness();
-    await h.svc.grant('editor', {
-      subject: 'Workspace',
-      action: 'update',
-      conditions: null,
-      organizationId: 'orgX',
-    });
+    await h.svc.grant('editor', { subject: 'Workspace', action: 'update', conditions: null });
     expect(h.rbac.grant).toHaveBeenCalledWith(
       'tenantA',
-      'orgA',
       'editor',
-      { subject: 'Workspace', action: 'update', conditions: null, organizationId: 'orgX' },
+      { subject: 'Workspace', action: 'update', conditions: null },
       'u1',
     );
-    await h.svc.revoke('editor', 'Workspace', 'update', null, 'orgX');
+    await h.svc.revoke('editor', 'Workspace', 'update', null);
     expect(h.rbac.revoke).toHaveBeenCalledWith(
       'tenantA',
-      'orgA',
       'editor',
       'Workspace',
       'update',
       null,
       'u1',
-      'orgX',
     );
   });
 

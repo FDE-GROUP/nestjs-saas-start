@@ -29,6 +29,8 @@ function makeMiddleware(opts: {
   activeTenantId?: string;
   /** 切片 4·D7：显式租路径 `readOrgVisibility` 桩返回值。 */
   explicitOrgVisibility?: string;
+  /** X7 切片 C 换源：`resolveTenantRole` 桩返回角色（默认 undefined=非成员/无行 → 守卫 fail-closed）。 */
+  resolvedRole?: 'owner' | 'admin' | 'member';
 }) {
   const read = vi.fn().mockResolvedValue(
     opts.noSession
@@ -61,7 +63,13 @@ function makeMiddleware(opts: {
   });
   // 切片 4·D7：显式租激活路径的可见性直读桩。
   const readOrgVisibility = vi.fn(async () => opts.explicitOrgVisibility);
-  const tenantScope = { resolveTenantScopeOf, readOrgVisibility } as unknown as TenantScopeResolver;
+  // X7 切片 C 换源：会话角色经活动租解析（默认 undefined·与旧「不随会话携角色」同形）。
+  const resolveTenantRole = vi.fn(async () => opts.resolvedRole);
+  const tenantScope = {
+    resolveTenantScopeOf,
+    readOrgVisibility,
+    resolveTenantRole,
+  } as unknown as TenantScopeResolver;
 
   return {
     mw: new TenantIsolationMiddleware(session, status, userStatus, tenantScope),
@@ -69,6 +77,7 @@ function makeMiddleware(opts: {
     userIsBlocked,
     resolveTenantScopeOf,
     readOrgVisibility,
+    resolveTenantRole,
     read,
   };
 }
@@ -138,6 +147,19 @@ describe('TenantIsolationMiddleware · S4 approval fail-closed (deny-list)', () 
     const store = await run(mw, reqWith({ 'x-workspace-id': 'ws7' }));
     expect(store?.organizationId).toBe('orgA');
     expect(store?.workspaceId).toBe('ws7');
+  });
+
+  it('X7 切片 C 换源：会话角色按活动租经 resolveTenantRole 解析绑定（org 派生路径）', async () => {
+    const { mw, resolveTenantRole } = makeMiddleware({
+      activeOrganizationId: 'orgA',
+      userId: 'u1',
+      blocked: false,
+      resolvedRole: 'admin',
+    });
+    const store = await run(mw, reqWith());
+    // 角色只随活动租解析：以派生的 tenantId + userId 为参。
+    expect(resolveTenantRole).toHaveBeenCalledWith('tenant-orgA', 'u1');
+    expect(store?.role).toBe('admin');
   });
 
   it('passes straight through (no ALS bind) when the port reports no session context', async () => {

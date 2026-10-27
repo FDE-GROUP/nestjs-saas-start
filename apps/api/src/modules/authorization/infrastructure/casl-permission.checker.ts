@@ -14,7 +14,6 @@ import type {
   PermissionListPredicate,
   PermissionListPredicateRequest,
 } from '@core/saas-kit/authorization/permission.port';
-import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { Inject, Injectable } from '@nestjs/common';
 import { buildScopedAbility, type CaslScopedAbility } from './casl-ability.factory';
 
@@ -25,34 +24,26 @@ interface CachedEntry {
 }
 
 const USER_TEMPLATE = '{{userId}}';
-const ORG_TEMPLATE = '{{organizationId}}';
 
 /**
- * 解析 grant conditions 里的 `{{userId}}` / `{{organizationId}}` 模板为当前上下文实值（S4 check 级·
- * 第三次复裁切片 2 补 org 轴）。无对应实值（未登录/未透传）→ 保留字面模板，CASL mongo 等值匹配
- * 必然落空 → 保守 deny（fail-closed）。值面只处理字符串（写侧策略闸已锁 conditions 为平铺原始量）。
+ * 解析 grant conditions 里的 `{{userId}}` 模板为当前上下文实值（S4 check 级）。无对应实值
+ * （未登录/未透传）→ 保留字面模板，CASL mongo 等值匹配必然落空 → 保守 deny（fail-closed）。
+ * 值面只处理字符串（写侧策略闸已锁 conditions 为平铺原始量）。X7 切片 C 组轴上收租级·废
+ * `{{organizationId}}` 解析（不再随活动 org 解模板）。
  */
 function resolveConditions(
   conditions: Record<string, unknown> | null,
   userId?: string,
-  organizationId?: string,
 ): Record<string, unknown> | null {
   if (conditions === null) return conditions;
-  if (userId === undefined && organizationId === undefined) return conditions;
+  if (userId === undefined) return conditions;
   const out: Record<string, unknown> = {};
   for (const [field, value] of Object.entries(conditions)) {
     if (typeof value !== 'string') {
       out[field] = value;
       continue;
     }
-    let resolved = value;
-    if (userId !== undefined && resolved.includes(USER_TEMPLATE)) {
-      resolved = resolved.split(USER_TEMPLATE).join(userId);
-    }
-    if (organizationId !== undefined && resolved.includes(ORG_TEMPLATE)) {
-      resolved = resolved.split(ORG_TEMPLATE).join(organizationId);
-    }
-    out[field] = resolved;
+    out[field] = value.includes(USER_TEMPLATE) ? value.split(USER_TEMPLATE).join(userId) : value;
   }
   return out;
 }
@@ -61,9 +52,8 @@ function resolveConditions(
  * `PermissionChecker` 的 CASL 适配（module-rbac-casl §2.2 · module-rbac-dynamic-roles §2.3·S2 落形）。
  *
  * 新宪（丙裁）：**授权事实 SSOT 在 DB grant 行**——本类经 `TENANT_RBAC_REPOSITORY` 端口读
- * per-租户角色规则集（rehierarchy 片三 K5·角色**目录**塌租级：分区键=隔离主轴
- * tenantId·unique(tenantId,key)；第三次复裁切片 2（D1）：grant 行可依组织收窄——`findGrants` 按活动 org
- * 取「租级通配（org IS NULL）∪ 本 org」适用集·缓存键加 activeOrg 轴），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
+ * per-租户角色规则集（X7 切片 C·角色目录与 grant 行均纯租级：分区键=隔离主轴 tenantId·unique(tenantId,key)·
+ * 废 D1 grant 组织收窄维——`findGrants` 直取本角色全部行作适用集·缓存键不含 org 轴），投影为 CASL ability 后判定，自身零内置权限知识。语义约束：
  *  - **lazy-ensure**：miss 时先 `ensureSystemRoles`（缺则补种三系统角色·纯租级无归属盖章）再 `findGrants`；
  *  - **fail-closed**：无租户/无角色/查无角色（null）/零授权（[]）/加载抛错 → 恒 deny，绝不视同放行；
  *  - **进程内版本缓存**：同 (tenant,key) 记忆 ability（含在途 Promise 防并发重入），守卫热路径不逐请求查库；
@@ -80,10 +70,7 @@ function resolveConditions(
  */
 @Injectable()
 export class CaslPermissionChecker implements PermissionChecker, PermissionInvalidator {
-  constructor(
-    @Inject(TENANT_RBAC_REPOSITORY) private readonly rbac: TenantRbacRepository,
-    @Inject(TenantIsolationService) private readonly ctx: TenantIsolationService,
-  ) {}
+  constructor(@Inject(TENANT_RBAC_REPOSITORY) private readonly rbac: TenantRbacRepository) {}
 
   /** `(tenant,key)` 复合键 → 在途/已决投影 Promise（防并发重入·加载失败即时淘汰）。 */
   private readonly abilities = new Map<string, Promise<CachedEntry>>();
@@ -102,12 +89,10 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
     const { tenantId, role, action, subject } = check;
     // fail-closed：无租户上下文 / 无角色 → 直拒，不触规则源。
     if (!tenantId || !role) return false;
-    // 第三次复裁切片 2（D1）：缓存键加活动 org 轴——同 (tenant,role) 在不同活动 org 下适用集不同
-    // （租级通配 ∪ 本 org）。activeOrg 缺省（租级操作）仍与历史 2 元组同解。
-    const activeOrg = check.organizationId;
-    const cacheKey = `${tenantId}\u0000${role}\u0000${activeOrg ?? ''}`;
+    // X7 切片 C：缓存键 = (tenant,role) 二元组——授权上收租级·废 org 轴（同 (tenant,role) 适用集不再随活动 org 变）。
+    const cacheKey = `${tenantId}\u0000${role}`;
     try {
-      const entry = await this.entryFor(cacheKey, tenantId, role, activeOrg);
+      const entry = await this.entryFor(cacheKey, tenantId, role);
       // 守卫路径（不带 resource）。
       if (check.resource === undefined) {
         // 人裁 A1（module-rbac-guard-instance-read·仅 list 面）：read 入口级判定复用
@@ -119,19 +104,18 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
             role,
             action,
             subject,
-            organizationId: activeOrg,
           });
           return pred.kind !== 'none';
         }
         // 写动作：类型级判定·复用缓存 ability·conditions 行保守 deny（S2 防线原样）。
         return entry.typeLevel.can(action, subject);
       }
-      // 实例路径（check 级·S4）：纳入全部 grant 行·按操作者/活动 org 解析 {{userId}}/{{organizationId}} 后交 CASL mongo 匹配。
+      // 实例路径（check 级·S4）：纳入全部 grant 行·按操作者解析 {{userId}} 后交 CASL mongo 匹配（X7 废 {{organizationId}}）。
       const instance = buildScopedAbility(
         entry.grants.map((g) => ({
           subject: g.subject,
           action: g.action,
-          conditions: resolveConditions(g.conditions ?? null, check.userId, activeOrg),
+          conditions: resolveConditions(g.conditions ?? null, check.userId),
         })),
       );
       return instance.can(action, { __caslSubjectType__: subject, ...check.resource });
@@ -162,17 +146,17 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
   async listPredicate(check: PermissionListPredicateRequest): Promise<PermissionListPredicate> {
     const { tenantId, role, action, subject } = check;
     if (!tenantId || !role) return { kind: 'none' };
-    const activeOrg = check.organizationId;
-    const cacheKey = `${tenantId}\u0000${role}\u0000${activeOrg ?? ''}`;
+    // X7 切片 C：缓存键不含 org 轴（与 `can` 同口径）。(tenant,role) 二元组。
+    const cacheKey = `${tenantId}\u0000${role}`;
     try {
-      const entry = await this.entryFor(cacheKey, tenantId, role, activeOrg);
+      const entry = await this.entryFor(cacheKey, tenantId, role);
       const matched = entry.grants.filter((g) => g.action === action && g.subject === subject);
       if (matched.length === 0) return { kind: 'none' };
       // 人裁②：存在无条件类型级行 ⇒ 该角色对此 action/subject 有无条件全量授权。
       if (matched.some((g) => (g.conditions ?? null) === null)) return { kind: 'all' };
       // 全部带 conditions 行 → 逐行译词 → $or 合并（matched 已排 conditions=null，故非 null）。
       const rowPredicates = matched.map((g) =>
-        toMikroPredicate(g.conditions as Record<string, unknown>, check.userId, activeOrg),
+        toMikroPredicate(g.conditions as Record<string, unknown>, check.userId),
       );
       const merged = mergePredicatesWithOr(rowPredicates);
       return merged ? { kind: 'where', where: merged } : { kind: 'none' };
@@ -183,12 +167,7 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
     }
   }
 
-  private entryFor(
-    cacheKey: string,
-    tenantId: string,
-    roleKey: string,
-    activeOrg?: string,
-  ): Promise<CachedEntry> {
+  private entryFor(cacheKey: string, tenantId: string, roleKey: string): Promise<CachedEntry> {
     const pending = this.abilities.get(cacheKey);
     if (pending) {
       // 有界 LRU（P0 D1）：`Map.set` 于既有键**不**改插入序→需先删后插方能标「最近使用」。
@@ -196,7 +175,7 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
       this.abilities.set(cacheKey, pending);
       return pending;
     }
-    const created = this.buildEntry(tenantId, roleKey, activeOrg);
+    const created = this.buildEntry(tenantId, roleKey);
     this.abilities.set(cacheKey, created);
     // 超限驱逐最旧（迭代首个 = 最久未访问·命中已重插至队尾）·O(1)·无新依赖。
     if (this.abilities.size > this.maxEntries) {
@@ -206,20 +185,12 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
     return created;
   }
 
-  private async buildEntry(
-    tenantId: string,
-    roleKey: string,
-    activeOrg?: string,
-  ): Promise<CachedEntry> {
+  private async buildEntry(tenantId: string, roleKey: string): Promise<CachedEntry> {
     // lazy-ensure 纯租级（片三 K5）：角色无归属组织可盖·不再传活动组织（缺活动组织仍能懒建租级行）。
     await this.rbac.ensureSystemRoles(tenantId);
     // 查无角色（null）与零授权（[]）同归空 grants → 类型级/实例级投影皆落空 → 全拒（fail-closed 双保险）。
-    // D1：活性 org 缺省时仅取租级通配行（与原全量同解·存量行皆 NULL）；有活动 org 时取「通配 ∪ 本 org」。
-    // 条件传参：activeOrg 未定则不传第三参（保持与历史 findGrants(tenant,key) 两参调用契约一致）。
-    const grants =
-      (activeOrg === undefined
-        ? await this.rbac.findGrants(tenantId, roleKey)
-        : await this.rbac.findGrants(tenantId, roleKey, activeOrg)) ?? [];
+    // X7 切片 C：`findGrants(tenantId, roleKey)` 直取本角色全部 grant 行（废组织收窄维·不再按活动 org 过滤）。
+    const grants = (await this.rbac.findGrants(tenantId, roleKey)) ?? [];
     // 类型级投影：over-grant 防线——conditions 行（conditions≠null）不入类型级 ability。
     const typeLevel = buildScopedAbility(grants.filter((g) => (g.conditions ?? null) === null));
     return { grants, typeLevel };

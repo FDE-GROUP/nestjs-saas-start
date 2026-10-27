@@ -20,7 +20,7 @@ import type { RoleAssignabilityReader } from '../domain/ports/role-assignability
 import {
   TENANT_RBAC_REPOSITORY,
   type TenantRbacRepository,
-  type TenantRoleGrantAdminView,
+  type TenantRoleGrantView,
   type TenantRoleView,
 } from '../domain/repositories/organization-rbac.repository';
 
@@ -29,8 +29,8 @@ import {
  *
  * @remarks
  * 职责边界（授权在我·事实入 DB）：
- *  - 从 ALS 取活动租户（主轴 `requireActiveTenantId`·fail-closed）+ 活动组织（写路径归属盖章）
- *    与操作者（`userId`·审计 actorId，缺省 null）（rehierarchy 切片 C·角色升租级）；
+ *  - 从 ALS 取活动租户（主轴 `requireActiveTenantId`·fail-closed）与操作者（`userId`·审计 actorId，缺省 null）
+ *    （X7 切片 C：授权整轴上收租级·角色/授权 CRUD 不再需活动组织盖章·审计按租户留痕）；
  *  - 委派 `TenantRbacRepository`（授权事实 SSOT 的唯一读写通道·写侧先过 domain 策略闸并同通道落审计行）；
  *  - 将端口返回的**领域结果码**转译为 HTTP 语义（领域不借异常表达事实，转译归应用层）；
  *  - **写成功后失效本租户投影缓存**（`PermissionInvalidator`·热改即生效·读写分治端口）。
@@ -57,15 +57,15 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
   }
 
   /**
-   * 某角色的全量授权行（查无角色 → 404·供管理面回显勾选态 + org 归属·P0 X6）。
-   * 走 `listAllGrantsForRole`（不加 org 过滤·全行回显 `organizationId`）而非 `findGrants`（后者为 CASL 适用集裁决）。
+   * 某角色的全部授权行（查无角色 → 404·供管理面回显勾选态）。
+   * X7 切片 C：授权上收租级后 `findGrants` 即本角色全部行（无 org 过滤·不再需单独管理面回显方法）。
    * @param roleKey - 角色 key。
-   * @returns 授权行读模型列表（带回显 `organizationId`）。
+   * @returns 授权行读模型列表。
    *
    * @throws {NotFoundException} 指定 roleKey 的角色不存在时。
    */
-  async getGrants(roleKey: string): Promise<TenantRoleGrantAdminView[]> {
-    const grants = await this.rbac.listAllGrantsForRole(this.tenantId(), roleKey);
+  async getGrants(roleKey: string): Promise<TenantRoleGrantView[]> {
+    const grants = await this.rbac.findGrants(this.tenantId(), roleKey);
     if (grants === null) {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
         errorCode: ERROR_CODES.ROLE_NOT_FOUND,
@@ -86,7 +86,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
    */
   async createRole(key: string, name: string): Promise<TenantRoleView> {
     const tenantId = this.tenantId();
-    const result = await this.rbac.createRole(tenantId, this.orgId(), key, name, this.actor());
+    const result = await this.rbac.createRole(tenantId, key, name, this.actor());
     if (result === 'invalidKey') {
       throw new BadRequestException(`Invalid role key: ${key}`, {
         errorCode: ERROR_CODES.ROLE_INVALID_KEY,
@@ -115,7 +115,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
    */
   async renameRole(key: string, name: string): Promise<void> {
     const tenantId = this.tenantId();
-    const result = await this.rbac.renameRole(tenantId, this.orgId(), key, name, this.actor());
+    const result = await this.rbac.renameRole(tenantId, key, name, this.actor());
     this.mapMutation(result, key);
     this.invalidator.invalidate(tenantId);
   }
@@ -126,7 +126,7 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
    */
   async deleteRole(key: string): Promise<void> {
     const tenantId = this.tenantId();
-    const result = await this.rbac.deleteRole(tenantId, this.orgId(), key, this.actor());
+    const result = await this.rbac.deleteRole(tenantId, key, this.actor());
     this.mapMutation(result, key);
     this.invalidator.invalidate(tenantId);
   }
@@ -146,11 +146,10 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
       subject: AuthorizationSubject;
       action: AuthorizationAction;
       conditions: Record<string, unknown> | null;
-      organizationId?: string | null;
     },
   ): Promise<void> {
     const tenantId = this.tenantId();
-    const result = await this.rbac.grant(tenantId, this.orgId(), roleKey, entry, this.actor());
+    const result = await this.rbac.grant(tenantId, roleKey, entry, this.actor());
     if (result === 'invalidConditions') {
       throw new BadRequestException('Invalid grant conditions shape (whitelist-only)', {
         errorCode: ERROR_CODES.GRANT_INVALID_CONDITIONS,
@@ -183,18 +182,15 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
     subject: AuthorizationSubject,
     action: AuthorizationAction,
     conditions: Record<string, unknown> | null,
-    scopeOrgId?: string | null,
   ): Promise<void> {
     const tenantId = this.tenantId();
     const result = await this.rbac.revoke(
       tenantId,
-      this.orgId(),
       roleKey,
       subject,
       action,
       conditions,
       this.actor(),
-      scopeOrgId,
     );
     if (result === 'roleNotFound') {
       throw new NotFoundException(`Role not found: ${roleKey}`, {
@@ -224,14 +220,6 @@ export class TenantRbacAdminService implements RoleAssignabilityReader {
   /** 隔离主轴（租级角色分区键·fail-closed）。 */
   private tenantId(): string {
     return this.ctx.requireActiveTenantId();
-  }
-
-  /**
-   * 写路径审计归属盖章（二级轴·活动组织）：角色目录无 org 列（K5 塌租级）·本值仅供 `tenant_role_audit`
-   * 盖章（缺位 fail-closed 拒写）；grant 行的组织 scope 另由 `entry.organizationId`（切片 2·D1）显式指定。
-   */
-  private orgId(): string {
-    return this.ctx.requireActiveOrganizationId();
   }
 
   private actor(): string | null {

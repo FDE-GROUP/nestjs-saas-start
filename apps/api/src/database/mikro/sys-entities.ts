@@ -1,6 +1,9 @@
 import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
 import {
   MIKRO_RBAC_TABLE_ENTITIES,
+  TENANT_INVITATION_META,
+  TENANT_MEMBERSHIP_META,
+  TENANT_ROLE_ASSIGNMENT_META,
   TENANT_ROLE_AUDIT_META,
   TENANT_ROLE_GRANT_META,
   TENANT_ROLE_META,
@@ -43,8 +46,15 @@ export const MIKRO_META_TABLE_ENTITIES = [Workspace, Event, Tenant, TenantSubscr
 /** META 双形元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
 export const META_TABLE_METAS = [WORKSPACE_META, EVENT_META, TENANT_META, TENANT_SUBSCRIPTION_META];
 
-/** RBAC 三表元数据（迁移装配可消费）。 */
-export const RBAC_TABLE_METAS = [TENANT_ROLE_META, TENANT_ROLE_GRANT_META, TENANT_ROLE_AUDIT_META];
+/** RBAC 表元数据（迁移装配可消费·X7 加租级成员/角色分配/邀请三表）。 */
+export const RBAC_TABLE_METAS = [
+  TENANT_ROLE_META,
+  TENANT_ROLE_GRANT_META,
+  TENANT_ROLE_AUDIT_META,
+  TENANT_MEMBERSHIP_META,
+  TENANT_ROLE_ASSIGNMENT_META,
+  TENANT_INVITATION_META,
+];
 
 /** BA 契约面八表全集（身份机器族[auth] + 组织容器族[tenants]·global-ba-entity-domain-placement 归域后装配根聚合）。 */
 export const MIKRO_ENTITIES = [...MIKRO_IDENTITY_ENTITIES, ...MIKRO_ORG_ENTITIES];

@@ -8,7 +8,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { tenantRoleGrantViewSchema, tenantRoleViewSchema } from '@saas/contracts/index';
 import type { z } from 'zod';
 import type {
-  TenantRoleGrantAdminView,
+  TenantRoleGrantView,
   TenantRoleView,
 } from '../../domain/repositories/organization-rbac.repository';
 
@@ -64,28 +64,18 @@ export class TenantRoleGrantViewResponse {
     description: 'CASL 条件（白名单字段）；null = 无约束。',
   })
   conditions!: Record<string, unknown> | null;
-
-  /**
-   * 组织收窄 scope（P0 X6 管理面回显）：null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效的收窄行。
-   */
-  @ApiProperty({
-    type: 'string',
-    nullable: true,
-    description: '组织收窄 scope；null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效。',
-  })
-  organizationId!: string | null;
 }
 
-const _trgf: TenantRoleGrantViewResponse = {} as TenantRoleGrantAdminView;
-const _trgb: TenantRoleGrantAdminView = {} as TenantRoleGrantViewResponse;
+const _trgf: TenantRoleGrantViewResponse = {} as TenantRoleGrantView;
+const _trgb: TenantRoleGrantView = {} as TenantRoleGrantViewResponse;
 void _trgf;
 void _trgb;
 
 // —— S7b 序列化契约锁：contracts zod 单源输出型 ≡ 真相源。——
 const _arv1: z.infer<typeof tenantRoleViewSchema> = {} as TenantRoleView;
 const _arv2: TenantRoleView = {} as z.infer<typeof tenantRoleViewSchema>;
-const _agv1: z.infer<typeof tenantRoleGrantViewSchema> = {} as TenantRoleGrantAdminView;
-const _agv2: TenantRoleGrantAdminView = {} as z.infer<typeof tenantRoleGrantViewSchema>;
+const _agv1: z.infer<typeof tenantRoleGrantViewSchema> = {} as TenantRoleGrantView;
+const _agv2: TenantRoleGrantView = {} as z.infer<typeof tenantRoleGrantViewSchema>;
 void _arv1;
 void _arv2;
 void _agv1;

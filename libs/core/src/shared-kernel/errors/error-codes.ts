@@ -42,6 +42,15 @@ export const ERROR_CODES = {
   // 因 BA APIError 仅回不透明 message+status，门面无法可靠辨具体业务语义，不逐态猜码）。
   ORG_PROVISIONING_REJECTED: 'ORG:PROVISIONING_REJECTED',
 
+  // —— X7 租级成员/邀请门面（global-role-membership-tenantization 切片 D·成员/邀请面自 BA passthrough
+  //  上收自有租级 SSOT·守卫拒因显式化·沿用 ORG 命名空间不新增）——
+  ORG_MEMBER_NOT_FOUND: 'ORG:MEMBER_NOT_FOUND',
+  ORG_LAST_OWNER: 'ORG:LAST_OWNER',
+  ORG_SELF_REMOVAL: 'ORG:SELF_REMOVAL',
+  ORG_INVITATION_NOT_FOUND: 'ORG:INVITATION_NOT_FOUND',
+  ORG_INVITATION_DUPLICATE: 'ORG:INVITATION_DUPLICATE',
+  ORG_INVITATION_EXPIRED: 'ORG:INVITATION_EXPIRED',
+
   // —— RBAC 动态角色/授权（ROLE_* / GRANT_*·module-rbac-dynamic-roles S3·自建角色/授权管理门面的领域拒绝码）——
   ROLE_INVALID_KEY: 'ROLE:INVALID_KEY',
   ROLE_DUPLICATE: 'ROLE:DUPLICATE',

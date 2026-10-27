@@ -32,9 +32,4 @@ export const tenantRoleGrantViewSchema = z.object({
   action: z.enum(AUTHORIZATION_ACTION_VALUES),
   /** CASL 条件（白名单字段）；null = 无约束。值面自由透传（strip 只作用于本层键）。 */
   conditions: z.record(z.string(), z.unknown()).nullable(),
-  /**
-   * 组织收窄 scope（P0 X6 管理面回显）：null = 租级通配行（跨 org 生效），
-   * 字符串 = 仅该 org 生效的收窄行。供管理面可见 grant 归属（CASL 适用集投影不消费此字段）。
-   */
-  organizationId: z.string().nullable(),
 });

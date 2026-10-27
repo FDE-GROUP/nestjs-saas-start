@@ -158,6 +158,36 @@ export const OVERTURNED_RULINGS: readonly OverturnedRuling[] = [
     bannedTokens: [/TENANCY_STATUS/, /\bTenancyStatus\b/, /isTenancyBlocked/],
     framingMarkers: ['原', '旧', '曾', '改名', '复裁', '历史', '修订', '旧名', '当时'],
   },
+  {
+    // grant 组织收窄：第三次层级复裁 D1（global-tenant-organization-rehierarchy 片四）裁授权 grant 可依组织收窄
+    // （`tenant_role_grant.organizationId`·nullable·NULL=租级通配·支持子公司管理员）→ global-role-membership-tenantization
+    // （X7）复裁：成员/角色/授权整轴上收租级·**DROP grant `organizationId`**。凡「grant 可依组织收窄/租级通配/子公司管理员」
+    // 之类现态断言皆失实（须随 B/C 换轴改写为租级口径·或带历史框定词）。
+    plan: 'global-tenant-organization-rehierarchy',
+    supersededBy: 'global-role-membership-tenantization',
+    bannedTokens: [
+      /grant[^\n]{0,12}可依[^\n]{0,8}收窄/,
+      /租级通配/,
+      /子公司管理员/,
+      /tenant_role_grant\.organizationId/,
+    ],
+    // 框定词仅取「历史叙述」标志（故意不含「复裁/D1」——它们亦现于被翻的现态断言注释中·须逼改写）。
+    framingMarkers: [
+      '原',
+      '旧',
+      '曾',
+      '此前',
+      '先前',
+      '推翻',
+      '已废',
+      '废',
+      '已撤',
+      '已 DROP',
+      'DROP',
+      '历史',
+      '沿革',
+    ],
+  },
 ];
 
 export interface CommentUnit {

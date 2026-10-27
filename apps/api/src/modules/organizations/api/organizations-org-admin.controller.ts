@@ -1,26 +1,7 @@
-import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
-import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
-import {
-  ROLE_ASSIGNABILITY_READER,
-  type RoleAssignabilityReader,
-} from '@app/modules/authorization/domain/ports/role-assignability.port';
 import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
-import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   type CreateInvitation,
@@ -38,29 +19,17 @@ import {
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
-import { mapBaError } from './ba-error.mapping';
-
-/** BA org 管理面窄类型（服务端 API·非 HTTP）。 */
-interface OrganizationOrgApi {
-  listMembers(p: { headers: Record<string, unknown> }): Promise<unknown>;
-  updateMemberRole(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-  removeMember(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-  listInvitations(p: { headers: Record<string, unknown> }): Promise<unknown>;
-  createInvitation(p: {
-    headers: Record<string, unknown>;
-    body: { email: string; role: string };
-  }): Promise<unknown>;
-  cancelInvitation(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-}
+import { TenantMemberFacadeService } from '../application/tenant-member-facade.service';
 
 /**
- * 租户成员/邀请**管理门面**（module-rbac-casl §2.3.1·甲裁严格拆）。
+ * 租户成员/邀请**管理门面**（global-role-membership-tenantization 切片 D·租级化）。
  *
  * @remarks
- * 新宪落点：授权裁决 = `@Can` + CASL（authorization-rules 单源·经 AuthorizationGuard 判定），
- * 数据操作 = BA `auth.api.*` **服务端直调**（认证·membership 数据域，不经被封堵的
- * BA 内置 org HTTP 面）。BA 服务端调用仍过其 membership/数据校验与 seats 配额 hook——
- * 门面是「授权在我、数据在 BA」的收口点，不是重实现。
+ * 新宪落点：授权裁决 = `@Can` + CASL（authorization-rules 单源·经 `AuthorizationGuard` 判定）；
+ * 数据操作 = 自有租级 SSOT（`tenant_membership`/`tenant_role_assignment`/`tenant_invitation`）经
+ * {@link TenantMemberFacadeService} 编排——**替代此前 BA `auth.api.*` org 维 passthrough**
+ * （成员/邀请整轴上收租户维·org 降为纯数据分组）。角色可挂载校验、last-owner / self-removal 守卫、
+ * 席位卡点均在门面/领域侧重建（fail-closed·不再依赖 BA 内置数据守卫）。
  *
  * 租户作用域路由：不豁免（S11 全局墙 fail-closed），guard 组合沿用 workspaces 先例。
  * @public
@@ -70,61 +39,30 @@ interface OrganizationOrgApi {
 @Controller('organizations')
 @UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class OrganizationsOrgAdminController {
-  constructor(
-    @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
-    // 领域细化重构 A5：角色存在性知识属 authorization，经 published port 消费（不再直注应用服务类）。
-    @Inject(ROLE_ASSIGNABILITY_READER) private readonly roleAssignability: RoleAssignabilityReader,
-  ) {}
-
-  private ba(): OrganizationOrgApi {
-    const auth = this.authInstance.get();
-    if (!auth)
-      throw new ForbiddenException('Auth instance not initialized', {
-        errorCode: ERROR_CODES.AUTH_PROVIDER_UNAVAILABLE,
-      });
-    return auth.api as unknown as OrganizationOrgApi;
-  }
+  constructor(private readonly facade: TenantMemberFacadeService) {}
 
   /**
-   * 角色可挂载存在性闸（module-rbac-dynamic-roles S3·§2.5）：`role` 须 ∈ 系统三 key ∪ 本租
-   * 在库自定义角色——严格在库 fail-closed，词汇外角色不得挂成员/邀请（DTO 仅校形态）。
-   */
-  private async assertRoleAssignable(role: string): Promise<void> {
-    if (!(await this.roleAssignability.isRoleAssignable(role))) {
-      throw new BadRequestException(`Role not assignable in this organization: ${role}`, {
-        errorCode: ERROR_CODES.ROLE_NOT_FOUND,
-      });
-    }
-  }
-
-  /**
-   * 列出 active 租户的成员（全角色·CASL read）。
-   * @param headers - 透传 BA 的请求头。
-   * @returns BA 成员列表。
+   * 列出活动租户的成员（全角色·CASL read）。
+   * @returns 租级成员列表（`tenant_membership` ⋈ `tenant_role_assignment` ⋈ user）。
    */
   @Get('members')
   @Can('read', 'Member')
-  @ApiOperation({ summary: 'List members of the active organization (all roles · CASL read)' })
+  @ApiOperation({ summary: 'List members of the active tenant (all roles · CASL read)' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Member list (membership data from Better Auth)',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      description: 'Member list (tenant-level membership SSOT)',
+      ssotHint: 'tenant_membership + tenant_role_assignment（自有租级表）',
     }),
   )
-  @ApiResponse(apiError(403, 'No active organization / CASL deny / not a member.'))
-  async listMembers(@Headers() headers: Record<string, unknown>): Promise<unknown> {
-    try {
-      return await this.ba().listMembers({ headers });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(403, 'No active tenant / CASL deny / not a member.'))
+  listMembers() {
+    return this.facade.listMembers();
   }
 
   /**
    * 更新成员角色（owner/admin·CASL update）。
-   * @param headers - 透传 BA 的请求头。
-   * @param dto - 成员 id + 新角色载荷。
-   * @returns BA 更新结果；角色不可挂载先 400，CASL/last-owner 拒经 `mapBaError` 归一。
+   * @param dto - 目标成员用户 id（`memberId`·租级以 userId 定位）+ 新角色载荷。
+   * @returns 空体（守卫拒经门面译 400/403/404）。
    */
   @Post('members/role')
   @Can('update', 'Member')
@@ -133,27 +71,20 @@ export class OrganizationsOrgAdminController {
   @ApiResponse(
     apiOkPassthrough({
       description: 'Updated member',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      ssotHint: 'tenant_role_assignment（自有租级表）',
     }),
   )
-  @ApiResponse(apiError(403, 'CASL deny (member role) / last-owner guard (BA).'))
-  async updateMemberRole(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: updateMemberRoleSchema }) dto: UpdateMemberRole,
-  ): Promise<unknown> {
-    await this.assertRoleAssignable(dto.role);
-    try {
-      return await this.ba().updateMemberRole({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(403, 'CASL deny (member role) / last-owner guard.'))
+  @ApiResponse(apiError(400, 'Role not assignable.'))
+  async updateMemberRole(@Body({ schema: updateMemberRoleSchema }) dto: UpdateMemberRole) {
+    await this.facade.updateMemberRole(dto.memberId, dto.role);
+    return { ok: true };
   }
 
   /**
    * 移除成员（owner/admin·CASL delete）。
-   * @param headers - 透传 BA 的请求头。
-   * @param dto - 成员 id 载荷。
-   * @returns BA 移除结果；自移除等数据守卫拒经 `mapBaError` 归一。
+   * @param dto - 目标成员用户 id 载荷。
+   * @returns 空体（自移/最后属主拒经门面译 403）。
    */
   @Post('members/remove')
   @Can('delete', 'Member')
@@ -162,85 +93,59 @@ export class OrganizationsOrgAdminController {
   @ApiResponse(
     apiOkPassthrough({
       description: 'Removed member',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      ssotHint: 'tenant_membership（自有租级表）',
     }),
   )
-  @ApiResponse(apiError(403, 'CASL deny (member role) / self-removal guard (BA).'))
-  async removeMember(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: removeMemberSchema }) dto: RemoveMember,
-  ): Promise<unknown> {
-    try {
-      return await this.ba().removeMember({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(403, 'CASL deny (member role) / self-removal / last-owner guard.'))
+  async removeMember(@Body({ schema: removeMemberSchema }) dto: RemoveMember) {
+    await this.facade.removeMember(dto.memberId);
+    return { ok: true };
   }
 
   /**
-   * 列出 active 租户的待处理邀请（全角色·CASL read）。
-   * @param headers - 透传 BA 的请求头。
-   * @returns BA 邀请列表。
+   * 列出活动租户的待处理邀请（全角色·CASL read）。
+   * @returns 租级邀请列表（`tenant_invitation`）。
    */
   @Get('invitations')
   @Can('read', 'Invitation')
-  @ApiOperation({ summary: 'List pending invitations of the active organization (all roles)' })
+  @ApiOperation({ summary: 'List pending invitations of the active tenant (all roles)' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Invitation list (data from Better Auth)',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      description: 'Invitation list (tenant-level invitation SSOT)',
+      ssotHint: 'tenant_invitation（自有租级表）',
     }),
   )
-  @ApiResponse(apiError(403, 'No active organization / CASL deny / not a member.'))
-  async listInvitations(@Headers() headers: Record<string, unknown>): Promise<unknown> {
-    try {
-      return await this.ba().listInvitations({ headers });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(403, 'No active tenant / CASL deny / not a member.'))
+  listInvitations() {
+    return this.facade.listInvitations();
   }
 
   /**
-   * 邀请成员加入 active 租户（租级通配 owner/admin·CASL create·D6 席位治理）。
-   *
-   * @remarks
-   * 发邀终将消耗**租席位**（accept 时 member 行落），故需 actor 持**租级通配** `Invitation create`
-   * grant（org=NULL）——`@Can(..., { tenantWildcardOnly: true })` 令裁决忽略活动 org，org-scoped 子管理员
-   * 默认不可加席（可配 per-org 席位上限留后）。
-   * @param headers - 透传 BA 的请求头。
+   * 邀请成员加入活动租户（owner/admin·CASL create·席位在接受时点卡·非发邀）。
    * @param dto - 邮箱 + 角色载荷。
-   * @returns BA 邀请结果；角色不可挂载先 400，CASL 拒经 `mapBaError` 归一。
+   * @returns 空体（角色不可挂载/重复 pending 邀经门面译 400）。
    */
   @Post('invitations')
-  @Can('create', 'Invitation', { tenantWildcardOnly: true })
+  @Can('create', 'Invitation')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Invite a member to the active organization (owner/admin · CASL create)',
-  })
+  @ApiOperation({ summary: 'Invite a member to the active tenant (owner/admin · CASL create)' })
   @ApiResponse(
     apiOkPassthrough({
       description: 'Created invitation',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      ssotHint: 'tenant_invitation（自有租级表）',
     }),
   )
   @ApiResponse(apiError(403, 'CASL deny (member role).'))
-  async createInvitation(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: createInvitationSchema }) dto: CreateInvitation,
-  ): Promise<unknown> {
-    await this.assertRoleAssignable(dto.role);
-    try {
-      return await this.ba().createInvitation({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(400, 'Role not assignable / duplicate pending invitation.'))
+  async createInvitation(@Body({ schema: createInvitationSchema }) dto: CreateInvitation) {
+    await this.facade.createInvitation(dto.email, dto.role);
+    return { ok: true };
   }
 
   /**
    * 取消邀请（owner/admin·CASL cancel）。
-   * @param headers - 透传 BA 的请求头。
    * @param dto - 邀请 id 载荷。
-   * @returns BA 取消结果；不可取消拒经 `mapBaError` 归一。
+   * @returns 空体（无 pending 行经门面译 404）。
    */
   @Post('invitations/cancel')
   @Can('cancel', 'Invitation')
@@ -249,18 +154,13 @@ export class OrganizationsOrgAdminController {
   @ApiResponse(
     apiOkPassthrough({
       description: 'Cancelled invitation',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      ssotHint: 'tenant_invitation（自有租级表）',
     }),
   )
-  @ApiResponse(apiError(403, 'CASL deny (member role) / not cancellable (BA).'))
-  async cancelInvitation(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: invitationIdSchema }) dto: InvitationId,
-  ): Promise<unknown> {
-    try {
-      return await this.ba().cancelInvitation({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  @ApiResponse(apiError(403, 'CASL deny (member role).'))
+  @ApiResponse(apiError(404, 'Pending invitation not found.'))
+  async cancelInvitation(@Body({ schema: invitationIdSchema }) dto: InvitationId) {
+    await this.facade.cancelInvitation(dto.invitationId);
+    return { ok: true };
   }
 }

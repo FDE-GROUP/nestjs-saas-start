@@ -59,8 +59,8 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   'apps/api/src/modules/subscriptions/subscription-replay-truth.e2e.test.ts',
   'apps/api/src/modules/workspaces/workspace-owner-rbac.e2e.test.ts',
-  // 第三次层级复裁 切片 2（D1）·grant 组织收窄真库 e2e：org-scoped grant 只在本 org 生效·租级通配跨 org·跨租恒不可见。
-  'apps/api/src/modules/authorization/org-scoped-grant.e2e.test.ts',
+  // X7 切片 C（推翻 D1）：原 grant 组织收窄真库 e2e（`org-scoped-grant.e2e.test.ts`）随组织收窄维废除**整件删除**——
+  // grant 现纯租级通配生效，该被测特性已不存在（用例矩阵换轴归切片 F）。
   // 第三次层级复裁 切片 3（D2）·租内跨组织可见性策略真库 e2e：shared 互见·isolated 互不可见·跨租恒不可见·scoped:false 豁免。
   'apps/api/src/tenant-isolation/org-visibility-isolation.e2e.test.ts',
   // 第三次层级复裁 切片 4（D7）·租户激活解绑真库 e2e：设活动租落 activeTenantId+清活动 org·跨租 fail-closed·租级可达不依赖 org。
@@ -216,14 +216,10 @@ try {
     return code;
   }
 
-  failed |= run(
-    'env-gated 全栈 e2e（9 文件·真容器真库）',
-    ['exec', 'vitest', 'run', ...GATED_E2E_FILES],
-    {
-      DATABASE_URL: e2eUrl,
-      E2E_DATABASE_URL: e2eUrl,
-    },
-  );
+  failed |= run('env-gated 全栈 e2e（真容器真库）', ['exec', 'vitest', 'run', ...GATED_E2E_FILES], {
+    DATABASE_URL: e2eUrl,
+    E2E_DATABASE_URL: e2eUrl,
+  });
   failed |= run(
     'BA authFlow 一致性套件（assertScratchDb 库名恒等满足）',
     ['exec', 'vitest', 'run', '--config', 'vitest.consistency.config.ts'],

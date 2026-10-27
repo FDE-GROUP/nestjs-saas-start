@@ -81,6 +81,8 @@ function tenantScopeStub(
     resolveTenantScopeOf: async () => (tenantId ? { tenantId, orgVisibility } : undefined),
     // 切片 4·D7：显式租激活路径的可见性直读桩（本组测试走 org 派生·不触此支）。
     readOrgVisibility: async () => orgVisibility,
+    // X7 切片 C 换源：会话角色按活动租解析（本桩纯读不触库·有租则回固定席位角色）。
+    resolveTenantRole: async () => (tenantId ? 'admin' : undefined),
   } as unknown as TenantScopeResolver;
 }
 

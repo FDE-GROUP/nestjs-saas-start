@@ -46,6 +46,7 @@ import {
   apiError,
   apiOkPassthrough,
 } from '../../../common/contracts/api-contracts';
+import { TenantMemberFacadeService } from '../application/tenant-member-facade.service';
 import { mapBaError } from './ba-error.mapping';
 import { OrganizationOdooAvailabilityResponse } from './response/organization-odoo-availability.response';
 
@@ -54,12 +55,6 @@ interface OrganizationSelfApi {
   listOrganizations(p: { headers: Record<string, unknown> }): Promise<unknown>;
   setActiveOrganization(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
   leaveOrganization(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-  acceptInvitation(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-  rejectInvitation(p: { headers: Record<string, unknown>; body: unknown }): Promise<unknown>;
-  listUserInvitations(p: {
-    headers: Record<string, unknown>;
-    query?: { email?: string };
-  }): Promise<unknown>;
 }
 
 /**
@@ -88,6 +83,7 @@ export class OrganizationsSelfController {
     private readonly bindings: OrganizationOdooBindingReader,
     @Inject(TenantIsolationService) private readonly tenant: TenantIsolationService,
     @Inject(AUTH_SESSION_STORE) private readonly sessions: AuthSessionStore,
+    private readonly facade: TenantMemberFacadeService,
   ) {}
 
   private ba(): OrganizationSelfApi {
@@ -190,10 +186,10 @@ export class OrganizationsSelfController {
   }
 
   /**
-   * 接受发给当前用户的邀请。
-   * @param headers - 透传 BA 的请求头。
+   * 接受发给当前用户的邀请（X7 租级化：消费自有 `tenant_invitation`·非 BA passthrough）。
    * @param dto - 邀请 id 载荷。
-   * @returns BA 接受结果；无效/过期/非受邀人经 `mapBaError` 归一。
+   * @param user - 会话用户（受邀主体·邮箱匹配与入租落行依据）。
+   * @returns 入租结果（目标租 + 授予角色）；无效/过期 404、非受邀人 403、席位超限 402（门面守卫）。
    */
   @Post('invitations/accept')
   @UseGuards(SessionGuard)
@@ -201,30 +197,29 @@ export class OrganizationsSelfController {
   @ApiOperation({ summary: 'Accept an invitation addressed to the current user' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Invitation accepted; membership created',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      description: 'Invitation accepted; tenant-level membership created',
+      ssotHint: 'tenant_invitation + tenant_membership（自有租级表）',
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(
-    apiError(400, 'Invitation not found/expired/not the invitee/seat cap (BA guards + hooks).'),
-  )
+  @ApiResponse(apiError(403, 'Session email does not match the invitee (fail-closed).'))
+  @ApiResponse(apiError(404, 'Pending invitation not found or expired.'))
+  @ApiResponse(apiError(402, 'Seat quota exceeded (checked at accept time).'))
   async acceptInvitation(
-    @Headers() headers: Record<string, unknown>,
     @Body({ schema: invitationIdSchema }) dto: InvitationId,
-  ): Promise<unknown> {
-    try {
-      return await this.ba().acceptInvitation({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+    @CurrentUser() user: SessionUser,
+  ): Promise<{ tenantId: string; roleKey: string }> {
+    return this.facade.acceptInvitation(dto.invitationId, {
+      userId: user.id,
+      email: user.email,
+    });
   }
 
   /**
-   * 拒绝发给当前用户的邀请。
-   * @param headers - 透传 BA 的请求头。
+   * 拒绝发给当前用户的邀请（X7 租级化：自有 `tenant_invitation` pending → cancelled）。
    * @param dto - 邀请 id 载荷。
-   * @returns BA 拒绝结果；无效/过期经 `mapBaError` 归一。
+   * @param user - 会话用户（受邀邮箱锥定·fail-closed 他人不可代拒）。
+   * @returns 空体（非 pending/邮箱不符 → 404）。
    */
   @Post('invitations/reject')
   @UseGuards(SessionGuard)
@@ -233,48 +228,36 @@ export class OrganizationsSelfController {
   @ApiResponse(
     apiOkPassthrough({
       description: 'Invitation rejected',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      ssotHint: 'tenant_invitation（自有租级表）',
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(400, 'Invitation not found/expired/not the invitee (BA).'))
+  @ApiResponse(apiError(404, 'Invitation not found/expired/not the invitee.'))
   async rejectInvitation(
-    @Headers() headers: Record<string, unknown>,
     @Body({ schema: invitationIdSchema }) dto: InvitationId,
-  ): Promise<unknown> {
-    try {
-      return await this.ba().rejectInvitation({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+    @CurrentUser() user: SessionUser,
+  ): Promise<{ ok: true }> {
+    await this.facade.rejectInvitation(dto.invitationId, user.email);
+    return { ok: true };
   }
 
   /**
-   * 列出发给当前用户的待处理邀请。
-   * @param headers - 透传 BA 的请求头。
+   * 列出发给当前用户的待处理邀请（X7 租级化：自有 `tenant_invitation`·跨租个人可见面）。
    * @param user - 会话用户（以 email 收敛可见面）。
-   * @returns BA 邀请列表。
+   * @returns 租级邀请列表。
    */
   @Get('invitations/mine')
   @UseGuards(SessionGuard)
   @ApiOperation({ summary: 'List pending invitations addressed to the current user' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Invitation list (data from Better Auth)',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      description: 'Invitation list (tenant-level invitation SSOT)',
+      ssotHint: 'tenant_invitation（自有租级表）',
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async listMyInvitations(
-    @Headers() headers: Record<string, unknown>,
-    @CurrentUser() user: SessionUser,
-  ): Promise<unknown> {
-    try {
-      // 服务端直调专属 query.email（BA 源码注记 server-side only）——以会话用户收敛可见面。
-      return await this.ba().listUserInvitations({ headers, query: { email: user.email } });
-    } catch (err) {
-      return mapBaError(err);
-    }
+  async listMyInvitations(@CurrentUser() user: SessionUser): Promise<unknown> {
+    return this.facade.listMyInvitations(user.email);
   }
 
   /**

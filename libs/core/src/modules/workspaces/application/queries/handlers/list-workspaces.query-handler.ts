@@ -48,8 +48,7 @@ export class ListWorkspacesQueryHandler implements IQueryHandler<ListWorkspacesQ
       tenantId: this.tenant.tenantId,
       role: this.tenant.role,
       userId: this.tenant.userId,
-      // 第三次复裁切片 2（D1）：透传活动 org——列表面纳入「租级通配 ∪ 本 org」grant 适用集·并解 conditions 的 {{organizationId}}。
-      organizationId: this.tenant.organizationId,
+      // X7 切片 C：授权上收租级·废组织收窄维——列表面适用集不再随活动 org 变（解 conditions 仅 {{userId}}）。
       action: 'read',
       subject: 'Workspace',
     });

@@ -1,13 +1,13 @@
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import type { AuthSessionStore } from '@app/modules/auth/domain/ports/session-store.port';
-import type { RoleAssignabilityReader } from '@app/modules/authorization/domain/ports/role-assignability.port';
 import type {
   OrganizationOdooBindingReader,
   OrganizationOdooBindingRow,
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
-import { BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
+import type { TenantMemberFacadeService } from '../application/tenant-member-facade.service';
 import { OrganizationsOrgAdminController } from './organizations-org-admin.controller';
 import { OrganizationsSelfController } from './organizations-self.controller';
 
@@ -22,12 +22,7 @@ function instanceWith(api: Record<string, unknown>): InjectAuthInstance {
   return { get: () => ({ api }) as never, set: () => {} } as unknown as InjectAuthInstance;
 }
 
-/** 角色可挂载读端口桩（默认一切角色可挂载，透传至 BA）。领域细化重构 A5：经 published port 相遇。 */
-function rbacStub(assignable = true): RoleAssignabilityReader {
-  return {
-    isRoleAssignable: vi.fn().mockResolvedValue(assignable),
-  } as unknown as RoleAssignabilityReader;
-}
+/** 角色可挂载读端口桩已随管理门面换轴（守卫语义上收 TenantMemberFacadeService·其单测另行覆盖）。 @internal */
 
 const HEADERS = { cookie: 'session=abc' };
 
@@ -52,101 +47,137 @@ function sessionsStub(): AuthSessionStore {
   } as unknown as AuthSessionStore;
 }
 
-describe('OrganizationsOrgAdminController（管理门面·委派 + BA 错误归一）', () => {
-  it('listMembers 透传 headers 直调 BA 服务端数据面', async () => {
-    const listMembers = vi.fn().mockResolvedValue([{ id: 'm1' }]);
-    const ctrl = new OrganizationsOrgAdminController(instanceWith({ listMembers }), rbacStub());
-    await expect(ctrl.listMembers(HEADERS)).resolves.toEqual([{ id: 'm1' }]);
-    expect(listMembers).toHaveBeenCalledWith({ headers: HEADERS });
+/** 租级成员/邀请门面桩（X7 个人通道 accept/reject/mine 委派·缺省返入租替身）。 @internal */
+function selfFacadeStub(): TenantMemberFacadeService {
+  return {
+    acceptInvitation: vi.fn().mockResolvedValue({ tenantId: 't1', roleKey: 'member' }),
+    rejectInvitation: vi.fn().mockResolvedValue(undefined),
+    listMyInvitations: vi.fn().mockResolvedValue([]),
+  } as unknown as TenantMemberFacadeService;
+}
+
+describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委派 TenantMemberFacadeService）', () => {
+  // 控制器已换轴为租级门面的薄委派层：@Can/CASL 授权由 guard 链锁测覆盖，
+  // 角色可挂载/last-owner/self-removal/席位卡点等守卫语义上收门面（其单测另行覆盖），
+  // 此处只验「端点形状 → facade 调用坐标」与「4xx 拒因原样上抛不伪装」。
+  function facadeStub() {
+    return {
+      listMembers: vi.fn().mockResolvedValue([{ userId: 'u1', roleKey: 'member' }]),
+      updateMemberRole: vi.fn().mockResolvedValue(undefined),
+      removeMember: vi.fn().mockResolvedValue(undefined),
+      listInvitations: vi.fn().mockResolvedValue([]),
+      createInvitation: vi.fn().mockResolvedValue(undefined),
+      cancelInvitation: vi.fn().mockResolvedValue(undefined),
+    };
+  }
+
+  it('listMembers 委派 facade.listMembers()', async () => {
+    const facade = facadeStub();
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
+    await expect(ctrl.listMembers()).resolves.toEqual([{ userId: 'u1', roleKey: 'member' }]);
+    expect(facade.listMembers).toHaveBeenCalledOnce();
   });
 
-  it('BA 4xx（membership/last-owner 等数据事实拒绝）→ HttpException 透传状态与消息', async () => {
-    const apiError = Object.assign(new Error('You are not a member of this organization'), {
-      status: 403,
-    });
-    const ctrl = new OrganizationsOrgAdminController(
-      instanceWith({ removeMember: vi.fn().mockRejectedValue(apiError) }),
-      rbacStub(),
-    );
-    await expect(ctrl.removeMember(HEADERS, { memberId: 'm1' } as never)).rejects.toThrow(
-      HttpException,
-    );
-    await expect(ctrl.removeMember(HEADERS, { memberId: 'm1' } as never)).rejects.toMatchObject({
-      status: 403,
-    });
-  });
-
-  it('5xx/未知错误原样上抛（全局异常过滤器接手·500 面不伪装）', async () => {
-    const boom = new Error('db exploded');
-    const ctrl = new OrganizationsOrgAdminController(
-      instanceWith({ createInvitation: vi.fn().mockRejectedValue(boom) }),
-      rbacStub(),
-    );
+  it('updateMemberRole 委派（memberId 视作 userId）并回 ok', async () => {
+    const facade = facadeStub();
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
     await expect(
-      ctrl.createInvitation(HEADERS, { email: 'a@b.c', role: 'member' } as never),
-    ).rejects.toBe(boom);
+      ctrl.updateMemberRole({ memberId: 'u1', role: 'admin' } as never),
+    ).resolves.toEqual({ ok: true });
+    expect(facade.updateMemberRole).toHaveBeenCalledWith('u1', 'admin');
   });
 
-  it('auth 实例未就绪 → ForbiddenException(AUTH_PROVIDER_UNAVAILABLE)', async () => {
-    const ctrl = new OrganizationsOrgAdminController({ get: () => undefined } as never, rbacStub());
-    // 异步方法内抛错 → 以 rejected Promise 形态呈现（非同步 throw）。
-    await expect(ctrl.listMembers(HEADERS)).rejects.toBeInstanceOf(ForbiddenException);
+  it('removeMember 委派（memberId 视作 userId）', async () => {
+    const facade = facadeStub();
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
+    await expect(ctrl.removeMember({ memberId: 'u1' } as never)).resolves.toEqual({ ok: true });
+    expect(facade.removeMember).toHaveBeenCalledWith('u1');
   });
 
-  it('S3 存在性闸：不可挂载角色 → BadRequest(400) 且 BA 数据面不被触达', async () => {
-    const updateMemberRole = vi.fn();
-    const ctrl = new OrganizationsOrgAdminController(
-      instanceWith({ updateMemberRole }),
-      rbacStub(false),
-    );
+  it('createInvitation 委派 email+role', async () => {
+    const facade = facadeStub();
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
     await expect(
-      ctrl.updateMemberRole(HEADERS, { memberId: 'm1', role: 'ghost' } as never),
+      ctrl.createInvitation({ email: 'a@b.c', role: 'member' } as never),
+    ).resolves.toEqual({ ok: true });
+    expect(facade.createInvitation).toHaveBeenCalledWith('a@b.c', 'member');
+  });
+
+  it('cancelInvitation 委派 invitationId', async () => {
+    const facade = facadeStub();
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
+    await expect(ctrl.cancelInvitation({ invitationId: 'inv-1' } as never)).resolves.toEqual({
+      ok: true,
+    });
+    expect(facade.cancelInvitation).toHaveBeenCalledWith('inv-1');
+  });
+
+  it('门面守卫拒绝（不可挂载角色 → 400）原样上抛不伪装', async () => {
+    const facade = facadeStub();
+    facade.updateMemberRole.mockRejectedValue(new BadRequestException('Role not assignable'));
+    const ctrl = new OrganizationsOrgAdminController(facade as never);
+    await expect(
+      ctrl.updateMemberRole({ memberId: 'u1', role: 'ghost' } as never),
     ).rejects.toBeInstanceOf(BadRequestException);
-    expect(updateMemberRole).not.toHaveBeenCalled();
   });
 });
 
-describe('OrganizationsSelfController（个人通道门面·委派形状）', () => {
-  it('listMyInvitations 以会话用户 email 收敛服务端查询可见面', async () => {
-    const listUserInvitations = vi.fn().mockResolvedValue([]);
+describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自有 tenant_invitation·setActive 仍 BA）', () => {
+  it('listMyInvitations 委派门面（以会话用户 email 收敛可见面）', async () => {
+    const facade = selfFacadeStub();
     const ctrl = new OrganizationsSelfController(
-      instanceWith({ listUserInvitations }),
+      instanceWith({}),
       bindingsStub(),
       tenantStub(),
       sessionsStub(),
+      facade,
     );
-    await ctrl.listMyInvitations(HEADERS, { id: 'u1', email: 'me@acme.com' });
-    expect(listUserInvitations).toHaveBeenCalledWith({
-      headers: HEADERS,
-      query: { email: 'me@acme.com' },
-    });
+    await ctrl.listMyInvitations({ id: 'u1', email: 'me@acme.com' });
+    expect(facade.listMyInvitations).toHaveBeenCalledWith('me@acme.com');
   });
 
-  it('acceptInvitation 透传 body（seats 配额 hook 在 BA 服务端管线照旧生效·不在门面重实现）', async () => {
-    const acceptInvitation = vi.fn().mockResolvedValue({ member: { id: 'm1' } });
+  it('acceptInvitation 委派门面（受邀主体取自会话用户·席位/邮箱守卫在门面）', async () => {
+    const facade = selfFacadeStub();
     const ctrl = new OrganizationsSelfController(
-      instanceWith({ acceptInvitation }),
+      instanceWith({}),
       bindingsStub(),
       tenantStub(),
       sessionsStub(),
+      facade,
     );
-    await expect(ctrl.acceptInvitation(HEADERS, { invitationId: 'inv-1' })).resolves.toEqual({
-      member: { id: 'm1' },
-    });
-    expect(acceptInvitation).toHaveBeenCalledWith({
-      headers: HEADERS,
-      body: { invitationId: 'inv-1' },
+    await expect(
+      ctrl.acceptInvitation({ invitationId: 'inv-1' }, { id: 'u1', email: 'me@acme.com' }),
+    ).resolves.toEqual({ tenantId: 't1', roleKey: 'member' });
+    expect(facade.acceptInvitation).toHaveBeenCalledWith('inv-1', {
+      userId: 'u1',
+      email: 'me@acme.com',
     });
   });
 
-  it('BA status 为字符串的 4xx（如 seats 402）同样归一透传', async () => {
-    const apiError = Object.assign(new Error('Seat limit reached'), { status: '402' });
+  it('rejectInvitation 委派门面（以受邀邮箱锥定）', async () => {
+    const facade = selfFacadeStub();
+    const ctrl = new OrganizationsSelfController(
+      instanceWith({}),
+      bindingsStub(),
+      tenantStub(),
+      sessionsStub(),
+      facade,
+    );
+    await expect(
+      ctrl.rejectInvitation({ invitationId: 'inv-1' }, { id: 'u1', email: 'me@acme.com' }),
+    ).resolves.toEqual({ ok: true });
+    expect(facade.rejectInvitation).toHaveBeenCalledWith('inv-1', 'me@acme.com');
+  });
+
+  it('BA status 为字符串的 4xx（如 setActive 非成员 403）同样归一透传', async () => {
+    const apiError = Object.assign(new Error('Not a member'), { status: '403' });
     const sessions = sessionsStub();
     const ctrl = new OrganizationsSelfController(
       instanceWith({ setActiveOrganization: vi.fn().mockRejectedValue(apiError) }),
       bindingsStub(),
       tenantStub(),
       sessions,
+      selfFacadeStub(),
     );
     await expect(
       ctrl.setActive(
@@ -155,7 +186,7 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
         { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
       ),
     ).rejects.toMatchObject({
-      status: 402,
+      status: 403,
     });
     // BA 写失败 → 不得清租位（不产生 org 已切/租已清的半态）。
     expect(sessions.clearActiveTenant).not.toHaveBeenCalled();
@@ -169,6 +200,7 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
       bindingsStub(),
       tenantStub(),
       { clearActiveTenant } as unknown as AuthSessionStore,
+      selfFacadeStub(),
     );
     await expect(
       ctrl.setActive(
@@ -188,6 +220,7 @@ describe('OrganizationsSelfController（个人通道门面·委派形状）', ()
       bindingsStub(),
       tenantStub(),
       { clearActiveTenant } as unknown as AuthSessionStore,
+      selfFacadeStub(),
     );
     await ctrl.setActive(HEADERS, { organizationId: 'org_1' }, { id: 'u1', email: 'me@acme.com' });
     expect(clearActiveTenant).not.toHaveBeenCalled();
@@ -208,6 +241,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       bindingsStub(row),
       tenantStub('org-1'),
       sessionsStub(),
+      selfFacadeStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: true,
@@ -223,6 +257,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       { read } as unknown as OrganizationOdooBindingReader,
       tenantStub(),
       sessionsStub(),
+      selfFacadeStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,
@@ -238,6 +273,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       bindingsStub(null),
       tenantStub('org-1'),
       sessionsStub(),
+      selfFacadeStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,
@@ -259,6 +295,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       bindingsStub(row),
       tenantStub('org-1'),
       sessionsStub(),
+      selfFacadeStub(),
     );
     await expect(ctrl.odooAvailability()).resolves.toEqual({
       available: false,

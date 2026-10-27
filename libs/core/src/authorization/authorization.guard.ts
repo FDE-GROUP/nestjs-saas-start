@@ -25,9 +25,9 @@ import { PERMISSION_CHECKER, type PermissionChecker } from './permission.port';
  * rows (tenant_role_grant·module-rbac-dynamic-roles) into a CASL ability. Core imports no
  * auth / CASL impl (§9.5.4①B).
  *
- * 换轴（global-tenant-organization-rehierarchy 切片 C）： fail-closed 闸口与规则分区键均锚
- * 隔离**主轴** `tenantId`（角色目录租级），缺租户上下文仍 403 同族错误码。第三次复裁切片 2（D1）：
- * 守卫另透传 ALS 活动 `organizationId` 供适配侧裁 org-scoped grant（租级通配 ∪ 本 org）是否生效。
+ * 换轴（global-role-membership-tenantization 切片 C）： fail-closed 闸口与规则分区键均锚隔离**主轴**
+ * `tenantId`（角色目录与 grant 行均租级·废 D1 组织收窄维），缺租户上下文仍 403 同族错误码。守卫不再透传
+ * 任何活动 org——授权只随活动租裁决（切 org 不翻角色）。
  *
  * @public
  */
@@ -65,18 +65,13 @@ export class AuthorizationGuard implements CanActivate {
 
     const role = this.tenantContext.role;
     // S2（module-rbac-dynamic-roles）：规则源 = 租户 DB grant 行，裁决异步（适配内版本缓存·
-    // 热路径命中不查库）。rehierarchy 切片 C：tenantId 为规则分区键（租级角色），同 key 角色跨租互不串形。
-    // 第三次复裁切片 2（D1）：透传活动 org——决定 org-scoped grant 是否纳入（租级通配 ∪ 本 org）。
-    // 第三次复裁切片 5（D6）：`tenantWildcardOnly` 路由强制忽略活动 org（传 undefined）→ 仅租级通配
-    // grant（org=NULL）生效——消耗租席位的发邀/加成员职权不向 org-scoped admin 开放。
-    const { action, subject, tenantWildcardOnly, ...rest } = requirement;
+    // 热路径命中不查库）。X7 切片 C：tenantId 为规则分区键（角色目录与 grant 行均租级），同 key 角色跨租互不串形。
+    // 废 D1 组织收窄维・废 D6 tenantWildcardOnly：授权只按活动租裁决（不再透传活动 org）。
     const allowed = await this.checker.can({
       tenantId,
       role,
-      organizationId: tenantWildcardOnly ? undefined : this.tenantContext.organizationId,
-      ...rest,
-      action,
-      subject,
+      action: requirement.action,
+      subject: requirement.subject,
     });
     if (!allowed) {
       throw new ForbiddenException(

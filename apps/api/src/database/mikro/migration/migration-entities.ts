@@ -2,6 +2,9 @@ import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/or
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
 import {
+  TENANT_INVITATION_META,
+  TENANT_MEMBERSHIP_META,
+  TENANT_ROLE_ASSIGNMENT_META,
   TENANT_ROLE_AUDIT_META,
   TENANT_ROLE_GRANT_META,
   TENANT_ROLE_META,
@@ -271,14 +274,14 @@ export const Event = buildMigrationEntity(EVENT_META, { User, Organization });
 
 // module-rbac-dynamic-roles S1（甲裁三表）：授权事实 SSOT 入 DB·同元数据双变体派生（纯 additive）。
 // rehierarchy 片三 K5：角色**目录**塌纯租级·tenant_role 去 Organization FK 依赖（仅剩 Tenant）。
-// 第三次复裁切片 2（D1）：grant 行重引入 `organizationId` 收窄列（FK→Organization cascade·nullable），
-// 故本表迁移目标重回 Organization；角色目录 `tenant_role` 仍纯租级不动（org 维唯一落 grant 列）。
+// X7（global-role-membership-tenantization 切片 C·推翻第三次复裁 D1）：**废 grant 组织收窄维**——
+// grant 行仅经 `roleId`→`tenant_role(tenantId,key)` 链归属租户·跨 org 通配生效·去 `organizationId` FK
+// 依赖（targets 重回纯 `{ TenantRole }`·grant org 列由 contract 段迁移 DROP）。
 export const TenantRole = buildMigrationEntity(TENANT_ROLE_META, {
   Tenant,
 });
 export const TenantRoleGrant = buildMigrationEntity(TENANT_ROLE_GRANT_META, {
   TenantRole,
-  Organization,
 });
 export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
   Organization,
@@ -289,7 +292,15 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
 // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·同元数据双变体派生·纯 additive）。
 export const AuditLog = buildMigrationEntity(AUDIT_LOG_META, { User });
 
-/** 迁移基线用的全表忠实实体集（17 表·与实体元数据逐列对齐·rehierarchy 片二 K2 旧 `organization_subscription` 退役后 18→17）。 */
+// X7 租级成员/角色分配/邀请三表（global-role-membership-tenantization 切片 B·纯 additive·FK→Tenant/User cascade）。
+export const TenantMembership = buildMigrationEntity(TENANT_MEMBERSHIP_META, { Tenant, User });
+export const TenantRoleAssignment = buildMigrationEntity(TENANT_ROLE_ASSIGNMENT_META, {
+  Tenant,
+  User,
+});
+export const TenantInvitation = buildMigrationEntity(TENANT_INVITATION_META, { Tenant, User });
+
+/** 迁移基线用的全表忠实实体集（20 表·与实体元数据逐列对齐·X7 加租级成员/角色分配/邀请三表 17→20）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -308,4 +319,7 @@ export const MIKRO_MIGRATION_ENTITIES = [
   TenantRoleGrant,
   TenantRoleAudit,
   AuditLog,
+  TenantMembership,
+  TenantRoleAssignment,
+  TenantInvitation,
 ];

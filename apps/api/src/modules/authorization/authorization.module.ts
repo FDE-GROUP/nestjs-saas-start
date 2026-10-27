@@ -7,9 +7,13 @@ import { Global, Module } from '@nestjs/common';
 import { AuthorizationAdminController } from './api/authorization-admin.controller';
 import { TenantRbacAdminService } from './application/organization-rbac-admin.service';
 import { ROLE_ASSIGNABILITY_READER } from './domain/ports/role-assignability.port';
+import { TENANT_INVITATION_MANAGER } from './domain/ports/tenant-invitation.port';
+import { TENANT_MEMBERSHIP_MANAGER } from './domain/ports/tenant-membership.port';
 import { TENANT_RBAC_REPOSITORY } from './domain/repositories/organization-rbac.repository';
 import { CaslPermissionChecker } from './infrastructure/casl-permission.checker';
 import { MikroTenantRbacRepository } from './infrastructure/repositories/mikro-organization-rbac.repository';
+import { MikroTenantInvitationManager } from './infrastructure/repositories/mikro-tenant-invitation.repository';
+import { MikroTenantMembershipManager } from './infrastructure/repositories/mikro-tenant-membership.repository';
 
 /**
  * Authorization 限界上下文（领域细化重构 A3·module-rbac-dynamic-roles 的上下文归位）。
@@ -37,6 +41,11 @@ import { MikroTenantRbacRepository } from './infrastructure/repositories/mikro-o
     { provide: PERMISSION_CHECKER, useExisting: CaslPermissionChecker },
     { provide: PERMISSION_INVALIDATOR, useExisting: CaslPermissionChecker },
     { provide: ROLE_ASSIGNABILITY_READER, useExisting: TenantRbacAdminService },
+    // X7 切片 D：租级成员/角色分配、租级邀请自有 SSOT 的读写适配器（三表属 authorization·写侧合规）。
+    // 以 symbol token 注册·经 @Global 导出供 organizations 租级成员/邀请门面（published port 相遇·
+    // 沿 ROLE_ASSIGNABILITY_READER 同构·上下文间不直 import infrastructure）。
+    { provide: TENANT_MEMBERSHIP_MANAGER, useClass: MikroTenantMembershipManager },
+    { provide: TENANT_INVITATION_MANAGER, useClass: MikroTenantInvitationManager },
   ],
   exports: [
     AuthorizationGuard,
@@ -44,6 +53,8 @@ import { MikroTenantRbacRepository } from './infrastructure/repositories/mikro-o
     PERMISSION_INVALIDATOR,
     TENANT_RBAC_REPOSITORY,
     ROLE_ASSIGNABILITY_READER,
+    TENANT_MEMBERSHIP_MANAGER,
+    TENANT_INVITATION_MANAGER,
   ],
 })
 export class AuthorizationModule {}

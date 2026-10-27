@@ -53,11 +53,16 @@ export const TENANT_SCOPED_TABLES: readonly string[] = [
   'organization',
   // 订阅面（rehierarchy 片二 K2：旧 `organization_subscription` 整表 DROP·仅余租级新表在册）。
   'tenant_subscription',
-  // RBAC 三表：role 持租级列·audit 持 org 列·grant 经第三次复裁切片 2（D1）重引入 `organizationId` 收窄列
-  // （NULL=租级通配）故入判在册。片二 K4 复原命名 `organization_role*→tenant_role*`。
+  // RBAC 三表（X7 切片 C 换轴后）：role 持租级 `tenantId` 列·audit 持 `tenantId` + nullable `organizationId` 列，二表入判在册。
+  // `tenant_role_grant` 经 X7（global-role-membership-tenantization 切片 C）DROP `organizationId` 收窄列（废 D1 维）、
+  // 且从不持 `tenantId` 列（经 roleId→tenant_role 链归属），已无租户轴列→不再入判据①（自本表退册）。
+  // 片二 K4 复原命名 `organization_role*→tenant_role*`。
   'tenant_role',
-  'tenant_role_grant',
   'tenant_role_audit',
+  // X7 租级成员/角色分配/邀请（global-role-membership-tenantization 切片 B·携 `tenantId` 主轴·读面锈活租户）。
+  'tenant_membership',
+  'tenant_role_assignment',
+  'tenant_invitation',
   // BA 组织容器族：读面仍 org 轴锚定（BA 机器不盖租级列·C 片自裁不换）·消费界内无裸跨租面。
   'member',
   'invitation',

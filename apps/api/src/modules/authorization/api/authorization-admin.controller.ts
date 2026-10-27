@@ -38,7 +38,7 @@ import {
 } from '../../../common/contracts/api-contracts';
 import { TenantRbacAdminService } from '../application/organization-rbac-admin.service';
 import type {
-  TenantRoleGrantAdminView,
+  TenantRoleGrantView,
   TenantRoleView,
 } from '../domain/repositories/organization-rbac.repository';
 import { TenantRoleGrantViewResponse, TenantRoleViewResponse } from './response/role.response';
@@ -137,7 +137,7 @@ export class AuthorizationAdminController {
   @ApiOperation({ summary: 'List grant rows of a role (echo checked state)' })
   @ApiResponse(apiOkArray(TenantRoleGrantViewResponse, 'Grant views (subject/action/conditions).'))
   @ApiResponse(apiError(404, 'Role not found.'))
-  listGrants(@Query('roleKey') roleKey?: string): Promise<TenantRoleGrantAdminView[]> {
+  listGrants(@Query('roleKey') roleKey?: string): Promise<TenantRoleGrantView[]> {
     if (!roleKey) {
       throw new BadRequestException('roleKey query param is required');
     }
@@ -163,7 +163,6 @@ export class AuthorizationAdminController {
       subject: dto.subject,
       action: dto.action,
       conditions: dto.conditions ?? null,
-      organizationId: dto.organizationId ?? null,
     });
   }
 
@@ -182,12 +181,6 @@ export class AuthorizationAdminController {
   async revoke(
     @Body({ schema: revokeRolePermissionSchema }) dto: RevokeRolePermission,
   ): Promise<void> {
-    await this.rbac.revoke(
-      dto.roleKey,
-      dto.subject,
-      dto.action,
-      dto.conditions ?? null,
-      dto.organizationId ?? null,
-    );
+    await this.rbac.revoke(dto.roleKey, dto.subject, dto.action, dto.conditions ?? null);
   }
 }

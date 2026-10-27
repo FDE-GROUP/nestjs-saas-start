@@ -3,9 +3,8 @@ import {
   AUTH_SURFACE_PATH,
   AuthInstanceInjectKey,
 } from '@app/modules/auth/auth.constant';
-import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.interface';
+import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
 import { resolveRequestSession } from '@app/modules/auth/infrastructure/session-resolver';
-import type { TenantRole } from '@core/saas-kit/authorization/authorization-rules';
 import type {
   RequestSessionReader,
   SessionRequestLike,
@@ -21,40 +20,11 @@ import { Inject, Injectable } from '@nestjs/common';
  * 仅向 core 透出标量 `SessionView`。auth 实例经全局 `AuthInstanceInjectKey` 注入（`AuthModule.forRoot`
  * 声明 `global: true`）。会话未解析出（null）归一为「无租户上下文」返回 null。
  *
- * module-rbac-casl 丙裁：额外在**有活动租户时**从 BA 数据面（`getActiveMemberRole`）取当前
- * 成员角色注入 `SessionView.role`（按请求 WeakMap 记忆·与 resolveRequestSession 同构模式）。
- * 角色是认证域事实（membership 数据），不是裁决——裁决在 CASL 侧。
- * 注：BA **服务端** API 面方法名为 `listOrganizations`/`getActiveMemberRole`（client 面的
- * `getOrganizationList` 不存在于 server 端·源码 organization.mjs 路由表对拍）；且
- * `listOrganizations` 返回纯 org 字段不带 role，角色只能经 getActiveMemberRole 取。
+ * global-role-membership-tenantization 切片 C 换源：本 reader **不再**从 BA 数据面（原
+ * `getActiveMemberRole` org 维）取成员角色——会话角色改由中间件在活动租户解析后经
+ * `TENANT_SCOPE_RESOLVER.resolveTenantRole` 从自有 `tenant_role_assignment` 供（角色只随活动租户·
+ * 切 org 不翻角色）。SessionView 自此不再携带 `role`。
  */
-
-/** 按请求记忆活动租户角色，避免同一请求多次 membership 读取。 */
-const roleCache = new WeakMap<SessionRequestLike, TenantRole | undefined>();
-
-/**
- * BA role 字符串透传归一（module-rbac-dynamic-roles 丙裁：角色是 DB 运行时词汇，系统三 key
- * + 自定义 key 皆合法，不再按封闭词汇表拦截）；非法值（非 string/空串）→ undefined·
- * 消费侧 fail-closed。合法性（角色存在且有授权）由投影侧查 DB grant 行裁决，非本处职责。
- */
-function toTenantRole(raw: unknown): TenantRole | undefined {
-  return typeof raw === 'string' && raw.length > 0 ? raw : undefined;
-}
-
-/**
- * 从 BA 数据面取当前用户在活动租户内的成员角色（module-rbac-casl 丙裁）。
- * `getActiveMemberRole` 按会话 `activeOrganizationId` 直取 `{ role }`（membership 数据事实）；
- * 失败/非成员 → undefined（guard 侧 fail-closed 拒）。
- */
-async function resolveActiveRole(
-  auth: AuthInstance,
-  req: SessionRequestLike,
-): Promise<TenantRole | undefined> {
-  const hit = await auth.api.getActiveMemberRole({
-    headers: req.headers as unknown as Headers,
-  });
-  return toTenantRole((hit as { role?: unknown } | undefined)?.role);
-}
 
 /**
  * 完整路径段对齐匹配（module-tenancy-session-path-match）：先剥 query/hash，再按斜杠切段，
@@ -102,18 +72,8 @@ export class AuthSessionReader implements RequestSessionReader {
       (result.session as { activeTenantId?: string | null } | undefined)?.activeTenantId ??
       undefined;
     // 既无活动组织也无显式激活租 → 仅回身份（无租户上下文·下游 fail-closed）。有其一即继续。
-    if (!activeOrganizationId && !activeTenantId) return { userId, activeTenantId };
-    // 有活动租户才付 membership 角色读（按请求记忆·has() 判命中避免与 undefined 值混淆）。
-    // 角色是 org 级事实（getActiveMemberRole 按 activeOrganizationId 取）；仅有 activeTenantId 无 org → role 缺省。
-    if (activeOrganizationId && !roleCache.has(req)) {
-      const role = await resolveActiveRole(auth, req).catch(() => undefined);
-      roleCache.set(req, role);
-    }
-    return {
-      userId,
-      activeOrganizationId,
-      activeTenantId,
-      role: activeOrganizationId ? roleCache.get(req) : undefined,
-    };
+    // 切片 C 换源：会话角色不再在此从 BA 取（已删 getActiveMemberRole 链）——由中间件按活动租户经
+    // `TENANT_SCOPE_RESOLVER.resolveTenantRole` 从自有 `tenant_role_assignment` 解析。
+    return { userId, activeOrganizationId, activeTenantId };
   }
 }
