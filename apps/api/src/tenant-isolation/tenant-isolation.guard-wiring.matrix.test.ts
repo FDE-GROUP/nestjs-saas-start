@@ -9,15 +9,16 @@ import { describe, expect, it } from 'vitest';
  * S11 补遗 · 「会话+租户」复合全局的**务实收口**形态（高危#4·经人裁采回归防线而非全局 `TenantIsolationGuard`）。
  *
  * 会话墙已全局化（S11 deny-by-default `SessionGuard`）；但**租户层不接全局 `TenantIsolationGuard`**——
- * 因租户隔离的实际强制点已在**仓储 `requireActiveOrganizationId()` 卡点** fail-closed（S2·仓储层唯一隔离卡点），
- * 而全局化会锁死所有「已认证但无 active 租户」的合法流（建租申请 / 平台治理 / 个人 PIPL / 未选组织），
+ * 因租户隔离的实际强制点已在**仓储 `requireActiveTenantId()` 卡点** fail-closed（隔离主轴·切片 C 换轴
+ * 由组织轴升租户轴·仓储层唯一隔离卡点），而全局化会锁死所有「已认证但无 active 租户」的合法流（建租申请 / 平台治理 / 个人 PIPL / 未选组织），
  * 需另开一整套 `@TenantIsolationExempt` 豁免轴（维护负担 + 漏标即死锁）。故本片的真实收益（路由层更早统一 403）
- * 以**回归防线**取得：锁死「凡后端触及租户自服务仓储（`requireActiveOrganizationId`）的 @Controller，每条路由都挂
+ * 以**回归防线**取得：锁死「凡后端触及租户自服务仓储（`requireActiveTenantId`）的 @Controller，每条路由都挂
  * `TenantIsolationGuard`」，一旦有人新散点漏挂或移除守卫，此矩阵即红。
  *
- * **SSOT 真相源**：租户自服务仓储 = `{ post, workspace, subscription }`（`grep requireActiveOrganizationId()` 坐实）；
- * 平台/跨租仓储按**参数** `tenantId` 而非 ALS 卡点，不属本防线（其治理由 `PlatformOperatorGuard` 承担）。
- * **维护铁律**：新增走 `requireActiveOrganizationId()` 仓储的 @Controller 必须并入下方清单，否则其无守卫路由不被覆盖。
+ * **SSOT 真相源**：租户自服务仓储 = `{ post, workspace, subscription }`（`grep requireActiveTenantId()` 坐实·
+ * 隔离主轴）；`requireActiveOrganizationId()` 系写归属/派生的**次轴**（散布 odoo/storage/governance 等非隔离点），
+ * 不属本防线。平台/跨租仓储按**参数** `tenantId` 而非 ALS 卡点，其治理由 `PlatformOperatorGuard` 承担。
+ * **维护铁律**：新增走 `requireActiveTenantId()` 仓储的 @Controller 必须并入下方清单，否则其无守卫路由不被覆盖。
  */
 
 const GUARDS_METADATA = '__guards__';
