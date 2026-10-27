@@ -45,6 +45,12 @@ import type {
  * 跨租户视图：刻意**不注入任何租户上下文**（requireActiveOrganizationId 于此无关·平台级天然全量·FR-11①）——访问
  * 裁决完全由 controller 侧 `PlatformOperatorGuard` 前置把守（fail-closed）。
  *
+ * **P0 X4（绕 ALS 筛）**：本类所有 `em` 一律 `mikro.fork({ scoped: false })`——`scoped:true`（缺省）会从当前会话
+ * ALS 派生 filter 参数，operator 会话若绑活动租会把在册实体（Organization/Member/Workspace/Post…）的
+ * `findOne`/`find`/`count` 误筛到本租，与「平台级天然全量」语义相悖（第一批 X1 同类）。`scoped:false` 显式
+ * 传空参 → 全局 `tenantIsolationCondition` 命中 `{}` 恒真不筛·天然全量跨租。nativeUpdate/nativeDelete 走 raw
+ * SQL 本不受 filter 影响，但统一 `scoped:false` 以维持读/写面语义一致、防未来误用。
+ *
  * 保真闸（详见 §5.13）：
  *  - **R-B1（安全红线）**：`exportOrganizationData` 成员名册的 user 侧走 `fields` 投影（`id/name/email/handle`）——
  *    探针实测该投影在**生成的 SQL SELECT 面**即不含 `password`（非取回后删）；缺省不投影时 QB `select .*`
@@ -103,7 +109,7 @@ export class MikroOrganizationGovernanceRepository
     offset: number;
     search?: string;
   }): Promise<PlatformTenantPage> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const where = opts.search
       ? {
           $or: [{ name: { $ilike: `%${opts.search}%` } }, { slug: { $ilike: `%${opts.search}%` } }],
@@ -150,7 +156,7 @@ export class MikroOrganizationGovernanceRepository
    * 名下组织采 `{$or:[{tenantId},{id:tenantId}]}` 折叠——含 expand 段未盖章的 1:1 骨架 org（org.id==tenant.id）。
    */
   async findTenantDetail(tenantId: string): Promise<PlatformTenantDetail | null> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const tenant = (await em.findOne(Tenant, { id: tenantId } as never)) as {
       id: string;
       name: string;
@@ -197,7 +203,7 @@ export class MikroOrganizationGovernanceRepository
   }
 
   async diagnostics(organizationId: string): Promise<OrganizationDiagnostics | null> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const entity = await em.findOne(Organization, { id: organizationId } as never);
     if (!entity) return null;
     const organization = this.toDrillRow(
@@ -214,7 +220,7 @@ export class MikroOrganizationGovernanceRepository
   }
 
   async exportOrganizationData(organizationId: string): Promise<OrganizationDataExport | null> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     // 组织本体（BA 面全列）；**不按准入态过滤**——
     // deleted 终态可导（S5 软删取证用途·NFR-6）。切片 6 D3：organization.status 列已 DROP，准入态单一锥归位 tenant.status。
     const org = await em.findOne(Organization, { id: organizationId } as never);
@@ -320,7 +326,7 @@ export class MikroOrganizationGovernanceRepository
     // 租户硬删连带：先清名下所有组织（member/invitation/workspace/post 由 DB FK
     // cascade 自动消灭·片二 K2 旧 organization_subscription 表已 DROP），再删租户本体（其名下 `tenant_subscription` 经 FK `onDelete:cascade` 随租户灭·不跨上下手）。
     // 均 nativeDelete＝纯 SQL DELETE（R-B3·非 em.remove 免 ORM 级联分歧·单一卡点）。名下组织采 {$or:[{tenantId},{id:tenantId}]} 折叠——含 expand 段未盖章的 1:1 骨架。
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const orgRows = (await em.find(
       Organization,
       { $or: [{ tenantId }, { id: tenantId }] } as never,
@@ -340,7 +346,7 @@ export class MikroOrganizationGovernanceRepository
   ): Promise<{ tenantId: string; orgVisibility: OrgVisibility } | null> {
     // 平台级治理写点（无租户 ALS 上下文·纯 SQL UPDATE 不触隔离 filter）：仅改 tenant.orgVisibility；
     // nativeUpdate 回影行数=0 → 租户本体不存在（调用方转 404）。
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const affected = await em.nativeUpdate(
       Tenant,
       { id: tenantId } as never,
@@ -357,7 +363,7 @@ export class MikroOrganizationGovernanceRepository
    * 租户的 `tenant.status`（准入态归位·companion org 正确取租户态·切片 6 D3 后组织自有态列已 DROP·无租户行防御回落 active）。
    */
   async findOrganizationAdmission(organizationId: string): Promise<TenantStatus | null> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const org = (await em.findOne(Organization, { id: organizationId } as never, {
       fields: ['id', 'tenantId'] as never,
     })) as { id: string; tenantId: string | null } | null;
@@ -369,7 +375,7 @@ export class MikroOrganizationGovernanceRepository
     organizationId: string,
     input: { odooCompanyId: number; odooCompanyName: string },
   ): Promise<BindOdooCompanyOutcome> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return { kind: 'not-found' };
     // 占用预检查（友好冲突前置）：公司已被**其它**租户占用 → conflict；同租户重复绑定同公司
@@ -418,7 +424,7 @@ export class MikroOrganizationGovernanceRepository
    * 单行读携治理态，裁决语义零加工（归 `canUseOdoo` 单源）。
    */
   async read(organizationId: string): Promise<OrganizationOdooBindingRow | null> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     const org = await em.findOne(Organization, { id: organizationId } as never);
     if (!org) return null;
     return {
@@ -444,7 +450,7 @@ export class MikroOrganizationGovernanceRepository
    * 落「建司意图」：绑定态置 `provisioning`（幂等于目标态·nativeUpdate 绕身份图直落真列）。
    */
   async beginProvisioning(organizationId: string): Promise<void> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     await em.nativeUpdate(
       Organization,
       { id: organizationId } as never,
@@ -456,7 +462,7 @@ export class MikroOrganizationGovernanceRepository
    * 回写就绪：绑定态置 `ready` + 公司 id/名快照 + `boundAt=now`，清失败原因。
    */
   async markReady(organizationId: string, patch: OrganizationOdooReadyPatch): Promise<void> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     await em.nativeUpdate(
       Organization,
       { id: organizationId } as never,
@@ -474,7 +480,7 @@ export class MikroOrganizationGovernanceRepository
    * 置失败：绑定态置 `failed` + 携截断后的失败原因（保留既有公司 id·供 doctor/重试 定位）。
    */
   async markFailed(organizationId: string, reason: string): Promise<void> {
-    const em = await this.mikro.fork();
+    const em = await this.mikro.fork({ scoped: false });
     await em.nativeUpdate(
       Organization,
       { id: organizationId } as never,

@@ -44,7 +44,10 @@ async function resolveTargetTenant(
   if (path === '/organization/accept-invitation') {
     const invitationId = (ctx.body as { invitationId?: string } | undefined)?.invitationId;
     if (!invitationId) return null;
-    const em = await deps.mikro.fork();
+    // P0 X5：跨上下文归属解析（invitationId→organizationId→organization.tenantId）必绕 ALS 筛——`Organization`
+    // 系在册过滤实体，scoped fork 在有会话 ALS（绑活动租）时会把它滤空 → 返回 null → **配额 fail-open**
+    // （现仅被 /auth 路由不绑 ALS 的巧合掩盖·此处解耦该巧合·显式 scoped:false）。
+    const em = await deps.mikro.fork({ scoped: false });
     // 读侧宽松（表所有权②）：只取 organizationId/status 两列·invitation 属 tenants 上下文·本处仅读。
     const row = await em.findOne(Invitation, { id: invitationId } as never, {
       fields: ['organizationId', 'status'],

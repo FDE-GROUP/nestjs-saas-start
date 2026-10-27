@@ -127,6 +127,9 @@ describe('seats-quota plugin hook（S7 收尾·BA 成员增量配额接线）', 
       await handler({ path: '/organization/accept-invitation', body: { invitationId: 'inv-1' } });
       // 懒 fork：仅在命中 matcher 的请求内建 em（保 DB-free 不变量）。
       expect(fork).toHaveBeenCalledTimes(1);
+      // P0 X5 接线恒等断言：跨租归属解析必绕 ALS 筛（scoped:false）——防 scoped fork 把在册
+      // Organization 滤空→返回 null→配额 fail-open（第一批 X1 目录仓储同款恒等闸）。
+      expect(fork).toHaveBeenCalledWith({ scoped: false });
       const [entity, where, options] = findOne.mock.calls[0] as [
         unknown,
         Record<string, unknown>,

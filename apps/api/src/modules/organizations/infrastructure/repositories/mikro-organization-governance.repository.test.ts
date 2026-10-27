@@ -368,3 +368,40 @@ describe('MikroOrganizationGovernanceRepository.destroyTenant (NFR-6 硬删连�
     expect(entities).toEqual([Tenant]);
   });
 });
+
+/**
+ * P0 X4 接线恒等断言：平台治理**天然全量跨租**——所有 em 必从 `mikro.fork({ scoped: false })` 取，
+ * 绝不可退化为 scoped（缺省）fork，否则 operator 会话绑活动租时会把在册实体（Organization…）读误筛到本租
+ * （第一批 X1 目录仓储同类陷阱·沿 `mikro-tenant-directory.repository.test` 同款恒等闸）。锁死跨租读面绕筛契约。
+ */
+describe('MikroOrganizationGovernanceRepository (P0 X4 · 跨租读面 scoped:false 绕筛)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const methods: [string, (repo: MikroOrganizationGovernanceRepository) => Promise<unknown>][] = [
+    ['listTenants', (repo) => repo.listTenants({ limit: 20, offset: 0 })],
+    ['findTenantDetail', (repo) => repo.findTenantDetail('t1')],
+    ['diagnostics', (repo) => repo.diagnostics('orgA')],
+    ['exportOrganizationData', (repo) => repo.exportOrganizationData('orgA')],
+    ['findOrganizationAdmission', (repo) => repo.findOrganizationAdmission('orgA')],
+    [
+      'bindOdooCompany',
+      (repo) => repo.bindOdooCompany('orgA', { odooCompanyId: 1, odooCompanyName: 'x' }),
+    ],
+    ['read', (repo) => repo.read('orgA')],
+    ['beginProvisioning', (repo) => repo.beginProvisioning('orgA')],
+    ['markReady', (repo) => repo.markReady('orgA', { odooCompanyId: 1, odooCompanyName: 'x' })],
+    ['markFailed', (repo) => repo.markFailed('orgA', 'boom')],
+    ['setOrgVisibility', (repo) => repo.setOrgVisibility('t1', 'isolated')],
+    ['destroyTenant', (repo) => repo.destroyTenant('t1')],
+  ];
+
+  it.each(methods)(
+    '%s 经 fork({ scoped: false }) 取 em（绕 ALS 筛·跨租全量）',
+    async (_name, run) => {
+      const { repo, spies } = makeRepo();
+      // 只验绕筛接线（fork 必携 scoped:false）；下游写面（nativeUpdate）未入 fake em 会抛，不影响此前置断言。
+      await run(repo).catch(() => undefined);
+      expect(spies.fork).toHaveBeenCalledWith({ scoped: false });
+    },
+  );
+});
