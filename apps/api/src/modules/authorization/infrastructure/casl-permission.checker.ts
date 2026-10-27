@@ -88,6 +88,16 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
   /** `(tenant,key)` 复合键 → 在途/已决投影 Promise（防并发重入·加载失败即时淘汰）。 */
   private readonly abilities = new Map<string, Promise<CachedEntry>>();
 
+  /**
+   * abilities 有界上限（P0 D1）：原 Map 随 (tenant,role,org) 组合无界增长 → 内存慢漏。
+   * 取经验容量 2048（角色×租户×活动 org 的活跃工作集远小于此·驱逐仅回收最久未访问项·不影响正确性：
+   * miss 即重建·与冷启动同路）。测试可下调 `maxEntries` 验驱逐。
+   */
+  private static readonly ABILITIES_CACHE_MAX_ENTRIES = 2048;
+
+  /** 实例级上限（默认取静态常量·仅供测试 seam 下调验 LRU 驱逐·生产不改）。 */
+  private maxEntries: number = CaslPermissionChecker.ABILITIES_CACHE_MAX_ENTRIES;
+
   async can(check: PermissionCheckInput): Promise<boolean> {
     const { tenantId, role, action, subject } = check;
     // fail-closed：无租户上下文 / 无角色 → 直拒，不触规则源。
@@ -179,12 +189,21 @@ export class CaslPermissionChecker implements PermissionChecker, PermissionInval
     roleKey: string,
     activeOrg?: string,
   ): Promise<CachedEntry> {
-    let pending = this.abilities.get(cacheKey);
-    if (!pending) {
-      pending = this.buildEntry(tenantId, roleKey, activeOrg);
+    const pending = this.abilities.get(cacheKey);
+    if (pending) {
+      // 有界 LRU（P0 D1）：`Map.set` 于既有键**不**改插入序→需先删后插方能标「最近使用」。
+      this.abilities.delete(cacheKey);
       this.abilities.set(cacheKey, pending);
+      return pending;
     }
-    return pending;
+    const created = this.buildEntry(tenantId, roleKey, activeOrg);
+    this.abilities.set(cacheKey, created);
+    // 超限驱逐最旧（迭代首个 = 最久未访问·命中已重插至队尾）·O(1)·无新依赖。
+    if (this.abilities.size > this.maxEntries) {
+      const oldest = this.abilities.keys().next().value;
+      if (oldest !== undefined) this.abilities.delete(oldest);
+    }
+    return created;
   }
 
   private async buildEntry(

@@ -635,3 +635,55 @@ describe('CaslPermissionChecker（第三次复裁 切片 2·D1·org-scoped grant
     ).resolves.toEqual({ kind: 'where', where: { organizationId: 'orgZ' } });
   });
 });
+
+/**
+ * P0 D1：abilities 有界 LRU。原 Map 随 (tenant,role,org) 无界增长 → 内存慢漏。锁：
+ *  - 超上限灌键 → size 不越界（驱逐最旧）；
+ *  - 命中重插标最近（先删后插·Map.set 不改既有键插入序）；
+ *  - 被驱逐者下次 miss 重建（与冷启动同路·不缓存失效语义）。
+ * 经实例级 `maxEntries` seam 下调上限验驱逐（生产取静态 2048）。
+ */
+describe('CaslPermissionChecker · P0 D1 abilities 有界 LRU', () => {
+  const abilitiesOf = (checker: CaslPermissionChecker) =>
+    (checker as unknown as { abilities: Map<string, unknown> }).abilities;
+
+  it('超 cap 灌键 → size 不越界·驱逐者下次重建', async () => {
+    const { checker, findGrants } = makeChecker(() => [grant('Workspace', 'read')]);
+    (checker as unknown as { maxEntries: number }).maxEntries = 2;
+    const drive = (tenantId: string) =>
+      checker.can({ tenantId, role: 'r', action: 'update', subject: 'Workspace' });
+
+    await drive('t1');
+    await drive('t2');
+    expect(abilitiesOf(checker).size).toBe(2);
+    // 再灌 t3 → 超限驱逐最旧 t1 → size 仍为 2（不越界）。
+    await drive('t3');
+    expect(abilitiesOf(checker).size).toBe(2);
+    expect(abilitiesOf(checker).has('t1\u0000r\u0000')).toBe(false);
+
+    // t1 已被驱逐→ 命中 t1 触发重建（findGrants 多一次）。
+    const before = (findGrants as ReturnType<typeof vi.fn>).mock.calls.length;
+    await drive('t1');
+    expect((findGrants as ReturnType<typeof vi.fn>).mock.calls.length).toBe(before + 1);
+  });
+
+  it('命中重插标最近：反复访问者存活·最久未访问者被驱逐', async () => {
+    const { checker } = makeChecker(() => [grant('Workspace', 'read')]);
+    (checker as unknown as { maxEntries: number }).maxEntries = 2;
+    const drive = (tenantId: string) =>
+      checker.can({ tenantId, role: 'r', action: 'update', subject: 'Workspace' });
+    const survivingTenants = () =>
+      [...abilitiesOf(checker).keys()].map((k) => k.split('\u0000')[0]);
+
+    await drive('t1');
+    await drive('t2');
+    // 复访 t1 → 标最近（至队尾）·现队首（最旧）为 t2。
+    await drive('t1');
+    // 灌 t3 → 驱逐队首 t2（非刚被重插的 t1）。
+    await drive('t3');
+    const survived = survivingTenants();
+    expect(survived).toContain('t1'); // 最近访问键存活
+    expect(survived).toContain('t3');
+    expect(survived).not.toContain('t2'); // 最久未访问者被驱逐
+  });
+});

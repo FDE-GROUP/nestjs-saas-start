@@ -236,4 +236,27 @@ gated('租内跨组织可见性策略端到端（D2·shared 互见 / isolated �
     expect(t1?.orgVisibility).toBe('shared');
     expect(t2?.orgVisibility).toBe('isolated');
   }, 60000);
+
+  it('P0 D2：未装参 em 语义钉锁（newTransactionEm 抛·fork scoped:false 装空参跨租全见不抛）', async () => {
+    // 钉锁 MikroORM v7 filter 空参语义·防升级漂移两条真相：
+    //  ① `newTransactionEm()` = `orm.em.fork()` 不调 `applyTenantFilterParams`→filter 参从未装配，
+    //     读**在册过滤实体** Organization 时 v7 在 cond 之前即抛「No arguments provided for filter」
+    //     （框架级守卫·非谓词能吞——空参 em 根本走不到 `tenantIsolationCondition`·后者对 undefined
+    //     返回 `{}` 仅为已装参路径的纵深防御）→ 故跨租治理读面必走 fork({scoped:false}) 而非 newTransactionEm。
+    //  ② `fork({ scoped:false })` 显式装空参 `{}`→`tenantIsolationCondition({})={}` 恒真不筛（不抛）·
+    //     Organization 在册但跨租全见三组织。防升级把「装空参」路径改为抛错/默认收窄。
+    const rawEm = await mikro.newTransactionEm();
+    await expect(
+      rawEm.find(Organization, { id: { $in: [orgA, orgB, orgC] } } as never, {
+        fields: ['id'] as never,
+      }),
+    ).rejects.toThrow(/No arguments provided for filter/);
+
+    const em = await mikro.fork({ scoped: false });
+    const rows = (await em.find(Organization, { id: { $in: [orgA, orgB, orgC] } } as never, {
+      fields: ['id'] as never,
+    })) as { id: string }[];
+    // orgC 属 tenant2·orgA/orgB 属 tenantId——装空参 scoped:false 跨租全见三组织（不抛）。
+    expect(rows.map((r) => r.id).sort()).toEqual([orgA, orgB, orgC].sort());
+  }, 60000);
 });

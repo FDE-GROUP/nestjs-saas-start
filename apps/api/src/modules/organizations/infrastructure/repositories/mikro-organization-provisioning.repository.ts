@@ -5,7 +5,7 @@ import { Organization } from '@app/modules/organizations/infrastructure/entities
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
   OrganizationProvisioningReceipt,
   OrganizationProvisioningRepository,
@@ -23,6 +23,10 @@ import type {
  * 组生命周期列初态入册·沿 L2 建后未改即 NULL）。
  * ⚠ 两段非事务于 BA 写——存在毫秒级「本体已立、态未翻」窗口（此窗内 org 瞬时 'active'），
  * 而 submit 系受信系统动作、返回前必完两步，FR-1 闭环实质不变；态写失败即 loud fail、申请可重提。
+ *
+ * P0 D3（ saga 孤儿补偿 + slug 竞）：我方两段写（Tenant 插 + org 盖章）现入**同一事务**（`em.transactional`），
+ * 整段 try/catch——任一失败先回滚我方写、再 `remove(organizationId)` 回收 BA 建的无归属孤儿 org 后重抛；
+ * slug 冲突经前置可用性预检（fail-fast 译 409）+ 并发 `tenant_slug_unique` 违例翻译 409（竞态终防线靠库 unique + 补偿）。
  *
  * `remove` 采 `em.nativeDelete(Organization, {id})`（纯 SQL DELETE·五子表由 DB FK `onDelete:cascade`
  * 自动消灭·pending 期零业务数据）·`>0` 为实删——与切片 3c-ii-B 治理读面 `destroy`（R-B3）
@@ -48,6 +52,13 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
   ): Promise<OrganizationProvisioningReceipt> {
     const auth = this.authInstance.get();
     if (!auth) throw new Error('Auth instance not initialized');
+    // P0 D3·① slug 可用性预检（fail-fast）：`tenant_slug_unique` 全局唯一——自助建租撞 slug 提前译
+    // 409 Conflict（无本体可孤儿），缩窄并发 TOCTOU 窗（终防线仍靠库 unique 违例翻译 + 下方孤儿补偿）。
+    // 跨租 slug 检无活动租户上下文，显式 `scoped:false`（与 BA 同域·防在册 filter 误筛 Tenant 读）。
+    const probe = await this.mikro.fork({ scoped: false });
+    if (await probe.findOne(Tenant, { slug } as never)) {
+      throw new ConflictException(`Tenant slug already taken: ${slug}`);
+    }
     const created = await auth.api.createOrganization({
       body: { name, slug, userId },
     });
@@ -56,34 +67,48 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
     // 治理换轴归位（rehierarchy E-F）：租户准入态落 `tenant.status` = pending_approval（审批对象）；
     // 同流 ensure 专属租户行（1:1 骨架·id=orgId）并盖 organization.tenantId（缺此环则新 org 无主轴 403）。
     // 组织本体去审批化——BA 建后 status 保持默认 'active'，不再手覆 pending。
-    const em = await this.mikro.fork();
-    if (!(await em.findOne(Tenant, { id: organizationId }))) {
-      em.create(Tenant, {
-        id: organizationId,
-        name,
-        slug,
-        status: TENANT_STATUS.PENDING,
-        // 新建专属租户骨架取缺省可见性策略 shared（零行为变更·租内跨组织互见·切片 3 D2）。
-        orgVisibility: ORG_VISIBILITY.SHARED,
-        // 席位物化计数初值 0：建租者 member 已随 BA auto-join 落行但 `organization.tenantId` 尚未盖章（NULL），
-        // 下方 `nativeUpdate` 盖租时 `organization_tenant_relink_count_sync` 触发器按当前成员数 +N 补计（→ 1）。
-        memberCount: 0,
-        createdAt: new Date(),
-        updatedAt: null,
+    // P0 D3·② 我方两段写（Tenant flush + org stamp）入**同一事务**：任一失败整体回滚，不遗留半提交租户行。
+    const em = await this.mikro.fork({ scoped: false });
+    try {
+      await em.transactional(async (trx) => {
+        if (!(await trx.findOne(Tenant, { id: organizationId } as never))) {
+          trx.create(Tenant, {
+            id: organizationId,
+            name,
+            slug,
+            status: TENANT_STATUS.PENDING,
+            // 新建专属租户骨架取缺省可见性策略 shared（零行为变更·租内跨组织互见·切片 3 D2）。
+            orgVisibility: ORG_VISIBILITY.SHARED,
+            // 席位物化计数初值 0：建租者 member 已随 BA auto-join 落行但 `organization.tenantId` 尚未盖章（NULL），
+            // 下方 `nativeUpdate` 盖租时 `organization_tenant_relink_count_sync` 触发器按当前成员数 +N 补计（→ 1）。
+            memberCount: 0,
+            createdAt: new Date(),
+            updatedAt: null,
+          });
+          await trx.flush();
+        }
+        await trx.nativeUpdate(Organization, { id: organizationId } as never, {
+          tenantId: organizationId,
+        });
       });
-      await em.flush();
+    } catch (err) {
+      // P0 D3·③ 孤儿补偿：事务已回滚我方 Tenant 插行，但 BA 建的 org（tenantId NULL）仍在——
+      // 必回收（nativeDelete org·FK cascade 清子表·幂等兼删可能的租户父行），防半途异常遗留无归属孤儿 org。
+      await this.remove(organizationId).catch(() => undefined);
+      // 同 slug 并发竞（双过 BA 预检后撞 `tenant_slug_unique`）→ 译 409 Conflict（去孤儿·竞态终防线）。
+      if (err instanceof Error && /unique|duplicate/i.test(err.message)) {
+        throw new ConflictException(`Tenant slug already taken: ${slug}`);
+      }
+      throw err;
     }
-    await em.nativeUpdate(Organization, { id: organizationId } as never, {
-      tenantId: organizationId,
-    });
     return { organizationId, status: TENANT_STATUS.PENDING };
   }
 
   async remove(organizationId: string): Promise<boolean> {
     // nativeDelete＝纯 SQL DELETE·FK cascade 由 DB 层清 member/invitation/workspace/post（R-B3 同律·旧 organization_subscription 表已随片二 K2 DROP·订阅锚上移 tenant）。
     // 治理换轴（rehierarchy E-F）：驳回 pending 申请 = 连专属租户行一并硬删（1:1 骨架·tenant.id=org.id）：
-    // 先删组织（子表 FK 级联）再删租户父行，避免 organization.tenantId FK 悬挂。
-    const em = await this.mikro.fork();
+    // 先删组织（子表 FK 级联）再删租户父行，避免 organization.tenantId FK 悬挂。亦作 `submit` 失败时的**孤儿补偿**面（P0 D3）。
+    const em = await this.mikro.fork({ scoped: false });
     const affected = await em.nativeDelete(Organization, { id: organizationId } as never);
     if (affected > 0) {
       await em.nativeDelete(Tenant, { id: organizationId } as never);

@@ -17,7 +17,7 @@
   "apps/api/src/modules/auth/infrastructure/session-store.adapter.ts": 4,
   "apps/api/src/modules/organizations/infrastructure/mikro-tenant-status.store.ts": 3,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-governance.repository.ts": 41,
-  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-provisioning.repository.ts": 3,
+  "apps/api/src/modules/organizations/infrastructure/repositories/mikro-organization-provisioning.repository.ts": 5,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-tenant-directory.repository.ts": 7,
   "apps/api/src/modules/organizations/infrastructure/repositories/mikro-user-governance.repository.ts": 2,
   "apps/api/src/modules/posts/infrastructure/repositories/mikro-post.repository.ts": 4,

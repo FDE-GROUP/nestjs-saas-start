@@ -32,6 +32,10 @@ describe('MikroORM 全局租户隔离 filter（切片 1 机制化）', () => {
     it('无 tenantId → {} 恒真不筛（跨租/无上下文豁免面命中此支）', () => {
       expect(tenantIsolationCondition({})).toEqual({});
       expect(tenantIsolationCondition()).toEqual({});
+      // P0 D2 语义钉测：`newTransactionEm()` 不调 `applyTenantFilterParams`，filter `default:true` 于
+      // **未装参**（args 缺位·MikroORM 传 undefined）下须恒真不筛（不抛）——锁 v7 空参语义、防升级漂移。
+      expect(tenantIsolationCondition(undefined)).toEqual({});
+      expect(tenantIsolationCondition(undefined, undefined)).toEqual({});
       expect(tenantIsolationCondition({ organizationId: 'orgA' })).toEqual({});
     });
 

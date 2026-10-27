@@ -3,7 +3,7 @@ import type { AuthInstance, InjectAuthInstance } from '@app/modules/auth/auth.in
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
-import type { EntityManager } from '@mikro-orm/core';
+import { ConflictException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroOrganizationProvisioningRepository } from './mikro-organization-provisioning.repository';
 
@@ -34,7 +34,12 @@ function makeDeps(deletedCount = 1) {
     return data;
   });
   const flush = vi.fn().mockResolvedValue(undefined);
-  const em = { nativeDelete, nativeUpdate, findOne, create, flush } as unknown as EntityManager;
+  const em = { nativeDelete, nativeUpdate, findOne, create, flush } as unknown as Record<
+    string,
+    unknown
+  >;
+  // P0 D3：submit 我方两段写入 `em.transactional(cb)`——镜像以同 em 直执 cb（无真库事务·保行为可观测）。
+  em.transactional = vi.fn((cb: (trx: unknown) => Promise<unknown>) => cb(em));
   const fork = vi.fn().mockResolvedValue(em);
   const mikro = { fork } as unknown as MikroOrmService;
   return {
@@ -129,5 +134,33 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
     const { repo, spies } = makeDeps(0);
     expect(await repo.remove('ghost')).toBe(false);
     expect(spies.nativeDelete).toHaveBeenCalledTimes(1);
+  });
+
+  // —— P0 D3· saga 孤儿补偿 + slug 竞 ——
+  it('submit() slug 预检命中 → 409 Conflict（fail-fast·BA 未调·无孤儿可补）', async () => {
+    const { repo, spies } = makeDeps();
+    // 预检 findOne(Tenant,{slug}) 命中已存 slug → 直拒（在 BA 建本体前）。
+    spies.findOne.mockResolvedValueOnce({ id: 'existing' });
+    await expect(repo.submit('u', 'Acme', 'acme')).rejects.toBeInstanceOf(ConflictException);
+    expect(spies.createOrganization).not.toHaveBeenCalled();
+    expect(spies.nativeDelete).not.toHaveBeenCalled();
+  });
+
+  it('submit() 事务内 tenant_slug_unique 违例 → 补偿删孤儿 org + 译 409 Conflict', async () => {
+    const { repo, spies } = makeDeps();
+    // 事务回滚语义：transactional 内 flush 抛唯一违例 → catch 补偿。
+    spies.flush.mockRejectedValueOnce(new Error('duplicate key value violates tenant_slug_unique'));
+    await expect(repo.submit('u', 'Acme', 'acme')).rejects.toBeInstanceOf(ConflictException);
+    // 孤儿补偿走 remove：nativeDelete org（命中>0）+ nativeDelete tenant。
+    const entities = spies.nativeDelete.mock.calls.map((c) => c[0]);
+    expect(entities).toEqual([Organization, Tenant]);
+  });
+
+  it('submit() 事务内非唯一违例异常 → 补偿删孤儿 org + 原样上抛', async () => {
+    const { repo, spies } = makeDeps();
+    spies.flush.mockRejectedValueOnce(new Error('connection reset'));
+    await expect(repo.submit('u', 'Acme', 'acme')).rejects.toThrow(/connection reset/);
+    const entities = spies.nativeDelete.mock.calls.map((c) => c[0]);
+    expect(entities).toEqual([Organization, Tenant]);
   });
 });
