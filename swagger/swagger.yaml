@@ -444,6 +444,11 @@ paths:
                 conditions:
                   type: object
                   additionalProperties: {}
+                organizationId:
+                  type:
+                    - string
+                    - 'null'
+                  minLength: 1
               required:
                 - roleKey
                 - subject
@@ -507,6 +512,11 @@ paths:
                 conditions:
                   type: object
                   additionalProperties: {}
+                organizationId:
+                  type:
+                    - string
+                    - 'null'
+                  minLength: 1
               required:
                 - roleKey
                 - subject
@@ -2544,10 +2554,16 @@ components:
             - 'null'
           additionalProperties: true
           description: CASL 条件（白名单字段）；null = 无约束。
+        organizationId:
+          type:
+            - string
+            - 'null'
+          description: 组织收窄 scope；null = 租级通配行（跨 org 生效），字符串 = 仅该 org 生效。
       required:
         - subject
         - action
         - conditions
+        - organizationId
     PlatformTenantRowResponse:
       type: object
       properties:
