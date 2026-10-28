@@ -157,32 +157,30 @@ export class OrganizationsSelfController {
   }
 
   /**
-   * 自助退出租户（last-owner 不可退）。
-   * @param headers - 透传 BA 的请求头。
-   * @param dto - 目标租户 id 载荷。
-   * @returns BA 退出结果；数据守卫拒经 `mapBaError` 归一。
+   * 自助退租（X7 切片 G·G1 租级换轴：不再 BA passthrough，经门面 `leaveSelf` 撤租级两表 + 连清 BA member）。
+   * @param _dto - 目标组织 id 载荷（租级以活动租定位·本字段保留仅守线形契约·不再透传 BA）。
+   * @param user - 会话用户（退租主体）。
+   * @returns 撤权撤席结果（唯一 owner 拒退 403·非成员 404）。
    */
   @Post('members/leave')
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Leave an organization (self-service · last-owner cannot leave)' })
+  @ApiOperation({ summary: 'Leave the active tenant (self-service · last-owner cannot leave)' })
   @ApiResponse(
     apiOkPassthrough({
-      description: 'Membership removed',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
+      description: 'Membership revoked (tenant-level SSOT + BA member sync)',
+      ssotHint: 'tenant_membership + tenant_role_assignment（自有租级表）',
     }),
   )
   @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(400, 'Not a member / sole owner leaving the organization (BA data guard).'))
+  @ApiResponse(apiError(403, 'Sole owner leaving the tenant (last-owner guard).'))
+  @ApiResponse(apiError(404, 'Not a member of the active tenant.'))
   async leave(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: leaveOrganizationSchema }) dto: LeaveOrganization,
-  ): Promise<unknown> {
-    try {
-      return await this.ba().leaveOrganization({ headers, body: dto });
-    } catch (err) {
-      return mapBaError(err);
-    }
+    @Body({ schema: leaveOrganizationSchema }) _dto: LeaveOrganization,
+    @CurrentUser() user: SessionUser,
+  ): Promise<{ ok: true }> {
+    await this.facade.leaveSelf(user.id);
+    return { ok: true };
   }
 
   /**

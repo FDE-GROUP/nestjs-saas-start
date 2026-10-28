@@ -31,6 +31,8 @@ function makeMiddleware(opts: {
   explicitOrgVisibility?: string;
   /** X7 切片 C 换源：`resolveTenantRole` 桩返回角色（默认 undefined=非成员/无行 → 守卫 fail-closed）。 */
   resolvedRole?: 'owner' | 'admin' | 'member';
+  /** G5 缺省租桩：无 org/无显式租时 `defaultTenantForUser` 返回（默认 undefined=零/多租 → 不绑·fail-closed）。 */
+  defaultTenantId?: string;
 }) {
   const read = vi.fn().mockResolvedValue(
     opts.noSession
@@ -65,10 +67,13 @@ function makeMiddleware(opts: {
   const readOrgVisibility = vi.fn(async () => opts.explicitOrgVisibility);
   // X7 切片 C 换源：会话角色经活动租解析（默认 undefined·与旧「不随会话携角色」同形）。
   const resolveTenantRole = vi.fn(async () => opts.resolvedRole);
+  // 切片 G·G5：纯租级成员冷启动缺省租桩（默认 undefined=零/多租 → 维持不绑）。
+  const defaultTenantForUser = vi.fn(async () => opts.defaultTenantId);
   const tenantScope = {
     resolveTenantScopeOf,
     readOrgVisibility,
     resolveTenantRole,
+    defaultTenantForUser,
   } as unknown as TenantScopeResolver;
 
   return {
@@ -78,6 +83,7 @@ function makeMiddleware(opts: {
     resolveTenantScopeOf,
     readOrgVisibility,
     resolveTenantRole,
+    defaultTenantForUser,
     read,
   };
 }
@@ -264,5 +270,42 @@ describe('TenantIsolationMiddleware · 切片 4 D7 租级激活解绑（显式 a
     expect(resolveTenantScopeOf).toHaveBeenCalledWith('orgA');
     expect(readOrgVisibility).not.toHaveBeenCalled();
     expect(store?.tenantId).toBe('tenant-orgA');
+  });
+});
+
+describe('TenantIsolationMiddleware · 切片 G·G5 纯租级成员冷启动缺省租（仅单租才缺省·地板不弱化）', () => {
+  it('无 org/无显式租·user 恰属单一租 → 缺省绑该租（仅指针·角色按活动租解）', async () => {
+    const { mw, isBlocked, resolveTenantRole, resolveTenantScopeOf } = makeMiddleware({
+      userId: 'u1',
+      blocked: false,
+      defaultTenantId: 'tenantSolo',
+      resolvedRole: 'member',
+    });
+    const store = await run(mw, reqWith());
+    expect(resolveTenantScopeOf).not.toHaveBeenCalled(); // 无 org → 不走组织派生
+    expect(isBlocked).toHaveBeenCalledWith('tenantSolo'); // 仍过租户失能卡点
+    expect(resolveTenantRole).toHaveBeenCalledWith('tenantSolo', 'u1');
+    expect(store?.tenantId).toBe('tenantSolo');
+    expect(store?.organizationId).toBeUndefined(); // 仅租指针·无活动 org
+    expect(store?.role).toBe('member');
+  });
+
+  it('无 org/无显式租·user 零租/多租（缺省桩回 undefined）→ 维持 fail-closed 不绑主轴', async () => {
+    const { mw, isBlocked } = makeMiddleware({ userId: 'u1', blocked: false });
+    const store = await run(mw, reqWith());
+    expect(isBlocked).not.toHaveBeenCalled();
+    expect(store?.tenantId).toBeUndefined();
+    expect(store?.userId).toBe('u1');
+  });
+
+  it('缺省租被封禁 → 不绑主轴（guard fail-closed 403）·保留身份', async () => {
+    const { mw } = makeMiddleware({
+      userId: 'u1',
+      blocked: true,
+      defaultTenantId: 'tenantSusp',
+    });
+    const store = await run(mw, reqWith());
+    expect(store?.tenantId).toBeUndefined();
+    expect(store?.userId).toBe('u1');
   });
 });

@@ -1,5 +1,8 @@
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
-import { TenantRoleAssignment } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
+import {
+  TenantMembership,
+  TenantRoleAssignment,
+} from '@app/modules/authorization/infrastructure/entities/rbac.entities';
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import type { TenantRole } from '@core/saas-kit/authorization/authorization-rules';
@@ -63,5 +66,18 @@ export class MikroTenantScopeResolver implements TenantScopeResolver {
     const row = await em.findOne(TenantRoleAssignment, { tenantId, userId });
     const roleKey = row?.roleKey;
     return typeof roleKey === 'string' && roleKey.length > 0 ? roleKey : undefined;
+  }
+
+  /**
+   * 纯租级成员冷启动缺省租（切片 G·G5）：读自有 `tenant_membership` 收敛该 user 的所属租集合，
+   * **恰一个**才返回、零/多返回 `undefined`（多租须显式切租消歧·不猜）。本表属 authorization，
+   * 解析器为隔离机制锚（运行于 ALS 绑定之前），显式 `fork({ scoped:false })` + `where{userId}` 锚定
+   * （沿 `resolveTenantRole` 同律）。纯读（不触写侧纪律·table-ownership 守卫只扫写调用）。 @internal
+   */
+  async defaultTenantForUser(userId: string): Promise<string | undefined> {
+    const em = await this.mikro.fork({ scoped: false });
+    const rows = await em.find(TenantMembership, { userId });
+    const ids = new Set(rows.map((r) => r.tenantId));
+    return ids.size === 1 ? [...ids][0] : undefined;
   }
 }

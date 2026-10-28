@@ -1788,7 +1788,9 @@ paths:
               additionalProperties: false
       responses:
         '200':
-          description: Membership removed（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传））
+          description: >-
+            Membership revoked (tenant-level SSOT + BA member sync)（透传面·形参真相源 =
+            tenant_membership + tenant_role_assignment（自有租级表））
           content:
             application/json:
               schema:
@@ -1799,19 +1801,25 @@ paths:
                       data:
                         type: object
                         additionalProperties: true
-        '400':
-          description: Not a member / sole owner leaving the organization (BA data guard).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
         '401':
           description: Missing or invalid session.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Leave an organization (self-service · last-owner cannot leave)
+        '403':
+          description: Sole owner leaving the tenant (last-owner guard).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Not a member of the active tenant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+      summary: Leave the active tenant (self-service · last-owner cannot leave)
       tags: *ref_12
   /api/v1/organizations/invitations/accept:
     post:

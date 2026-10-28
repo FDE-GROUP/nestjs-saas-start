@@ -615,7 +615,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Leave an organization (self-service · last-owner cannot leave) */
+        /** Leave the active tenant (self-service · last-owner cannot leave) */
         post: operations["OrganizationsSelfController_leave_v1"];
         delete?: never;
         options?: never;
@@ -3153,7 +3153,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Membership removed（透传面·形参真相源 = Better Auth auth.api.*（服务端直调透传）） */
+            /** @description Membership revoked (tenant-level SSOT + BA member sync)（透传面·形参真相源 = tenant_membership + tenant_role_assignment（自有租级表）） */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3166,8 +3166,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Not a member / sole owner leaving the organization (BA data guard). */
-            400: {
+            /** @description Missing or invalid session. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3175,8 +3175,17 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description Missing or invalid session. */
-            401: {
+            /** @description Sole owner leaving the tenant (last-owner guard). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Not a member of the active tenant. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

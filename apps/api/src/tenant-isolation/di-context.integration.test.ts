@@ -83,6 +83,8 @@ function tenantScopeStub(
     readOrgVisibility: async () => orgVisibility,
     // X7 切片 C 换源：会话角色按活动租解析（本桩纯读不触库·有租则回固定席位角色）。
     resolveTenantRole: async () => (tenantId ? 'admin' : undefined),
+    // G5 缺省租桩：本组走 org 派生·不触冷启动缺省支；回 undefined 维持 fail-closed（与旧行为同形）。
+    defaultTenantForUser: async () => undefined,
   } as unknown as TenantScopeResolver;
 }
 

@@ -4,6 +4,7 @@ import type { TenantMembershipManager } from '@app/modules/authorization/domain/
 import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
+import type { UnitOfWork } from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { ConflictException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MikroOrganizationProvisioningRepository } from './mikro-organization-provisioning.repository';
@@ -43,11 +44,13 @@ function makeDeps(deletedCount = 1) {
   em.transactional = vi.fn((cb: (trx: unknown) => Promise<unknown>) => cb(em));
   const fork = vi.fn().mockResolvedValue(em);
   const mikro = { fork } as unknown as MikroOrmService;
+  // G2：submit 我方两段写 + creator-join 现入 `uow.run` ambient 事务——镜像以直执 fn 模拟（无真库事务）。
+  const uow = { run: (fn: () => Promise<unknown>) => fn() } as unknown as UnitOfWork;
   // X7 creator-join（R1）：租级成员/角色写侧经 published port 委托——镜像以 manager 桩捕调用。
   const ensureMembership = vi.fn().mockResolvedValue(undefined);
   const memberships = { ensureMembership } as unknown as TenantMembershipManager;
   return {
-    repo: new MikroOrganizationProvisioningRepository(mikro, authInstance, memberships),
+    repo: new MikroOrganizationProvisioningRepository(mikro, authInstance, memberships, uow),
     spies: {
       createOrganization,
       nativeDelete,
@@ -116,9 +119,16 @@ describe('MikroOrganizationProvisioningRepository (S-d2 · FR-1 唯一建租户�
       set: () => {},
     } as InjectAuthInstance;
     const mikro = { fork: vi.fn() } as unknown as MikroOrmService;
-    const repo = new MikroOrganizationProvisioningRepository(mikro, coldAuth, {
-      ensureMembership: vi.fn(),
-    } as unknown as TenantMembershipManager);
+    const repo = new MikroOrganizationProvisioningRepository(
+      mikro,
+      coldAuth,
+      {
+        ensureMembership: vi.fn(),
+      } as unknown as TenantMembershipManager,
+      {
+        run: (fn: () => Promise<unknown>) => fn(),
+      } as unknown as UnitOfWork,
+    );
     await expect(repo.submit('u', 'n', 's')).rejects.toThrow(/Auth instance not initialized/);
   });
 

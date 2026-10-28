@@ -48,4 +48,11 @@ export interface TenantScopeResolver {
    * 绝不回退用他轴角色冒充。纯读、无副作用（适配侧 `fork({ scoped:false })` 读目录表）。
    */
   resolveTenantRole(tenantId: string, userId: string): Promise<TenantRole | undefined>;
+  /**
+   * 纯租级成员冷启动缺省租解析（global-role-membership-tenantization 切片 G·G5）：会话既无显式
+   * 活动租、又无活动组织时，**仅当**该用户恰好归属**单一**租户才返回该租 id（免手动切租的冷启动指针）。
+   * 零成员 / 多成员（须显式切租消歧）→ `undefined`（维持中间件 fail-closed 不绑主轴·403）。
+   * 纯读、无副作用；跨租地板不弱化（角色仍由 `resolveTenantRole` 按活动租从 `tenant_role_assignment` 解）。
+   */
+  defaultTenantForUser(userId: string): Promise<string | undefined>;
 }

@@ -24,6 +24,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  BA_MEMBER_DIRECTORY_WRITER,
+  type BaMemberDirectoryWriter,
+} from '../domain/repositories/ba-member-writer.repository';
 
 /** 接受邀请的入参形状（受邀者自助通道·invitationId 定位 pending 行）。 */
 export interface AcceptInvitationInput {
@@ -56,6 +60,7 @@ export class TenantMemberFacadeService {
     @Inject(TENANT_INVITATION_MANAGER) private readonly invitations: TenantInvitationManager,
     @Inject(ROLE_ASSIGNABILITY_READER) private readonly roleAssignability: RoleAssignabilityReader,
     @Inject(QuotaService) private readonly quota: QuotaService,
+    @Inject(BA_MEMBER_DIRECTORY_WRITER) private readonly baMembers: BaMemberDirectoryWriter,
   ) {}
 
   /** 列出活动租户全部成员。 */
@@ -89,11 +94,12 @@ export class TenantMemberFacadeService {
   }
 
   /**
-   * 移除成员（守卫结果译 HTTP·自移/最后属主拒）。
+   * 移除成员（守卫结果译 HTTP·自移/最后属主拒）：撤租级两表（SSOT·撤权撤席）+ 连带清 BA `member` 行（双轴同步）。
    * @param targetUserId - 目标成员用户 id。
    */
   async removeMember(targetUserId: string): Promise<void> {
-    const result = await this.members.removeMember(this.tenantId(), targetUserId, this.actorId());
+    const tenantId = this.tenantId();
+    const result = await this.members.removeMember(tenantId, targetUserId, this.actorId());
     if (result === 'self') {
       throw new ForbiddenException('Cannot remove yourself', {
         errorCode: ERROR_CODES.ORG_SELF_REMOVAL,
@@ -109,6 +115,30 @@ export class TenantMemberFacadeService {
         errorCode: ERROR_CODES.ORG_LAST_OWNER,
       });
     }
+    // 撤权撤席（SSOT）既成，BA 遗留轴 best-effort 同步（失败不回滚·BA 非 SSOT）。
+    await this.baMembers.removeAcrossTenant(tenantId, targetUserId).catch(() => undefined);
+  }
+
+  /**
+   * 自助退租（切片 G·G1·P1 安全回归修复）：actor==target 合法（绕管理员面自移拒），与管理员移除
+   * 共用 {@link revokeMembership} 同形撤权撤席（唯一 owner 拒退）+ 连带清 BA `member` 行。
+   * 目标租取自活动租户 ALS（退租语义即“退出当前活动租”）。
+   * @param userId - 退租者用户 id（会话主体）。
+   */
+  async leaveSelf(userId: string): Promise<void> {
+    const tenantId = this.tenantId();
+    const result = await this.members.revokeMembership(tenantId, userId);
+    if (result === 'notFound') {
+      throw new NotFoundException('Not a member of this tenant', {
+        errorCode: ERROR_CODES.ORG_MEMBER_NOT_FOUND,
+      });
+    }
+    if (result === 'lastOwner') {
+      throw new ForbiddenException('Cannot leave as the last owner', {
+        errorCode: ERROR_CODES.ORG_LAST_OWNER,
+      });
+    }
+    await this.baMembers.removeAcrossTenant(tenantId, userId).catch(() => undefined);
   }
 
   /** 列出活动租户的待处理邀请。 */
@@ -190,16 +220,26 @@ export class TenantMemberFacadeService {
       });
     }
     const verdict = await this.quota.checkSeats(invitation.tenantId, 1);
-    if (!verdict.ok) {
+    // G3 TOCTOU 硬化：席位终裁 + 落成员/角色 + 消费邀请入单事务（锁内 live 计数）·预飞 verdict 仅供早退提示。
+    const result = await this.invitations.admitAtomically({
+      invitationId,
+      email: invitee.email,
+      userId: invitee.userId,
+      seatsLimit: verdict.limit,
+    });
+    if (result.status === 'notFound') {
+      throw new NotFoundException('Pending invitation not found', {
+        errorCode: ERROR_CODES.ORG_INVITATION_NOT_FOUND,
+      });
+    }
+    if (result.status === 'overLimit') {
       throw new HttpException(
         `Seat quota exceeded: ${verdict.used}+1 > ${verdict.limit}`,
         HttpStatus.PAYMENT_REQUIRED,
         { errorCode: ERROR_CODES.BILLING_SEAT_LIMIT_EXCEEDED },
       );
     }
-    await this.members.ensureMembership(invitation.tenantId, invitee.userId, invitation.roleKey);
-    await this.invitations.markAccepted(invitationId);
-    return { tenantId: invitation.tenantId, roleKey: invitation.roleKey };
+    return { tenantId: result.tenantId, roleKey: result.roleKey };
   }
 
   /** 角色可挂载闸（严格在库 fail-closed·词汇外拒）。 */

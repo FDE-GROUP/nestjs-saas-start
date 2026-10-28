@@ -1,14 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { MikroOrmService } from '@app/database/mikro/mikro-orm.service';
+import type { BasePostgreSqlEntityManager as PgEntityManager } from '@mikro-orm/postgresql';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   InvitationAcceptResult,
+  InvitationAdmitResult,
   InvitationCancelResult,
   InvitationCreateResult,
   TenantInvitationManager,
   TenantInvitationView,
 } from '../../domain/ports/tenant-invitation.port';
-import { TenantInvitation, type TenantInvitationRow } from '../entities/rbac.entities';
+import {
+  TenantInvitation,
+  type TenantInvitationRow,
+  TenantMembership,
+  TenantRoleAssignment,
+} from '../entities/rbac.entities';
 
 /** 邀请状态词汇（与 `tenant_invitation.status` 文本列取值对齐）。 */
 const PENDING = 'pending';
@@ -105,6 +112,50 @@ export class MikroTenantInvitationManager implements TenantInvitationManager {
     em.assign(row, { status: ACCEPTED, updatedAt: new Date() });
     await em.flush();
     return 'accepted';
+  }
+
+  async admitAtomically(params: {
+    invitationId: string;
+    email: string;
+    userId: string;
+    seatsLimit: number;
+  }): Promise<InvitationAdmitResult> {
+    const em = (await this.mikro.fork({ scoped: false })) as unknown as PgEntityManager;
+    return em.transactional(async (trx) => {
+      // 锁内重查 pending 邀请（兼防双消费·事务外预检不可信）。
+      const row = await trx.findOne(TenantInvitation, { id: params.invitationId });
+      if (!row || row.status !== PENDING || isExpired(row, Date.now()))
+        return { status: 'notFound' };
+      if (row.email.toLowerCase() !== params.email.toLowerCase()) return { status: 'notFound' };
+      const tenantId = row.tenantId;
+      // 事务级 advisory 锁（按 tenantId 串行化并发 accept·提交自动释放）——消 checkSeats→write 的 TOCTOU 窗。
+      await trx.execute('select pg_advisory_xact_lock(hashtext(?))', [tenantId], 'run');
+      const used = await trx.count(TenantMembership, { tenantId });
+      if (used + 1 > params.seatsLimit) return { status: 'overLimit' };
+      const now = new Date();
+      if (!(await trx.findOne(TenantMembership, { tenantId, userId: params.userId }))) {
+        trx.create(TenantMembership, {
+          id: randomUUID(),
+          tenantId,
+          userId: params.userId,
+          createdAt: now,
+          updatedAt: null,
+        });
+      }
+      if (!(await trx.findOne(TenantRoleAssignment, { tenantId, userId: params.userId }))) {
+        trx.create(TenantRoleAssignment, {
+          id: randomUUID(),
+          tenantId,
+          userId: params.userId,
+          roleKey: row.roleKey,
+          createdAt: now,
+          updatedAt: null,
+        });
+      }
+      trx.assign(row, { status: ACCEPTED, updatedAt: now });
+      await trx.flush();
+      return { status: 'accepted', tenantId, roleKey: row.roleKey };
+    });
   }
 
   async listPendingByEmail(email: string): Promise<TenantInvitationView[]> {

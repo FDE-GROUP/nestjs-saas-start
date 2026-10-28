@@ -4,6 +4,7 @@ import { User } from '@app/modules/auth/infrastructure/entities/ba-identity.enti
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   MemberRemoveResult,
+  MemberRevokeResult,
   MemberRoleUpdateResult,
   TenantMembershipManager,
   TenantMemberView,
@@ -24,7 +25,7 @@ import { TenantMembership, TenantRoleAssignment } from '../entities/rbac.entitie
  * 同律·无投影/无 `$in` 边界 cast）。
  *
  * `email`/`name` 展示走**跨上下文纯读**（user 表属 auth·读侧宽松·table-ownership 注）：成员数受席位
- * 上限约束·逐 id `findOne` 取回（无 `$in` 边界 cast·规模有界不构成 N+1 隐患）。
+ * 上限约束·`listMembers` 以 `id $in userIds` 批量一次取（切片 G·G5·去 N+1·userIds 为纯 string 无边界 cast）。
  *
  * 守卫重建（原 BA 数据守卫上收租级·fail-closed）：
  *  - **last-owner**：`owner` 是本租存续的不可清空角色——降级/移除**唯一** owner 即拒（防锁死）；
@@ -43,17 +44,18 @@ export class MikroTenantMembershipManager implements TenantMembershipManager {
     const assignments = await em.find(TenantRoleAssignment, { tenantId });
     const roleByUser = new Map(assignments.map((a) => [a.userId, a.roleKey]));
 
-    const out: TenantMemberView[] = [];
-    for (const userId of userIds) {
-      const u = await em.findOne(User, { id: userId });
-      out.push({
+    // 切片 G·G5：user 展示改**批量**一次取（`id $in userIds`·规模受席位上限约束）·去 per-id findOne 的 N+1。
+    const users = await em.find(User, { id: { $in: userIds } });
+    const userById = new Map(users.map((u) => [u.id, u]));
+    return userIds.map((userId) => {
+      const u = userById.get(userId);
+      return {
         userId,
         email: u?.email ?? '',
         name: u?.name ?? '',
         roleKey: roleByUser.get(userId) ?? 'member',
-      });
-    }
-    return out;
+      };
+    });
   }
 
   async updateMemberRole(
@@ -94,19 +96,23 @@ export class MikroTenantMembershipManager implements TenantMembershipManager {
     targetUserId: string,
     actorId: string | null,
   ): Promise<MemberRemoveResult> {
-    // self-removal 闸：管理员移除面拒自移（退租走自助 leave·非本门面职权）。
+    // self-removal 闸：管理员移除面拒自移（退租走自助 leave·非本面职权）。
     if (actorId && actorId === targetUserId) return 'self';
+    return this.revokeMembership(tenantId, targetUserId);
+  }
+
+  async revokeMembership(tenantId: string, userId: string): Promise<MemberRevokeResult> {
     const em = await this.mikro.fork({ scoped: false });
-    if (!(await em.findOne(TenantMembership, { tenantId, userId: targetUserId }))) {
+    if (!(await em.findOne(TenantMembership, { tenantId, userId }))) {
       return 'notFound';
     }
-    const current = await em.findOne(TenantRoleAssignment, { tenantId, userId: targetUserId });
+    const current = await em.findOne(TenantRoleAssignment, { tenantId, userId });
     if (current?.roleKey === 'owner' && (await this.countOwners(em, tenantId)) <= 1) {
       return 'lastOwner';
     }
     // 删两行：nativeDelete 纯 SQL·此二表无子表外键指向（cascade 无涉）。
-    await em.nativeDelete(TenantRoleAssignment, { tenantId, userId: targetUserId });
-    await em.nativeDelete(TenantMembership, { tenantId, userId: targetUserId });
+    await em.nativeDelete(TenantRoleAssignment, { tenantId, userId });
+    await em.nativeDelete(TenantMembership, { tenantId, userId });
     await em.flush();
     return 'ok';
   }

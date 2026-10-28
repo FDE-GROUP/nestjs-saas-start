@@ -29,6 +29,7 @@ import { GetPlatformTenantQueryHandler } from './application/queries/handlers/ge
 import { ListPlatformTenantsQueryHandler } from './application/queries/handlers/list-platform-tenants.query-handler';
 import { ListPlatformUsersQueryHandler } from './application/queries/handlers/list-platform-users.query-handler';
 import { TenantMemberFacadeService } from './application/tenant-member-facade.service';
+import { BA_MEMBER_DIRECTORY_WRITER } from './domain/repositories/ba-member-writer.repository';
 import { ORGANIZATION_GOVERNANCE_REPOSITORY } from './domain/repositories/organization-governance.repository';
 import { ORGANIZATION_PROVISIONING_REPOSITORY } from './domain/repositories/organization-provisioning.repository';
 import { TENANT_DIRECTORY_REPOSITORY } from './domain/repositories/tenant-directory.repository';
@@ -36,6 +37,7 @@ import { USER_GOVERNANCE_REPOSITORY } from './domain/repositories/user-governanc
 import { MikroAuditLogStore } from './infrastructure/mikro-audit-log.store';
 import { MikroTenantStatusStore } from './infrastructure/mikro-tenant-status.store';
 import { MikroUserStatusStore } from './infrastructure/mikro-user-status.store';
+import { MikroBaMemberDirectoryWriter } from './infrastructure/repositories/mikro-ba-member-writer.repository';
 import { MikroOrganizationGovernanceRepository } from './infrastructure/repositories/mikro-organization-governance.repository';
 import { MikroOrganizationProvisioningRepository } from './infrastructure/repositories/mikro-organization-provisioning.repository';
 import { MikroTenantDirectoryRepository } from './infrastructure/repositories/mikro-tenant-directory.repository';
@@ -133,6 +135,8 @@ const QueryHandlers = [
     // X7 切片 D：租级成员/邀请门面（组合 authorization owned 三表的读写端口 + QuotaService 席位闸
     //  + ROLE_ASSIGNABILITY_READER·org-admin HTTP 门面委托本服务替代此前 BA passthrough）。
     TenantMemberFacadeService,
+    // 切片 G·G1：BA 遗留 `member` 轴属主侧清理写口（同属 organizations·供门面退租/移除时连带清行·双轴同步）。
+    { provide: BA_MEMBER_DIRECTORY_WRITER, useClass: MikroBaMemberDirectoryWriter },
     // 领域细化重构 D：platform-* 治理 HTTP 门面已迁 PlatformModule（经 CQRS Bus 调本上下文
     // handlers·闸门/审计单点由 PlatformModule @Global 供给）；命令/查询 handlers 与读模型
     // 留 tenants（租户生命周期写能力是核心域本体）。

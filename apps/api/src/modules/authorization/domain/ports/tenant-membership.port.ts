@@ -25,8 +25,13 @@ export interface TenantMemberView {
 
 /** 更新成员角色结果（fail-closed 守卫·词汇与端点响应映射对齐）。 */
 export type MemberRoleUpdateResult = 'ok' | 'notFound' | 'self' | 'lastOwner';
-/** 移除成员结果（fail-closed 守卫）。 */
+/** 移除成员结果（fail-closed 守卫·含管理员面自移拒）。 */
 export type MemberRemoveResult = 'ok' | 'notFound' | 'self' | 'lastOwner';
+/**
+ * 统一撤销结果（切片 G·G1）：管理员移除与自助退租共用的撤销原语返回词汇
+ * （不含 `self`——自移判定留管理员 `removeMember` 前置·自助 leave 天然 actor==target）。
+ */
+export type MemberRevokeResult = 'ok' | 'notFound' | 'lastOwner';
 
 /**
  * 租级成员/角色分配管理端口（切片 D·organizations 租级成员门面经本端口消费·写侧落 authorization 自有表）。
@@ -70,6 +75,16 @@ export interface TenantMembershipManager {
     targetUserId: string,
     actorId: string | null,
   ): Promise<MemberRemoveResult>;
+
+  /**
+   * 统一撤销原语（切片 G·G1）：删 `tenant_membership` + `tenant_role_assignment` 两行（撤权撤席·同事务）。
+   * 管理员移除（{@link removeMember} 委派）与自助退租（门面 `leaveSelf`）**共用**——二者同形·唯一 owner 拒。
+   * 不含自移判定（自助 leave 的 actor==target 合法）；BA `member` 遗留观测轴的连带清理由 organizations
+   * 属主侧（{@link BA_MEMBER_DIRECTORY_WRITER}）best-effort 完成，本端口不越界写他属表。
+   * @param tenantId - 目标租户 id（跨租硬地板锚）。
+   * @param userId - 被撤销用户 id。
+   */
+  revokeMembership(tenantId: string, userId: string): Promise<MemberRevokeResult>;
 
   /**
    * 幂等确保成员存在并挂角色（provisioning 建租者 auto-join + 邀请接受入租共用的写原语）：

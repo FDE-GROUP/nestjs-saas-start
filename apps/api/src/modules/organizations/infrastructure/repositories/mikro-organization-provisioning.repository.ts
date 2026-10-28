@@ -9,6 +9,10 @@ import { Organization } from '@app/modules/organizations/infrastructure/entities
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORG_VISIBILITY } from '@core/saas-kit/modules/organizations/visibility/org-visibility';
+import {
+  UNIT_OF_WORK,
+  type UnitOfWork,
+} from '@core/saas-kit/shared-kernel/domain/unit-of-work.port';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type {
   OrganizationProvisioningReceipt,
@@ -54,6 +58,7 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
     @Inject(MikroOrmService) private readonly mikro: MikroOrmService,
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
     @Inject(TENANT_MEMBERSHIP_MANAGER) private readonly memberships: TenantMembershipManager,
+    @Inject(UNIT_OF_WORK) private readonly uow: UnitOfWork,
   ) {}
 
   async submit(
@@ -78,12 +83,14 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
     // 治理换轴归位（rehierarchy E-F）：租户准入态落 `tenant.status` = pending_approval（审批对象）；
     // 同流 ensure 专属租户行（1:1 骨架·id=orgId）并盖 organization.tenantId（缺此环则新 org 无主轴 403）。
     // 组织本体去审批化——BA 建后 status 保持默认 'active'，不再手覆 pending。
-    // P0 D3·② 我方两段写（Tenant flush + org stamp）入**同一事务**：任一失败整体回滚，不遗留半提交租户行。
-    const em = await this.mikro.fork({ scoped: false });
+    // P0 D3·② 我方两段写（Tenant flush + org stamp）+ X7 creator-join 现入**同一 ambient 事务**（`uow.run`）：
+    // `ensureMembership` 内部 `fork()` 经 `TransactionScope` 并入本事务 em·故建租与建租者租成员/角色写
+    // 一并提交——崩溃窗不再遗留「租已提交·membership 未写·saga 未触发」的无主租户（切片 G·G2）。
     try {
-      await em.transactional(async (trx) => {
-        if (!(await trx.findOne(Tenant, { id: organizationId } as never))) {
-          trx.create(Tenant, {
+      await this.uow.run(async () => {
+        const em = await this.mikro.fork({ scoped: false });
+        if (!(await em.findOne(Tenant, { id: organizationId } as never))) {
+          em.create(Tenant, {
             id: organizationId,
             name,
             slug,
@@ -96,16 +103,15 @@ export class MikroOrganizationProvisioningRepository implements OrganizationProv
             createdAt: new Date(),
             updatedAt: null,
           });
-          await trx.flush();
+          await em.flush();
         }
-        await trx.nativeUpdate(Organization, { id: organizationId } as never, {
+        await em.nativeUpdate(Organization, { id: organizationId } as never, {
           tenantId: organizationId,
         });
+        // X7 creator-join（R1/G2）：建租者租成员 + owner 角色分配，与上方同事务（经 published port 委托
+        // authorization 属主写侧·ambient txScope 使本调用内部 fork 并入本事务）。
+        await this.memberships.ensureMembership(organizationId, userId, 'owner');
       });
-      // X7 creator-join（R1）：租户事务落成正后补写建租者租成员 + owner 角色分配（经 published port
-      // 委托 authorization 属主写侧·自带 scoped:false 锚定·system 动作无活动租上下文中得）。与 BA auto-join
-      //（仅写 org 维 member）互补：会话角色自此有 `tenant_role_assignment` 可解。失败交由下方 catch  saga 补偿。
-      await this.memberships.ensureMembership(organizationId, userId, 'owner');
     } catch (err) {
       // P0 D3·③ 孤儿补偿：事务已回滚我方 Tenant 插行，但 BA 建的 org（tenantId NULL）仍在——
       // 必回收（nativeDelete org·FK cascade 清子表·幂等兼删可能的租户父行），防半途异常遗留无归属孤儿 org。

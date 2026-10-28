@@ -310,6 +310,75 @@ gated('席位配额全栈 e2e（租级 SSOT + 旧 BA 通道 hook 退役边界 + 
     expect(row?.status).toBe('pending');
   }, 120000);
 
+  it('席位 TOCTOU 原子化（G3）：used=limit-1 时两并发 accept 经 pg_advisory_xact_lock 仅一成一 402·live 不越 limit', async () => {
+    const owner = await signUpThenSignIn('c-owner');
+    const tenantId = await createOrgFor(owner, 'c');
+    const store = app.get<MikroQuotaStore>(QUOTA_STORE);
+    const limit = FREE_PLAN.seatsLimit.value;
+
+    /** owner 发租级邀请（真 HTTP）→ 受邀者经 mine 查回 id（不 accept·留作并发靶）。 */
+    async function seedPendingInvitation(
+      tag: string,
+    ): Promise<{ invitee: Actor; invitationId: string }> {
+      const invitee = await signUpThenSignIn(tag);
+      const inv = await app.inject({
+        method: 'POST',
+        url: '/organizations/invitations',
+        headers: { cookie: owner.cookie, 'content-type': 'application/json' },
+        payload: JSON.stringify({ email: invitee.email, role: 'member' }),
+      });
+      if (inv.statusCode >= 400)
+        throw new Error(`createInvitation(${tag}) ${inv.statusCode}: ${inv.body}`);
+      const mine = await app.inject({
+        method: 'GET',
+        url: '/organizations/invitations/mine',
+        headers: { cookie: invitee.cookie },
+      });
+      const rows = (mine.json() as { data?: { id?: string; tenantId?: string }[] }).data ?? [];
+      const invitationId = String(rows.find((r) => r.tenantId === tenantId)?.id);
+      if (!invitationId || invitationId === 'undefined')
+        throw new Error(`invitations/mine(${tag}) 未回本租邀请行: ${mine.body}`);
+      return { invitee, invitationId };
+    }
+
+    // 灌至 used=limit-1：creator(1) + (limit-2) 人逐个 accept 成功。
+    for (let i = 1; i < limit - 1; i++) {
+      const { invitee, invitationId } = await seedPendingInvitation(`c-m${i}`);
+      const acc = await app.inject({
+        method: 'POST',
+        url: '/organizations/invitations/accept',
+        headers: { cookie: invitee.cookie, 'content-type': 'application/json' },
+        payload: JSON.stringify({ invitationId }),
+      });
+      expect(acc.statusCode, `第 ${i} 人 accept 应成功（body=${acc.body}）`).toBeLessThan(400);
+    }
+    expect(await store.countMembers(tenantId), `灌至 limit-1=${limit - 1}`).toBe(limit - 1);
+
+    // 并发抢最后 1 席：两独立受邀者各自 accept 两条不同 pending 邀请，`Promise.all` 同发。
+    // 门面预检 `checkSeats` 非原子（两者皆见 used=limit-1·放行）→ 终裁入 admitAtomically 锁内串行：
+    // 先者计数 limit-1→插成（live=limit）·后者锁重取见 limit→used+1>limit 回滚 overLimit（402）。
+    const [a, b] = await Promise.all([
+      seedPendingInvitation('c-x1'),
+      seedPendingInvitation('c-x2'),
+    ]);
+    const results = await Promise.all(
+      [a, b].map(({ invitee, invitationId }) =>
+        app.inject({
+          method: 'POST',
+          url: '/organizations/invitations/accept',
+          headers: { cookie: invitee.cookie, 'content-type': 'application/json' },
+          payload: JSON.stringify({ invitationId }),
+        }),
+      ),
+    );
+    const codes = results.map((r) => r.statusCode).sort();
+    const okCount = codes.filter((c) => c < 400).length;
+    const seatFull = codes.filter((c) => c === 402).length;
+    expect(okCount, `仅一人抢到最后席位（codes=${codes.join(',')}）`).toBe(1);
+    expect(seatFull, '另一人应 402 超限').toBe(1);
+    expect(await store.countMembers(tenantId), 'live 席位恰至 limit·绝不越界').toBe(limit);
+  }, 120000);
+
   it('旧 BA 通道 hook 已退役（R6 退役边界钉锁）：租级席位塞满后 BA accept-invitation 放行·BA member +1 但 live SSOT 零增长', async () => {
     const owner = await signUpThenSignIn('h-owner');
     const tenantId = await createOrgFor(owner, 'hook');

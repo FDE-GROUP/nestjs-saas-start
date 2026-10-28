@@ -57,6 +57,10 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/auth/oauth-sso.e2e.test.ts',
   'apps/api/src/modules/auth/session-reclaim.e2e.test.ts',
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
+  // X7 切片 G·G1：自助退租撤权撤席真 HTTP+ALS e2e（撤租级两表 + 连清 BA member + live 席位 −1 + 退租者 @Can 403 + last-owner 拒）。
+  'apps/api/src/modules/organizations/tenant-member-leave.e2e.test.ts',
+  // X7 切片 G·G4：R4 NULL-tenant org 自动 re-parent backfill 迁移真库回放（up 合成专属租+盖 tenantId+补租级成员角色·memberCount 对拍·down 仅撤哨兵合成者可逆）。
+  'apps/api/src/database/mikro/migration/backfill-null-tenant-orgs.e2e.test.ts',
   'apps/api/src/modules/subscriptions/subscription-replay-truth.e2e.test.ts',
   'apps/api/src/modules/workspaces/workspace-owner-rbac.e2e.test.ts',
   // X7 切片 C（推翻 D1）：原 grant 组织收窄真库 e2e（`org-scoped-grant.e2e.test.ts`）随组织收窄维废除**整件删除**——

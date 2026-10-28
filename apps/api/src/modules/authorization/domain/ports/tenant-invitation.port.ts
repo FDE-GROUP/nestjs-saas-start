@@ -35,6 +35,17 @@ export type InvitationCancelResult = 'cancelled' | 'notFound';
 export type InvitationAcceptResult = 'accepted' | 'notFound' | 'expired';
 
 /**
+ * 原子入租结果（切片 G·G3）：`admitAtomically` 单事务内完成「锁→重查 pending→live 数席→落成员/角色→消费邀请」。
+ *  - `accepted`：入租成功（携目标租 + 授予角色）；
+ *  - `overLimit`：锁内 live 计数超席（并发 TOCTOU 的终裁决）→ 门面译 402；
+ *  - `notFound`：无 pending 行/已消费/过期/邮箱不符（兼防双消费）→ 门面译 404。
+ */
+export type InvitationAdmitResult =
+  | { readonly status: 'accepted'; readonly tenantId: string; readonly roleKey: string }
+  | { readonly status: 'overLimit' }
+  | { readonly status: 'notFound' };
+
+/**
  * 租级邀请管理端口（切片 D·organizations 租级邀请门面经本端口消费·写侧落 authorization 自有 `tenant_invitation`）。
  *
  * @remarks
@@ -87,6 +98,19 @@ export interface TenantInvitationManager {
    * @param invitationId - 邀请行 id。
    */
   markAccepted(invitationId: string): Promise<InvitationAcceptResult>;
+
+  /**
+   * 原子入租（切片 G·G3·席位 TOCTOU 硬化）：单事务 + `pg_advisory_xact_lock(hashtext(tenantId))` 串行化同租并发 accept。
+   * 事务内：重查 pending 邀请（兼防双消费）+ 校验受邀邮箱→`count(tenant_membership)` live→`used+1>seatsLimit` 则回滚 `overLimit`；
+   * 否则落 `tenant_membership`+`tenant_role_assignment` + `markAccepted` 一并提交。三表均属 authorization（单事务合规）。
+   * @param params - 邀请定位（id）+ 受邀主体（email 复校/userId）+ 席上限（门面预算 `checkSeats` 预飞取）。
+   */
+  admitAtomically(params: {
+    readonly invitationId: string;
+    readonly email: string;
+    readonly userId: string;
+    readonly seatsLimit: number;
+  }): Promise<InvitationAdmitResult>;
 
   /**
    * 列出发送给某邮箱的待处理邀请（**跨租·个人通道 `mine` 可见面**·`scoped:false`）。

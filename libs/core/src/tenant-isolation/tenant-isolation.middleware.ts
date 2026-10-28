@@ -151,8 +151,31 @@ export class TenantIsolationMiddleware implements NestMiddleware {
           }
           // 回落：无显式激活租 → 经活动组织派生主轴 tenantId（rehierarchy 切片 C 换轴·向后兼容）。
           if (!organizationId) {
-            bind(undefined, userId);
-            return;
+            // 切片 G·G5：纯租级成员冷启动（既无活动 org 又无显式活动租）→ 该 user 恰属单一租户时缺省绑该租
+            //（仅作指针·免手动切租）；零/多租、被封禁、解析不可得一律维持 fail-closed 不绑主轴（guard 403）。
+            // 跨租地板不弱化：主轴仅取该 user 自身 `tenant_membership`，角色仍经 `resolveTenantRole` 按活动租从
+            // `tenant_role_assignment` 解（非成员→undefined→@Can 403），org 分区读面仍因无活动 org fail-closed。
+            if (!userId) {
+              bind(undefined, userId);
+              return;
+            }
+            return this.tenantScope
+              .defaultTenantForUser(userId)
+              .then((defaultTenantId) => {
+                if (!defaultTenantId) return bind(undefined, userId);
+                return this.tenantStatus.isBlocked(defaultTenantId).then((blocked) => {
+                  if (blocked) return bind(undefined, userId);
+                  return this.tenantScope
+                    .readOrgVisibility(defaultTenantId)
+                    .then((vis) =>
+                      resolveRole(defaultTenantId, userId).then((r) =>
+                        bind(undefined, userId, defaultTenantId, vis, r),
+                      ),
+                    )
+                    .catch(() => bind(undefined, userId, defaultTenantId));
+                });
+              })
+              .catch(() => bind(undefined, userId)); // fail-closed: 缺省解析不可得 → 维持不绑
           }
           return this.tenantScope
             .resolveTenantScopeOf(organizationId)
