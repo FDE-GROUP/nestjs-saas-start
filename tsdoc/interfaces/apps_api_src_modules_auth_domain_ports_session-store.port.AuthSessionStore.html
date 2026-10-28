@@ -24,7 +24,7 @@
 </div></div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">AuthSessionStore</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-call-signature" href="#clearactivetenant-1">clearActiveTenant</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">sessionId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#deleteallforuser-1">deleteAllForUser</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">userId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-call-signature" href="#setactivetenant-1">setActiveTenant</a><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">sessionId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">tenantId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/45523edebd1daa2ca37f72133f4646da7512808c/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L18">apps/api/src/modules/auth/domain/ports/session-store.port.ts:18</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/a77dc440d8221ecddc93ac5f8c5ff848b038aa13/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L18">apps/api/src/modules/auth/domain/ports/session-store.port.ts:18</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -58,7 +58,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>受影响行数（0 → 会话不存在）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/45523edebd1daa2ca37f72133f4646da7512808c/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L41">apps/api/src/modules/auth/domain/ports/session-store.port.ts:41</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/a77dc440d8221ecddc93ac5f8c5ff848b038aa13/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L41">apps/api/src/modules/auth/domain/ports/session-store.port.ts:41</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="deleteallforuser"><span>delete<wbr/>All<wbr/>For<wbr/>User</span><a href="#deleteallforuser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -76,7 +76,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>删除行数。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/45523edebd1daa2ca37f72133f4646da7512808c/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L24">apps/api/src/modules/auth/domain/ports/session-store.port.ts:24</a></li></ul></aside></div></li></ul></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/a77dc440d8221ecddc93ac5f8c5ff848b038aa13/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L24">apps/api/src/modules/auth/domain/ports/session-store.port.ts:24</a></li></ul></aside></div></li></ul></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="setactivetenant"><span>set<wbr/>Active<wbr/>Tenant</span><a href="#setactivetenant" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures">
@@ -99,7 +99,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4><p>受影响行数（0 → 会话不存在）。</p>
 <aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/45523edebd1daa2ca37f72133f4646da7512808c/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L33">apps/api/src/modules/auth/domain/ports/session-store.port.ts:33</a></li></ul></aside></div></li></ul></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/a77dc440d8221ecddc93ac5f8c5ff848b038aa13/apps/api/src/modules/auth/domain/ports/session-store.port.ts#L33">apps/api/src/modules/auth/domain/ports/session-store.port.ts:33</a></li></ul></aside></div></li></ul></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
