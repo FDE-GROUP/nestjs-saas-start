@@ -43,6 +43,14 @@ export interface OverturnedRuling {
  */
 export const OVERTURNED_RULINGS: readonly OverturnedRuling[] = [
   {
+    // 开源边界重划（2026-10-28）：features/前端从私有叠加层迁出·常驻本公共仓，旧「叠加层住
+    // 私有仓」叙事禁于现势注释（框定词「开源边界重划/2026-10-28/常驻/非/…」下的历史/否定句合法放行）。
+    plan: 'module-odoo-rpc-frontend',
+    supersededBy: 'global-open-source-boundary-redraw',
+    bannedTokens: [/私有真源/, /私有同步副本/, /两态全绿/, /住私有仓/, /私有叠加层/],
+    framingMarkers: ['开源边界重划', '2026-10-28', '复裁', '常驻', '非', '原', '旧', '曾', '退役'],
+  },
+  {
     // 治理态存储：寄居 metadata → 自有 `tenant` 旁表（reclamation·已反悔）→ `organization.status` 真列（consolidation）。
     // （注：global-tenant-organization-rehierarchy 切片 D 将准入态自 org 迁回 Tenant·本条禁项随之重判·C 期仍锢 org.status）。
     plan: 'global-tenant-entity-reclamation',

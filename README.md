@@ -121,6 +121,8 @@ packages/
 | `platform` | 平台运营面：经营者治理端点与审计 |
 | `posts` | 示例内容上下文（演示领域建模与读写的参考切片） |
 
+> **集成专属区**：`apps/api/src/features/`（`odoo-rpc-api` Odoo 只读数据面、`odoo-provisioning` 组织开通 saga）为第三方集成专属区，与 `modules/` 双向隔离（无自有 domain、经 published port 读写）；`apps/odoo-rpc-web` 为演示「经 SaaS 只读访问 Odoo」的可选前端壳（opt-in・不入核心门禁）。
+
 ## 快速开始
 
 完整安装与运行步骤见 [安装与运行指南](https://github.com/FDE-GROUP/odoo-saas-start/blob/main/docs/install&run.md)。
@@ -156,6 +158,8 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 - **提交规范**：Conventional Commits，详见 [约定文档](./COMMIT_CONVENTION.md)。
 - **契约对拍**：响应注解变更须重生成 OpenAPI 规范与 `@saas/api-client` 类型，门禁会比对入库产物与代码是否同源。
 - **代码智能分析**：`fallow`（devDependency）用于架构边界与死代码佐证，结论须人工二次核验后采信。
+
+> **公开 clone 须知·文档与 CI 的耦合**：治理文档（specs / plans / stories 等）住**私有仓**，本公共仓不含 `docs/`——根 `docs` 是指向本地私有 checkout `docs-private/docs` 的软链（`.gitignore` 排除・不入库）。因此 **全新公开 clone 直接 `pnpm run ci`（或 `ci:quick`）会在 stories-drift 闸失败**——该闸对 `docs/stories` 溯源做恒等对拍、缺目录即 fail-loud，系「文档不开源」的必然代价。两种应对：① 本地要让全链绿，先 `git clone <私有文档仓> docs-private` 并建软链 `docs → docs-private/docs`；② 只跑与文档无关的单步（`pnpm run test`、`pnpm run check`）。
 
 ## 部署
 

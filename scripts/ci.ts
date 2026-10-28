@@ -83,6 +83,12 @@ if (!quick) {
   // api-client schema.d.ts 脱钩当时须手动 typecheck 才现，入闸后自动拦截）。
   // 依赖 build 产出的 @saas/contracts + @saas/api-client dist，故置于 build 之后、仅 full 模式。
   step('Web typecheck (apps/web)', run('--filter', 'web', 'run', 'typecheck'));
+  // 集成演示前端 odoo-rpc-web 类型面纳入门禁（第六轮评估 N4·与 apps/web 第二盲区同形补位）：
+  // feature 迁公共仓后新增 workspace 包（其 tsconfig 已配 @odoo-feature paths）·ci 曾不 typecheck 它。
+  step(
+    'Odoo-rpc-web typecheck (apps/odoo-rpc-web)',
+    run('--filter', 'odoo-rpc-web', 'run', 'typecheck'),
+  );
   // 测试类型面纳入门禁（本轮暴露第三盲区：build 的 tsc 排 `*.test.ts`、vitest transpile-only
   // 不做类型检查 → posts/auth 两处测试类型错长期潜伏、只在手动 tsc 现形）。逐包复用各 tsconfig.json
   // （apps/api + libs 已含测试）+ packages/scripts 两个 test-inclusive 配置；web 测试由上面独立步已覆盖。
