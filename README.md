@@ -4,7 +4,7 @@
   <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-<p align="center">一个采用 NestJS v12 的全新工程骨架：Fastify + Better Auth + CASL + MikroORM + PostgreSQL + Zod，<br/>并正演进为面向企业级应用、混合架构的多租户 SaaS 框架（技术栈及资源选择面向中国大陆地区优化、前后端全栈、持续开发中...）。</p>
+<p align="center">我们将从一个采用 NestJS v12 + Fastify  + Better Auth + CASL + MikroORM + PostgreSQL + Zod 的全新工程骨架开始一步一步地演进：多租户 AI Agent SaaS 框架 > Odoo 全栈应用 > ERP 本体系统 > 多源数据治理与共享，最终成为一个企业综合服务平台。</br>（技术栈及资源选择面向中国大陆地区优化、前后端全栈、持续开发中...）</p>
 
 <p align="center">
   <a href="https://github.com/nestjs/nest" target="_blank"><img src="https://img.shields.io/badge/NestJS-12-E0234E?style=flat&logo=nestjs&logoColor=white" alt="NestJS" /></a>
