@@ -31,8 +31,8 @@ const ODOO_LOGIN_URL = process.env.ODOO_LOGIN_URL || 'http://localhost:8069/web/
 // WEB_BASE 不带尾斜杠（挂载前缀）；需与镜像构建时 apps/web 的 vite base（`/app/`带尾斜杠）对齐。
 const WEB_BASE = (process.env.WEB_BASE || '/app').replace(/\/+$/, '');
 const WEB_DIST = process.env.WEB_DIST || '/opt/web/dist';
-// 切片 D：第二个同源 SPA 挂载点——私有叠加层演示前端 odoo-rpc（与 apps/web 同机制·同域免改 ALLOWED_ORIGINS）。
-// ODOO_RPC_BASE 不带尾斜杠；需与镜像构建时 web/odoo-rpc 的 vite base（`/odoo-rpc/`带尾斜杠）对齐。
+// 切片 D：第二个同源 SPA 挂载点——odoo-rpc 演示前端（apps/odoo-rpc-web·开源 feature·与 apps/web 同机制·同域免改 ALLOWED_ORIGINS）。
+// ODOO_RPC_BASE 不带尾斜杠；需与镜像构建时 apps/odoo-rpc-web 的 vite base（`/odoo-rpc/`带尾斜杠）对齐。
 const ODOO_RPC_BASE = (process.env.ODOO_RPC_BASE || '/odoo-rpc').replace(/\/+$/, '');
 const ODOO_RPC_DIST = process.env.ODOO_RPC_DIST || '/opt/odoo-rpc/dist';
 // 多 SPA 静态服务表（顺序即匹配优先级·两者皆走 serveWeb 同一泛化函数）。

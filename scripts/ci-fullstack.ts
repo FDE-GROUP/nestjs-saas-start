@@ -71,11 +71,11 @@ const GATED_E2E_FILES = [
   'apps/api/src/tenant-isolation/tenant-activation.e2e.test.ts',
   // P0 安全缺陷修复·真 HTTP+ALS 反证 e2e：X1 多租目录含全租 + 切租可达（补 tenant-activation 直调 bus 的证明力错位）·X2 混态租借权读侧 fail-closed 403。
   'apps/api/src/tenant-isolation/p0-lockout-escalation.e2e.test.ts',
-  // 私有叠加层条目（module-odoo-rpc-frontend §4-3·高危#3 经人签核 2026-10-25）：登记随真源
-  // 「在场即必须登记」，缺席态由下方 overlayAbsent 豁免判据放行——恒等闸两态全绿。
+  // 叠加层条目（module-odoo-rpc-frontend §4-3·开源边界重划 2026-10-28 后常驻本仓）：features
+  // 已纳入 git 追踪·目录恒在，登记随文件恒存——与其他 gated 条目同走双向恒等。
   'apps/api/src/features/odoo-rpc-api/api/odoo-rpc-live.e2e.test.ts',
-  // 私有叠加层条目（module-org-odoo-company-mapping 切片 C）：建司回找活体链（门 ODOO_E2E_BASE_URL·
-  // 无联调栈整体 skip）——同 overlayAbsent 豁免两态恒等。
+  // 叠加层条目（module-org-odoo-company-mapping 切片 C）：建司回找活体链（门 ODOO_E2E_BASE_URL·
+  // 无联调栈整体 skip）——常驻本仓·随双向恒等闸校验。
   'apps/api/src/features/odoo-provisioning/api/odoo-provisioning-live.e2e.test.ts',
 ];
 
@@ -96,14 +96,9 @@ const GATED_EXEMPT = [
  */
 function verifyGatedListIdentity(): void {
   const rel = (abs: string) => abs.replace(/^\.\//, '');
-  // 叠加层缺席豁免（通用规则·非逐模块特判）：`apps/api/src/features/<name>/…` 条目在整个
-  // 叠加层目录不存在时不算 stale——私有机器在场则照常参与双向恒等（机制同 check:features
-  // 三态：缺席 OK / 在场须同步 / 漂移 fail-loud）。
-  const overlayAbsent = (p: string): boolean => {
-    if (!p.startsWith('apps/api/src/features/')) return false;
-    return !existsSync(p.split('/').slice(0, 5).join('/'));
-  };
-  const stale = GATED_E2E_FILES.filter((p) => !existsSync(p) && !overlayAbsent(p));
+  // 叠加层已随开源边界重划 2026-10-28 常驻本仓（features 纳入 git 追踪·目录恒在），旧「私有真源
+  // 缺席豁免」两态前提消失——所有条目同走 existsSync 双向恒等，不再逐目录特判。
+  const stale = GATED_E2E_FILES.filter((p) => !existsSync(p));
   if (stale.length > 0) {
     throw new Error(
       `[ci-fullstack] GATED_E2E_FILES 引用不存在路径（漂移·迁居/stale）：\n  ${stale.join('\n  ')}`,

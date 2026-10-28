@@ -3,20 +3,19 @@ import { fileURLToPath } from 'node:url';
 import type { Type } from '@nestjs/common';
 
 /**
- * Feature 私有叠加层装配桩（module-odoo-rpc-frontend 切片 A · 公共仓常驻代码）。
+ * Feature 叠加层装配桩（module-odoo-rpc-frontend 切片 A · 本公共仓常驻代码）。
  *
- * Why：第三方集成的产品源码住私有仓（开源裁剪裁决 2026-10-25），公共仓既不能静态
- * import 一个「可能不存在」的文件（build 闭合断裂），也不能靠远程 CI 兜底（本仓只跑
- * 本地 L1）——故运行期探测编译件/源件是否存在：在场即动态 `import()` 纳入 feature
- * 模块，缺席即空数组、应用照常装配。动态 import 说明符由运行期拼接（computed
- * specifier），tsc/swc 静态分析不可见，公共仓构建不被私有叠加层绑架——这正是方案
- * 「严格叠加·两态全绿」总原则的装配面物化。
+ * Why：第三方集成（Odoo 对接件）住 `apps/api/src/features/` 专属区（开源边界重划
+ * 2026-10-28 后已并入本公共仓常驻·非私有同步副本），但仍靠运行期探测将 feature 模块
+ * 纳入装配：在场即动态 `import()`，缺席即空数组、应用照常装配。动态 import 说明符由
+ * 运行期拼接（computed specifier），tsc/swc 静态分析不可见——装配面与具体叠加层解耦，
+ * 新增/移除叠加层不绑架主应用构建闭合。这正是方案「严格叠加·两态全绿」总原则的装配面物化。
  *
  * 顶层 await（ESM/ES2022 合法面）：导出已是解析后的类数组，app.module 展开同步、
  * 不依赖 Nest 对 `imports` 内 Promise 的解释行为。缺席分支零网络/零副作用。
  */
 interface FeatureOverlay {
-  /** 叠加层目录名（= `sync:features` 同步进 apps/api/src/features/ 的目录）。 */
+  /** 叠加层目录名（= `apps/api/src/features/` 下的常驻目录）。 */
   dir: string;
   /** 装配模块文件名（无扩展名）：约定落 `<dir>/api/<moduleFile>.ts`。 */
   moduleFile: string;

@@ -55,7 +55,7 @@ services:
         condition: service_healthy
 
   # Odoo 20 社区版联调目标自持（承 docs/plans/module-local-odoo20-ce.md·SSO 联调用·opt-in 但随 dev 栈常驻）。
-  # 插件落点 ./odoo/saas-addons → 容器 /mnt/extra-addons（官方镜像默认识别·可 -i 安装）。
+  # 插件落点 ./odoo-addons → 容器 /mnt/extra-addons（官方镜像默认识别·可 -i 安装·公共仓常驻空占位）。
   odoo:
     container_name: odoo20-ce
     image: odoo:20
@@ -67,7 +67,7 @@ services:
       - "8069:8069"
     volumes:
       - odoo-web-data:/var/lib/odoo
-      - ./odoo/saas-addons:/mnt/extra-addons
+      - ./odoo-addons:/mnt/extra-addons
     environment:
       - HOST=postgres
       - PORT=5432

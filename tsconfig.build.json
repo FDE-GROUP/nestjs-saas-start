@@ -16,6 +16,7 @@
     "coverage",
     "libs",
     "apps/web",
+    "apps/odoo-rpc-web",
     "**/*.spec.ts",
     "**/*.test.ts"
   ]

@@ -6,11 +6,9 @@
 #
 # 前置（须你自备·本仓不落任何凭证）：
 #   - Repository secrets：DOCKERHUB_USERNAME=arligle 、DOCKERHUB_TOKEN=<Docker Hub access token>
-#   - FDE-GROUP/odoo-saas-start 为**公共仓**，跨仓检出无需额外 token；若转私有需配 PAT。
 #
-# 关键·构建上下文：Dockerfile.demo 会 `COPY odoo/saas-addons`（在父仓被 .gitignore
-#   忽略·属兄弟独立仓），因此必须把 odoo-saas-start 单独检出到该路径，否则 addons 为空、
-#   构建必炸。这是本 workflow 与普通「单仓检出」不同的核心点。
+# 关键·构建上下文：开源边界重划后 demo 所需全部代码（apps/api feature 叠件 + apps/odoo-rpc-web）
+#   已入本公共仓，Dockerfile.demo 只依赖单仓检出即可构建（不再检出兄弟私有仓·不再 COPY odoo/saas-addons）。
 #
 # 触发：默认只 workflow_dispatch（手动·安全）。tag 触发样例已注释，避免与应用发布 tag 纠缠。
 # ────────────────────────────────────────────────────────────────────────────
@@ -43,14 +41,6 @@ jobs:
     steps:
       - name: Checkout 应用仓 (nestjs-saas-start)
         uses: actions/checkout@v7
-
-      # 组装统一构建上下文：addon 源在兄弟仓 odoo-saas-start
-      - name: Checkout addon 仓 → odoo/saas-addons
-        uses: actions/checkout@v7
-        with:
-          repository: FDE-GROUP/odoo-saas-start
-          path: odoo/saas-addons
-          fetch-depth: 1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

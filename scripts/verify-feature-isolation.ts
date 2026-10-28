@@ -1,4 +1,4 @@
-// Feature 私有叠加层双向隔离闸（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md §4-3 ·
+// Feature 叠加层双向隔离闸（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md §4-3 ·
 // 高危#3 经人签核 2026-10-25 · 宪法依据 docs/specs/architecture.md §features/ 专属区条）。
 //
 // 判据（违例即 fail-loud，把「纪律」升级为「机制」）：
@@ -6,7 +6,7 @@
 //  B. `apps/api/src/features/**`（装配桩 feature-loader.ts 豁免——它就是唯一合法耦合点）禁止
 //     import 任何上下文的深层件：路径含 `modules/<ctx>/(domain|infrastructure)/` 即违例
 //     （features 只许经上下文公开入口/application 耦合）。
-// 缺席态自然绿：无副本时 B 面零文件，A 面本就要求恒零。
+// features 常驻本仓（开源边界重划 2026-10-28 后已纳入追踪）·两向 import 边界恒扫；A 面本就要求恒零。
 // 诚实边界：只扫静态 `from`/动态 `import()` 字面量（源码面）；跨 feature 深导入等更细规则
 // 待第二入住者出现再扩（避免为不存在的消费者预建复杂度）。
 import { readdirSync, readFileSync, statSync } from 'node:fs';

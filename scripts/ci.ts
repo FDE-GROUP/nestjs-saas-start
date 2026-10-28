@@ -49,13 +49,12 @@ step('Type-escape ratchet', run('run', 'verify:type-escape'));
 // 扫 apps/api/*/domain，根散件 / 非规范子目录即 fail-loud（防归位后再漂移）。纯目录扫描、便宜，
 // 故与 type-escape 同置 full/quick 均跑、早失败；libs/core 另规则不纳入（防误红）。
 step('Domain layout guard', run('run', 'verify:domain-layout'));
-// Feature 私有叠加层双闸（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md §4-3 · 高危#3
-// 经人签核 2026-10-25）：① verify:feature-isolation——features/↔modules/ 双向隔离宪条的机制强制
-// （违例 fail-loud）；② check:features——私有真源↔同步副本 sha256 对拍，堵「改了私有忘同步」
-// 腐烂。纯文本/目录扫、便宜，与 type-escape/domain-layout 同置 full/quick 均跑、早失败；
-// 缺席态（公共机器无真源无副本）两闸天然绿——严格叠加·两态全绿判据的链内物化。
+// Feature 叠加层隔离闸（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md §4-3 · 高危#3
+// 经人签核 2026-10-25）：verify:feature-isolation——features/↔modules/ 双向隔离宪条的机制强制
+// （违例 fail-loud）。纯文本/目录扫、便宜，与 type-escape/domain-layout 同置 full/quick 均跑、早失败。
+// （原第二闸 check:features 真源↔副本 sha256 对拍已随 sync-features 退役——开源边界重划 2026-10-28
+// 后 features 常驻本仓、无「私有真源↔同步副本」两态可漂移。）
 step('Feature isolation guard', run('run', 'verify:feature-isolation'));
-step('Feature overlays check', run('run', 'check:features'));
 // stories-drift 恒等闸（docs/stories 溯源纪律「只指文件名/方法名」的机制强制·新增门禁·高危经人签核）：
 // 校验故事引用的关联 plan / `.ts` 文件名 / wire 错误码在仓内实存，断链即 fail-loud（防重命名/搬迁/
 // 删除致讲解性 as-built 文档静默指向不存在之物）。纯文本 + 源树扫描、便宜，与 type-escape/domain-layout

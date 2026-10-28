@@ -22,6 +22,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
+COPY apps/odoo-rpc-web/package.json ./apps/odoo-rpc-web/
 COPY libs/core/package.json ./libs/core/
 COPY libs/contracts/package.json ./libs/contracts/
 COPY libs/ba-mikro-adapter/package.json ./libs/ba-mikro-adapter/
@@ -30,26 +31,10 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
 # 先建 libs+client+nest（API 面），再建 apps/web（依赖 @saas/contracts + @saas/api-client 的 dist）。
 # WEB_BASE=/app/ 使 vite base 与登录门挂载前缀对齐（切片 G·同源子路径服务）。
-RUN pnpm run build && WEB_BASE=/app/ pnpm run build:web
-# demo 运行期需再跑迁移/seed（依赖 tsx + TS 源 + devDep）→ 保留 node_modules 与源整树（体积大·demo-only 已知取舍）
-
-# ---- 1b) 私有叠加层演示前端 web/odoo-rpc（切片 D·独立 workspace·自带 lockfile·仅私有机可构建）----
-# 服务端 feature 已由上面 appbuilder 的 `COPY . .` 纳入工作树副本→`pnpm run build` 编入 dist（无需单独段）；
-# 但前端是**独立 pnpm 工程**（非父仓 workspace），需在 saas-addons 相对结构下单独 install+build。
-FROM ${NODE_IMAGE} AS odoo-rpc-web-builder
-WORKDIR /build
-ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
-ENV PNPM_HOME=/pnpm
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
-# 保留 saas-addons 相对结构：vite alias 从 web/odoo-rpc 的 `../../server/.../odoo-rpc.schemas.ts` 解析到 /build/server/...（契约真源）。
-COPY odoo/saas-addons/server ./server
-# 安装层只依赖 lockfile（独立 workspace 自带·非父仓链）；源码变动时重装走下方 store 挂载秒级完成。
-COPY odoo/saas-addons/web/odoo-rpc/pnpm-lock.yaml odoo/saas-addons/web/odoo-rpc/package.json odoo/saas-addons/web/odoo-rpc/pnpm-workspace.yaml odoo/saas-addons/web/odoo-rpc/.npmrc ./web/odoo-rpc/
-RUN --mount=type=cache,id=pnpm-odoo-rpc,target=/pnpm/store cd web/odoo-rpc && pnpm install --frozen-lockfile
-COPY odoo/saas-addons/web/odoo-rpc ./web/odoo-rpc
+# 再建 apps/odoo-rpc-web（开源 feature 演示前端·workspace 成员·与 apps/web 同层由 `COPY . .` 携入·无需单独段）。
 # ODOO_WEB_BASE=/odoo-rpc/ 与登录门同名子路径静态挂载对齐（base + router basepath 同源同值）。
-RUN cd web/odoo-rpc && ODOO_WEB_BASE=/odoo-rpc/ pnpm build
+RUN pnpm run build && WEB_BASE=/app/ pnpm run build:web && ODOO_WEB_BASE=/odoo-rpc/ pnpm run build:odoo-rpc-web
+# demo 运行期需再跑迁移/seed（依赖 tsx + TS 源 + devDep）→ 保留 node_modules 与源整树（体积大·demo-only 已知取舍）
 
 # ---- 2) 运行时：odoo 基础镜像（自带 python3/odoo/wkhtmltopdf/pg 客户端）+ PG server + node ----
 FROM odoo:20 AS runner
@@ -75,11 +60,11 @@ COPY --from=appbuilder /app /saas-app
 # 切片 G：apps/web 静态产物→登录门在 :7009/app/ 同源服务（会话 cookie 天然共享·免二次登录）
 COPY --from=appbuilder /app/apps/web/dist /opt/web/dist
 
-# 切片 D：私有叠加层演示前端 odoo-rpc 静态产物→登录门 :7009/odoo-rpc/ 同源服务（同会话免二次登录）
-COPY --from=odoo-rpc-web-builder /build/web/odoo-rpc/dist /opt/odoo-rpc/dist
+# 切片 D：odoo-rpc 演示前端（apps/odoo-rpc-web·开源 feature）静态产物→登录门 :7009/odoo-rpc/ 同源服务（同会话免二次登录）
+COPY --from=appbuilder /app/apps/odoo-rpc-web/dist /opt/odoo-rpc/dist
 
-# Odoo 插件落点（saas-addons 现为空模板·保持通道）
-COPY odoo/saas-addons /mnt/extra-addons
+# Odoo 自定义 addon 落点占位（demo 只用官方 CE·留空目录兜现 odoo.conf addons_path 的 /mnt/extra-addons 项·非私有仓检出）
+RUN mkdir -p /mnt/extra-addons
 
 # demo 支撑文件
 COPY docker/demo/odoo.conf /etc/odoo.conf

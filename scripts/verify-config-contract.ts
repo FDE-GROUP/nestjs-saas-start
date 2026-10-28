@@ -33,6 +33,7 @@ const CODE_DIRS = ['apps', 'libs', 'scripts'];
  * `http://localhost:7009`·从不需为启动而设·非部署契约）——纳管见 module-config-web-dev-proxy-key。
  * `WEB_BASE` = demo 镜像将 apps/web 挂同源子路径时的 vite base 覆盖键（all-in-one 切片 G·
  * 带兜底 `/`·仅构建期读、app 从不读、非部署契约——与 WEB_PROXY_TARGET 同类）。
+ * `ODOO_WEB_BASE` = 同型键，唯 apps/odoo-rpc-web（开源 feature 演示前端·切片 D）的 vite base 覆盖（带兜底 `/`）。
  * `E2E_*` 六键 = 部署态黄金流编排器（`scripts/e2e-web.ts`·global-playwright-browser-e2e 切片 B）的
  * 端口/种子凭据/跳构建覆盖旋钮：同样从不装载 dotenv、app 从不读、非部署契约——与 VERIFY_PORT 同类
  * （用户令「同意」高危#3 门禁面签核登记）。 */
@@ -43,6 +44,7 @@ const WHITELIST = new Set([
   'TESTCONTAINERS_RYUK_DISABLED',
   'WEB_PROXY_TARGET',
   'WEB_BASE',
+  'ODOO_WEB_BASE',
   'E2E_API_PORT',
   'E2E_WEB_PORT',
   'E2E_ADMIN_EMAIL',
