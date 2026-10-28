@@ -8,7 +8,7 @@
 #   - Repository secrets：DOCKERHUB_USERNAME=arligle 、DOCKERHUB_TOKEN=<Docker Hub access token>
 #
 # 关键·构建上下文：开源边界重划后 demo 所需全部代码（apps/api feature 叠件 + apps/odoo-rpc-web）
-#   已入本公共仓，Dockerfile.demo 只依赖单仓检出即可构建（不再检出兄弟私有仓·不再 COPY odoo/saas-addons）。
+#   已入本公共仓，Dockerfile.demo 只依赖单仓检出即可构建（不再检出兄弟私有仓·不再 COPY 私有文档 checkout docs-private）。
 #
 # 触发：默认只 workflow_dispatch（手动·安全）。tag 触发样例已注释，避免与应用发布 tag 纠缠。
 # ────────────────────────────────────────────────────────────────────────────

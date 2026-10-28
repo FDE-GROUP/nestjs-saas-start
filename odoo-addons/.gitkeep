@@ -1,5 +1,5 @@
 # Odoo 自定义 addon 落点占位（承 docs/plans/module-local-odoo20-ce.md·SSO/联调用）。
-# 开源边界重划 2026-10-28：Odoo addon 与文档分离——文档住私有仓 odoo/saas-addons/docs，
+# 开源边界重划 2026-10-28：Odoo addon 与文档分离——文档住私有仓 docs-private/docs，
 # 本目录是公共仓常驻的空 addon 通道（dev 联调 compose bind-mount 至此·官方镜像默认识别·可 -i 安装）。
 # 放入你的自定义 addon 模块即可被 Odoo 加载；留空时 Odoo 仅见官方 CE addons。
 .keep
