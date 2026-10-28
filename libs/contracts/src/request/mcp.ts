@@ -31,11 +31,8 @@ export const mintMcpCredentialSchema = strictObject({
 export type MintMcpCredential = z.infer<typeof mintMcpCredentialSchema>;
 
 /**
- * MCP 凭证 id 路径参（`DELETE /api/v1/mcp/credentials/:id` 的 `@Param`）。
+ * MCP 凭证 id 路径参（`DELETE /api/v1/mcp/credentials/:id` 的 `@Param('id', { schema })` 单值形）。
  *
  * @public
  */
-export const mcpCredentialIdParamSchema = strictObject({
-  id: reqString('mcpCredentialId.required'),
-});
-export type McpCredentialIdParam = z.infer<typeof mcpCredentialIdParamSchema>;
+export const mcpCredentialIdParamSchema = reqString('mcpCredentialId.required');

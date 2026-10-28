@@ -6,11 +6,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { CsrfOriginGuard } from './api/guards/csrf-origin.guard';
 import { SessionGuard } from './api/guards/session.guard';
 import { OauthSsoController } from './api/oauth-sso.controller';
+import { MCP_ACCESS_TOKEN_STORE } from './application/ports/mcp-access-token-store.port';
 import { AuthInstanceInjectKey } from './auth.constant';
 import type { AuthInstance } from './auth.interface';
 import { AUTH_SESSION_STORE } from './domain/ports/session-store.port';
 import { AUTH_USER_STORE } from './domain/ports/user-store.port';
 import { AuthBootstrapService } from './infrastructure/auth.bootstrap';
+import { MikroMcpAccessTokenStoreAdapter } from './infrastructure/mcp-access-token-store.adapter';
 import { OauthSsoService } from './infrastructure/oauth-sso.service';
 import { SessionReclaimService } from './infrastructure/session-reclaim.service';
 import { MikroSessionStoreAdapter } from './infrastructure/session-store.adapter';
@@ -60,6 +62,9 @@ export class AuthModule {
         { provide: AUTH_SESSION_STORE, useClass: MikroSessionStoreAdapter },
         // global-ba-entity-domain-placement 切片 A：user 表归 auth 域——users 模块 PIPL 硬删经此端口（S3 同型）。
         { provide: AUTH_USER_STORE, useClass: MikroUserStoreAdapter },
+        // module-mcp-agent-surface 切片 1（实体归位裁定）：MCP 租级凭证属 auth 身份机器族——
+        // features/mcp 编排面经本端口落属主（PIPL 同型），global 模块直注零 import。
+        { provide: MCP_ACCESS_TOKEN_STORE, useClass: MikroMcpAccessTokenStoreAdapter },
         // module-session-index-and-expiry-reclaim F2（甲′·镜像 OutboxRelay 零依赖）：过期 session 周期回收。
         // 缺省 SESSION_RECLAIM_ENABLED=false ⇒ 不启 timer·不触库（DB-free 不变量不动）。
         SessionReclaimService,
@@ -67,7 +72,13 @@ export class AuthModule {
         SsoTokenService,
         OauthSsoService,
       ],
-      exports: [SessionGuard, authProvider, AUTH_SESSION_STORE, AUTH_USER_STORE],
+      exports: [
+        SessionGuard,
+        authProvider,
+        AUTH_SESSION_STORE,
+        AUTH_USER_STORE,
+        MCP_ACCESS_TOKEN_STORE,
+      ],
       global: true,
     };
   }

@@ -32,6 +32,8 @@ const OVERLAYS: readonly FeatureOverlay[] = [
     moduleFile: 'odoo-provisioning.module',
     exportName: 'OdooProvisioningModule',
   },
+  // module-mcp-agent-surface 切片 1：MCP Agent 工具面（凭证管理面先行·/mcp 执行面属切片 2）。
+  { dir: 'mcp', moduleFile: 'mcp.module', exportName: 'McpModule' },
 ];
 
 async function resolveOverlay(overlay: FeatureOverlay): Promise<Type<unknown>[]> {

@@ -10,7 +10,7 @@
  * - 用冒号而非点分：点分与领域事件名（`user.registered`）相撞，且撞 nestjs-i18n 键语法。
  * - code 是机器标识，与人面可读消息（`message`，随 i18n 翻译）**解耦**——前端据 code 分支、据 message 展示。
  *
- * 命名空间 = 按限界上下文（甲裁）：`AUTH / ISOLATION / ORG / ROLE / GRANT / AUTHZ / USER / WORKSPACE / BILLING / STORAGE`。
+ * 命名空间 = 按限界上下文（甲裁）：`AUTH / ISOLATION / ORG / ROLE / GRANT / AUTHZ / USER / WORKSPACE / BILLING / STORAGE / MCP`。
  * 新增码一律先加此处，再在抛错点以 object response 携带（filter 透传·零新异常类）。
  *
  * @public
@@ -77,6 +77,9 @@ export const ERROR_CODES = {
   STORAGE_FILE_TOO_LARGE: 'STORAGE:FILE_TOO_LARGE',
   STORAGE_FILE_TYPE_NOT_ALLOWED: 'STORAGE:FILE_TYPE_NOT_ALLOWED',
   STORAGE_UPLOAD_FAILED: 'STORAGE:UPLOAD_FAILED',
+
+  // —— MCP Agent 工具面（module-mcp-agent-surface 切片 1·additive 新组）——
+  MCP_CREDENTIAL_NOT_FOUND: 'MCP:CREDENTIAL_NOT_FOUND',
 } as const;
 
 /** 业务错误码值的字面量联合（自 `ERROR_CODES` 派生·`NAMESPACE:NAME` 文法·前后端稳定机器契约）。 @public */

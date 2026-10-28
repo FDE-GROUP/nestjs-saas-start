@@ -38,3 +38,13 @@ export const mintedMcpCredentialSchema = mcpCredentialRowSchema.extend({
   token: z.string(),
 });
 export type MintedMcpCredential = z.infer<typeof mintedMcpCredentialSchema>;
+
+/**
+ * 凭证列表信封（对象根=序列化器 standard-schema 消费形·沿 workspace page 先例，非裸数组）。
+ *
+ * @public
+ */
+export const mcpCredentialListSchema = z.object({
+  items: z.array(mcpCredentialRowSchema),
+});
+export type McpCredentialList = z.infer<typeof mcpCredentialListSchema>;

@@ -17,6 +17,7 @@ const ALLOWED_NAMESPACES = new Set([
   'WORKSPACE',
   'BILLING',
   'STORAGE',
+  'MCP',
 ]);
 
 describe('ERROR_CODES 契约（shared-kernel·单源码表）', () => {
