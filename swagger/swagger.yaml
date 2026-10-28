@@ -2444,6 +2444,22 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
       summary: Handle payment webhook events
       tags: *ref_16
+  /api/v1/mcp:
+    post:
+      operationId: McpController_post_v1
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags: &ref_17
+        - Mcp
+    delete:
+      operationId: McpController_remove_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags: *ref_17
 info:
   title: NestJS SaaS Start API
   description: NestJS SaaS Start API documentation
@@ -2596,7 +2612,7 @@ components:
           type: string
         status:
           type: string
-          enum: &ref_17
+          enum: &ref_18
             - pending_approval
             - active
             - suspended
@@ -2648,7 +2664,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 组织自有态。
         odooCompanyId:
           type:
@@ -2685,7 +2701,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 准入态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2713,7 +2729,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 组织态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2757,7 +2773,7 @@ components:
           description: 目标 tenant 主键。
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 迁移后的准入态。
       required:
         - tenantId
@@ -2805,7 +2821,7 @@ components:
           type: string
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 治理状态（无记录视同 active）。
         createdAt:
           format: date-time
@@ -2845,7 +2861,7 @@ components:
           description: 用户主键。
         status:
           type: string
-          enum: *ref_17
+          enum: *ref_18
           description: 迁移后的新状态。
       required:
         - userId
@@ -2963,7 +2979,7 @@ components:
           description: organization 主键。
         status:
           type: string
-          enum: &ref_18
+          enum: &ref_19
             - pending_approval
             - active
             - suspended
@@ -3062,7 +3078,7 @@ components:
           description: 租户 slug。
         status:
           type: string
-          enum: *ref_18
+          enum: *ref_19
           description: 租户准入态。
         organizations:
           description: 该租户下当前用户可见的组织集合。
@@ -3176,7 +3192,7 @@ components:
           description: 集成状态恒 "ok"。
         selected:
           type: string
-          enum: &ref_19
+          enum: &ref_20
             - stripe
             - alipay
             - wechat_pay
@@ -3186,7 +3202,7 @@ components:
           description: 可用通道集合。
           items:
             type: string
-            enum: *ref_19
+            enum: *ref_20
       required:
         - status
         - selected
@@ -3199,7 +3215,7 @@ components:
           description: 通道侧 customer id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_20
           description: 所属通道。
         email:
           type: string
@@ -3220,7 +3236,7 @@ components:
           description: checkout / payment intent id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_20
           description: 所属通道。
         status:
           type: string
@@ -3244,7 +3260,7 @@ components:
           description: refund id。
         providerId:
           type: string
-          enum: *ref_19
+          enum: *ref_20
           description: 所属通道。
         status:
           type: string

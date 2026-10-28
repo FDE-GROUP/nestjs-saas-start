@@ -16,7 +16,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">OrganizationStatusTransitionedPayload</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#actorid">actorId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#from">from</a><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#reason">reason</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#to">to</a><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/5104f75688fb491fa5c4194310f8b12477d13f1c/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L10">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:10</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/6e725e4112b306707a8b9bae0b43ecda99f66c35/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L10">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:10</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -38,28 +38,28 @@
 <div class="tsd-comment tsd-typography"><p>治理动作主体（会话用户 id·PII 最小化：仅 id 不携邮箱·§6-③）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/5104f75688fb491fa5c4194310f8b12477d13f1c/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L16">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:16</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/6e725e4112b306707a8b9bae0b43ecda99f66c35/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L16">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:16</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="from"><code class="tsd-tag">Readonly</code><span>from</span><a href="#from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>迁移前状态；从未记录状态的行为 null（与 transition 返回的 previous===undefined 同口径）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/5104f75688fb491fa5c4194310f8b12477d13f1c/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L12">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:12</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/6e725e4112b306707a8b9bae0b43ecda99f66c35/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L12">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:12</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="reason"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>reason</span><a href="#reason" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">reason</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>租户状态迁移原因。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/5104f75688fb491fa5c4194310f8b12477d13f1c/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L18">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:18</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/6e725e4112b306707a8b9bae0b43ecda99f66c35/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L18">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:18</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="to"><code class="tsd-tag">Readonly</code><span>to</span><a href="#to" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a></div>
 <div class="tsd-comment tsd-typography"><p>迁移后的目标状态。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/5104f75688fb491fa5c4194310f8b12477d13f1c/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L14">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:14</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/6e725e4112b306707a8b9bae0b43ecda99f66c35/libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts#L14">libs/core/src/modules/organizations/lifecycle/events/organization-status-transitioned.event.ts:14</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
