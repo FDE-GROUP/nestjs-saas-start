@@ -48,6 +48,8 @@
 - 校验单源：以 zod 契约同时驱动请求校验、响应序列化与前后端类型
 - 支付、对象存储、邮件、日志、i18n 等横切能力抽象为可插拔 provider
 - OpenAPI 契约与类型安全 API 客户端由代码单一来源生成
+- **MCP Agent 导出面（已落地）**：经官方 `@modelcontextprotocol/sdk` 建 `/mcp`（Streamable HTTP·bearer 租级服务凭证·scope 空集 deny-by-default·工具薄壳复用既有应用服务），向 Agent 导出 `tenant.directory` / `posts.list` / `workspace.create`（落 `features/mcp`·与 `modules/` 双向隔离）
+- **oRPC（评估中·未采用）**：「以 oRPC 统一传输层 / 契约治理」处于已审通过的评估阶段（结论「技术可行·现在全量引入否」）；MCP 动机已从此评估解耦先行落地，oRPC 治理翻转切片候 v2 GA 三触发条件后方启
 - 本地 CI 一键质量门禁 + Git Hooks；容器化开箱即用
 
 ## 技术栈
@@ -121,7 +123,7 @@ packages/
 | `platform` | 平台运营面：经营者治理端点与审计 |
 | `posts` | 示例内容上下文（演示领域建模与读写的参考切片） |
 
-> **集成专属区**：`apps/api/src/features/`（`odoo-rpc-api` Odoo 只读数据面、`odoo-provisioning` 组织开通 saga）为第三方集成专属区，与 `modules/` 双向隔离（无自有 domain、经 published port 读写）；`apps/odoo-rpc-web` 为演示「经 SaaS 只读访问 Odoo」的可选前端壳（opt-in・不入核心门禁）。
+> **集成专属区**：`apps/api/src/features/`（`odoo-rpc-api` Odoo 只读数据面、`odoo-provisioning` 组织开通 saga、`mcp` Agent 工具面 `/mcp`）为第三方集成专属区，与 `modules/` 双向隔离（无自有 domain、经 published port 读写）；`apps/odoo-rpc-web` 为演示「经 SaaS 只读访问 Odoo」的可选前端壳（opt-in・不入核心门禁）。
 
 ## 快速开始
 
