@@ -56,6 +56,10 @@ const GATED_E2E_FILES = [
   'apps/api/src/modules/auth/auth-http-surface.e2e.test.ts',
   'apps/api/src/modules/auth/oauth-sso.e2e.test.ts',
   'apps/api/src/modules/auth/session-reclaim.e2e.test.ts',
+  // module-mcp-agent-surface 切片 1·凭证闭环四负例真库 e2e（他租拒绝/空 scope 零工具/撤销即时/suspend 联动）。
+  // 归位 auth 属主区（features 测试文件深引实体触隔离闸 B·沿「DB 集成测试落归属上下文」先例），
+  // 消费面经 MCP_TOKEN_VERIFIER token 解析零 features 路径。
+  'apps/api/src/modules/auth/mcp-credentials.e2e.test.ts',
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   // X7 切片 G·G1：自助退租撤权撤席真 HTTP+ALS e2e（撤租级两表 + 连清 BA member + live 席位 −1 + 退租者 @Can 403 + last-owner 拒）。
   'apps/api/src/modules/organizations/tenant-member-leave.e2e.test.ts',

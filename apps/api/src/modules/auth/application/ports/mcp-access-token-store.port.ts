@@ -25,6 +25,24 @@ export interface McpAccessTokenMintInput {
 }
 
 /**
+ * 消费面凭证行的扁平形状（端口自持·不外泄 `McpAccessToken` 实体型——features 消费侧
+ * 若 need 实体型会走 type 导入路径触隔离闸 B，本形以结构型兼容断离 infrastructure）。
+ *
+ * @public
+ */
+export interface McpAccessTokenRecord {
+  id: string;
+  /** 签发时盖章的属租（凭证=租户单源·消费面据此绑 ALS）。 */
+  tenantId: string;
+  userId: string;
+  name: string;
+  scopes: string[];
+  expiresAt: Date;
+  lastUsedAt: Date | null;
+  revokedAt: Date | null;
+}
+
+/**
  * MCP 租级凭证（`mcp_access_token`·auth 属主）的受控读写入口（module-mcp-agent-surface 切片 1）。
  *
  * @remarks
@@ -32,7 +50,7 @@ export interface McpAccessTokenMintInput {
  * 落属主**（PIPL/AUTH_USER_STORE 同型先例），禁绕行直捅 entity。本端口居 `application/` 层——
  * features 深导入判据（verify-feature-isolation B 面）只红 `domain|infrastructure` 路径，
  * application 为上下文公开耦合面。
- * 消费面（哈希查找 `findByHash`/`touchLastUsed`）属切片 2 MCP 执行面，届时 additive 扩列。
+ * 消费面（哈希查找 `findByHash`/`touchLastUsed`）居切片 1 校验中间件判据件（四负例 e2e 前置）。
  *
  * @public
  */
@@ -49,4 +67,11 @@ export interface McpAccessTokenStore {
    * @returns 命中行数 0 → false（controller 面译 404）。
    */
   revoke(userId: string, id: string): Promise<boolean>;
+  /**
+   * 消费面按 sha256 哈希查找（bearer 校验时尚无租户 ALS，**必走 `scoped: false` 全租单行查**）；
+   * 只回列形状不含哈希（行自带签发盖章 tenantId·调用面零租户参数无从伪造）。
+   */
+  findByHash(tokenHash: string): Promise<McpAccessTokenRecord | null>;
+  /** 消费面成功校验后刷 `lastUsedAt`（按 id 单行窄写·失败不致阻断校验主路）。 */
+  touchLastUsed(id: string, at: Date): Promise<void>;
 }

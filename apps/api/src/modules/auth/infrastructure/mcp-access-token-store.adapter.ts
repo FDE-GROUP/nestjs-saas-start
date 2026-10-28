@@ -6,6 +6,7 @@ import { QueryOrder } from '@mikro-orm/core';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   McpAccessTokenMintInput,
+  McpAccessTokenRecord,
   McpAccessTokenStore,
 } from '../application/ports/mcp-access-token-store.port';
 
@@ -70,5 +71,31 @@ export class MikroMcpAccessTokenStoreAdapter implements McpAccessTokenStore {
     em.assign(row, { revokedAt: new Date(), updatedAt: new Date() });
     await em.flush();
     return true;
+  }
+
+  async findByHash(tokenHash: string): Promise<McpAccessTokenRecord | null> {
+    // 消费面校验时 ALS 尚无租户上下文（bearer 面自证身份前不绑租轴）——scoped:false 全租单行查
+    // 是唯一可行形；唯一索引命中后安全由行自带盖章 tenantId 承担（调用侧零参数可伪造）。
+    const em = await this.mikro.fork({ scoped: false });
+    const row = await em.findOne(McpAccessToken, { tokenHash } as never);
+    if (!row) return null;
+    return {
+      id: row.id,
+      tenantId: row.tenantId,
+      userId: row.userId,
+      name: row.name,
+      scopes: row.scopes,
+      // 列物理 NOT NULL；`as never` 泛参宽化使 Mikro 返回形带 null/undefined 漂移，此处窄化回真形。
+      expiresAt: row.expiresAt as Date,
+      lastUsedAt: row.lastUsedAt ?? null,
+      revokedAt: row.revokedAt ?? null,
+    };
+  }
+
+  async touchLastUsed(id: string, at: Date): Promise<void> {
+    // 写表面属主闸：mcpAccessToken ∈ auth owned（table-ownership 机读律）；无租上下文面走
+    // scoped:false + 按 id 单行窄写（id 源于 findByHash 已验行，非调用侧输入）。
+    const em = await this.mikro.fork({ scoped: false });
+    await em.nativeUpdate(McpAccessToken, { id } as never, { lastUsedAt: at });
   }
 }

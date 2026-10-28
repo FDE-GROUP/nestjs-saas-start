@@ -12,7 +12,7 @@
   "apps/api/src/main.ts": 4,
   "apps/api/src/modules/auth/infrastructure/auth.bootstrap.ts": 1,
   "apps/api/src/modules/auth/infrastructure/auth.implement.ts": 50,
-  "apps/api/src/modules/auth/infrastructure/mcp-access-token-store.adapter.ts": 2,
+  "apps/api/src/modules/auth/infrastructure/mcp-access-token-store.adapter.ts": 5,
   "apps/api/src/modules/auth/infrastructure/session-reclaim.service.ts": 1,
   "apps/api/src/modules/auth/infrastructure/session-store.adapter.ts": 4,
   "apps/api/src/modules/organizations/infrastructure/mikro-tenant-status.store.ts": 3,

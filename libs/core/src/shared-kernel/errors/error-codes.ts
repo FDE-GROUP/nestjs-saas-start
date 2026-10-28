@@ -80,6 +80,10 @@ export const ERROR_CODES = {
 
   // —— MCP Agent 工具面（module-mcp-agent-surface 切片 1·additive 新组）——
   MCP_CREDENTIAL_NOT_FOUND: 'MCP:CREDENTIAL_NOT_FOUND',
+  /** 消费面统一 401（不存在/已撤销/已过期同码防探测·切片 1 校验中间件）。 */
+  MCP_CREDENTIAL_INVALID: 'MCP:CREDENTIAL_INVALID',
+  /** 凭证有效但属租被封禁（失能联动·沿 TenantStatusService 单源）。 */
+  MCP_TENANT_SUSPENDED: 'MCP:TENANT_SUSPENDED',
 } as const;
 
 /** 业务错误码值的字面量联合（自 `ERROR_CODES` 派生·`NAMESPACE:NAME` 文法·前后端稳定机器契约）。 @public */
