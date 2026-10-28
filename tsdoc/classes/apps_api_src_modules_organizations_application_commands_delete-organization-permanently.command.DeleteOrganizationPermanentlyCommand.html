@@ -20,14 +20,14 @@
 后连带清除该租户名下所有组织行（各子表 FK cascade 自动消灭）+ 名下订阅行 + 租户本体（plan §3.1 顺序论证：
 任意一步失败均可整请求重试不留不可达残迹）。非 deleted 态 → 409（前置闸·两段式先软后硬）；不存在/已被硬删 → null（404 幂等）。</p>
 </div></div></section>
-<section class="tsd-panel tsd-hierarchy" data-refl="2774">
+<section class="tsd-panel tsd-hierarchy" data-refl="2808">
 <h4>Hierarchy (<a href="../hierarchy.html#apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.DeleteOrganizationPermanentlyCommand">View Summary</a>)</h4>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><a href="libs_core_src_shared-kernel_cqrs_types.BaseCommand.html" class="tsd-signature-type tsd-kind-class">BaseCommand</a><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/apps_api_src_modules_organizations_application_read-models_tenant-governance.read-model.TenantHardDeleteResult.html" class="tsd-signature-type tsd-kind-interface">TenantHardDeleteResult</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span>
 <ul class="tsd-hierarchy">
 <li class="tsd-hierarchy-item"><span class="tsd-hierarchy-target">DeleteOrganizationPermanentlyCommand</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bdeaa3db4d25d6dca43b9e078eb0cd69dac136c9/apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts#L13">apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts:13</a></li></ul></aside></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/45523edebd1daa2ca37f72133f4646da7512808c/apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts#L13">apps/api/src/modules/organizations/application/commands/delete-organization-permanently.command.ts:13</a></li></ul></aside></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
