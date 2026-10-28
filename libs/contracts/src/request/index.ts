@@ -1,4 +1,5 @@
 export * from './authorization';
+export * from './mcp';
 export * from './oauth-sso';
 export * from './organizations';
 export * from './pagination';

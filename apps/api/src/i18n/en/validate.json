@@ -21,5 +21,8 @@
   "clientId.required": "Please provide client_id",
   "redirectUri.required": "Please provide redirect_uri",
   "responseType.unsupported": "Only implicit flow response_type=token is supported",
-  "scope.invalid": "scope may only contain openid, profile or email"
+  "scope.invalid": "scope may only contain openid, profile or email",
+  "mcpCredentialName.required": "Please enter a credential name",
+  "mcpScopes.required": "Please select at least one permission scope",
+  "mcpCredentialId.required": "Please enter the credential ID"
 }

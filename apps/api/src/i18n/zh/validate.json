@@ -21,5 +21,8 @@
   "clientId.required": "请输入 client_id",
   "redirectUri.required": "请输入 redirect_uri",
   "responseType.unsupported": "仅支持隐式流 response_type=token",
-  "scope.invalid": "scope 仅可包含 openid、profile、email"
+  "scope.invalid": "scope 仅可包含 openid、profile、email",
+  "mcpCredentialName.required": "请输入凭证名称",
+  "mcpScopes.required": "请至少选择一个授权面",
+  "mcpCredentialId.required": "请输入凭证 ID"
 }
