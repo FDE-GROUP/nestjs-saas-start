@@ -1,6 +1,7 @@
 import { TENANT_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-lifecycle';
 import { ORGANIZATION_ODOO_BINDING_STATUS } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding';
 import { defineEntity, p } from '@mikro-orm/core';
+import { MCP_ACCESS_TOKEN_META } from '../../../modules/auth/infrastructure/entities/mcp-access-token.entity';
 import {
   TENANT_INVITATION_META,
   TENANT_MEMBERSHIP_META,
@@ -292,6 +293,9 @@ export const TenantRoleAudit = buildMigrationEntity(TENANT_ROLE_AUDIT_META, {
 // global-governance-lifecycle-consolidation 切片 E：治理审计耐久账本（append-only·同元数据双变体派生·纯 additive）。
 export const AuditLog = buildMigrationEntity(AUDIT_LOG_META, { User });
 
+// module-mcp-agent-surface 切片 1：MCP 租级凭证表（auth 属主·FK Tenant/User 级联删·哈希唯一）。
+export const McpAccessToken = buildMigrationEntity(MCP_ACCESS_TOKEN_META, { Tenant, User });
+
 // X7 租级成员/角色分配/邀请三表（global-role-membership-tenantization 切片 B·纯 additive·FK→Tenant/User cascade）。
 export const TenantMembership = buildMigrationEntity(TENANT_MEMBERSHIP_META, { Tenant, User });
 export const TenantRoleAssignment = buildMigrationEntity(TENANT_ROLE_ASSIGNMENT_META, {
@@ -300,7 +304,7 @@ export const TenantRoleAssignment = buildMigrationEntity(TENANT_ROLE_ASSIGNMENT_
 });
 export const TenantInvitation = buildMigrationEntity(TENANT_INVITATION_META, { Tenant, User });
 
-/** 迁移基线用的全表忠实实体集（20 表·与实体元数据逐列对齐·X7 加租级成员/角色分配/邀请三表 17→20）。 */
+/** 迁移基线用的全表忠实实体集（21 表·与实体元数据逐列对齐·X7 三表 17→20·MCP 凭证 20→21）。 */
 export const MIKRO_MIGRATION_ENTITIES = [
   User,
   Account,
@@ -322,4 +326,5 @@ export const MIKRO_MIGRATION_ENTITIES = [
   TenantMembership,
   TenantRoleAssignment,
   TenantInvitation,
+  McpAccessToken,
 ];

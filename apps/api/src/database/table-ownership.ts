@@ -22,6 +22,9 @@ export const TABLE_OWNERSHIP: Record<string, string> = {
   session: 'auth',
   verification: 'auth',
   consent: 'auth',
+  // module-mcp-agent-surface 切片 1（实体归位裁定）：MCP 租级凭证与 consent/session 同族
+  //（身份机器族·有界委托凭证）；唯一写通道 = auth 属主侧仓储，features/mcp 编排面经端口落属主（PIPL 同型）。
+  mcpAccessToken: 'auth',
   // organizations：审批制生命周期与成员域（BA organization/member/invitation 由本侧服务端 SDK 写）
   // global-tenant-organization-rehierarchy 切片 B：`tenant` 新层根表（组织之父行·非旧旁表血脉·
   // 写通道归 organizations 治理链·切片 D 审批上移后 provisioning 唯一写面）

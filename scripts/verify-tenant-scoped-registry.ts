@@ -66,6 +66,9 @@ export const TENANT_SCOPED_TABLES: readonly string[] = [
   // BA 组织容器族：读面仍 org 轴锚定（BA 机器不盖租级列·C 片自裁不换）·消费界内无裸跨租面。
   'member',
   'invitation',
+  // module-mcp-agent-surface 切片 1：MCP 租级凭证（携 `tenantId` 主轴 NOT NULL·读锚活动租·
+  // 鉴权查找面走哈希直查由中间件具名豁免语境承担——登记闸只判列位证据，不判 where 形状）。
+  'mcp_access_token',
 ];
 
 /**

@@ -1,5 +1,9 @@
 import { MIKRO_IDENTITY_ENTITIES } from '../../modules/auth/infrastructure/entities/ba-identity.entities';
 import {
+  MCP_ACCESS_TOKEN_META,
+  McpAccessToken,
+} from '../../modules/auth/infrastructure/entities/mcp-access-token.entity';
+import {
   MIKRO_RBAC_TABLE_ENTITIES,
   TENANT_INVITATION_META,
   TENANT_MEMBERSHIP_META,
@@ -41,10 +45,23 @@ import { EVENT_META, Event } from '../eventing/entities/event.entity';
  */
 
 /** META 双形运行时实体集（rehierarchy 片二 K2：旧 `OrganizationSubscription` 退役·新层根表 `Tenant`/`TenantSubscription`·均 buildRuntimeEntity 派生·并入 `MIKRO_SYS_ENTITIES`）。 */
-export const MIKRO_META_TABLE_ENTITIES = [Workspace, Event, Tenant, TenantSubscription];
+export const MIKRO_META_TABLE_ENTITIES = [
+  Workspace,
+  Event,
+  Tenant,
+  TenantSubscription,
+  // module-mcp-agent-surface 切片 1：MCP 凭证表（auth 属主·租级有界委托·明文永不落库）。
+  McpAccessToken,
+];
 
 /** META 双形元数据（迁移装配可消费·与 `MIKRO_MIGRATION_ENTITIES` 顺序无关，恒等闸逐语句比对）。 */
-export const META_TABLE_METAS = [WORKSPACE_META, EVENT_META, TENANT_META, TENANT_SUBSCRIPTION_META];
+export const META_TABLE_METAS = [
+  WORKSPACE_META,
+  EVENT_META,
+  TENANT_META,
+  TENANT_SUBSCRIPTION_META,
+  MCP_ACCESS_TOKEN_META,
+];
 
 /** RBAC 表元数据（迁移装配可消费·X7 加租级成员/角色分配/邀请三表）。 */
 export const RBAC_TABLE_METAS = [
