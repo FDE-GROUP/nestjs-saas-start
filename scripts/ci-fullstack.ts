@@ -60,6 +60,10 @@ const GATED_E2E_FILES = [
   // 归位 auth 属主区（features 测试文件深引实体触隔离闸 B·沿「DB 集成测试落归属上下文」先例），
   // 消费面经 MCP_TOKEN_VERIFIER token 解析零 features 路径。
   'apps/api/src/modules/auth/mcp-credentials.e2e.test.ts',
+  // module-mcp-agent-surface 切片 2·执行面真库 e2e（真 SDK over 实听 socket 打 /mcp：
+  //  scope 可见面/租轴读通/跨租硬地板/越权 401·403/超限）。同归位 auth 属主区（features 零深引·
+  //  沿「DB 集成测试落归属上下文」先例·消费面经真 HTTP 全链验鉴权链）。
+  'apps/api/src/modules/auth/mcp-agent-surface.e2e.test.ts',
   'apps/api/src/modules/subscriptions/seat-quota-member.e2e.test.ts',
   // X7 切片 G·G1：自助退租撤权撤席真 HTTP+ALS e2e（撤租级两表 + 连清 BA member + live 席位 −1 + 退租者 @Can 403 + last-owner 拒）。
   'apps/api/src/modules/organizations/tenant-member-leave.e2e.test.ts',

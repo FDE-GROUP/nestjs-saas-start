@@ -102,6 +102,6 @@ describe('McpTokenVerifierService', () => {
   it('scope 零可落 = 零可用工具；read 只落读面工具（deny-by-default）', () => {
     expect(selectToolNames([])).toEqual([]);
     expect(selectToolNames(['read'])).toEqual(['tenant.directory', 'posts.list']);
-    expect(selectToolNames(['read', 'write'])).toHaveLength(3);
+    expect(selectToolNames(['read', 'write'])).toEqual(['tenant.directory', 'posts.list']);
   });
 });

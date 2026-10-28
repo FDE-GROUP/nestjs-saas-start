@@ -28,6 +28,7 @@ import { GetOrganizationDiagnosticsQueryHandler } from './application/queries/ha
 import { GetPlatformTenantQueryHandler } from './application/queries/handlers/get-platform-tenant.query-handler';
 import { ListPlatformTenantsQueryHandler } from './application/queries/handlers/list-platform-tenants.query-handler';
 import { ListPlatformUsersQueryHandler } from './application/queries/handlers/list-platform-users.query-handler';
+import { ListTenantDirectoryQueryHandler } from './application/queries/handlers/list-tenant-directory.query-handler';
 import { TenantMemberFacadeService } from './application/tenant-member-facade.service';
 import { BA_MEMBER_DIRECTORY_WRITER } from './domain/repositories/ba-member-writer.repository';
 import { ORGANIZATION_GOVERNANCE_REPOSITORY } from './domain/repositories/organization-governance.repository';
@@ -67,6 +68,8 @@ const QueryHandlers = [
   GetOrganizationDiagnosticsQueryHandler,
   ExportOrganizationDataQueryHandler,
   ListPlatformUsersQueryHandler,
+  // mcp 切片 2 B 面倒置：租户目录用户级读面的 CQRS 出口（features 零深引 domain 端口）。
+  ListTenantDirectoryQueryHandler,
 ];
 
 /**

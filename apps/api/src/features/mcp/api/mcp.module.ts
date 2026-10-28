@@ -1,7 +1,11 @@
 import { MCP_TOKEN_VERIFIER } from '@app/modules/auth/application/ports/mcp-token-verifier.port';
 import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
+import { McpAgentSurfaceService } from '../application/mcp-agent-surface.service';
 import { McpCredentialService } from '../application/mcp-credential.service';
 import { McpTokenVerifierService } from '../application/mcp-token-verifier.service';
+import { McpToolExecutorService } from '../application/mcp-tool-executor.service';
+import { McpController } from './mcp.controller';
 import { McpCredentialsController } from './mcp-credentials.controller';
 
 /**
@@ -14,9 +18,14 @@ import { McpCredentialsController } from './mcp-credentials.controller';
  * token/形状端口居 auth 公开面——属主侧 e2e 零 features 路径即可消费（隔离闸 A/B 双向合规）。
  */
 @Module({
-  controllers: [McpCredentialsController],
+  // 消费面执行件经 QueryBus 派发既有查询（沿 odoo-provisioning 先例引入 CqrsModule·
+  // TenantIsolationService/TENANT_SCOPE_RESOLVER 由 @Global TenantIsolationModule 直解析）。
+  imports: [CqrsModule],
+  controllers: [McpCredentialsController, McpController],
   providers: [
     McpCredentialService,
+    McpToolExecutorService,
+    McpAgentSurfaceService,
     { provide: MCP_TOKEN_VERIFIER, useClass: McpTokenVerifierService },
   ],
   exports: [MCP_TOKEN_VERIFIER],

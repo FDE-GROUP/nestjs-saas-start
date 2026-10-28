@@ -50,8 +50,24 @@ export class MikroPostRepository implements PostRepository {
     };
   }
 
+  /**
+   * 读侧作用域（rehierarchy 切片 C 换轴收口·global-mcp-agent-surface 切片 2 乙裁）：
+   * 谓词只需**主轴 `tenantId`**（同租跨组织默认互见·`organizationId` 降归属标签·非读隔离轴），
+   * 故此处**不强求活动组织**——`requireActiveOrganizationId()` 的 doc 明载「隔离裁决一律锚
+   * `requireActiveTenantId()`，勿在此新用」，读路径此前经 `scope()` 顺带 fail-closed 活动组织，
+   * 属换轴未清理的过度收窄（既卡 bearer 消费面无会话组织，亦卡 D7 显式租激活的会话无活动组织态）。
+   * 主轴恒 `requireActiveTenantId()` fail-closed：无租户→403、先于取 em 抛出、绝不查库；租级读绝不
+   * 因此放宽跨租硬地板（谓词仍恒含 `tenantId`）。写路径 `scope()` 双盖章原样不动。
+   */
+  private readScope(): { tenantId: string; workspaceId?: string } {
+    return {
+      tenantId: this.tenant.requireActiveTenantId(),
+      workspaceId: this.tenant.workspaceId,
+    };
+  }
+
   async list(request: CursorPageRequest, organizationId?: string): Promise<CursorPage<Post>> {
-    const { tenantId, workspaceId } = this.scope();
+    const { tenantId, workspaceId } = this.readScope();
     // `where` 为真实谓词对象（tenantId 必含·去之则回归测红）。`as never` 仅系调用边界 cast——
     // `mikro-orm.factory.ts` 以 `entities as never` 装配（切片 1 同源惯例）使 `em` 泛参解析为 defineEntity builder 推断
     // 类型而非 companion interface·两者在可空/默认列上 `FilterQuery` 宽化不致；cast 不改运行时谓词。
@@ -94,7 +110,7 @@ export class MikroPostRepository implements PostRepository {
   }
 
   async findById(id: string): Promise<Post | null> {
-    const { tenantId, workspaceId } = this.scope();
+    const { tenantId, workspaceId } = this.readScope();
     const where = workspaceId ? { id, tenantId, workspaceId } : { id, tenantId };
     const em = await this.mikro.fork();
     const entity = await em.findOne(PostEntity, where as never);

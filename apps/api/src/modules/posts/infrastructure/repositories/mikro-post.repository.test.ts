@@ -190,6 +190,69 @@ describe('MikroPostRepository · 组织收窄筛选维（rehierarchy E-F·归属
   });
 });
 
+describe('MikroPostRepository · 租级读免活动组织（mcp 切片 2 乙裁·换轴 D7 解绑收口）', () => {
+  // 读侧作用域只锚主轴 tenantId，不强求活动组织：模拟「凭证/D7 只绑租、无会话 org」形。
+  function makeTenantScopedOnlyRepo(workspaceId?: string) {
+    const requireActiveOrganizationId = vi.fn(() => {
+      throw new ForbiddenException('Missing active organization context');
+    });
+    const requireActiveTenantId = vi.fn(() => 'tenant-only');
+    const tenant = {
+      requireActiveOrganizationId,
+      requireActiveTenantId,
+      workspaceId,
+    } as unknown as TenantIsolationService;
+    const find = vi.fn().mockResolvedValue([]);
+    const findOne = vi.fn().mockResolvedValue(null);
+    const em = { find, findOne } as unknown as EntityManager;
+    const fork = vi.fn().mockResolvedValue(em);
+    const mikro = { fork } as unknown as MikroOrmService;
+    return {
+      repo: new MikroPostRepository(mikro, tenant),
+      spies: { requireActiveOrganizationId, requireActiveTenantId, fork, find, findOne },
+    };
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('list() 无活动组织仍放行：谓词恒含租户主轴·绝不触 requireActiveOrganizationId', async () => {
+    const { repo, spies } = makeTenantScopedOnlyRepo();
+    await repo.list({ limit: 20 });
+    expect(spies.requireActiveOrganizationId).not.toHaveBeenCalled();
+    const [, where] = spies.find.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(where).toEqual({ tenantId: 'tenant-only' });
+  });
+
+  it('findById() 无活动组织仍放行（跨租硬地板不受影响·id+tenant 双谓词）', async () => {
+    const { repo, spies } = makeTenantScopedOnlyRepo();
+    await repo.findById('p1');
+    expect(spies.requireActiveOrganizationId).not.toHaveBeenCalled();
+    const [, where] = spies.findOne.mock.calls[0] as [unknown, Record<string, unknown>];
+    expect(where).toEqual({ id: 'p1', tenantId: 'tenant-only' });
+  });
+
+  it('list() 无租户仍 fail-closed：先于 fork 抛出·绝不查库（读闸不收租轴地板）', async () => {
+    const requireActiveTenantId = vi.fn(() => {
+      throw new ForbiddenException('Missing active tenant context');
+    });
+    const tenant = { requireActiveTenantId } as unknown as TenantIsolationService;
+    const fork = vi.fn();
+    const mikro = { fork } as unknown as MikroOrmService;
+    const repo = new MikroPostRepository(mikro, tenant);
+    await expect(repo.list({ limit: 20 })).rejects.toBeInstanceOf(ForbiddenException);
+    expect(fork).not.toHaveBeenCalled();
+  });
+
+  it('create() 无活动组织仍拒（写双盖章 fail-closed 不动·读写分治）', async () => {
+    const { repo, spies } = makeTenantScopedOnlyRepo();
+    await expect(repo.create(Post.draft({ title: 'hi' }))).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(spies.requireActiveOrganizationId).toHaveBeenCalled();
+    expect(spies.fork).not.toHaveBeenCalled();
+  });
+});
+
 describe('MikroPostRepository · 游标分页语义（就绪预备切片 B）', () => {
   beforeEach(() => vi.clearAllMocks());
 

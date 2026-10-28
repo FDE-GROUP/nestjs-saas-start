@@ -7,12 +7,16 @@
  * 工具**（deny-by-default·立项稿切片 1 四负例之二）。工具 handler 一律委托既有应用服务，
  * 本表不携带任何第二套判据逻辑（纯静态清单）。
  *
+ * **首批降为只读两工具（切片 2 人裁乙·2026-10-28）**：`workspace.create` 写工具需「活动
+ * 组织」（MikroWorkspaceRepository 每方法先调 `requireActiveOrganizationId()`），而 bearer 凭证
+ * 只有租户轴、无会话组织——本表暂不收录该写工具（避免写入提权面），待专片设计
+ * 「Agent 显式选 org + 租属校验」后再铺。本表只列**已实现且可安全对外声明**的工具。
+ *
  * @public
  */
 export const MCP_TOOLS = [
   { name: 'tenant.directory', requiredScope: 'read' },
   { name: 'posts.list', requiredScope: 'read' },
-  { name: 'workspace.create', requiredScope: 'write' },
 ] as const;
 
 /** 工具名联合（自静态表派生·单源）。 @public */
