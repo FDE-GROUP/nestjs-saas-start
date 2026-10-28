@@ -48,6 +48,15 @@ const TOOL_META: Record<McpToolName, ToolMeta> = {
       limit: z.number().int().min(1).max(100).optional(),
     },
   },
+  'workspace.create': {
+    description:
+      'Create a workspace under an organization of the credential tenant. organizationId must be one of the tenant/organization ids returned by tenant.directory.',
+    inputSchema: {
+      name: z.string().min(1),
+      slug: z.string().min(1),
+      organizationId: z.string().min(1),
+    },
+  },
 };
 
 /**

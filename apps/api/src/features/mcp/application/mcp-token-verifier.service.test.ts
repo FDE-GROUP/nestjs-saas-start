@@ -99,9 +99,14 @@ describe('McpTokenVerifierService', () => {
     await expect(verifier.verify('mcp_x')).resolves.toMatchObject({ tenantId: 'T1' });
   });
 
-  it('scope 零可落 = 零可用工具；read 只落读面工具（deny-by-default）', () => {
+  it('scope 零可落 = 零可用工具；read 只落读面·write 添写工具（deny-by-default）', () => {
     expect(selectToolNames([])).toEqual([]);
     expect(selectToolNames(['read'])).toEqual(['tenant.directory', 'posts.list']);
-    expect(selectToolNames(['read', 'write'])).toEqual(['tenant.directory', 'posts.list']);
+    expect(selectToolNames(['write'])).toEqual(['workspace.create']);
+    expect(selectToolNames(['read', 'write'])).toEqual([
+      'tenant.directory',
+      'posts.list',
+      'workspace.create',
+    ]);
   });
 });

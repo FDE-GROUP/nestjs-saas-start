@@ -162,9 +162,9 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     expect(transport.handleRequest).toHaveBeenCalledOnce();
   });
 
-  it('scope→可见工具映射：空集零工具（deny-by-default），read 落两读工具', () => {
+  it('scope→可见工具映射：空集零工具（deny-by-default），read 落两读·write 落写工具', () => {
     expect(surface.visibleTools([])).toEqual([]);
     expect(surface.visibleTools(['read'])).toEqual(['tenant.directory', 'posts.list']);
-    expect(surface.visibleTools(['write'])).toEqual([]);
+    expect(surface.visibleTools(['write'])).toEqual(['workspace.create']);
   });
 });

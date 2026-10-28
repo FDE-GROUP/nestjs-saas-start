@@ -15,9 +15,13 @@ import {
   TenantMembership,
   TenantRoleAssignment,
 } from '@app/modules/authorization/infrastructure/entities/rbac.entities';
-import { Organization } from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
+import {
+  Member,
+  Organization,
+} from '@app/modules/organizations/infrastructure/entities/ba-org.entities';
 import { Tenant } from '@app/modules/organizations/infrastructure/entities/tenant.entity';
 import { PostEntity } from '@app/modules/posts/infrastructure/entities/post.entity';
+import { Workspace } from '@app/modules/workspaces/infrastructure/entities/workspace.entity';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { uuidv7 } from '@core/saas-kit/shared-kernel/util/uuid-v7';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -96,6 +100,7 @@ gated(
     }
     let u1: Actor; // ∈ T1（owner）
     let u2: Actor; // ∈ T2（owner）
+    let u1WriteToken = ''; // u1 额外 write scope 凭证（写工具 workspace.create 用）
     let orphanUserId = ''; // 真用户但 T1 内无角色分配行（越权负例用）
     let orphanToken = ''; // 指向 orphan 用户的有效凭证（消费面应 403）
 
@@ -121,6 +126,8 @@ gated(
       u1 = await provisionActor('t1');
       u2 = await provisionActor('t2');
       orphanUserId = await provisionOrphanUser();
+      // u1 额外铸一张 write scope 凭证（写工具面回归判据⑦）。
+      u1WriteToken = await mintViaRest({ cookie: u1.cookie }, ['read', 'write']);
       await seedPosts();
     }, 120000);
 
@@ -180,6 +187,15 @@ gated(
         createdAt: new Date(),
         updatedAt: null,
       } as never);
+      // BA `member` 行（org 轴成员·生产经 Better Auth 入组织必有）：`listForUser` 的 `organizations` 子集
+      // 仅按此派生（非 tenant_membership），workspace.create 租属校验「写入集⊆发现集」依赖其在册。
+      await em.insert(Member, {
+        id: `${orgId}-${userId}-bm`,
+        organizationId: orgId,
+        userId,
+        role: 'owner',
+        createdAt: new Date(),
+      } as never);
       await em.flush();
 
       // REST mint 真链（ALS 在本租盖章），回明文 token。
@@ -220,13 +236,16 @@ gated(
       return userId;
     }
 
-    /** 铸只读凭证（REST 面·ALS 盖本租），回明文 token。 */
-    async function mintViaRest(actor: { cookie: string }): Promise<string> {
+    /** 铸凭证（REST 面·ALS 盖本租），回明文 token（缺省只读·写工具面传 `['read','write']`）。 */
+    async function mintViaRest(
+      actor: { cookie: string },
+      scopes: readonly string[] = ['read'],
+    ): Promise<string> {
       const res = await app.inject({
         method: 'POST',
         url: '/mcp/credentials',
         headers: { cookie: actor.cookie, 'content-type': 'application/json' },
-        payload: JSON.stringify({ name: `surf-${stamp}`, scopes: ['read'] }),
+        payload: JSON.stringify({ name: `surf-${stamp}`, scopes }),
       });
       expect(res.statusCode, `mint 应 201（body=${res.body}）`).toBe(201);
       const token = String(res.json().data.token);
@@ -289,6 +308,7 @@ gated(
         await em.nativeDelete(TenantMembership, { tenantId: { $in: createdTenantIds } } as never);
       }
       if (createdOrgIds.length) {
+        await em.nativeDelete(Member, { organizationId: { $in: createdOrgIds } } as never);
         await em.nativeDelete(Organization, { id: { $in: createdOrgIds } } as never);
       }
       if (createdTenantIds.length) {
@@ -420,6 +440,61 @@ gated(
           .catch(() => ({ isError: true as const }));
         // SDK inputSchema（max 100）在派发前拦下：要么 JSON-RPC 错误要么 isError 回执——不得回正常帖页。
         expect((res as { isError?: boolean }).isError).toBe(true);
+      } finally {
+        await client.close();
+      }
+    }, 60000);
+
+    it('⑦写工具回归（切片 3 人裁甲）：write 凭证列三工具·workspace.create 真库落行三盖章·跨租 org 拒', async () => {
+      // 写凭证面：tools/list 现回三工具（workspace.create 对 write scope 可见）。
+      const wc = await connectAs(u1WriteToken);
+      try {
+        const { tools } = await wc.listTools();
+        expect(tools.map((t) => t.name).sort()).toEqual([
+          'posts.list',
+          'tenant.directory',
+          'workspace.create',
+        ]);
+      } finally {
+        await wc.close();
+      }
+      // 只读凭证仍不见写工具（裁定乙对外口径未因回归而泄）。
+      const rc = await connectAs(u1.token);
+      try {
+        const { tools } = await rc.listTools();
+        expect(tools.map((t) => t.name)).not.toContain('workspace.create');
+      } finally {
+        await rc.close();
+      }
+
+      const wsSlug = `e2e-mcp-surf-ws-${stamp}`;
+      const client = await connectAs(u1WriteToken);
+      try {
+        // 正向：显式选本租组织 u1.orgId→ALS 补 org 轴→仓储双盖章落行。
+        const ok = parseText(
+          await client.callTool({
+            name: 'workspace.create',
+            arguments: { name: 'E2E Surf WS', slug: wsSlug, organizationId: u1.orgId },
+          }),
+        ) as { slug?: string; organizationId?: string; tenantId?: string; ownerId?: string };
+        expect(ok.slug).toBe(wsSlug);
+        // 真库对拍：tenantId/organizationId/ownerId 三盖章齐备（跨租地板+可信会话属主）。
+        const em = await mikro.fork({ scoped: false });
+        const row = await em
+          .getRepository(Workspace)
+          .findOne({ slug: wsSlug, organizationId: u1.orgId } as never);
+        expect(row?.tenantId).toBe(u1.tenantId);
+        expect(row?.organizationId).toBe(u1.orgId);
+        expect(row?.ownerId).toBe(u1.userId);
+
+        // 负向：organizationId 属他租（u2.orgId）→租属校验拒（runTool 折成 isError·不泄存在性）。
+        const denied = await client
+          .callTool({
+            name: 'workspace.create',
+            arguments: { name: 'X', slug: `e2e-mcp-surf-ws-x-${stamp}`, organizationId: u2.orgId },
+          })
+          .catch(() => ({ isError: true as const }));
+        expect((denied as { isError?: boolean }).isError).toBe(true);
       } finally {
         await client.close();
       }
