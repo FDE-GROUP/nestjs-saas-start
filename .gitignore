@@ -58,10 +58,11 @@ oh-my-env/
 # TypeDoc API reference output (generated locally/CI; not committed)
 api-docs/
 
-# Odoo 20 CE 联调栈运行时产物（承 docker-compose.odoo.yml·命名卷在 docker 侧·宿主应无残留·防御性登记）
-odoo/*.dump
-odoo/*.sql
-odoo/.filestore/
+# Odoo 联调栈运行时产物（承 docker-compose.dev.yml·命名卷 pgadmin/DB 数据在 docker 侧·宿主应无残留·防御性登记）
+# 自定义 addon 落点 odoo-addons/（bind /mnt/extra-addons）里若临时丢入 dump/sql/filestore 一律不入库（.gitkeep 仍追踪）
+odoo-addons/*.dump
+odoo-addons/*.sql
+odoo-addons/.filestore/
 
 # 治理文档私有仓 checkout 落点 docs-private/（原 `odoo/saas-addons/`·2026-10-28 开源边界重划后本仓转为纯文档仓、
 # 目录名去 odoo/addons 误导）走独立私有仓·不入本公共仓（松耦合各推各的·remote github.com/FDE-GROUP/odoo-saas-start）。
