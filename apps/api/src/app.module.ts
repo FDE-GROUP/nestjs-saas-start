@@ -8,8 +8,8 @@ import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 // ORM 修宪案 B · 切片 2：app-Mikro 装配根（@Global·懒建·不劫持 DB-free 装配冒烟）。
 import { MikroOrmModule } from './database/mikro/mikro-orm.module';
-// Feature 私有叠加层装配桩（module-odoo-rpc-frontend 切片 A）：缺席态展开为空数组，
-// 公共仓构建不被私有源码绑架；机制细节见 feature-loader.ts 头注。
+// Feature 叠加层装配桩（module-odoo-rpc-frontend 切片 A·开源边界重划 2026-10-28 后 features 常驻本仓）：
+// 运行期探测装配，缺席分支仍展开为空数组、主应用构建不被具体叠加层绑架；机制见 feature-loader.ts 头注。
 import { FEATURE_MODULES } from './features/feature-loader';
 import { AppI18nModule } from './i18n/i18n.module';
 import { LoggerModule } from './logger/logger.module';

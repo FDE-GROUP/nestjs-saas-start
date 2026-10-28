@@ -11,7 +11,7 @@ import { OdooJsonCompanyGateway } from '../infrastructure/odoo-json-company.gate
  * 坐实「命名回找幂等」在真实 `res.company` 上成立（骨架窗的核心不变量·saga 单测只能锁调用时序不能锁 Odoo 侧真语义）。
  *
  * **门**：`ODOO_E2E_BASE_URL` 未置即整体 skip（公共机器/无联调栈绿跳过·与 GATED_E2E_FILES 恒等闸协同——文件登记于清单、
- * 在场与否由叠加层状态决定）。凭证 = 运行环境注入（**须 write scope**·见网关类头诚实边界），本文件不含任何真实凭证值。
+ * feature 常驻本仓后文件恒在·跑否纯由本 env 门决定）。凭证 = 运行环境注入（**须 write scope**·见网关类头诚实边界），本文件不含任何真实凭证值。
  * 本地化/管理员预配两步在网关侧仍是带日志占位（联调窗补实），故本测只验可即刻对拍的 create/回找面，不覆盖深水区。
  */
 const BASE_URL = process.env.ODOO_E2E_BASE_URL ?? '';

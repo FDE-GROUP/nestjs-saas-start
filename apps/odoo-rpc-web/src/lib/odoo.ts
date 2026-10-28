@@ -3,8 +3,9 @@ import type { z } from 'zod';
 /**
  * SaaS 服务端 Odoo 只读数据面（GET /api/v1/odoo/{partners,products}）。
  *
- * 响应校验走 `@odoo-feature` 单源 **wire schema**（vite alias 直指 server 侧真源文件——
- * 私有叠加层契约例外·tooling §3）：全局 TransformInterceptor 的成功信封
+ * 响应校验走 `@odoo-feature` 单源 **wire schema**（vite alias 直指后端 feature 侧源文件
+ * `apps/api/src/features/odoo-rpc-api/api/odoo-rpc.schemas.ts`——feature 叠加层契约例外·tooling §3）：
+ * 全局 TransformInterceptor 的成功信封
  * `{data, statusCode, message}` 也在契约内，前后端同一 zod 定义、零复制漂移；
  * 解析失败即上游形状漂移，UI 落错误态。401/403 由路由守卫面处理；此处只负责数据/错误的二分。
  */

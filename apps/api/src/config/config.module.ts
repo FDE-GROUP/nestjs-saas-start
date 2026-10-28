@@ -46,10 +46,10 @@ const createSchemaForEnv = (_isProd: boolean) => {
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     STRIPE_API_VERSION: z.string().optional(),
     PAYMENT_PROVIDER: z.enum(['stripe', 'alipay', 'wechat_pay']).default('stripe'),
-    // odoo-rpc feature 私有叠加层接入参数（odoo-saas-start docs/plans/module-odoo-rpc-frontend.md
-    // 切片 A）：叠加层同步在场时由 feature 代码经 ConfigService 消费；optional⇒非必填、
-    // 不上 compose 必填闸（verify:config-contract 判据③），缺席态零负担。凭证（API key）只走
-    // env、永不入库——样例仅注释态占位，真值指引见私有仓 runbook。
+    // odoo-rpc feature 接入参数（docs/plans/module-odoo-rpc-frontend.md 切片 A）：feature 常驻本仓、
+    // 由 feature 代码经 ConfigService 消费；optional⇒非必填、不上 compose 必填闸（verify:config-contract
+    // 判据③），未注入即 RPC 面 503 fail-closed、零负担。凭证（API key）只走
+    // env、永不入库——样例仅注释态占位，真值签发见 demo runbook（私有文档仓 docs/handbooks）。
     ODOO_BASE_URL: z.string().url().optional(),
     ODOO_DB: z.string().optional(),
     ODOO_LOGIN: z.string().optional(),

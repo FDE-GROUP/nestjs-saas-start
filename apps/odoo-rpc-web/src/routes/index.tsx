@@ -78,8 +78,8 @@ function DataPage() {
           <p className="font-medium text-amber-800">Odoo 数据不可用</p>
           <p className="mt-1 text-amber-700">{view.message}</p>
           <p className="mt-2 text-xs text-amber-600">
-            引导：服务端需注入 ODOO_BASE_URL / ODOO_DB / ODOO_LOGIN / ODOO_API_KEY 四键（feature
-            私有叠加层），并保证 Odoo 实例可达。
+            引导：服务端需注入 ODOO_BASE_URL / ODOO_DB / ODOO_LOGIN / ODOO_API_KEY 四键（odoo-rpc
+            feature），并保证 Odoo 实例可达。
           </p>
         </div>
       ) : (

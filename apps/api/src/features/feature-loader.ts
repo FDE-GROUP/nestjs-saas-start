@@ -9,7 +9,8 @@ import type { Type } from '@nestjs/common';
  * 2026-10-28 后已并入本公共仓常驻·非私有同步副本），但仍靠运行期探测将 feature 模块
  * 纳入装配：在场即动态 `import()`，缺席即空数组、应用照常装配。动态 import 说明符由
  * 运行期拼接（computed specifier），tsc/swc 静态分析不可见——装配面与具体叠加层解耦，
- * 新增/移除叠加层不绑架主应用构建闭合。这正是方案「严格叠加·两态全绿」总原则的装配面物化。
+ * 新增/移除叠加层不绑架主应用构建闭合。这正是「严格叠加·构建解耦」原则的装配面物化
+ * （开源边界重划 2026-10-28 后 features 常驻本仓·单态在场）。
  *
  * 顶层 await（ESM/ES2022 合法面）：导出已是解析后的类数组，app.module 展开同步、
  * 不依赖 Nest 对 `imports` 内 Promise 的解释行为。缺席分支零网络/零副作用。
@@ -51,7 +52,7 @@ async function resolveOverlay(overlay: FeatureOverlay): Promise<Type<unknown>[]>
   return [];
 }
 
-/** `AppModule.imports` 直接展开；缺席态为空数组（两态全绿判据的机制根源）。 */
+/** `AppModule.imports` 直接展开；在场即解析类数组，缺席分支返回空数组（构建解耦的机制根源）。 */
 export const FEATURE_MODULES: readonly Type<unknown>[] = (
   await Promise.all(OVERLAYS.map((overlay) => resolveOverlay(overlay)))
 ).flat();

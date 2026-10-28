@@ -11,7 +11,7 @@ import { odooListQuerySchema } from './odoo-rpc.schemas';
  * 无需 import auth 上下文——这是「严格叠加·零耦合」的落点。反透传红线：仅类型化
  * 只读端点，模型/字段白名单硬编码于 `OdooReadService`。
  *
- * `@ApiExcludeController()`：整控制器退出公共 `openapi.yaml`（私有叠加层契约例外·
+ * `@ApiExcludeController()`：整控制器退出公共 `openapi.yaml`（feature 叠加层契约例外·
  * tooling-standards §3）——机制根源：codegen 运行期扫应用图，在场/缺席两态再生成
  * 必漂移、对拍闸一态必炸。前端类型经 vite alias 直指 `odoo-rpc.schemas.ts` 单源。
  *

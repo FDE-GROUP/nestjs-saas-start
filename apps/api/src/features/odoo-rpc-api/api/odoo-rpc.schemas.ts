@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 /**
- * odoo-rpc feature 传输契约单源（私有叠加层·承 tooling-standards §3「私有叠加层契约例外」：
- * 契约随源码居私有仓，不入 `@saas/contracts`、不进公共 openapi 对拍）。
+ * odoo-rpc feature 传输契约单源（承 tooling-standards §3「feature 叠加层契约例外」：
+ * 契约随源码居 feature 侧，不入 `@saas/contracts`、不进公共 openapi 对拍）。
  *
- * 叠加层前端（odoo-saas-start `web/odoo-rpc/`）经 vite alias 直指本文件 import——前后端
- * 单源，与公共仓 contracts 同一纪律，只是仓库归属不同。
+ * 前端（`apps/odoo-rpc-web`）经 vite alias 直指本文件 import——前后端单源，
+ * 与公共仓 contracts 同一纪律，仅公开面取舍不同（controller 退出公共 openapi）。
  * @public
  */
 

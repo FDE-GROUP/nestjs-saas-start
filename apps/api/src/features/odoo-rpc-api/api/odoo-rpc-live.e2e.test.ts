@@ -15,7 +15,7 @@ import { OdooJsonClient } from '../infrastructure/odoo-json.client';
  * 锁「鉴权 → search_read/search_count → 白名单视图」端到端形状。
  *
  * 门：`ODOO_E2E_BASE_URL` 未置即整体 skip（公共机器/无 Odoo 链绿跳过——与
- * GATED_E2E_FILES 恒等闸协同：文件登记于清单，在场与否由叠加层状态决定）。
+ * GATED_E2E_FILES 恒等闸协同：文件登记于清单；feature 常驻本仓后文件恒在·跑否纯由上述 env 门决定）。
  * 凭证来源 = 运行环境注入（demo 实例的本机 key），本文件不含任何真实凭证值。
  * 已登记 scripts/ci-fullstack.ts GATED_E2E_FILES（私有机器 `pnpm run ci:db` 真链跑）。
  */
