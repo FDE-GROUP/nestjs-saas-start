@@ -22,8 +22,13 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '../..');
-// 扫描域（后端源码·承「注释居代码侧」判据）。
-const SOURCE_ROOTS = ['libs/core/src', 'libs/contracts/src', 'apps/api/src'];
+// 扫描域（后端 + 集成前端源码·承「注释居代码侧」判据；2026-10-28 前端纳入失实措辞闸）。
+const SOURCE_ROOTS = [
+  'libs/core/src',
+  'libs/contracts/src',
+  'apps/api/src',
+  'apps/odoo-rpc-web/src',
+];
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.tanstack', 'coverage', '.next', 'build']);
 
 export interface OverturnedRuling {
@@ -288,7 +293,7 @@ export function findViolations(
   return out;
 }
 
-/** 递归收集扫描域内全部非排除 `.ts` 文件绝对路径。 */
+/** 递归收集扫描域内全部非排除 `.ts`/`.tsx` 文件绝对路径。 */
 function collectTsFiles(abs: string, acc: string[]): void {
   let entries: string[];
   try {
@@ -309,8 +314,8 @@ function collectTsFiles(abs: string, acc: string[]): void {
       collectTsFiles(p, acc);
       continue;
     }
-    if (!name.endsWith('.ts')) continue;
-    if (name.endsWith('.test.ts')) continue; // 测试可正名断言·排除
+    if (!name.endsWith('.ts') && !name.endsWith('.tsx')) continue;
+    if (name.endsWith('.test.ts') || name.endsWith('.test.tsx')) continue; // 测试可正名断言·排除
     if (p.includes(`${'migration'}/`) || /(^|\/)migration(\/|$)/.test(p)) continue; // 迁移工件=append-only 史实
     acc.push(p);
   }
