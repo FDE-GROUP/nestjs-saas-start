@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ServerResponse } from 'node:http';
+import { STATUS_CODES } from 'node:http';
 import type {
   McpTokenVerifier,
   VerifiedMcpCredential,
@@ -17,6 +18,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { errorEnvelopeFields } from '../../../common/errors/error-envelope-fields';
 import type { McpToolResult } from './mcp-tool-executor.service';
 import { McpToolExecutorService } from './mcp-tool-executor.service';
 import { MCP_TOOLS, type McpToolName, selectToolNames } from './mcp-tool-registry';
@@ -75,6 +77,10 @@ const TOOL_META: Record<McpToolName, ToolMeta> = {
  * 程序化合成 ALS（对齐中间件 D7 显式租激活形：租户轴 + userId + role + orgVisibility 顺带读回，
  * **无活动组织轴**）→ `transport.handleRequest`。工具 handler 在同一异步链执行，ALS 天然可达。
  *
+ * 错误体（承换轨评审 M3）：本面所有 JSON 错误回执经 `writeError` 统一发射，补齐
+ * `@saas/contracts` `errorResponseSchema` 必填字段（`timestamp/path/requestId` 与 REST 过滤器
+ * 共享 `errorEnvelopeFields` 单源）；verifier 自带 message/errorCode 原样透传、不改写。
+ *
  * 会话安全：条目记建会话租户；后续请求凭证租户与条目不符 → 视作无会话（400·sessionId 不可
  * 跨租冒用）。HTTP 面 GET（服务端主动通知通道）在 `enableJsonResponse` 形下未启用，只开 POST/DELETE。
  */
@@ -107,18 +113,15 @@ export class McpAgentSurfaceService {
     try {
       cred = await this.verifier.verify(this.bearerOf(req));
     } catch (err) {
-      this.writeThrowable(res, err);
+      this.writeThrowable(req, res, err);
       return;
     }
     const ctx = await this.buildScope(cred);
     if (!ctx) {
-      res.writeHead(403, { 'content-type': 'application/json' }).end(
-        JSON.stringify({
-          statusCode: 403,
-          errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
-          message: 'No active tenant membership for MCP credential',
-        }),
-      );
+      this.writeError(req, res, 403, {
+        errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
+        message: 'No active tenant membership for MCP credential',
+      });
       return;
     }
     // ALS 包裹整个 transport 处理窗：工具 handler 在同一异步链执行（enableJsonResponse 下
@@ -134,20 +137,20 @@ export class McpAgentSurfaceService {
     try {
       cred = await this.verifier.verify(this.bearerOf(req));
     } catch (err) {
-      this.writeThrowable(res, err);
+      this.writeThrowable(req, res, err);
       return;
     }
     const sessionId = this.sessionIdOf(req);
     const session = sessionId ? this.sessions.get(sessionId) : undefined;
     if (!session || session.tenantId !== cred.tenantId) {
-      res.writeHead(404).end();
+      this.writeError(req, res, 404, { message: 'No valid MCP session' });
       return;
     }
     try {
       await session.transport.handleRequest(req.raw, res);
     } catch (err) {
       this.logger.warn(`mcp session terminate failed: ${String(err)}`);
-      if (!res.headersSent) res.writeHead(500).end();
+      this.writeError(req, res, 500);
     }
   }
 
@@ -169,12 +172,7 @@ export class McpAgentSurfaceService {
     // 他租 sessionId（或缺头非 initialize）→ 一律视作无会话：400，绝不透露该 id 是否存在。
     // 不带 MCP:CREDENTIAL_* 码——凭证本身可能完全有效，败因只在会话面（防误导诊断）。
     if (firstFrame?.method !== 'initialize') {
-      res.writeHead(400, { 'content-type': 'application/json' }).end(
-        JSON.stringify({
-          statusCode: 400,
-          message: 'No valid MCP session',
-        }),
-      );
+      this.writeError(req, res, 400, { message: 'No valid MCP session' });
       return;
     }
 
@@ -204,7 +202,7 @@ export class McpAgentSurfaceService {
       await transport.handleRequest(req.raw, res, body);
     } catch (err) {
       this.logger.warn(`mcp transport error: ${String(err)}`);
-      if (!res.headersSent) res.writeHead(500).end();
+      this.writeError(req, res, 500);
     }
   }
 
@@ -267,17 +265,44 @@ export class McpAgentSurfaceService {
     return typeof value === 'string' && value.length > 0 ? value : undefined;
   }
 
-  /** 验凭证失败的响应：`HttpException` 原样状态+体（防探测文案单源在 verifier，不在此改写）。 */
-  private writeThrowable(res: ServerResponse, err: unknown): void {
+  /**
+   * 验凭证失败的响应：`HttpException` 状态+体经 `writeError` 透传补齐（防探测文案单源在
+   * verifier，本面不改写其 message/errorCode）；非-HttpException 落通用 500（不泄露原文）。
+   */
+  private writeThrowable(req: FastifyRequest, res: ServerResponse, err: unknown): void {
     if (err instanceof HttpException) {
-      const status = err.getStatus();
       const body = err.getResponse();
-      const payload =
-        body && typeof body === 'object' ? body : { statusCode: status, message: err.message };
-      res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(payload));
+      const partial =
+        body && typeof body === 'object'
+          ? (body as Record<string, unknown>)
+          : { message: err.message };
+      this.writeError(req, res, err.getStatus(), partial);
       return;
     }
     this.logger.warn(`mcp surface unexpected error: ${String(err)}`);
-    if (!res.headersSent) res.writeHead(500).end();
+    this.writeError(req, res, 500);
+  }
+
+  /**
+   * 本面错误体统一发射（承换轨评审 M3）：补齐 `@saas/contracts` `errorResponseSchema` 必填
+   * 字段（`statusCode/message/error/timestamp/path/requestId`），关联三字段与 REST 过滤器共享
+   * `errorEnvelopeFields` 单源。`partial` 原样透传异常体自带字段（如 verifier 防探测 message/
+   * errorCode），缺省项回落 HTTP reason phrase；`headersSent` 后不再写（transport 接管后归其所有）。
+   */
+  private writeError(
+    req: FastifyRequest,
+    res: ServerResponse,
+    status: number,
+    partial?: Record<string, unknown>,
+  ): void {
+    if (res.headersSent) return;
+    const payload: Record<string, unknown> = {
+      statusCode: status,
+      message: STATUS_CODES[status] ?? 'Internal server error',
+      error: STATUS_CODES[status] ?? 'Internal Server Error',
+      ...errorEnvelopeFields(req),
+      ...partial,
+    };
+    res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(payload));
   }
 }

@@ -1,7 +1,7 @@
-import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { I18nContext } from 'nestjs-i18n';
+import { errorEnvelopeFields } from '../errors/error-envelope-fields';
 import type { ResponseErrorDetail } from '../errors/response-error-detail';
 import {
   joinIssuePath,
@@ -47,9 +47,8 @@ export class StandardSchemaValidationExceptionFilter implements ExceptionFilter 
       statusCode: HttpStatus.BAD_REQUEST,
       message: details.map((d) => d.message),
       error: 'Bad Request',
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      requestId: currentRequestId() ?? String(request.id ?? 'req-unknown'),
+      // 关联三字段单源 helper（承换轨评审 M3·与 HttpExceptionFilter/MCP 面同文）。
+      ...errorEnvelopeFields(request),
       ...(details.length > 0 ? { errors: details } : {}),
     });
   }

@@ -1,6 +1,5 @@
 import { STATUS_CODES } from 'node:http';
 import { LoggerService } from '@app/logger/logger.service';
-import { currentRequestId } from '@core/saas-kit/shared-kernel/context/request-context';
 import {
   type ArgumentsHost,
   Catch,
@@ -11,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { ErrorResponse as ErrorResponseContract } from '@saas/contracts/index';
 import type { FastifyReply } from 'fastify';
+import { errorEnvelopeFields } from '../errors/error-envelope-fields';
 import type { ResponseErrorDetail } from '../errors/response-error-detail';
 
 /**
@@ -74,9 +74,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode: status,
       message,
       error,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      requestId: currentRequestId() ?? String(request.id ?? 'req-unknown'),
+      // 关联三字段单源 helper（承换轨评审 M3·与 MCP 裸面包同文，防各面漂移）。
+      ...errorEnvelopeFields(request),
       ...(errorCode !== undefined ? { errorCode } : {}),
       ...(details !== undefined ? { errors: details } : {}),
     };

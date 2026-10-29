@@ -2,6 +2,7 @@ import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import type { TenantScopeResolver } from '@core/saas-kit/tenant-isolation/tenant-scope-resolver.port';
 import { HttpException } from '@nestjs/common';
+import { errorResponseSchema } from '@saas/contracts/index';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { McpTokenVerifier } from '../../../modules/auth/application/ports/mcp-token-verifier.port';
@@ -14,7 +15,8 @@ import type { McpToolExecutorService } from './mcp-tool-executor.service';
  * 卡尺：①凭证校验失败原样落 401（防探测文案单源在 verifier，网关不改写）；
  * ②租内无角色分配 → 403 fail-closed，ALS 绑定不发生；③绑定形 = D7 显式租激活
  * （tenantId/userId/role/orgVisibility·无活动组织轴）且会话处理在其内进行；
- * ④他租 sessionId 冒用视作无会话（400·不透露存在性）；⑤scope→可见工具映射。
+ * ④他租 sessionId 冒用视作无会话（400·不透露存在性）；⑤scope→可见工具映射；
+ * ⑥本面全部 JSON 错误体过 `@saas/contracts` `errorResponseSchema` 强锁（承换轨评审 M3）。
  * 真协议往返（initialize/tools/list/tools/call）由 gated e2e 承担。
  */
 describe('McpAgentSurfaceService（鉴权链）', () => {
@@ -48,9 +50,26 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     const headers: Record<string, string> = {};
     if (options.authorization) headers.authorization = options.authorization;
     if (options.sessionId) headers['mcp-session-id'] = options.sessionId;
-    const req = { headers, body: options.body, raw: {} } as unknown as FastifyRequest;
+    const req = {
+      headers,
+      body: options.body,
+      raw: {},
+      url: '/mcp',
+      id: 'req-test',
+    } as unknown as FastifyRequest;
     const reply = { hijack: vi.fn(), raw } as unknown as FastifyReply;
     return { req, reply, written };
+  }
+
+  /**
+   * 错误体契约强锁（承评审 M3）：写出体必须满足 `@saas/contracts` `errorResponseSchema`
+   * 必填字段（statusCode/message/error/timestamp/path/requestId），与 REST 面同一口径。
+   */
+  function expectEnvelope(body?: string): Record<string, unknown> {
+    const parsed = JSON.parse(body ?? '{}') as Record<string, unknown>;
+    const result = errorResponseSchema.safeParse(parsed);
+    expect(result.success, `错误体不合契约: ${JSON.stringify(result.error?.issues)}`).toBe(true);
+    return parsed;
   }
 
   /** 塞入既有会话（绕过真实 initialize 网络链的测试后门·只动私有表）。 */
@@ -94,6 +113,9 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     await surface.handlePost(req, reply);
     expect(written.status).toBe(401);
     expect(written.body).toContain(ERROR_CODES.MCP_CREDENTIAL_INVALID);
+    const envelope = expectEnvelope(written.body);
+    expect(envelope.requestId).toBe('req-test');
+    expect(envelope.path).toBe('/mcp');
     expect(tenant.run).not.toHaveBeenCalled();
   });
 
@@ -105,6 +127,8 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     await surface.handlePost(req, reply);
     expect(verifier.verify).toHaveBeenCalledWith('');
     expect(written.status).toBe(401);
+    // 防探测体缺 message → 本面补齐 reason phrase，仍合契约。
+    expectEnvelope(written.body);
   });
 
   it('租内解析不出角色（成员资格已撤）→ 403 fail-closed，不绑 ALS 不触会话', async () => {
@@ -116,6 +140,7 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     await surface.handlePost(req, reply);
     expect(written.status).toBe(403);
     expect(written.body).toContain(ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT);
+    expectEnvelope(written.body);
     expect(tenant.run).not.toHaveBeenCalled();
   });
 
@@ -148,6 +173,7 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     });
     await surface.handlePost(req, reply);
     expect(written.status).toBe(400);
+    expectEnvelope(written.body);
     expect(transport.handleRequest).not.toHaveBeenCalled();
   });
 
@@ -155,6 +181,7 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     const missing = fakePair({ authorization: 'Bearer mcp_ok', sessionId: 'nope' });
     await surface.handleDelete(missing.req, missing.reply);
     expect(missing.written.status).toBe(404);
+    expectEnvelope(missing.written.body);
 
     const transport = seedSession('s3', 'T1');
     const owned = fakePair({ authorization: 'Bearer mcp_ok', sessionId: 's3' });
