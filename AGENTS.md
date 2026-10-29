@@ -17,7 +17,7 @@
 
 ## 2. 铁律（不得违反）
 - **无已审方案不写码**：审计门**强制**（即便单人）；未过审计不得实现。
-- **ESM + Node + 装饰器元数据** 约束：Controller 校验/序列化走**官方 standard-schema 路径**（`@Body/@Param/@Query({ schema })` / `@SerializeOptions({ schema })`），**zod schema 必须值导入**（勿 `import type`），否则参数装饰器拿不到 schema、校验/序列化静默跳过；构造函数注入的类仍**必须值导入 + 显式 `@Inject`**（否则 DI 运行时 `UnknownDependenciesException`）（见 tooling §4.3）。Node-ESM 不兼容需人工防（CJS 默认导出、`__dirname`、子路径目录不可裸解如 `@nestjs/common/serializer/index.js`、dotenv 装载时序），见 tooling §4.1 R-η。
+- **ESM + Node + 装饰器元数据** 约束：公共 HTTP 面校验/序列化走 oRPC `@Impl(contract)` 的契约 `.input/.output`（zod 单源·居 `@saas/contracts`）；**仅残存 REST carve-out**（Better Auth 面 / payment webhook / storage upload）走 Nest **官方 standard-schema 参数路径**（`@Body/@Param/@Query({ schema })` / `@SerializeOptions({ schema })`）。无论哪条，**zod schema 必须值导入**（勿 `import type`），否则契约派生/参数装饰器拿不到 schema、校验静默跳过；构造函数注入的类仍**必须值导入 + 显式 `@Inject`**（否则 DI 运行时 `UnknownDependenciesException`）（见 tooling §4.3）。Node-ESM 不兼容需人工防（CJS 默认导出、`__dirname`、子路径目录不可裸解如 `@nestjs/common/serializer/index.js`、dotenv 装载时序），见 tooling §4.1 R-η。
 - **工具红线**（tooling §3）：只用 `pnpm`/`pnpm dlx`（禁 bun/npm/yarn）；**Biome**（禁 ESLint/Prettier）；**Vitest**（禁 jest/`bun test`）；**MikroORM + PostgreSQL**（禁 Prisma/TypeORM·禁回迁已退役 ORM）；**zod 单源**（请求/响应校验 + 配置/env 一律 zod·官方 standard-schema 件集成，禁 class-validator/class-transformer/Joi·禁 nestjs-zod/自研 pipe，契约居 `@saas/contracts`）；生产只走 `migration:generate`+`migration:run`，破坏性 `db:reset`（`mikro-migrate --fresh`）仅限 dev。
 - **fallow 等静态分析结论必须二次人工核验**（大量假阳性源于反射/框架魔法，见 tooling §4.7）。
 - **部署声明必须真跑对拍**（tooling §4.10）：改 `Dockerfile`/compose/`HEALTHCHECK`/workflows 后，以实跑链为验收口径（build→容器起服→`/health` 200→`healthy`），“配置就位/构建通过”不算完成；探针只能用镜像内实存能力（slim 无 wget/curl），镜像内不留产物实际跑不通的死面。

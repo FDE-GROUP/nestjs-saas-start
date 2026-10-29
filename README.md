@@ -60,7 +60,7 @@
 - **架构范式**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + 函数式领域内核；CQRS/ES/EDA **皆按需引入、能力基线完备备能**（简单上下文直接调用服务即为合法终态；被事件化聚合可选「回放即真相」为真相源，简单 CRUD 依法可永不事件化），领域事件用于跨上下文集成与审计；已知范式偏移（auth/BA、authorization/CASL 等）以 `docs/specs/architecture.md`「Paradigm Deviations」登记册为权威
 - **数据库 / ORM**：PostgreSQL + MikroORM（迁移与种子）
 - **认证**：Better Auth（邮箱 + OAuth、会话 / CSRF）
-- **校验 / 契约**：zod（经 Nest 官方 standard-schema 集成 `@Body/@Param/@Query({ schema })`、`@SerializeOptions({ schema })`），跨端共享契约单源居 `libs/contracts`
+- **校验 / 契约**：zod 单源——公共 HTTP 面经 oRPC `@Impl(contract)` 的 `.input/.output`；仅残存 REST carve-out（Better Auth / payment webhook / storage upload）经 Nest 官方 standard-schema（`@Body/@Param/@Query({ schema })`、`@SerializeOptions({ schema })`），跨端共享契约单源居 `libs/contracts`
 - **授权**：CASL 能力模型 + 自研 RBAC 管理面
 - **构建**：SWC（`nest build --builder swc`）
 - **测试**：Vitest
