@@ -8,7 +8,21 @@
 </head>
 <body>
   <div id="app"></div>
+  <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
   <script>
+    if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+    // Docsify 把 ```mermaid 渲染成 <pre><code class="language-mermaid">，
+    // 每次页面渲染后将其改写为 <div class="mermaid"> 并交给 mermaid.run 就地绘制。
+    function renderMermaid() {
+      if (!window.mermaid) return;
+      document.querySelectorAll('pre code.language-mermaid').forEach(function (codeEl) {
+        var div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = codeEl.textContent;
+        codeEl.parentElement.replaceWith(div);
+      });
+      try { window.mermaid.run({ querySelector: '.mermaid' }); } catch (e) { console.error(e); }
+    }
     window.$docsify = {
       name: 'RepoWiki',
       loadSidebar: true,
@@ -17,6 +31,7 @@
       subMaxLevel: 3,
       sidebarDisplayLevel: 1,
       search: { placeholder: '搜索', noData: '无结果', depth: 6 },
+      hooks: { doneEach: renderMermaid },
     };
   </script>
   <script src="https://unpkg.com/docsify@4/lib/docsify.min.js"></script>
