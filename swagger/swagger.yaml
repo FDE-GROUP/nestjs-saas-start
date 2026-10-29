@@ -2,167 +2,11 @@ openapi: 3.1.0
 paths:
   /api/v1/health:
     get:
-      operationId: HealthController_check_v1
+      operationId: HealthController__v1
       parameters: []
       responses:
         '200':
-          description: |-
-            Service is alive（透传面·形参真相源 = @nestjs/terminus HealthCheckResult）
-
-            The Health Check is successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum:
-                      - ok
-                      - degraded
-                    example: ok
-                  info:
-                    type:
-                      - object
-                      - 'null'
-                    example: &ref_0
-                      database:
-                        status: up
-                        responseTime: 12
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-                  error:
-                    type:
-                      - object
-                      - 'null'
-                    example: {}
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-                  details:
-                    type: object
-                    example: *ref_0
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-        '503':
-          description: The Health Check is not successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum:
-                      - error
-                      - shutting_down
-                    example: error
-                  info:
-                    type:
-                      - object
-                      - 'null'
-                    example:
-                      database: &ref_1
-                        status: up
-                        responseTime: 12
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-                  error:
-                    type:
-                      - object
-                      - 'null'
-                    example:
-                      redis: &ref_2
-                        status: down
-                        message: Could not connect
-                        responseTime: 3005
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-                  details:
-                    type: object
-                    example:
-                      database: *ref_1
-                      redis: *ref_2
-                    additionalProperties:
-                      type: object
-                      required:
-                        - status
-                      properties:
-                        status:
-                          type: string
-                          enum:
-                            - up
-                            - degraded
-                            - down
-                        responseTime:
-                          type: number
-                          description: Time the health indicator took to respond, in ms
-                      additionalProperties: true
-      summary: Liveness probe (ping-only, no dependency checks)
+          description: ''
       tags:
         - Health
   /api/v1/oauth2/authorize:
@@ -212,7 +56,7 @@ paths:
       summary: >-
         OAuth2 implicit-flow authorization endpoint (this repo acts as Odoo
         auth_oauth OP)
-      tags: &ref_3
+      tags: &ref_0
         - oauth-sso
   /api/v1/oauth2/userinfo:
     get:
@@ -228,1926 +72,395 @@ paths:
       summary: >-
         OIDC userinfo (Bearer access token; returns raw JSON, not the API
         envelope)
-      tags: *ref_3
+      tags: *ref_0
   /api/v1/organizations/roles:
     get:
       operationId: AuthorizationAdminController_listRoles_v1
       parameters: []
       responses:
         '200':
-          description: Role views.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/TenantRoleViewResponse'
-        '403':
-          description: CASL deny (no Role read).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List roles of the active organization (system + custom)
-      tags: &ref_4
-        - organizations
+          description: ''
+      tags: &ref_1
+        - AuthorizationAdmin
     post:
       operationId: AuthorizationAdminController_createRole_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                key:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-              required:
-                - key
-                - name
-              additionalProperties: false
       responses:
         '200':
-          description: Created role view.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantRoleViewResponse'
-        '400':
-          description: Invalid/reserved role key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Role key already exists.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Create a custom role (owner/admin)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
   /api/v1/organizations/roles/rename:
     post:
       operationId: AuthorizationAdminController_renameRole_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                key:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-              required:
-                - key
-                - name
-              additionalProperties: false
       responses:
         '200':
-          description: Renamed.
-        '404':
-          description: Role not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: System role protected.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Rename a custom role (system roles protected)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
   /api/v1/organizations/roles/delete:
     post:
       operationId: AuthorizationAdminController_deleteRole_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                key:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - key
-              additionalProperties: false
       responses:
         '200':
-          description: Deleted.
-        '404':
-          description: Role not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: System role protected.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Delete a custom role (grants cascade; system roles protected)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
   /api/v1/organizations/roles/grants:
     get:
       operationId: AuthorizationAdminController_listGrants_v1
-      parameters:
-        - name: roleKey
-          required: true
-          in: query
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Grant views (subject/action/conditions).
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/TenantRoleGrantViewResponse'
-        '404':
-          description: Role not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List grant rows of a role (echo checked state)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
     post:
       operationId: AuthorizationAdminController_grant_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                roleKey:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                subject:
-                  type: string
-                  enum:
-                    - Organization
-                    - Member
-                    - Invitation
-                    - Workspace
-                    - Role
-                    - RoleGrant
-                action:
-                  type: string
-                  enum:
-                    - create
-                    - read
-                    - update
-                    - delete
-                    - cancel
-                conditions:
-                  type: object
-                  additionalProperties: {}
-              required:
-                - roleKey
-                - subject
-                - action
-              additionalProperties: false
       responses:
         '200':
-          description: Granted.
-        '400':
-          description: Invalid conditions (whitelist-only).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Role not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Duplicate grant.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Grant a permission cell to a role (multi-condition rows = OR union)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
   /api/v1/organizations/roles/grants/revoke:
     post:
       operationId: AuthorizationAdminController_revoke_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                roleKey:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                subject:
-                  type: string
-                  enum:
-                    - Organization
-                    - Member
-                    - Invitation
-                    - Workspace
-                    - Role
-                    - RoleGrant
-                action:
-                  type: string
-                  enum:
-                    - create
-                    - read
-                    - update
-                    - delete
-                    - cancel
-                conditions:
-                  type: object
-                  additionalProperties: {}
-              required:
-                - roleKey
-                - subject
-                - action
-              additionalProperties: false
       responses:
         '200':
-          description: Revoked.
-        '404':
-          description: Role or matching grant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Revoke a grant (conditions null = whole-subject row; object = exact row)
-      tags: *ref_4
+          description: ''
+      tags: *ref_1
   /api/v1/platform/tenants:
     get:
       operationId: PlatformTenantsController_list_v1
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          schema:
-            default: 20
-            type: integer
-            minimum: 1
-            maximum: 100
-        - name: offset
-          required: false
-          in: query
-          schema:
-            default: 0
-            type: integer
-            minimum: 0
-            maximum: 9007199254740991
-        - name: search
-          required: false
-          in: query
-          schema:
-            type: string
-            maxLength: 200
+      parameters: []
       responses:
         '200':
-          description: A page of tenants with admission status and org counts.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PlatformTenantPageResponse'
-        '403':
-          description: Not the platform operator.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List all tenants across the platform (operator only)
-      tags: &ref_5
-        - platform
+          description: ''
+      tags: &ref_2
+        - PlatformTenants
   /api/v1/platform/tenants/{tenantId}:
     get:
       operationId: PlatformTenantsController_detail_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Tenant detail.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PlatformTenantDetailResponse'
-        '404':
-          description: Tenant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Get one tenant with its organization roster (operator only)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
     delete:
       operationId: PlatformTenantsController_remove_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Tenant marked deleted.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
-        '404':
-          description: Tenant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Already deleted (illegal transition).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Soft-delete a tenant (→ deleted terminal · blocks the whole tenant · row
-        kept for export)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/suspend:
     patch:
       operationId: PlatformTenantsController_suspend_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Tenant suspended.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
-        '404':
-          description: Tenant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Suspend an active tenant (active → suspended · blocks the whole tenant)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/resume:
     patch:
       operationId: PlatformTenantsController_resume_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Tenant resumed.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantGovernanceResultResponse'
-        '404':
-          description: Tenant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Resume a suspended tenant (suspended → active)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/visibility:
     patch:
       operationId: PlatformTenantsController_setVisibility_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                orgVisibility:
-                  type: string
-                  enum:
-                    - shared
-                    - isolated
-              required:
-                - orgVisibility
-              additionalProperties: false
+      parameters: []
       responses:
         '200':
-          description: Tenant orgVisibility updated (shared=互见 · isolated=租内跨组织互不可见).
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantOrgVisibilityResultResponse'
-        '404':
-          description: Tenant not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Set the tenant's intra-tenant organization visibility policy (shared ⇄
-        isolated)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/permanent:
     delete:
       operationId: PlatformTenantsController_permanentRemove_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: >-
-            Tenant rows purged; payload carries purgedOrgs/purgedEvents for
-            audit核对.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantHardDeleteResultResponse'
-        '404':
-          description: Tenant not found (or already hard-deleted · idempotent).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Not in deleted terminal state — soft-delete first.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Hard-delete a deleted-terminal tenant (irreversible · cascade purge of
-        all its orgs + event purge · NFR-6)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/diagnostics:
     get:
       operationId: PlatformTenantsController_diagnostics_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
-        - name: orgId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Diagnostics bundle.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationDiagnosticsResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Per-organization diagnostics: member/invitation/workspace/post counts
-        (drill-down)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/export:
     get:
       operationId: PlatformTenantsController_exportData_v1
-      parameters:
-        - name: tenantId
-          required: true
-          in: path
-          schema:
-            type: string
-        - name: orgId
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: >-
-            Six-section organization data export (credentials
-            excluded)（透传面·形参真相源 = OrganizationDataExport（bulk-export·六段聚合））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Export all organization-owned data as a single JSON payload (NFR-6 ·
-        drill-down)
-      tags: *ref_5
+          description: ''
+      tags: *ref_2
   /api/v1/platform/users:
     get:
       operationId: PlatformUsersController_list_v1
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          schema:
-            default: 20
-            type: integer
-            minimum: 1
-            maximum: 100
-        - name: offset
-          required: false
-          in: query
-          schema:
-            default: 0
-            type: integer
-            minimum: 0
-            maximum: 9007199254740991
-        - name: search
-          required: false
-          in: query
-          schema:
-            type: string
-            maxLength: 200
+      parameters: []
       responses:
         '200':
-          description: A page of users with suspension status.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PlatformUserPageResponse'
-        '403':
-          description: Not the platform operator.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List all platform users with lifecycle status (operator only)
-      tags: &ref_6
-        - platform
+          description: ''
+      tags: &ref_3
+        - PlatformUsers
   /api/v1/platform/users/{id}/suspend:
     patch:
       operationId: PlatformUsersController_suspend_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reason:
-                  type: string
-                  maxLength: 500
-              additionalProperties: false
+      parameters: []
       responses:
         '200':
-          description: User suspended.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/UserGovernanceResultResponse'
-        '404':
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Suspend a platform user (active → suspended · sessions invalidated ·
-        fail-closed失能)
-      tags: *ref_6
+          description: ''
+      tags: *ref_3
   /api/v1/platform/users/{id}/resume:
     patch:
       operationId: PlatformUsersController_resume_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: User resumed.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/UserGovernanceResultResponse'
-        '404':
-          description: User not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Illegal transition for the current status.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Resume a suspended platform user (suspended → active)
-      tags: *ref_6
+          description: ''
+      tags: *ref_3
   /api/v1/users/me/data-export:
     get:
       operationId: UsersController_exportMe_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Aggregated personal data (no credentials)（透传面·形参真相源 =
-            UserDataExportReadModel（bulk-export·四段聚合））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: 'PIPL right-to-access: export current user personal data (C1 · FR-7)'
-      tags: &ref_7
-        - users
+          description: ''
+      tags: &ref_4
+        - Users
   /api/v1/users/me:
     delete:
       operationId: UsersController_deleteMe_v1
       parameters: []
       responses:
         '204':
-          description: User deleted; consent rows retained anonymously.
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: 'PIPL right-to-erase: hard-delete current user (C1 · FR-7)'
-      tags: *ref_7
+          description: ''
+      tags: *ref_4
   /api/v1/posts:
     get:
       operationId: PostsController_list_v1
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          schema:
-            default: 20
-            type: integer
-            minimum: 1
-            maximum: 100
-        - name: cursor
-          required: false
-          in: query
-          schema:
-            type: string
-            maxLength: 512
-            pattern: ^[A-Za-z0-9_-]+$
-        - name: organizationId
-          required: false
-          in: query
-          schema:
-            type: string
-            maxLength: 128
+      parameters: []
       responses:
         '200':
-          description: Cursor page of posts owned by the active organization.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PostCursorPageResponse'
-        '400':
-          description: Malformed cursor.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: No active organization context.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List posts in the active organization (cursor-paginated)
-      tags: &ref_8
-        - posts
+          description: ''
+      tags: &ref_5
+        - Posts
     post:
       operationId: PostsController_create_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-                content:
-                  type: string
-                  maxLength: 20000
-                published:
-                  type: boolean
-              required:
-                - title
-              additionalProperties: false
       responses:
         '201':
-          description: Created post stamped with the active organization.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PostResponse'
-        '403':
-          description: No active organization context.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Create a post in the active organization
-      tags: *ref_8
+          description: ''
+      tags: *ref_5
   /api/v1/workspaces:
     get:
       operationId: WorkspacesController_list_v1
-      parameters:
-        - name: limit
-          required: false
-          in: query
-          schema:
-            default: 20
-            type: integer
-            minimum: 1
-            maximum: 100
-        - name: offset
-          required: false
-          in: query
-          schema:
-            default: 0
-            type: integer
-            minimum: 0
-            maximum: 9007199254740991
+      parameters: []
       responses:
         '200':
-          description: Workspaces owned by the active organization (offset page).
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/WorkspacePageResponse'
-        '403':
-          description: No active organization, or missing workspace:read.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List workspaces in the active organization
-      tags: &ref_9
-        - workspaces
+          description: ''
+      tags: &ref_6
+        - Workspaces
     post:
       operationId: WorkspacesController_create_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-                slug:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
-              required:
-                - name
-                - slug
-              additionalProperties: false
       responses:
         '201':
-          description: Created workspace stamped with the active organization.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/WorkspaceResponse'
-        '403':
-          description: Missing workspace:create (members are rejected).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Create a workspace (owner/admin)
-      tags: *ref_9
+          description: ''
+      tags: *ref_6
   /api/v1/workspaces/{id}:
     patch:
       operationId: WorkspacesController_update_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-                slug:
-                  type: string
-                  maxLength: 128
-                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
-              additionalProperties: false
+      parameters: []
       responses:
         '200':
-          description: Updated workspace.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/WorkspaceResponse'
-        '404':
-          description: Workspace not found in the active organization.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Update a workspace (owner/admin)
-      tags: *ref_9
+          description: ''
+      tags: *ref_6
     delete:
       operationId: WorkspacesController_remove_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '204':
-          description: Workspace deleted.
-        '404':
-          description: Workspace not found in the active organization.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Delete a workspace (owner/admin)
-      tags: *ref_9
+          description: ''
+      tags: *ref_6
   /api/v1/organizations/applications:
     post:
       operationId: OrganizationsController_apply_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 1
-                  maxLength: 200
-                slug:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
-              required:
-                - name
-                - slug
-              additionalProperties: false
       responses:
         '201':
-          description: Pending organization created; inactive until approved.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationApplicationResponse'
-        '400':
-          description: Organization slug already exists (BA duplicate).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Apply to create an organization (user-level · lands pending_approval)
-      tags: &ref_10
-        - organizations
+          description: ''
+      tags: &ref_7
+        - Organizations
   /api/v1/organizations/applications/{id}/approve:
     post:
       operationId: OrganizationsController_approve_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Organization activated.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationApplicationResponse'
-        '403':
-          description: Not a platform operator.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Approve a pending organization (platform operator · pending → active)
-      tags: *ref_10
+          description: ''
+      tags: *ref_7
   /api/v1/organizations/applications/{id}/reject:
     post:
       operationId: OrganizationsController_reject_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
+      parameters: []
       responses:
         '204':
-          description: Pending organization discarded.
-        '403':
-          description: Not a platform operator.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Reject a pending organization (platform operator · hard-delete)
-      tags: *ref_10
+          description: ''
+      tags: *ref_7
   /api/v1/organizations/{id}/odoo-binding:
     post:
       operationId: OrganizationsController_bindOdooCompany_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                odooCompanyId:
-                  type: integer
-                  minimum: 0
-                  exclusiveMinimum: true
-                  maximum: 9007199254740991
-                odooCompanyName:
-                  type: string
-                  minLength: 1
-                  maxLength: 256
-              required:
-                - odooCompanyId
-                - odooCompanyName
-              additionalProperties: false
+      parameters: []
       responses:
         '200':
-          description: Odoo company bound (binding lands ready).
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationOdooBindingResponse'
-        '403':
-          description: Not a platform operator.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Organization not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '409':
-          description: Odoo company already bound to another organization.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Bind an existing Odoo company to an active organization (platform
-        operator)
-      tags: *ref_10
+          description: ''
+      tags: *ref_7
   /api/v1/organizations/members:
     get:
       operationId: OrganizationsOrgAdminController_listMembers_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Member list (tenant-level membership SSOT)（透传面·形参真相源 =
-            tenant_membership + tenant_role_assignment（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '403':
-          description: No active tenant / CASL deny / not a member.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List members of the active tenant (all roles · CASL read)
-      tags: &ref_11
-        - organizations
+          description: ''
+      tags: &ref_8
+        - OrganizationsOrgAdmin
   /api/v1/organizations/members/role:
     post:
       operationId: OrganizationsOrgAdminController_updateMemberRole_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                memberId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                role:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - memberId
-                - role
-              additionalProperties: false
       responses:
         '200':
-          description: Updated member（透传面·形参真相源 = tenant_role_assignment（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '400':
-          description: Role not assignable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: CASL deny (member role) / last-owner guard.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Update a member role (owner/admin · CASL update)
-      tags: *ref_11
+          description: ''
+      tags: *ref_8
   /api/v1/organizations/members/remove:
     post:
       operationId: OrganizationsOrgAdminController_removeMember_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                memberId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - memberId
-              additionalProperties: false
       responses:
         '200':
-          description: Removed member（透传面·形参真相源 = tenant_membership（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '403':
-          description: CASL deny (member role) / self-removal / last-owner guard.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Remove a member (owner/admin · CASL delete)
-      tags: *ref_11
+          description: ''
+      tags: *ref_8
   /api/v1/organizations/invitations:
     get:
       operationId: OrganizationsOrgAdminController_listInvitations_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 =
-            tenant_invitation（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '403':
-          description: No active tenant / CASL deny / not a member.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List pending invitations of the active tenant (all roles)
-      tags: *ref_11
+          description: ''
+      tags: *ref_8
     post:
       operationId: OrganizationsOrgAdminController_createInvitation_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  minLength: 1
-                  maxLength: 254
-                role:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - email
-                - role
-              additionalProperties: false
       responses:
         '200':
-          description: Created invitation（透传面·形参真相源 = tenant_invitation（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '400':
-          description: Role not assignable / duplicate pending invitation.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: CASL deny (member role).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Invite a member to the active tenant (owner/admin · CASL create)
-      tags: *ref_11
+          description: ''
+      tags: *ref_8
   /api/v1/organizations/invitations/cancel:
     post:
       operationId: OrganizationsOrgAdminController_cancelInvitation_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                invitationId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - invitationId
-              additionalProperties: false
       responses:
         '200':
-          description: Cancelled invitation（透传面·形参真相源 = tenant_invitation（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '403':
-          description: CASL deny (member role).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Pending invitation not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Cancel an invitation (owner/admin · CASL cancel)
-      tags: *ref_11
+          description: ''
+      tags: *ref_8
   /api/v1/organizations:
     get:
       operationId: OrganizationsSelfController_listMyOrganizations_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Membership organizations (data from Better Auth)（透传面·形参真相源 = Better
-            Auth auth.api.*（服务端直调透传））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List organizations the current user belongs to (personal channel)
-      tags: &ref_12
-        - organizations
+          description: ''
+      tags: &ref_9
+        - OrganizationsSelf
   /api/v1/organizations/active:
     post:
       operationId: OrganizationsSelfController_setActive_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                organizationId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - organizationId
-              additionalProperties: false
       responses:
         '200':
-          description: >-
-            Session activated organization updated（透传面·形参真相源 = Better Auth
-            auth.api.*（服务端直调透传））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: Not a member of the target organization (BA).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Switch the session's active organization (must be a member)
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/organizations/members/leave:
     post:
       operationId: OrganizationsSelfController_leave_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                organizationId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - organizationId
-              additionalProperties: false
       responses:
         '200':
-          description: >-
-            Membership revoked (tenant-level SSOT + BA member sync)（透传面·形参真相源 =
-            tenant_membership + tenant_role_assignment（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: Sole owner leaving the tenant (last-owner guard).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Not a member of the active tenant.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Leave the active tenant (self-service · last-owner cannot leave)
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/organizations/invitations/accept:
     post:
       operationId: OrganizationsSelfController_acceptInvitation_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                invitationId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - invitationId
-              additionalProperties: false
       responses:
         '200':
-          description: >-
-            Invitation accepted; tenant-level membership created（透传面·形参真相源 =
-            tenant_invitation + tenant_membership（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '402':
-          description: Seat quota exceeded (checked at accept time).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: Session email does not match the invitee (fail-closed).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Pending invitation not found or expired.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Accept an invitation addressed to the current user
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/organizations/invitations/reject:
     post:
       operationId: OrganizationsSelfController_rejectInvitation_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                invitationId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-              required:
-                - invitationId
-              additionalProperties: false
       responses:
         '200':
-          description: Invitation rejected（透传面·形参真相源 = tenant_invitation（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '404':
-          description: Invitation not found/expired/not the invitee.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Reject an invitation addressed to the current user
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/organizations/invitations/mine:
     get:
       operationId: OrganizationsSelfController_listMyInvitations_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Invitation list (tenant-level invitation SSOT)（透传面·形参真相源 =
-            tenant_invitation（自有租级表））
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        additionalProperties: true
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List pending invitations addressed to the current user
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/organizations/odoo/availability:
     get:
       operationId: OrganizationsSelfController_odooAvailability_v1
       parameters: []
       responses:
         '200':
-          description: >-
-            Odoo availability by binding status (single-source canUseOdoo
-            verdict).
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrganizationOdooAvailabilityResponse'
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Read the active organization Odoo availability for the apps panel
-        (personal channel)
-      tags: *ref_12
+          description: ''
+      tags: *ref_9
   /api/v1/tenants:
     get:
       operationId: TenantsController_list_v1
       parameters: []
       responses:
         '200':
-          description: Tenant directory grouped by the current user memberships.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/TenantDirectoryResponse'
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: List tenant directory of the current user (tenants → organizations)
-      tags: &ref_13
-        - tenants
+          description: ''
+      tags: &ref_10
+        - Tenants
   /api/v1/tenants/active:
     put:
       operationId: TenantsController_setActiveTenant_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                tenantId:
-                  type: string
-                  minLength: 1
-                  maxLength: 64
-              required:
-                - tenantId
-              additionalProperties: false
       responses:
         '200':
-          description: The activated tenant id written to the session.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ActiveTenantResponse'
-        '400':
-          description: Session id missing on the authenticated principal.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '401':
-          description: Missing or invalid session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '403':
-          description: Not a member of the target tenant.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Set the active tenant of the current session (tenant activation)
-      tags: *ref_13
+          description: ''
+      tags: *ref_10
   /api/v1/subscriptions/current:
     get:
       operationId: SubscriptionsController_getCurrent_v1
       parameters: []
       responses:
         '200':
-          description: Effective subscription snapshot for the active organization.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/SubscriptionResponse'
-        '403':
-          description: No active organization context.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Current organization subscription: plan, seat quota, usage, customer
-        mapping
-      tags: &ref_14
-        - subscriptions
+          description: ''
+      tags: &ref_11
+        - Subscriptions
   /api/v1/subscriptions:
     post:
       operationId: SubscriptionsController_create_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                plan:
-                  type: string
-                  enum:
-                    - free
-                    - pro
-                    - enterprise
-                customerEmail:
-                  type: string
-                  maxLength: 254
-                  format: email
-                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
-                seatsLimit:
-                  type: integer
-                  minimum: 1
-                  maximum: 9007199254740991
-                storageQuota:
-                  type: integer
-                  minimum: 0
-                  maximum: 9007199254740991
-                apiQuota:
-                  type: integer
-                  minimum: 0
-                  maximum: 9007199254740991
-              required:
-                - plan
-                - customerEmail
-              additionalProperties: false
       responses:
         '201':
-          description: Subscription created; returns the updated snapshot.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/SubscriptionResponse'
-        '403':
-          description: Not allowed to update the organization.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-        '503':
-          description: No payment provider configured.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: >-
-        Provision/upgrade the organization subscription (creates the provider
-        customer)
-      tags: *ref_14
+          description: ''
+      tags: *ref_11
   /api/v1/storage/upload:
     post:
       operationId: StorageController_uploadFile_v1
@@ -2176,244 +489,65 @@ paths:
                       data:
                         $ref: '#/components/schemas/FileUploadResultDto'
       summary: Upload a single file
-      tags: &ref_15
+      tags: &ref_12
         - storage
   /api/v1/storage/{key}:
     delete:
       operationId: StorageController_deleteFile_v1
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: Unique identifier of the file
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Delete result.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/StorageDeleteResponse'
-      summary: Delete a file
-      tags: *ref_15
+          description: ''
+      tags: *ref_12
   /api/v1/storage/{key}/url:
     get:
       operationId: StorageController_getFileUrl_v1
-      parameters:
-        - name: key
-          required: true
-          in: path
-          description: Unique identifier of the file
-          schema:
-            type: string
-        - name: expiresIn
-          required: false
-          in: query
-          description: Expiration time for URL (seconds)
-          schema:
-            type: number
+      parameters: []
       responses:
         '200':
-          description: Signed URL payload.
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/StorageUrlResponse'
-      summary: Get a signed URL for a file
-      tags: *ref_15
+          description: ''
+      tags: *ref_12
   /api/v1/payment/test:
     get:
       operationId: PaymentController_test_v1
       parameters: []
       responses:
         '200':
-          description: Current provider selection and available channels
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PaymentStatusResponse'
-      summary: Payment integration status
-      tags: &ref_16
-        - payment
+          description: ''
+      tags: &ref_13
+        - Payment
   /api/v1/payment/customers:
     post:
       operationId: PaymentController_createCustomer_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  maxLength: 254
-                  format: email
-                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
-                name:
-                  type: string
-                  maxLength: 200
-                metadata:
-                  type: object
-                  additionalProperties:
-                    type: string
-              required:
-                - email
-              additionalProperties: false
       responses:
         '201':
-          description: Customer created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PaymentCustomerRefResponse'
-      summary: Create a payment customer
-      tags: *ref_16
+          description: ''
+      tags: *ref_13
   /api/v1/payment/checkouts:
     post:
       operationId: PaymentController_createCheckout_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                amount:
-                  type: number
-                  minimum: 1
-                currency:
-                  type: string
-                  minLength: 1
-                  maxLength: 10
-                description:
-                  type: string
-                  maxLength: 20000
-                metadata:
-                  type: object
-                  additionalProperties:
-                    type: string
-              required:
-                - amount
-                - currency
-              additionalProperties: false
       responses:
         '201':
-          description: Checkout created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PaymentCheckoutRefResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Create a checkout (payment intent)
-      tags: *ref_16
+          description: ''
+      tags: *ref_13
   /api/v1/payment/checkouts/{id}:
     get:
       operationId: PaymentController_retrieveCheckout_v1
-      parameters:
-        - name: id
-          required: true
-          in: path
-          description: Checkout (payment intent) ID
-          schema:
-            type: string
+      parameters: []
       responses:
         '200':
-          description: Checkout retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PaymentCheckoutRefResponse'
-        '404':
-          description: Checkout not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Retrieve a checkout
-      tags: *ref_16
+          description: ''
+      tags: *ref_13
   /api/v1/payment/refunds:
     post:
       operationId: PaymentController_refund_v1
       parameters: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                checkoutId:
-                  type: string
-                  minLength: 1
-                  maxLength: 128
-                amount:
-                  type: number
-                  minimum: 1
-                reason:
-                  type: string
-                  maxLength: 20000
-              required:
-                - checkoutId
-              additionalProperties: false
       responses:
         '201':
-          description: Refund created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PaymentRefundRefResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Refund a checkout
-      tags: *ref_16
+          description: ''
+      tags: *ref_13
   /api/v1/payment/webhooks:
     post:
       operationId: PaymentController_handleWebhook_v1
@@ -2421,29 +555,53 @@ paths:
         - name: stripe-signature
           required: true
           in: header
-          description: Payment provider webhook signature
           schema:
             type: string
       responses:
         '200':
-          description: Webhook processed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/WebhookAckResponse'
-        '400':
-          description: Invalid webhook signature
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorResponse'
-      summary: Handle payment webhook events
-      tags: *ref_16
+          description: ''
+      tags: *ref_13
+  /api/v1/odoo/partners:
+    get:
+      operationId: OdooRpcController_listPartners_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags: &ref_14
+        - OdooRpc
+  /api/v1/odoo/products:
+    get:
+      operationId: OdooRpcController_listProducts_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags: *ref_14
+  /api/v1/mcp/credentials:
+    post:
+      operationId: McpCredentialsController_mint_v1
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      tags: &ref_15
+        - McpCredentials
+    get:
+      operationId: McpCredentialsController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags: *ref_15
+  /api/v1/mcp/credentials/{id}:
+    delete:
+      operationId: McpCredentialsController_revoke_v1
+      parameters: []
+      responses:
+        '204':
+          description: ''
+      tags: *ref_15
   /api/v1/mcp:
     post:
       operationId: McpController_post_v1
@@ -2451,7 +609,7 @@ paths:
       responses:
         '201':
           description: ''
-      tags: &ref_17
+      tags: &ref_16
         - Mcp
     delete:
       operationId: McpController_remove_v1
@@ -2459,7 +617,7 @@ paths:
       responses:
         '200':
           description: ''
-      tags: *ref_17
+      tags: *ref_16
 info:
   title: NestJS SaaS Start API
   description: NestJS SaaS Start API documentation
@@ -2548,597 +706,6 @@ components:
         - timestamp
         - path
         - requestId
-    TenantRoleViewResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: UUIDv7。
-        key:
-          type: string
-          description: 角色 key（租户内唯一）。
-        name:
-          type: string
-          description: 人面可读名。
-        isSystem:
-          type: boolean
-          description: 系统内置角色（不可改名/删除）。
-      required:
-        - id
-        - key
-        - name
-        - isSystem
-    TenantRoleGrantViewResponse:
-      type: object
-      properties:
-        subject:
-          type: string
-          enum:
-            - Organization
-            - Member
-            - Invitation
-            - Workspace
-            - Role
-            - RoleGrant
-          description: 授权主体词汇。
-        action:
-          type: string
-          enum:
-            - create
-            - read
-            - update
-            - delete
-            - cancel
-          description: 动作词汇。
-        conditions:
-          type:
-            - object
-            - 'null'
-          additionalProperties: true
-          description: CASL 条件（白名单字段）；null = 无约束。
-      required:
-        - subject
-        - action
-        - conditions
-    PlatformTenantRowResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: tenant 主键。
-        name:
-          type: string
-        slug:
-          type: string
-        status:
-          type: string
-          enum: &ref_18
-            - pending_approval
-            - active
-            - suspended
-            - deleted
-          description: 准入态（无记录视同 active）。
-        organizationCount:
-          type: number
-          description: 名下组织数量（一租多组织可见）。
-        createdAt:
-          format: date-time
-          type: string
-      required:
-        - tenantId
-        - name
-        - slug
-        - status
-        - organizationCount
-        - createdAt
-    PlatformTenantPageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlatformTenantRowResponse'
-        total:
-          type: number
-          description: 全量行数。
-        limit:
-          type: number
-          description: 回显页宽。
-        offset:
-          type: number
-          description: 回显偏移。
-      required:
-        - items
-        - total
-        - limit
-        - offset
-    PlatformTenantOrganizationResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: organization 主键。
-        name:
-          type: string
-        slug:
-          type: string
-        status:
-          type: string
-          enum: *ref_18
-          description: 组织自有态。
-        odooCompanyId:
-          type:
-            - object
-            - 'null'
-          description: 绑定的 Odoo 公司 id（未绑定为 null）。
-        odooBindingStatus:
-          type:
-            - object
-            - 'null'
-          description: Odoo 绑定态（未绑定为 null）。
-        odooCompanyName:
-          type:
-            - object
-            - 'null'
-          description: Odoo 公司名快照（未绑定为 null）。
-      required:
-        - organizationId
-        - name
-        - slug
-        - status
-        - odooCompanyId
-        - odooBindingStatus
-        - odooCompanyName
-    PlatformTenantDetailResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: tenant 主键。
-        name:
-          type: string
-        slug:
-          type: string
-        status:
-          type: string
-          enum: *ref_18
-          description: 准入态（无记录视同 active）。
-        createdAt:
-          format: date-time
-          type: string
-        organizations:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlatformTenantOrganizationResponse'
-      required:
-        - tenantId
-        - name
-        - slug
-        - status
-        - createdAt
-        - organizations
-    PlatformOrganizationDrillRowResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: organization 主键。
-        name:
-          type: string
-        slug:
-          type: string
-        status:
-          type: string
-          enum: *ref_18
-          description: 组织态（无记录视同 active）。
-        createdAt:
-          format: date-time
-          type: string
-      required:
-        - organizationId
-        - name
-        - slug
-        - status
-        - createdAt
-    OrganizationDiagnosticsResponse:
-      type: object
-      properties:
-        organization:
-          description: 组织下钻行。
-          allOf:
-            - $ref: '#/components/schemas/PlatformOrganizationDrillRowResponse'
-        memberCount:
-          type: number
-          description: 成员数。
-        invitationCount:
-          type: number
-          description: 待处理邀请数。
-        workspaceCount:
-          type: number
-          description: 工作区数。
-        postCount:
-          type: number
-          description: 帖子数。
-      required:
-        - organization
-        - memberCount
-        - invitationCount
-        - workspaceCount
-        - postCount
-    TenantGovernanceResultResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: 目标 tenant 主键。
-        status:
-          type: string
-          enum: *ref_18
-          description: 迁移后的准入态。
-      required:
-        - tenantId
-        - status
-    TenantHardDeleteResultResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: 被硬删的 tenant 主键。
-        purgedOrgs:
-          type: number
-          description: 本次连带消灭的组织行数（一租多组织）。
-        purgedEvents:
-          type: number
-          description: 本次清除的 lifecycle 事件数（供审计核对）。
-      required:
-        - tenantId
-        - purgedOrgs
-        - purgedEvents
-    TenantOrgVisibilityResultResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: 目标 tenant 主键。
-        orgVisibility:
-          type: string
-          enum:
-            - shared
-            - isolated
-          description: 设置后的租内跨组织可见性策略（shared 互见·isolated 互不可见）。
-      required:
-        - tenantId
-        - orgVisibility
-    PlatformUserRowResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: 用户主键。
-        name:
-          type: string
-        email:
-          type: string
-        status:
-          type: string
-          enum: *ref_18
-          description: 治理状态（无记录视同 active）。
-        createdAt:
-          format: date-time
-          type: string
-      required:
-        - userId
-        - name
-        - email
-        - status
-        - createdAt
-    PlatformUserPageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/PlatformUserRowResponse'
-        total:
-          type: number
-          description: 全量行数。
-        limit:
-          type: number
-          description: 回显页宽。
-        offset:
-          type: number
-          description: 回显偏移。
-      required:
-        - items
-        - total
-        - limit
-        - offset
-    UserGovernanceResultResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          description: 用户主键。
-        status:
-          type: string
-          enum: *ref_18
-          description: 迁移后的新状态。
-      required:
-        - userId
-        - status
-    PostResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: UUIDv7。
-        title:
-          type: string
-        content:
-          type:
-            - string
-            - 'null'
-        published:
-          type: boolean
-        organizationId:
-          type: string
-          description: 所属组织（ALS 盖章，body 不接受）。
-        workspaceId:
-          type:
-            - string
-            - 'null'
-          description: 所属工作区；NULL = 未分区。
-        createdAt:
-          format: date-time
-          type: string
-        updatedAt:
-          format: date-time
-          type: string
-      required:
-        - id
-        - title
-        - content
-        - published
-        - organizationId
-        - workspaceId
-        - createdAt
-        - updatedAt
-    PostCursorPageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/PostResponse'
-        hasMore:
-          type: boolean
-          description: 是否还有下一页。
-        nextCursor:
-          type: string
-          description: 不透明游标（hasMore=false 时缺省）。
-      required:
-        - items
-        - hasMore
-    WorkspaceResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: UUIDv7。
-        name:
-          type: string
-        slug:
-          type: string
-        organizationId:
-          type: string
-          description: 所属组织（仓储盖章）。
-        ownerId:
-          type:
-            - string
-            - 'null'
-          description: 实例属主；NULL/缺省 = 不属任何人（owner-column 片语义）。
-        createdAt:
-          format: date-time
-          type: string
-        updatedAt:
-          format: date-time
-          type: string
-      required:
-        - id
-        - name
-        - slug
-        - organizationId
-        - createdAt
-        - updatedAt
-    WorkspacePageResponse:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkspaceResponse'
-        total:
-          type: number
-          description: 全量行数。
-        limit:
-          type: number
-          description: 回显页宽。
-        offset:
-          type: number
-          description: 回显偏移。
-      required:
-        - items
-        - total
-        - limit
-        - offset
-    OrganizationApplicationResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: organization 主键。
-        status:
-          type: string
-          enum: &ref_19
-            - pending_approval
-            - active
-            - suspended
-            - deleted
-          description: 生命周期状态。
-      required:
-        - organizationId
-        - status
-    OrganizationOdooBindingResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: organization 主键。
-        odooCompanyId:
-          type: number
-          description: 绑定的 Odoo 公司 id（res.company 主键·跨库弱引用）。
-        odooBindingStatus:
-          type: string
-          enum:
-            - pending
-            - provisioning
-            - ready
-            - failed
-          description: 绑定生命周期态。
-        odooCompanyName:
-          type:
-            - string
-            - 'null'
-          description: 公司名快照（denormalize）。
-        odooBoundAt:
-          format: date-time
-          type:
-            - string
-            - 'null'
-          description: 绑定确立时间。
-      required:
-        - organizationId
-        - odooCompanyId
-        - odooBindingStatus
-        - odooCompanyName
-        - odooBoundAt
-    OrganizationOdooAvailabilityResponse:
-      type: object
-      properties:
-        available:
-          type: boolean
-          description: Odoo 能力当前对该租户是否可用（canUseOdoo 单源裁决）。
-        odooBindingStatus:
-          type:
-            - string
-            - 'null'
-          enum:
-            - pending
-            - provisioning
-            - ready
-            - failed
-            - null
-          description: 绑定生命周期态（null=未绑定/无活跃租户）。
-        odooCompanyId:
-          type:
-            - number
-            - 'null'
-          description: 绑定的 Odoo 公司 id（res.company 主键·无绑定即 null）。
-      required:
-        - available
-        - odooBindingStatus
-        - odooCompanyId
-    TenantDirectoryOrganizationResponse:
-      type: object
-      properties:
-        organizationId:
-          type: string
-          description: 组织主键（二级轴·绑一家 Odoo 公司）。
-        name:
-          type: string
-          description: 组织名称。
-        slug:
-          type: string
-          description: 组织 slug。
-      required:
-        - organizationId
-        - name
-        - slug
-    TenantDirectoryEntryResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: 租户主键（隔离主轴）。
-        name:
-          type: string
-          description: 租户名称。
-        slug:
-          type: string
-          description: 租户 slug。
-        status:
-          type: string
-          enum: *ref_19
-          description: 租户准入态。
-        organizations:
-          description: 该租户下当前用户可见的组织集合。
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantDirectoryOrganizationResponse'
-      required:
-        - tenantId
-        - name
-        - slug
-        - status
-        - organizations
-    TenantDirectoryResponse:
-      type: object
-      properties:
-        tenants:
-          description: 当前用户可见的租户目录（每租携其下组织集合）。
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantDirectoryEntryResponse'
-      required:
-        - tenants
-    ActiveTenantResponse:
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: 已激活的租级租户 id（写入会话 activeTenantId）。
-      required:
-        - tenantId
-    SubscriptionResponse:
-      type: object
-      properties:
-        hasSubscription:
-          type: boolean
-          description: 是否已有生效订阅。
-        plan:
-          type: string
-          description: 生效档位 plan key（缺订阅回落 FREE_PLAN）。
-        seatsLimit:
-          type: number
-          description: 座位上限。
-        used:
-          type: number
-          description: 已用座位（= 成员数·实时算）。
-        remaining:
-          type: number
-          description: 剩余座位。
-        providerCustomerId:
-          type:
-            - string
-            - 'null'
-          description: 支付通道 customer id；无订阅 = null。
-      required:
-        - hasSubscription
-        - plan
-        - seatsLimit
-        - used
-        - remaining
-        - providerCustomerId
     FileUploadResultDto:
       type: object
       properties:
@@ -3182,105 +749,3 @@ components:
           description: 签名访问 URL。
       required:
         - url
-    PaymentStatusResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - ok
-          description: 集成状态恒 "ok"。
-        selected:
-          type: string
-          enum: &ref_20
-            - stripe
-            - alipay
-            - wechat_pay
-          description: 当前选定通道。
-        available:
-          type: array
-          description: 可用通道集合。
-          items:
-            type: string
-            enum: *ref_20
-      required:
-        - status
-        - selected
-        - available
-    PaymentCustomerRefResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: 通道侧 customer id。
-        providerId:
-          type: string
-          enum: *ref_20
-          description: 所属通道。
-        email:
-          type: string
-        raw:
-          type: object
-          additionalProperties: true
-          description: 通道原生载荷透传。
-      required:
-        - id
-        - providerId
-        - email
-        - raw
-    PaymentCheckoutRefResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: checkout / payment intent id。
-        providerId:
-          type: string
-          enum: *ref_20
-          description: 所属通道。
-        status:
-          type: string
-          description: 通道侧状态串。
-        clientSecret:
-          type: string
-          description: 客户端密钥（前端确认支付用）。
-        raw:
-          type: object
-          additionalProperties: true
-          description: 通道原生载荷透传。
-      required:
-        - id
-        - providerId
-        - raw
-    PaymentRefundRefResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          description: refund id。
-        providerId:
-          type: string
-          enum: *ref_20
-          description: 所属通道。
-        status:
-          type: string
-          description: 通道侧状态串。
-        amount:
-          type: number
-          description: 退款金额（最小货币单位）。
-        raw:
-          type: object
-          additionalProperties: true
-          description: 通道原生载荷透传。
-      required:
-        - id
-        - providerId
-        - raw
-    WebhookAckResponse:
-      type: object
-      properties:
-        received:
-          type: boolean
-          description: 回调是否已接收处理。
-      required:
-        - received

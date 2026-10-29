@@ -16,7 +16,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">OrganizationOdooBindingRecord</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#odoobindingstatus">odooBindingStatus</a><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-odoo-binding.OrganizationOdooBindingStatus.html" class="tsd-signature-type tsd-kind-type-alias">OrganizationOdooBindingStatus</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#odooboundat">odooBoundAt</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#odoocompanyid">odooCompanyId</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#odoocompanyname">odooCompanyName</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#organizationid">organizationId</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#organizationstatus">organizationStatus</a><span class="tsd-signature-symbol">?:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L290">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:290</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L290">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:290</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -40,42 +40,42 @@
 <div class="tsd-comment tsd-typography"><p>绑定生命周期态。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L296">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:296</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L296">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:296</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="odooboundat"><span>odoo<wbr/>Bound<wbr/>At</span><a href="#odooboundat" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">odooBoundAt</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>绑定确立时间。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L300">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:300</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L300">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:300</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="odoocompanyid"><span>odoo<wbr/>Company<wbr/>Id</span><a href="#odoocompanyid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">odooCompanyId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 <div class="tsd-comment tsd-typography"><p>绑定的 Odoo 公司 id（跨库弱引用，无 FK）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L294">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:294</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L294">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:294</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="odoocompanyname"><span>odoo<wbr/>Company<wbr/>Name</span><a href="#odoocompanyname" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">odooCompanyName</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>公司名快照（denormalize）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L298">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:298</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L298">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:298</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="organizationid"><span>organization<wbr/>Id</span><a href="#organizationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">organizationId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>所属租户 id。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L292">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:292</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L292">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:292</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="organizationstatus"><code class="tsd-tag">Optional</code><span>organization<wbr/>Status</span><a href="#organizationstatus" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">organizationStatus</span><span class="tsd-signature-symbol">?:</span> <a href="../types/libs_core_src_modules_organizations_lifecycle_organization-lifecycle.TenantStatus.html" class="tsd-signature-type tsd-kind-type-alias">TenantStatus</a></div>
 <div class="tsd-comment tsd-typography"><p>租户治理态（可选携·供 <code>@core</code> reader 端口转形与 <code>canUseOdoo</code> 裁决；bind 回执不填）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/b1ec49780cada60bb4e9a2755e6d8a72ed249038/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L302">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:302</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/0ddceed8e258d7d80517400c520ada8c7d6de3ea/apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts#L302">apps/api/src/modules/organizations/domain/repositories/organization-governance.repository.ts:302</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
