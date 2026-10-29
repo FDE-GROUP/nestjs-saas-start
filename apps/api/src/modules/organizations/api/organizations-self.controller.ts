@@ -68,8 +68,9 @@ interface OrganizationSelfApi {
  */
 // 换轨 WP-C：七路由转 per-method `@Impl`——class 级 `@TenantIsolationExempt()` + 逐方法 `@UseGuards(SessionGuard)`
 // 原生保留（会话墙不弱化·401 先于 handler）。旧 `@CurrentUser()` 换 `context.user`、`@Headers()` 换 `context.headers`
-// （BA 服务端直调透传）。`apiOkPassthrough` 面（list/setActive/leave/accept/reject/listMyInvitations）不挂 `.output`
-// （透传逐字保真）；仅 odooAvailability 旧 `@SerializeOptions` 换 `.output(organizationOdooAvailabilityViewSchema)`。
+// （BA 服务端直调透传）。M4-b 响应面建模后：leave/accept/reject/listMyInvitations 已双侧同挂 `.output`（@Impl 镜像→handler
+// 真跑 parse·wire 保真靠 schema 忠实建模）；仅 list/setActive 两面为 BA passthrough 有意不型锥（逐字保真·属 M5 豁免面），
+// odooAvailability 承旧 `@SerializeOptions` 换 `.output(organizationOdooAvailabilityViewSchema)`。
 // `mapBaError` 出口经 WP-D 错误面归一为逐字 REST 信封。
 // 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
 export {

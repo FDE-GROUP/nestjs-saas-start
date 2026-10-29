@@ -43,6 +43,12 @@ function collectLeaves(node: unknown, out: unknown[] = []): unknown[] {
   return out;
 }
 
+/** 探针（批 D·M5）：契约叶 `~orpc.outputSchemas` 非空 = 已显式建模输出。 */
+function hasOutput(leaf: unknown): boolean {
+  const def = (leaf as { '~orpc'?: { outputSchemas?: readonly unknown[] } })['~orpc'];
+  return (def?.outputSchemas?.length ?? 0) > 0;
+}
+
 // router 侧叶子（深走）
 const routerLeaves = collectLeaves(APP_ROUTER_SPEC);
 
@@ -78,6 +84,39 @@ for (const mod of controllerModules) {
   }
 }
 
+/** 豁免登记清单（批 D·M5）：有意不建模输出者·逐条带理由·新增缺 output 叶不在此单即红。首版 10 叶（公共 9 + feature 侧 mcpRevoke 204）。 */
+const OUTPUT_EXEMPT: ReadonlyArray<{ leaf: unknown; why: string }> = [
+  {
+    leaf: organizationsSelfController.selfListContract,
+    why: 'BA listOrganizations 服务端直调 passthrough·逐字保真',
+  },
+  {
+    leaf: organizationsSelfController.selfSetActiveContract,
+    why: 'BA setActive passthrough + 本侧清 activeTenantId·逐字保真',
+  },
+  {
+    leaf: authorizationAdminController.authzRenameRoleContract,
+    why: 'void 语义无载荷（沿 usersDelete 空回执口径）',
+  },
+  { leaf: authorizationAdminController.authzDeleteRoleContract, why: 'void 语义无载荷' },
+  { leaf: authorizationAdminController.authzGrantContract, why: 'void 语义无载荷' },
+  { leaf: authorizationAdminController.authzRevokeContract, why: 'void 语义无载荷' },
+  // 已建模 204（successStatus 建模·无响应 body·合法不挂 .output）：
+  { leaf: usersController.usersDeleteContract, why: '204 NO_CONTENT 空体（PIPL 硬删）' },
+  {
+    leaf: workspacesController.workspacesRemoveContract,
+    why: '204 NO_CONTENT 空体（删 workspace）',
+  },
+  {
+    leaf: organizationsController.organizationsRejectContract,
+    why: '204 NO_CONTENT 空体（驳待审组织）',
+  },
+  {
+    leaf: mcpCredentialsController.mcpRevokeContract,
+    why: '204 NO_CONTENT 空体（撤销 MCP 凭证·幂等）',
+  },
+];
+
 describe('AppRouterContract 覆盖对拍', () => {
   it('router 叶子无重复（同引用恒等）', () => {
     expect(routerLeaves.length).toBe(new Set(routerLeaves).size);
@@ -95,5 +134,22 @@ describe('AppRouterContract 覆盖对拍', () => {
 
   it('叶子总数锁定 61（与实存 procedure 契约面同步·变动须显式确认）', () => {
     expect(routerLeaves).toHaveLength(61);
+  });
+
+  it('叶必须显式建模 .output（缺则须登记豁免·三向恒等）', () => {
+    const exempt = new Set(OUTPUT_EXEMPT.map((e) => e.leaf));
+    // 向①：router 叶缺 output 且未登记 → 漏建模（新 op 忘挂又没豁免）
+    const unmodeled = routerLeaves.filter((l) => !hasOutput(l) && !exempt.has(l));
+    // 向②：登记豁免却已挂 output → 豁免腐烂 stale（建模后忘撤登记）
+    const stale = OUTPUT_EXEMPT.filter((e) => hasOutput(e.leaf));
+    expect({ unmodeled: unmodeled.length, stale: stale.length }).toEqual({
+      unmodeled: 0,
+      stale: 0,
+    });
+  });
+
+  it('闸探针负例自测（漏挂→判无输出 / 已挂→判有输出）', () => {
+    expect(hasOutput({ '~orpc': { outputSchemas: [] } })).toBe(false);
+    expect(hasOutput({ '~orpc': { outputSchemas: [{}] } })).toBe(true);
   });
 });
