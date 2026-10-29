@@ -2,7 +2,12 @@
 import type { PlatformTenantRowView } from '@saas/contracts';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { actionEnabled, StatusBadge, TenantActions } from '../components/platform-tenants';
+import {
+  actionEnabled,
+  OrganizationApprovalActions,
+  StatusBadge,
+  TenantActions,
+} from '../components/platform-tenants';
 import { TenantsListView } from './platform.tenants';
 
 type TenantRow = PlatformTenantRowView;
@@ -149,6 +154,51 @@ describe('TenantActions（按钮 disable 矩阵 · 纯展示）', () => {
         onResume={noop}
         onSoftDelete={noop}
         onPermanentDelete={noop}
+      />,
+    );
+    for (const el of screen.getAllByRole('button')) {
+      expect((el as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+});
+
+describe('OrganizationApprovalActions（入驻审批动作·仅 pending_approval 显·F7）', () => {
+  it('pending_approval → 渲「批准/驳回」且回调各触发一次', () => {
+    const onApprove = vi.fn();
+    const onReject = vi.fn();
+    render(
+      <OrganizationApprovalActions
+        status="pending_approval"
+        pending={false}
+        onApprove={onApprove}
+        onReject={onReject}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '批准' }));
+    fireEvent.click(screen.getByRole('button', { name: '驳回' }));
+    expect(onApprove).toHaveBeenCalledTimes(1);
+    expect(onReject).toHaveBeenCalledTimes(1);
+  });
+
+  it('非 pending_approval（active）→ 不渲任何审批钮', () => {
+    render(
+      <OrganizationApprovalActions
+        status="active"
+        pending={false}
+        onApprove={noop}
+        onReject={noop}
+      />,
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('pending_approval + pending=true → 审批钮均禁用（防重复提交）', () => {
+    render(
+      <OrganizationApprovalActions
+        status="pending_approval"
+        pending
+        onApprove={noop}
+        onReject={noop}
       />,
     );
     for (const el of screen.getAllByRole('button')) {

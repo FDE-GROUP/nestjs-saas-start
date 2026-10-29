@@ -6,7 +6,11 @@ import type {
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ErrorPanel, SectionHeading } from '../components/panels';
-import { StatusBadge, TenantActions } from '../components/platform-tenants';
+import {
+  OrganizationApprovalActions,
+  StatusBadge,
+  TenantActions,
+} from '../components/platform-tenants';
 import { rpc } from '../lib/api';
 import { apiErrorDetail, describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
@@ -181,6 +185,31 @@ function OrganizationDrill({ tenantId, org }: { tenantId: string; org: TenantOrg
   const [diagErr, setDiagErr] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportErr, setExportErr] = useState<string | null>(null);
+  const action = useAction();
+
+  // 入驻申请审批（F7）：仅 pending_approval 组织可见（渲否由 OrganizationApprovalActions 定）；
+  // useAction 成功后 router.invalidate() 重载 loader → org.status 即时翻面（pending→active），无需手写刷新。
+  async function handleApprove() {
+    await action.run({
+      path: `/api/v1/organizations/applications/${org.organizationId}/approve`,
+      method: 'POST',
+      scope: 'platform.organization.approve',
+      successMessage: '已批准（pending_approval→active）',
+      thunk: () => rpc.organizations.applications.approve({ id: org.organizationId }),
+    });
+  }
+
+  async function handleReject() {
+    if (!window.confirm(`确认驳回待审批组织「${org.name}」（终态·触发驳回事件链·不可撤销）？`))
+      return;
+    await action.run({
+      path: `/api/v1/organizations/applications/${org.organizationId}/reject`,
+      method: 'POST',
+      scope: 'platform.organization.reject',
+      successMessage: '已驳回',
+      thunk: () => rpc.organizations.applications.reject({ id: org.organizationId }),
+    });
+  }
 
   async function handleDiagnostics() {
     setDiagErr(null);
@@ -255,9 +284,25 @@ function OrganizationDrill({ tenantId, org }: { tenantId: string; org: TenantOrg
         <button type="button" onClick={handleExport} disabled={exporting} className={btn}>
           {exporting ? '导出中…' : '导出数据（JSON 下载）'}
         </button>
+        <OrganizationApprovalActions
+          status={org.status}
+          pending={action.pending}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
       </div>
       {diagErr && <p className="text-xs text-red-700 dark:text-red-400">{diagErr}</p>}
       {exportErr && <p className="text-xs text-red-700 dark:text-red-400">{exportErr}</p>}
+      {/* 审批结果反馈：此 `action` 仅批准/驳回用（诊断/导出走各自 state）。故不 gated
+          `org.status`——useAction 先 invalidate（状态即翻离 pending_approval）再置 success，
+          若加状态门控则成功文案永不显示（真机自捕·浏览器验证坐实）。 */}
+      {(action.error || action.success) && (
+        <p
+          className={`text-xs ${action.error ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}
+        >
+          {action.error ?? action.success}
+        </p>
+      )}
       {diag && (
         <div className="flex flex-wrap gap-4 text-xs text-slate-600 dark:text-slate-300">
           <span>成员 {diag.memberCount}</span>

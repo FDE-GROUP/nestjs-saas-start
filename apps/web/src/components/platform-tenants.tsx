@@ -7,7 +7,8 @@ import type { PlatformTenantRowView } from '@saas/contracts';
  *
  * @remarks
  * 治理台改锚 tenant：租户控制台的生命周期动作收敛为 suspend/resume/软删/硬删（键 tenantId）；
- * 申请审批（approve/reject）系用户向 organizations 申请面（非租户治理台），故本组件不再暴露。
+ * 申请审批（approve/reject）act on 组织 id、非租户生命周期，故本组件（TenantActions）不暴露，
+ * 由同文件的 `OrganizationApprovalActions` 承载（前端 F7）。
  */
 export type TenantStatus = PlatformTenantRowView['status'];
 
@@ -122,5 +123,47 @@ export function TenantActions({
         硬删除
       </button>
     </div>
+  );
+}
+
+/**
+ * 待审批组织的审批动作（前端 F7 · module-frontend-platform-approval）：仅 `pending_approval` 显
+ * 「批准 / 驳回」，余态返 null（条件渲染就地封装·可脱离 router/mutation 单测）。审批 act on
+ * **组织 id**（非租户生命周期），与治理台 `TenantActions` 正交。驳回系终态治理动作，实际二次确认
+ * 由调用方在回调里把关（见详情路由 `window.confirm`）；破坏性配色复用 DANGER。
+ */
+export function OrganizationApprovalActions({
+  status,
+  pending,
+  onApprove,
+  onReject,
+}: {
+  status: TenantStatus;
+  pending: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  if (status !== 'pending_approval') return null;
+  return (
+    <>
+      <button
+        type="button"
+        disabled={pending}
+        title="批准（pending_approval→active）"
+        onClick={onApprove}
+        className={BTN}
+      >
+        批准
+      </button>
+      <button
+        type="button"
+        disabled={pending}
+        title="驳回（终态·触发驳回事件链·不可撤销）"
+        onClick={onReject}
+        className={DANGER}
+      >
+        驳回
+      </button>
+    </>
   );
 }
