@@ -13,18 +13,19 @@
     if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
     // Docsify(marked) 把 ```mermaid 渲染成 <pre data-lang="mermaid"><code class="lang-mermaid">，
     // 类名前缀随版本变（lang- / language-），故三类选择器并集→ 改写为 <div class="mermaid"> 交给 mermaid.run 就地绘制。
+    var MERMAID_CODE_SEL = 'pre > code.language-mermaid, pre > code.lang-mermaid, pre[data-lang="mermaid"] > code';
     function renderMermaid() {
       if (!window.mermaid) return;
-      var nodes = document.querySelectorAll(
-        'pre > code.language-mermaid, pre > code.lang-mermaid, pre[data-lang="mermaid"] > code',
-      );
-      nodes.forEach(function (codeEl) {
+      var pending = document.querySelectorAll(MERMAID_CODE_SEL);
+      var unprocessed = document.querySelectorAll('.markdown-section .mermaid:not([data-processed])');
+      if (!pending.length && !unprocessed.length) return; // 幂等守卫·防 MutationObserver 回环
+      pending.forEach(function (codeEl) {
         var div = document.createElement('div');
         div.className = 'mermaid';
         div.textContent = codeEl.textContent;
         codeEl.parentElement.replaceWith(div);
       });
-      try { window.mermaid.run({ querySelector: '.mermaid' }); } catch (e) { console.error(e); }
+      try { window.mermaid.run({ querySelector: '.markdown-section .mermaid' }); } catch (e) { console.error(e); }
     }
     window.$docsify = {
       name: 'RepoWiki',
@@ -34,11 +35,25 @@
       subMaxLevel: 3,
       sidebarDisplayLevel: 1,
       search: { placeholder: '搜索', noData: '无结果', depth: 6 },
-      hooks: { doneEach: renderMermaid },
+      hooks: { doneEach: function () { renderMermaid(); } },
     };
   </script>
   <script src="https://unpkg.com/docsify@4/lib/docsify.min.js"></script>
   <script src="https://unpkg.com/docsify@4/lib/plugins/search.min.js"></script>
   <script src="https://unpkg.com/docsify-sidebar-collapse@1/dist/docsify-sidebar-collapse.min.js"></script>
+  <script>
+    // 不依赖 Docsify doneEach 的触发时机（某些版本与代码块注入时序不同步）：
+    // load 后监听 #app 子树变化·带防抖兼幂等守卫兼底渲染新注入的 mermaid。
+    window.addEventListener('load', function () {
+      var app = document.getElementById('app');
+      if (!app || typeof MutationObserver === 'undefined') return;
+      var timer;
+      new MutationObserver(function () {
+        clearTimeout(timer);
+        timer = setTimeout(renderMermaid, 60);
+      }).observe(app, { childList: true, subtree: true });
+      renderMermaid();
+    });
+  </script>
 </body>
 </html>
