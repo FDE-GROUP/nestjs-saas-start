@@ -92,6 +92,9 @@ importers:
       '@orpc/server':
         specifier: 2.0.0-beta.44
         version: 2.0.0-beta.44(fastify@5.12.7)
+      '@orpc/zod':
+        specifier: 2.0.0-beta.44
+        version: 2.0.0-beta.44(fastify@5.12.7)(zod@4.6.7)
       '@saas/api-contract':
         specifier: workspace:*
         version: link:libs/api-contract
@@ -2095,6 +2098,11 @@ packages:
 
   '@orpc/shared@2.0.0-beta.44':
     resolution: {integrity: sha512-3R+et5pRqGXJ0GKeU/Xzm+Ia0pgfN7C2Ur01RxvDQmkPnFCfU5XxPWmHq0AmiTbOwt5dV3xpSeP7JTgy8P8A9Q==}
+
+  '@orpc/zod@2.0.0-beta.44':
+    resolution: {integrity: sha512-8okiueDOjcMF70v7W3RpMmLdzSzJzIMzWW1AaDZjLmc0WXC7eD1Om1PGO7SHYQIhxzKemsvxYRLJZZqTGgSP1A==}
+    peerDependencies:
+      zod: '>=4.5.0'
 
   '@oxc-project/types@0.153.0':
     resolution: {integrity: sha512-jSNrRIyvPVLL5E1z/tS5zLAprosGz/FuI1PWwEOz59j3E4TTTzSpqKb/RDGqJhhW0QHYISGXxq582wGx6T11Tw==}
@@ -8161,6 +8169,15 @@ snapshots:
       '@standard-server/shared': 0.10.3
       radash: 12.1.1
       type-fest: 5.10.0
+
+  '@orpc/zod@2.0.0-beta.44(fastify@5.12.7)(zod@4.6.7)':
+    dependencies:
+      '@openapi-spec/types': 0.3.0
+      '@orpc/json-schema': 2.0.0-beta.44(fastify@5.12.7)
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - crossws
+      - fastify
 
   '@oxc-project/types@0.153.0': {}
 

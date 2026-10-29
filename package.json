@@ -104,6 +104,7 @@
     "@orpc/nest": "2.0.0-beta.44",
     "@orpc/openapi": "2.0.0-beta.44",
     "@orpc/server": "2.0.0-beta.44",
+    "@orpc/zod": "2.0.0-beta.44",
     "@saas/api-contract": "workspace:*",
     "@saas/contracts": "workspace:*",
     "ali-oss": "^6.23.0",
