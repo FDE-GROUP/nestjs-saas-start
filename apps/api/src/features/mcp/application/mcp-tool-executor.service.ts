@@ -99,7 +99,7 @@ export class McpToolExecutorService {
         // 跨租 orgId 与不存在 orgId 同回执（不区分存在性·防枚举），对齐凭证三态同码先例。
         if (!(await this.isOrgInActiveTenant(organizationId, credential.userId, tenantId))) {
           throw new ForbiddenException('Organization not within credential tenant scope', {
-            errorCode: ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT,
+            errorCode: ERROR_CODES.ISOLATION_TENANT_SCOPE_MISMATCH,
           });
         }
         // 权限对称接 checker（守卫路径·类型级·对齐 HTTP @Can('create','Workspace')·零第二套判据）。

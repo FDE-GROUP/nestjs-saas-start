@@ -2,6 +2,7 @@ import { ListTenantDirectoryQuery } from '@app/modules/organizations/application
 import { ListPostsQuery } from '@app/modules/posts/application/queries/list-posts.query';
 import type { PermissionChecker } from '@core/saas-kit/authorization/permission.port';
 import { CreateWorkspaceCommand } from '@core/saas-kit/modules/workspaces/application/commands/create-workspace.command';
+import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { HttpException } from '@nestjs/common';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -129,15 +130,20 @@ describe('McpToolExecutorService', () => {
     });
   });
 
-  it('workspace.create：organizationId 跨租/不存在（不在活动租目录）→ 403 且绝不派 command、不查权限', async () => {
+  it('workspace.create：organizationId 跨租/不存在（不在活动租目录）→ 403 专属租属码且绝不派 command、不查权限', async () => {
     queryBus.execute.mockResolvedValue(directory); // 目录仅含 O1
-    await expect(
-      executor.execute('workspace.create', writeCred, {
+    const err = await executor
+      .execute('workspace.create', writeCred, {
         name: 'Proj',
         slug: 'proj',
         organizationId: 'OTHER-ORG', // 不在 T1 目录（跨租或不存在·同回执防枚举）
-      }),
-    ).rejects.toBeInstanceOf(HttpException);
+      })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(HttpException);
+    // 承评审 MCP①（错误码独立化）：租属拒绝走专属码，不复用「无活动上下文」码。
+    const body = (err as HttpException).getResponse() as { errorCode?: string };
+    expect(body.errorCode).toBe(ERROR_CODES.ISOLATION_TENANT_SCOPE_MISMATCH);
+    expect(body.errorCode).not.toBe(ERROR_CODES.ISOLATION_NO_ACTIVE_CONTEXT);
     expect(commandBus.execute).not.toHaveBeenCalled();
     expect(checker.can).not.toHaveBeenCalled(); // 归属校验前置于权限（早退）
   });

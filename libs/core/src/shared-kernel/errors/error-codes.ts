@@ -22,8 +22,12 @@ export const ERROR_CODES = {
   AUTH_ACCOUNT_SUSPENDED: 'AUTH:ACCOUNT_SUSPENDED',
   AUTH_CSRF_ORIGIN_MISMATCH: 'AUTH:CSRF_ORIGIN_MISMATCH',
 
-  // —— 隔离机制（区域 A·global-tenant-isolation-vocabulary：ALS 无活跃上下文 fail-closed 唯一一条）——
+  // —— 隔离机制（区域 A·global-tenant-isolation-vocabulary）——
+  // 「缺活动上下文」fail-closed 专用一条（ALS 无租户/组织轴）：
   ISOLATION_NO_ACTIVE_CONTEXT: 'ISOLATION:NO_ACTIVE_CONTEXT',
+  // 归属轴**存在但越出凭证活动租可见集**（跨租/不存在 org·防枚举同回执）——语义异于「无上下文」：
+  // 承换轨评审 MCP①（错误码独立化）——MCP `workspace.create` 租属拒绝不再复用 NO_ACTIVE_CONTEXT。
+  ISOLATION_TENANT_SCOPE_MISMATCH: 'ISOLATION:TENANT_SCOPE_MISMATCH',
 
   // —— 组织生命周期状态机 / 治理动作 / 平台经营者（ORG_*）+ 权限裁决拒绝（AUTHZ_*）——
   AUTHZ_PERMISSION_DENIED: 'AUTHZ:PERMISSION_DENIED',
