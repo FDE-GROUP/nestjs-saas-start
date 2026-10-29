@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure/database_eventing/eventing_outbox
+title: 事件溯源与 Outbox 投递基础设施
+scope:
+    - apps/api/src/database/eventing/
+source_files: []
+depends_on: []
+related_to: []

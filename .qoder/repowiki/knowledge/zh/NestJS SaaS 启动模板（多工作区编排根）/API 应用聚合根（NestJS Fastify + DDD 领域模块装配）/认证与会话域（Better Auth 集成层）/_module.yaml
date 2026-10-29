@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: api_app/domain_auth
+title: 认证与会话域（Better Auth 集成层）
+scope:
+    - apps/api/src/modules/auth/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_users
+    - path: api_app/feature_mcp
+    - path: web_app/auth_routes

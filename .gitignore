@@ -6,8 +6,10 @@ node_modules/
 /.idea
 /.awcache
 *.code-workspace
-# Qoder IDE wiki/cache workspace (local only, never committed)
-.qoder/
+# Qoder IDE cache/plans workspace (local only, never committed)
+# 例外：repowiki 代码库百科需随仓提交并发布到 GitHub Pages（见 deploy-swagger.yml）
+.qoder/*
+!.qoder/repowiki/
 
 # bundle
 packages/**/*.d.ts

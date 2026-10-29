@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: scripts_tooling
+title: 仓库级质量门禁与运维脚本集
+scope:
+    - scripts/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/feature_odoo_provisioning
+    - path: api_app/shared_infrastructure/database_eventing/mikro_orm_core

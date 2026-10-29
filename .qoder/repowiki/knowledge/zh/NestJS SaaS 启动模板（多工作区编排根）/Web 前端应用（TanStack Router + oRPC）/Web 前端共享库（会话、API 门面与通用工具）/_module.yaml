@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: web_app/shared_libs
+title: Web 前端共享库（会话、API 门面与通用工具）
+scope:
+    - apps/web/src/lib/
+source_files: []
+depends_on: []
+related_to: []

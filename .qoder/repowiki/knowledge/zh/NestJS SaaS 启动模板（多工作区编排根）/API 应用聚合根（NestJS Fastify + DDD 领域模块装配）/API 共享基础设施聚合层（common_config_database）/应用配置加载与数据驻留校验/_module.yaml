@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure/config
+title: 应用配置加载与数据驻留校验
+scope:
+    - apps/api/src/config/
+source_files: []
+depends_on: []
+related_to: []

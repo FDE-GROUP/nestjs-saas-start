@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: core_lib/platform
+title: 平台治理与 Operator 权限核心
+scope:
+    - libs/core/src/platform/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_platform

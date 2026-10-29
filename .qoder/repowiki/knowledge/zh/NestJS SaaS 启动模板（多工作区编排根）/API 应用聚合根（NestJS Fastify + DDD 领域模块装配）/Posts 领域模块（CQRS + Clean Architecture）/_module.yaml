@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/domain_posts
+title: Posts 领域模块（CQRS + Clean Architecture）
+scope:
+    - apps/api/src/modules/posts/
+source_files: []
+depends_on: []
+related_to: []

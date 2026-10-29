@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: core_lib/business_modules
+title: 核心业务领域模块集合
+scope:
+    - libs/core/src/modules/
+source_files: []
+depends_on: []
+related_to: []

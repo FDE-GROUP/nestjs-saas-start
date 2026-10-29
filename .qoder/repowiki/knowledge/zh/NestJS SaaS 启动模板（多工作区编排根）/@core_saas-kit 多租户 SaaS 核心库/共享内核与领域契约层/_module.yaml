@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: core_lib/shared_kernel
+title: 共享内核与领域契约层
+scope:
+    - libs/core/src/shared-kernel/
+source_files: []
+depends_on: []
+related_to: []

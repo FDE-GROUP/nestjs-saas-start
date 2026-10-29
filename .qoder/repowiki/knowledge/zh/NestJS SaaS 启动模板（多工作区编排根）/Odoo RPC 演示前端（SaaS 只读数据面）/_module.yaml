@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: odoo_rpc_web
+title: Odoo RPC 演示前端（SaaS 只读数据面）
+scope:
+    - apps/odoo-rpc-web/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/feature_odoo_rpc_api

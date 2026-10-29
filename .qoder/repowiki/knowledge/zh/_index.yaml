@@ -1,0 +1,562 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: main
+nodes_managed: true
+exported_at: "2026-10-29T13:47:55Z"
+modules:
+    "":
+        dir_name: NestJS SaaS 启动模板（多工作区编排根）
+        title: NestJS SaaS 启动模板（多工作区编排根）
+        scope:
+            - README.md
+            - AGENTS.md
+            - COMMIT_CONVENTION.md
+            - .gitignore
+            - .dockerignore
+            - package.json
+            - pnpm-workspace.yaml
+            - pnpm-lock.yaml
+            - tsconfig.json
+            - tsconfig.build.json
+            - nest-cli.json
+            - biome.json
+            - commitlint.config.cjs
+            - vitest.config.ts
+            - vitest.browser.config.ts
+            - vitest.consistency.config.ts
+            - playwright.config.ts
+            - typedoc.json
+            - renovate.json
+            - .swcrc
+            - .npmrc
+            - .env.example
+            - Dockerfile
+            - LICENSE
+            - abel-weichat.jpg
+            - chat_Odoo ERP.jpg
+            - docker-compose.dev.yml
+            - docker-compose.yml
+            - tsconfig.doc.json
+        source_files: []
+        children:
+            - api_app
+            - api_client_package
+            - core_lib
+            - docker_infra
+            - odoo_rpc_web
+            - scripts_tooling
+            - shared_libs
+            - web_app
+        depends_on: []
+        related_to: []
+    api_app:
+        dir_name: API 应用聚合根（NestJS Fastify + DDD 领域模块装配）
+        title: API 应用聚合根（NestJS Fastify + DDD 领域模块装配）
+        scope:
+            - apps/api/
+        source_files: []
+        children:
+            - api_app/app_bootstrap_and_config
+            - api_app/cross_cutting_services
+            - api_app/domain_auth
+            - api_app/domain_authorization
+            - api_app/domain_organizations
+            - api_app/domain_payment
+            - api_app/domain_platform
+            - api_app/domain_posts
+            - api_app/domain_storage
+            - api_app/domain_subscriptions
+            - api_app/domain_users
+            - api_app/domain_workspaces
+            - api_app/feature_mcp
+            - api_app/feature_odoo_provisioning
+            - api_app/feature_odoo_rpc_api
+            - api_app/shared_infrastructure
+            - api_app/tenant_isolation
+        depends_on: []
+        related_to:
+            - path: docker_infra
+            - path: web_app
+    api_app/app_bootstrap_and_config:
+        dir_name: API 应用启动与配置装配
+        title: API 应用启动与配置装配
+        scope:
+            - apps/api/src/main.ts
+            - apps/api/src/app.module.ts
+            - apps/api/src/load-env.ts
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/cross_cutting_services:
+        dir_name: 跨领域服务：i18n、日志与邮件
+        title: 跨领域服务：i18n、日志与邮件
+        scope:
+            - apps/api/src/i18n/
+            - apps/api/src/logger/
+            - apps/api/src/mailer/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/domain_auth:
+        dir_name: 认证与会话域（Better Auth 集成层）
+        title: 认证与会话域（Better Auth 集成层）
+        scope:
+            - apps/api/src/modules/auth/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_users
+            - path: api_app/feature_mcp
+            - path: web_app/auth_routes
+    api_app/domain_authorization:
+        dir_name: 租户 RBAC 授权与 CASL 能力裁决模块
+        title: 租户 RBAC 授权与 CASL 能力裁决模块
+        scope:
+            - apps/api/src/modules/authorization/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_organizations
+            - path: core_lib/authorization
+    api_app/domain_organizations:
+        dir_name: 组织与租户治理领域模块
+        title: 组织与租户治理领域模块
+        scope:
+            - apps/api/src/modules/organizations/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_authorization
+            - path: api_app/domain_platform
+            - path: api_app/feature_odoo_provisioning
+            - path: core_lib/business_modules/organizations
+    api_app/domain_payment:
+        dir_name: 支付领域模块（多通道抽象与 Stripe 适配）
+        title: 支付领域模块（多通道抽象与 Stripe 适配）
+        scope:
+            - apps/api/src/modules/payment/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/domain_platform:
+        dir_name: 平台治理限界上下文（Platform Governance Bounded Context）
+        title: 平台治理限界上下文（Platform Governance Bounded Context）
+        scope:
+            - apps/api/src/modules/platform/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_organizations
+            - path: core_lib/platform
+            - path: web_app/platform_admin
+    api_app/domain_posts:
+        dir_name: Posts 领域模块（CQRS + Clean Architecture）
+        title: Posts 领域模块（CQRS + Clean Architecture）
+        scope:
+            - apps/api/src/modules/posts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/domain_storage:
+        dir_name: 对象存储上传与文件管理模块
+        title: 对象存储上传与文件管理模块
+        scope:
+            - apps/api/src/modules/storage/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/settings_pages
+    api_app/domain_subscriptions:
+        dir_name: 组织订阅与席位配额模块
+        title: 组织订阅与席位配额模块
+        scope:
+            - apps/api/src/modules/subscriptions/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: core_lib/business_modules/subscriptions
+            - path: web_app/settings_pages
+    api_app/domain_users:
+        dir_name: 用户自助面（PIPL 右-access_右-erase）
+        title: 用户自助面（PIPL 右-access/右-erase）
+        scope:
+            - apps/api/src/modules/users/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_auth
+    api_app/domain_workspaces:
+        dir_name: 工作区（Workspace）API 模块
+        title: 工作区（Workspace）API 模块
+        scope:
+            - apps/api/src/modules/workspaces/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: core_lib/business_modules/workspaces
+    api_app/feature_mcp:
+        dir_name: MCP Agent 消费面与凭证实体
+        title: MCP Agent 消费面与凭证实体
+        scope:
+            - apps/api/src/features/mcp/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_auth
+    api_app/feature_odoo_provisioning:
+        dir_name: Odoo 租户开通 Saga（公司映射写侧）
+        title: Odoo 租户开通 Saga（公司映射写侧）
+        scope:
+            - apps/api/src/features/odoo-provisioning/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_organizations
+            - path: api_app/feature_odoo_rpc_api
+            - path: scripts_tooling
+    api_app/feature_odoo_rpc_api:
+        dir_name: Odoo RPC 只读集成 API
+        title: Odoo RPC 只读集成 API
+        scope:
+            - apps/api/src/features/odoo-rpc-api/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/feature_odoo_provisioning
+            - path: odoo_rpc_web
+    api_app/shared_infrastructure:
+        dir_name: API 共享基础设施聚合层（common_config_database）
+        title: API 共享基础设施聚合层（common/config/database）
+        scope:
+            - apps/api/src/common/
+            - apps/api/src/config/
+            - apps/api/src/database/
+        source_files: []
+        children:
+            - api_app/shared_infrastructure/common_plumbing
+            - api_app/shared_infrastructure/config
+            - api_app/shared_infrastructure/database_eventing
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/common_plumbing:
+        dir_name: API 通用横切基础设施
+        title: API 通用横切基础设施
+        scope:
+            - apps/api/src/common/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/config:
+        dir_name: 应用配置加载与数据驻留校验
+        title: 应用配置加载与数据驻留校验
+        scope:
+            - apps/api/src/config/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/database_eventing:
+        dir_name: API 数据库与事件基础设施聚合模块
+        title: API 数据库与事件基础设施聚合模块
+        scope:
+            - apps/api/src/database/
+        source_files: []
+        children:
+            - api_app/shared_infrastructure/database_eventing/db_shared
+            - api_app/shared_infrastructure/database_eventing/eventing_outbox
+            - api_app/shared_infrastructure/database_eventing/mikro_orm_core
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/database_eventing/db_shared:
+        dir_name: 数据库基础设施与事件总线持久化层
+        title: 数据库基础设施与事件总线持久化层
+        scope:
+            - apps/api/src/database/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/database_eventing/eventing_outbox:
+        dir_name: 事件溯源与 Outbox 投递基础设施
+        title: 事件溯源与 Outbox 投递基础设施
+        scope:
+            - apps/api/src/database/eventing/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_app/shared_infrastructure/database_eventing/mikro_orm_core:
+        dir_name: MikroORM v7 数据访问与租户隔离基础设施
+        title: MikroORM v7 数据访问与租户隔离基础设施
+        scope:
+            - apps/api/src/database/mikro/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: scripts_tooling
+    api_app/tenant_isolation:
+        dir_name: 多租户隔离机制装配层（应用侧适配）
+        title: 多租户隔离机制装配层（应用侧适配）
+        scope:
+            - apps/api/src/tenant-isolation/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: core_lib/tenant_isolation
+    api_client_package:
+        dir_name: 前端 Typed API 客户端（@saas_api-client）
+        title: 前端 Typed API 客户端（@saas/api-client）
+        scope:
+            - packages/api-client/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app
+    core_lib:
+        dir_name: '@core_saas-kit 多租户 SaaS 核心库'
+        title: '@core/saas-kit 多租户 SaaS 核心库'
+        scope:
+            - libs/core/
+        source_files: []
+        children:
+            - core_lib/authorization
+            - core_lib/business_modules
+            - core_lib/platform
+            - core_lib/shared_kernel
+            - core_lib/tenant_isolation
+        depends_on: []
+        related_to: []
+    core_lib/authorization:
+        dir_name: 租户级 RBAC 授权核心
+        title: 租户级 RBAC 授权核心
+        scope:
+            - libs/core/src/authorization/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_authorization
+    core_lib/business_modules:
+        dir_name: 核心业务领域模块集合
+        title: 核心业务领域模块集合
+        scope:
+            - libs/core/src/modules/
+        source_files: []
+        children:
+            - core_lib/business_modules/organizations
+            - core_lib/business_modules/subscriptions
+            - core_lib/business_modules/workspaces
+        depends_on: []
+        related_to: []
+    core_lib/business_modules/organizations:
+        dir_name: 组织与租户生命周期治理模块
+        title: 组织与租户生命周期治理模块
+        scope:
+            - libs/core/src/modules/organizations/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_organizations
+    core_lib/business_modules/subscriptions:
+        dir_name: 订阅与配额治理模块
+        title: 订阅与配额治理模块
+        scope:
+            - libs/core/src/modules/subscriptions/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_subscriptions
+    core_lib/business_modules/workspaces:
+        dir_name: 工作区（Workspace）领域模块
+        title: 工作区（Workspace）领域模块
+        scope:
+            - libs/core/src/modules/workspaces/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_workspaces
+    core_lib/platform:
+        dir_name: 平台治理与 Operator 权限核心
+        title: 平台治理与 Operator 权限核心
+        scope:
+            - libs/core/src/platform/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_platform
+    core_lib/shared_kernel:
+        dir_name: 共享内核与领域契约层
+        title: 共享内核与领域契约层
+        scope:
+            - libs/core/src/shared-kernel/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    core_lib/tenant_isolation:
+        dir_name: 租户隔离与请求作用域
+        title: 租户隔离与请求作用域
+        scope:
+            - libs/core/src/tenant-isolation/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/tenant_isolation
+    docker_infra:
+        dir_name: 演示镜像与 OpenAPI 契约
+        title: 演示镜像与 OpenAPI 契约
+        scope:
+            - docker/
+            - openapi/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app
+    odoo_rpc_web:
+        dir_name: Odoo RPC 演示前端（SaaS 只读数据面）
+        title: Odoo RPC 演示前端（SaaS 只读数据面）
+        scope:
+            - apps/odoo-rpc-web/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/feature_odoo_rpc_api
+    scripts_tooling:
+        dir_name: 仓库级质量门禁与运维脚本集
+        title: 仓库级质量门禁与运维脚本集
+        scope:
+            - scripts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/feature_odoo_provisioning
+            - path: api_app/shared_infrastructure/database_eventing/mikro_orm_core
+    shared_libs:
+        dir_name: 共享契约与 Better Auth MikroORM 适配器
+        title: 共享契约与 Better Auth MikroORM 适配器
+        scope:
+            - libs/api-contract/
+            - libs/ba-mikro-adapter/
+            - libs/contracts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app:
+        dir_name: Web 前端应用（TanStack Router + oRPC）
+        title: Web 前端应用（TanStack Router + oRPC）
+        scope:
+            - apps/web/
+        source_files: []
+        children:
+            - web_app/app_shell
+            - web_app/auth_routes
+            - web_app/platform_admin
+            - web_app/settings_pages
+            - web_app/shared_components
+            - web_app/shared_libs
+        depends_on: []
+        related_to:
+            - path: api_app
+            - path: api_client_package
+    web_app/app_shell:
+        dir_name: Web 应用启动与根路由壳
+        title: Web 应用启动与根路由壳
+        scope:
+            - apps/web/src/routes/__root.tsx
+            - apps/web/src/routes/index.tsx
+            - apps/web/src/main.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/auth_routes:
+        dir_name: 认证与邀请路由页面
+        title: 认证与邀请路由页面
+        scope:
+            - apps/web/src/routes/login.tsx
+            - apps/web/src/routes/register.tsx
+            - apps/web/src/routes/login-redirect.test.tsx
+            - apps/web/src/routes/login.test.tsx
+            - apps/web/src/routes/invitations.tsx
+            - apps/web/src/routes/invitations.test.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_auth
+    web_app/platform_admin:
+        dir_name: 平台运营后台（租户与用户治理）
+        title: 平台运营后台（租户与用户治理）
+        scope:
+            - apps/web/src/routes/platform.tsx
+            - apps/web/src/routes/platform.tenants.tsx
+            - apps/web/src/routes/platform.users.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_platform
+    web_app/settings_pages:
+        dir_name: 设置中心子页面（账户_计费_集成_邀请_成员_角色_存储）
+        title: 设置中心子页面（账户/计费/集成/邀请/成员/角色/存储）
+        scope:
+            - apps/web/src/routes/settings.account.tsx
+            - apps/web/src/routes/settings.billing.tsx
+            - apps/web/src/routes/settings.integrations.tsx
+            - apps/web/src/routes/settings.invitations.tsx
+            - apps/web/src/routes/settings.members.tsx
+            - apps/web/src/routes/settings.roles.tsx
+            - apps/web/src/routes/settings.storage.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_app/domain_storage
+            - path: api_app/domain_subscriptions
+    web_app/shared_components:
+        dir_name: Web 应用共享 UI 基元与领域面板
+        title: Web 应用共享 UI 基元与领域面板
+        scope:
+            - apps/web/src/components/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/shared_libs:
+        dir_name: Web 前端共享库（会话、API 门面与通用工具）
+        title: Web 前端共享库（会话、API 门面与通用工具）
+        scope:
+            - apps/web/src/lib/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

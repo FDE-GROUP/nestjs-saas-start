@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure/database_eventing
+title: API 数据库与事件基础设施聚合模块
+scope:
+    - apps/api/src/database/
+source_files: []
+depends_on: []
+related_to: []

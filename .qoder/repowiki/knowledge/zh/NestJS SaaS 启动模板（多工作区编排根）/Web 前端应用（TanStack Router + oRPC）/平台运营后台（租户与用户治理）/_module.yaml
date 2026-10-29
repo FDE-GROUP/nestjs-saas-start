@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: web_app/platform_admin
+title: 平台运营后台（租户与用户治理）
+scope:
+    - apps/web/src/routes/platform.tsx
+    - apps/web/src/routes/platform.tenants.tsx
+    - apps/web/src/routes/platform.users.tsx
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_platform

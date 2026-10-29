@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_app/domain_users
+title: 用户自助面（PIPL 右-access/右-erase）
+scope:
+    - apps/api/src/modules/users/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_auth

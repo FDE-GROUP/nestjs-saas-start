@@ -1,0 +1,36 @@
+schema_version: 1
+module_path: ""
+title: NestJS SaaS 启动模板（多工作区编排根）
+scope:
+    - README.md
+    - AGENTS.md
+    - COMMIT_CONVENTION.md
+    - .gitignore
+    - .dockerignore
+    - package.json
+    - pnpm-workspace.yaml
+    - pnpm-lock.yaml
+    - tsconfig.json
+    - tsconfig.build.json
+    - nest-cli.json
+    - biome.json
+    - commitlint.config.cjs
+    - vitest.config.ts
+    - vitest.browser.config.ts
+    - vitest.consistency.config.ts
+    - playwright.config.ts
+    - typedoc.json
+    - renovate.json
+    - .swcrc
+    - .npmrc
+    - .env.example
+    - Dockerfile
+    - LICENSE
+    - abel-weichat.jpg
+    - chat_Odoo ERP.jpg
+    - docker-compose.dev.yml
+    - docker-compose.yml
+    - tsconfig.doc.json
+source_files: []
+depends_on: []
+related_to: []
