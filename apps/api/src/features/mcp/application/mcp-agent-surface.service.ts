@@ -26,10 +26,12 @@ import { MCP_TOOLS, type McpToolName, selectToolNames } from './mcp-tool-registr
 /** JSON-RPC 单帧/批帧的宽松形状（只辨 initialize 判定，协议细节交 SDK transport）。 */
 type RpcBody = { method?: string } | { method?: string }[] | undefined;
 
-/** 会话表条目：transport 本体 + 建会话凭证的租户轴（跨租 sessionId 冒用防线）。 */
+/** 会话表条目：transport 本体 + 建会话凭证的租户轴（跨租 sessionId 冒用防线）+ 闲置回收轴。 */
 interface McpSession {
   transport: StreamableHTTPServerTransport;
   tenantId: string;
+  /** 最近一次命中时刻（ms epoch·闲置 TTL 与容量逐出的 LRU 锚）。 */
+  lastSeenAt: number;
 }
 
 /** 工具展示元数据（描述 + 入参 JSON Schema 的 zod 源·SDK 注册时投影）。 */
@@ -83,9 +85,19 @@ const TOOL_META: Record<McpToolName, ToolMeta> = {
  *
  * 会话安全：条目记建会话租户；后续请求凭证租户与条目不符 → 视作无会话（400·sessionId 不可
  * 跨租冒用）。HTTP 面 GET（服务端主动通知通道）在 `enableJsonResponse` 形下未启用，只开 POST/DELETE。
+ *
+ * 会话生命周期（承换轨评审 MCP②/M1 的进程内半段）：内存表非无界——闲置超
+ * `SESSION_IDLE_TTL_MS` 的条目在任意命中/新建点惰性回收，容量以 `MAX_SESSIONS` 为上限
+ * 按 LRU 逐出（被回收/逐出者 transport.close·后续请求同「无会话」口径 400·零新透露）。
+ * 多实例共享/横扩所需的外部存储（Redis 触 #2 / 表触 #1）属高危另签件·登记缓后。
  */
 @Injectable()
 export class McpAgentSurfaceService {
+  /** 闲置会话回收阈值（30 分钟无命中即惰性回收·常量单源·不占配置面）。 */
+  static readonly SESSION_IDLE_TTL_MS = 30 * 60_000;
+  /** 进程内并发会话上限（超出按 LRU 逐出·防无界增长拖倒单例）。 */
+  static readonly MAX_SESSIONS = 128;
+
   private readonly logger = new Logger(McpAgentSurfaceService.name);
   private readonly sessions = new Map<string, McpSession>();
 
@@ -141,11 +153,12 @@ export class McpAgentSurfaceService {
       return;
     }
     const sessionId = this.sessionIdOf(req);
-    const session = sessionId ? this.sessions.get(sessionId) : undefined;
+    const session = sessionId ? this.lookupSession(sessionId) : undefined;
     if (!session || session.tenantId !== cred.tenantId) {
       this.writeError(req, res, 404, { message: 'No valid MCP session' });
       return;
     }
+    session.lastSeenAt = Date.now();
     try {
       await session.transport.handleRequest(req.raw, res);
     } catch (err) {
@@ -161,11 +174,12 @@ export class McpAgentSurfaceService {
     cred: VerifiedMcpCredential,
   ): Promise<void> {
     const sessionId = this.sessionIdOf(req);
-    const stored = sessionId ? this.sessions.get(sessionId) : undefined;
+    const stored = sessionId ? this.lookupSession(sessionId) : undefined;
     const body = req.body as RpcBody;
     const firstFrame = Array.isArray(body) ? body[0] : body;
 
     if (stored && stored.tenantId === cred.tenantId) {
+      stored.lastSeenAt = Date.now();
       await this.process(stored.transport, req, res, body);
       return;
     }
@@ -181,7 +195,7 @@ export class McpAgentSurfaceService {
       sessionIdGenerator: () => randomUUID(),
       enableJsonResponse: true,
       onsessioninitialized: (sid: string) => {
-        this.sessions.set(sid, { transport, tenantId: cred.tenantId });
+        this.registerSession(sid, transport, cred.tenantId);
       },
     });
     transport.onclose = () => {
@@ -241,6 +255,13 @@ export class McpAgentSurfaceService {
 
   /**
    * 合成请求级租户作用域（对齐中间件 D7 显式租激活形·无活动组织轴）。
+   *
+   * @remarks
+   * 成本取舍留痕（承换轨评审 MCP③）：本面每个 HTTP 请求重验链最多 4 次 DB 往返
+   * （verifier 内 findByHash+touchLastUsed，加此处 resolveTenantRole+readOrgVisibility）——
+   * 换的是撤销/退租/封禁的即时生效（与会话同生命周期的缓存会开出撤销窗口），不在安全语义上
+   * 省钱。若量级坐实热点，降往返（合并查询/短 TTL 只读缓存）属另案待审·不在此自行优化。
+   *
    * @returns 绑定成功的 scope；成员资格解不出角色 → `undefined`（调用侧 403 fail-closed）。
    */
   private async buildScope(cred: VerifiedMcpCredential): Promise<TenantIsolationScope | undefined> {
@@ -263,6 +284,60 @@ export class McpAgentSurfaceService {
   private sessionIdOf(req: FastifyRequest): string | undefined {
     const value = req.headers['mcp-session-id'];
     return typeof value === 'string' && value.length > 0 ? value : undefined;
+  }
+
+  /**
+   * 命中读取 + 惰性闲置回收（承评审 MCP②）：过期条目出表并 close transport，
+   * 调用侧同「无会话」口径处置（零新透露面）。
+   */
+  private lookupSession(sessionId: string): McpSession | undefined {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    if (Date.now() - session.lastSeenAt > McpAgentSurfaceService.SESSION_IDLE_TTL_MS) {
+      this.sessions.delete(sessionId);
+      this.closeQuietly(session.transport);
+      return undefined;
+    }
+    return session;
+  }
+
+  /** 登记新会话：先惰性清过期，仍满则按 LRU 逐出最久未命中者（防无界增长）。 */
+  private registerSession(
+    sessionId: string,
+    transport: StreamableHTTPServerTransport,
+    tenantId: string,
+  ): void {
+    for (const [sid, session] of this.sessions) {
+      if (Date.now() - session.lastSeenAt > McpAgentSurfaceService.SESSION_IDLE_TTL_MS) {
+        this.sessions.delete(sid);
+        this.closeQuietly(session.transport);
+      }
+    }
+    while (this.sessions.size >= McpAgentSurfaceService.MAX_SESSIONS) {
+      let oldestId: string | undefined;
+      let oldestSeen = Number.POSITIVE_INFINITY;
+      for (const [sid, session] of this.sessions) {
+        if (session.lastSeenAt < oldestSeen) {
+          oldestId = sid;
+          oldestSeen = session.lastSeenAt;
+        }
+      }
+      if (oldestId === undefined) break;
+      const evicted = this.sessions.get(oldestId);
+      this.sessions.delete(oldestId);
+      if (evicted) this.closeQuietly(evicted.transport);
+      this.logger.warn(`mcp session capacity reached: evicted LRU ${oldestId}`);
+    }
+    this.sessions.set(sessionId, { transport, tenantId, lastSeenAt: Date.now() });
+  }
+
+  /** 回收时尽力关闭 transport（释 SDK 侧资源·失败只警不致断链）。 */
+  private closeQuietly(transport: StreamableHTTPServerTransport): void {
+    try {
+      void transport.close();
+    } catch (err) {
+      this.logger.warn(`mcp session close failed: ${String(err)}`);
+    }
   }
 
   /**

@@ -23,6 +23,10 @@ import { HttpException, Inject, Injectable } from '@nestjs/common';
  *  - 租户上下文 = 签发时盖章的 `row.tenantId` 单源（调用侧零参数可指定·X7 P0 教训的
  *    消费面对偶：「他租凭证」在本面上根本不存在跨租消费路径）。
  * 成功路径 await 刷 `lastUsedAt`，窄写失败吞错不阻断校验主路（可用性优先·审计面非安全闸）。
+ * 成本取舍显式留痕（承换轨评审 MCP③）：每次 verify = 2 次 DB 往返（`findByHash` 读 +
+ * `touchLastUsed` 窄写）+ 封禁判据读；逐请求重验换的是撤销/封禁**即时生效**（无缓存窗口），
+ * 代价是高频工具面下 `lastUsedAt` 的写放大（每请求一行更新）。若后续量级坐实瓶颈，节流写
+ * （如仅距上次 >60s 才刷）或读面缓存属另案待审，不在本判据件内自行优化。
  * 以 `MCP_TOKEN_VERIFIER` token 经 `McpModule` 注册——属主侧 e2e/消费面经 token 解析，
  * 零 features 路径 import（隔离闸 A/B 双向合规）。
  */

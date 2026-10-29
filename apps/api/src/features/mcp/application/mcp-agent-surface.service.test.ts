@@ -16,7 +16,8 @@ import type { McpToolExecutorService } from './mcp-tool-executor.service';
  * ②租内无角色分配 → 403 fail-closed，ALS 绑定不发生；③绑定形 = D7 显式租激活
  * （tenantId/userId/role/orgVisibility·无活动组织轴）且会话处理在其内进行；
  * ④他租 sessionId 冒用视作无会话（400·不透露存在性）；⑤scope→可见工具映射；
- * ⑥本面全部 JSON 错误体过 `@saas/contracts` `errorResponseSchema` 强锁（承换轨评审 M3）。
+ * ⑥本面全部 JSON 错误体过 `@saas/contracts` `errorResponseSchema` 强锁（承换轨评审 M3）；
+ * ⑦会话表有界：闲置超 TTL 惰性回收・满额按 LRU 逐出（承评审 MCP②/M1 进程内半段）。
  * 真协议往返（initialize/tools/list/tools/call）由 gated e2e 承担。
  */
 describe('McpAgentSurfaceService（鉴权链）', () => {
@@ -73,11 +74,16 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
   }
 
   /** 塞入既有会话（绕过真实 initialize 网络链的测试后门·只动私有表）。 */
-  function seedSession(sessionId: string, tenantId: string) {
-    const transport = { handleRequest: vi.fn().mockResolvedValue(undefined), sessionId };
+  function seedSession(sessionId: string, tenantId: string, lastSeenAt: number = Date.now()) {
+    const transport = {
+      handleRequest: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+      sessionId,
+    };
     (surface as unknown as { sessions: Map<string, unknown> }).sessions.set(sessionId, {
       transport,
       tenantId,
+      lastSeenAt,
     });
     return transport;
   }
@@ -187,6 +193,46 @@ describe('McpAgentSurfaceService（鉴权链）', () => {
     const owned = fakePair({ authorization: 'Bearer mcp_ok', sessionId: 's3' });
     await surface.handleDelete(owned.req, owned.reply);
     expect(transport.handleRequest).toHaveBeenCalledOnce();
+  });
+
+  it('闲置超 TTL 会话 → 惰性回收（transport.close・出表），后续请求同无会话口径 400', async () => {
+    const stale = seedSession(
+      's-stale',
+      'T1',
+      Date.now() - McpAgentSurfaceService.SESSION_IDLE_TTL_MS - 1_000,
+    );
+    const { req, reply, written } = fakePair({
+      authorization: 'Bearer mcp_ok',
+      sessionId: 's-stale',
+      body: { method: 'tools/call' },
+    });
+    await surface.handlePost(req, reply);
+    expect(written.status).toBe(400);
+    expect(stale.handleRequest).not.toHaveBeenCalled();
+    expect(stale.close).toHaveBeenCalledOnce();
+    const table = (surface as unknown as { sessions: Map<string, unknown> }).sessions;
+    expect(table.has('s-stale')).toBe(false);
+  });
+
+  it('会话表满额 → 登记新会话时按 LRU 逐出最久未命中者（非拒新·防无界增长）', () => {
+    const table = (surface as unknown as { sessions: Map<string, unknown> }).sessions;
+    const now = Date.now();
+    const oldest = seedSession('full-0', 'T1', now - McpAgentSurfaceService.MAX_SESSIONS * 1_000);
+    for (let i = 1; i < McpAgentSurfaceService.MAX_SESSIONS; i += 1) {
+      seedSession(`full-${i}`, 'T1', now - (McpAgentSurfaceService.MAX_SESSIONS - i) * 1_000);
+    }
+    expect(table.size).toBe(McpAgentSurfaceService.MAX_SESSIONS);
+    const newcomer = { handleRequest: vi.fn(), close: vi.fn(), sessionId: 'fresh' };
+    (
+      surface as unknown as {
+        registerSession(sid: string, transport: unknown, tenantId: string): void;
+      }
+    ).registerSession('fresh', newcomer, 'T1');
+    // 最久未命中的 full-0 被逐出且 close·表封顶不涨·新会话正常入表
+    expect(table.has('full-0')).toBe(false);
+    expect(oldest.close).toHaveBeenCalledOnce();
+    expect(table.has('fresh')).toBe(true);
+    expect(table.size).toBe(McpAgentSurfaceService.MAX_SESSIONS);
   });
 
   it('scope→可见工具映射：空集零工具（deny-by-default），read 落两读·write 落写工具', () => {
