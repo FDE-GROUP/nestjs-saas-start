@@ -1,751 +1,2138 @@
+info:
+  title: NestJS SaaS Start
+  description: NestJS template with best practices
+  version: 1.0.0
+servers:
+  - url: /api/v1.0
 openapi: 3.1.0
 paths:
-  /api/v1/health:
+  /health:
     get:
-      operationId: HealthController__v1
-      parameters: []
+      operationId: health.check
+      summary: Liveness probe (ping-only)
       responses:
         '200':
-          description: ''
-      tags:
-        - Health
-  /api/v1/oauth2/authorize:
+          description: OK
+          content: {}
+  /posts:
     get:
-      operationId: OauthSsoController_authorize_v1
+      operationId: posts.list
+      summary: List posts in the active organization (cursor-paginated)
       parameters:
-        - name: client_id
-          required: true
-          in: query
+        - in: query
+          name: limit
+          schema:
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: cursor
           schema:
             type: string
-            minLength: 1
-        - name: redirect_uri
-          required: true
-          in: query
+            maxLength: 512
+            pattern: ^[A-Za-z0-9_-]+$
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: organizationId
           schema:
             type: string
-            minLength: 1
-        - name: response_type
-          required: true
-          in: query
-          schema:
-            type: string
-            enum:
-              - token
-        - name: scope
-          required: false
-          in: query
-          schema:
-            type: string
-        - name: state
-          required: false
-          in: query
-          schema:
-            type: string
-      responses:
-        '302':
-          description: Redirect to whitelisted redirect_uri#access_token=…
-        '400':
-          description: Unregistered client_id or redirect_uri not in whitelist.
-        '401':
-          description: No authenticated session (global session wall).
-        '403':
-          description: >-
-            Odoo not available for the active organization (canUseOdoo
-            fail-closed).
-      summary: >-
-        OAuth2 implicit-flow authorization endpoint (this repo acts as Odoo
-        auth_oauth OP)
-      tags: &ref_0
-        - oauth-sso
-  /api/v1/oauth2/userinfo:
-    get:
-      operationId: OauthSsoController_userinfo_v1
-      parameters: []
+            maxLength: 128
+          allowEmptyValue: true
+          allowReserved: true
       responses:
         '200':
-          description: Raw OIDC claims { sub, email, name }.
-        '401':
-          description: Missing/invalid token or audience not authorized.
-        '403':
-          description: Email not verified.
-      summary: >-
-        OIDC userinfo (Bearer access token; returns raw JSON, not the API
-        envelope)
-      tags: *ref_0
-  /api/v1/organizations/roles:
-    get:
-      operationId: AuthorizationAdminController_listRoles_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_1
-        - AuthorizationAdmin
-    post:
-      operationId: AuthorizationAdminController_createRole_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-  /api/v1/organizations/roles/rename:
-    post:
-      operationId: AuthorizationAdminController_renameRole_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-  /api/v1/organizations/roles/delete:
-    post:
-      operationId: AuthorizationAdminController_deleteRole_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-  /api/v1/organizations/roles/grants:
-    get:
-      operationId: AuthorizationAdminController_listGrants_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-    post:
-      operationId: AuthorizationAdminController_grant_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-  /api/v1/organizations/roles/grants/revoke:
-    post:
-      operationId: AuthorizationAdminController_revoke_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_1
-  /api/v1/platform/tenants:
-    get:
-      operationId: PlatformTenantsController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_2
-        - PlatformTenants
-  /api/v1/platform/tenants/{tenantId}:
-    get:
-      operationId: PlatformTenantsController_detail_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-    delete:
-      operationId: PlatformTenantsController_remove_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/suspend:
-    patch:
-      operationId: PlatformTenantsController_suspend_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/resume:
-    patch:
-      operationId: PlatformTenantsController_resume_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/visibility:
-    patch:
-      operationId: PlatformTenantsController_setVisibility_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/permanent:
-    delete:
-      operationId: PlatformTenantsController_permanentRemove_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/diagnostics:
-    get:
-      operationId: PlatformTenantsController_diagnostics_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/tenants/{tenantId}/organizations/{orgId}/export:
-    get:
-      operationId: PlatformTenantsController_exportData_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_2
-  /api/v1/platform/users:
-    get:
-      operationId: PlatformUsersController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_3
-        - PlatformUsers
-  /api/v1/platform/users/{id}/suspend:
-    patch:
-      operationId: PlatformUsersController_suspend_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_3
-  /api/v1/platform/users/{id}/resume:
-    patch:
-      operationId: PlatformUsersController_resume_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_3
-  /api/v1/users/me/data-export:
-    get:
-      operationId: UsersController_exportMe_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_4
-        - Users
-  /api/v1/users/me:
-    delete:
-      operationId: UsersController_deleteMe_v1
-      parameters: []
-      responses:
-        '204':
-          description: ''
-      tags: *ref_4
-  /api/v1/posts:
-    get:
-      operationId: PostsController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_5
-        - Posts
-    post:
-      operationId: PostsController_create_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_5
-  /api/v1/workspaces:
-    get:
-      operationId: WorkspacesController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_6
-        - Workspaces
-    post:
-      operationId: WorkspacesController_create_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_6
-  /api/v1/workspaces/{id}:
-    patch:
-      operationId: WorkspacesController_update_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_6
-    delete:
-      operationId: WorkspacesController_remove_v1
-      parameters: []
-      responses:
-        '204':
-          description: ''
-      tags: *ref_6
-  /api/v1/organizations/applications:
-    post:
-      operationId: OrganizationsController_apply_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: &ref_7
-        - Organizations
-  /api/v1/organizations/applications/{id}/approve:
-    post:
-      operationId: OrganizationsController_approve_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_7
-  /api/v1/organizations/applications/{id}/reject:
-    post:
-      operationId: OrganizationsController_reject_v1
-      parameters: []
-      responses:
-        '204':
-          description: ''
-      tags: *ref_7
-  /api/v1/organizations/{id}/odoo-binding:
-    post:
-      operationId: OrganizationsController_bindOdooCompany_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_7
-  /api/v1/organizations/members:
-    get:
-      operationId: OrganizationsOrgAdminController_listMembers_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_8
-        - OrganizationsOrgAdmin
-  /api/v1/organizations/members/role:
-    post:
-      operationId: OrganizationsOrgAdminController_updateMemberRole_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_8
-  /api/v1/organizations/members/remove:
-    post:
-      operationId: OrganizationsOrgAdminController_removeMember_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_8
-  /api/v1/organizations/invitations:
-    get:
-      operationId: OrganizationsOrgAdminController_listInvitations_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_8
-    post:
-      operationId: OrganizationsOrgAdminController_createInvitation_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_8
-  /api/v1/organizations/invitations/cancel:
-    post:
-      operationId: OrganizationsOrgAdminController_cancelInvitation_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_8
-  /api/v1/organizations:
-    get:
-      operationId: OrganizationsSelfController_listMyOrganizations_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_9
-        - OrganizationsSelf
-  /api/v1/organizations/active:
-    post:
-      operationId: OrganizationsSelfController_setActive_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/organizations/members/leave:
-    post:
-      operationId: OrganizationsSelfController_leave_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/organizations/invitations/accept:
-    post:
-      operationId: OrganizationsSelfController_acceptInvitation_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/organizations/invitations/reject:
-    post:
-      operationId: OrganizationsSelfController_rejectInvitation_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/organizations/invitations/mine:
-    get:
-      operationId: OrganizationsSelfController_listMyInvitations_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/organizations/odoo/availability:
-    get:
-      operationId: OrganizationsSelfController_odooAvailability_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_9
-  /api/v1/tenants:
-    get:
-      operationId: TenantsController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_10
-        - Tenants
-  /api/v1/tenants/active:
-    put:
-      operationId: TenantsController_setActiveTenant_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_10
-  /api/v1/subscriptions/current:
-    get:
-      operationId: SubscriptionsController_getCurrent_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_11
-        - Subscriptions
-  /api/v1/subscriptions:
-    post:
-      operationId: SubscriptionsController_create_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_11
-  /api/v1/storage/upload:
-    post:
-      operationId: StorageController_uploadFile_v1
-      parameters: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: File to upload
-      responses:
-        '201':
-          description: Uploaded file result.
+          description: OK
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FileUploadResultDto'
-      summary: Upload a single file
-      tags: &ref_12
-        - storage
-  /api/v1/storage/{key}:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        content:
+                          type:
+                            - string
+                            - 'null'
+                        published:
+                          type: boolean
+                        organizationId:
+                          type: string
+                        workspaceId:
+                          type:
+                            - string
+                            - 'null'
+                        createdAt: {}
+                        updatedAt: {}
+                      required:
+                        - id
+                        - title
+                        - content
+                        - published
+                        - organizationId
+                        - workspaceId
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                  hasMore:
+                    type: boolean
+                  nextCursor:
+                    type: string
+                required:
+                  - items
+                  - hasMore
+                additionalProperties: false
+    post:
+      operationId: posts.create
+      summary: Create a post in the active organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                content:
+                  type: string
+                  maxLength: 20000
+                published:
+                  type: boolean
+              required:
+                - title
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  content:
+                    type:
+                      - string
+                      - 'null'
+                  published:
+                    type: boolean
+                  organizationId:
+                    type: string
+                  workspaceId:
+                    type:
+                      - string
+                      - 'null'
+                  createdAt: {}
+                  updatedAt: {}
+                required:
+                  - id
+                  - title
+                  - content
+                  - published
+                  - organizationId
+                  - workspaceId
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+  /users/me/data-export:
+    get:
+      operationId: users.exportData
+      summary: 'PIPL right-to-access: export current user personal data (C1 · FR-7)'
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /users/me:
     delete:
-      operationId: StorageController_deleteFile_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_12
-  /api/v1/storage/{key}/url:
-    get:
-      operationId: StorageController_getFileUrl_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_12
-  /api/v1/payment/test:
-    get:
-      operationId: PaymentController_test_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_13
-        - Payment
-  /api/v1/payment/customers:
-    post:
-      operationId: PaymentController_createCustomer_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_13
-  /api/v1/payment/checkouts:
-    post:
-      operationId: PaymentController_createCheckout_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_13
-  /api/v1/payment/checkouts/{id}:
-    get:
-      operationId: PaymentController_retrieveCheckout_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_13
-  /api/v1/payment/refunds:
-    post:
-      operationId: PaymentController_refund_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: *ref_13
-  /api/v1/payment/webhooks:
-    post:
-      operationId: PaymentController_handleWebhook_v1
-      parameters:
-        - name: stripe-signature
-          required: true
-          in: header
-          schema:
-            type: string
-      responses:
-        '200':
-          description: ''
-      tags: *ref_13
-  /api/v1/odoo/partners:
-    get:
-      operationId: OdooRpcController_listPartners_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: &ref_14
-        - OdooRpc
-  /api/v1/odoo/products:
-    get:
-      operationId: OdooRpcController_listProducts_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_14
-  /api/v1/mcp/credentials:
-    post:
-      operationId: McpCredentialsController_mint_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: &ref_15
-        - McpCredentials
-    get:
-      operationId: McpCredentialsController_list_v1
-      parameters: []
-      responses:
-        '200':
-          description: ''
-      tags: *ref_15
-  /api/v1/mcp/credentials/{id}:
-    delete:
-      operationId: McpCredentialsController_revoke_v1
-      parameters: []
+      operationId: users.remove
+      summary: 'PIPL right-to-erase: hard-delete current user (C1 · FR-7)'
       responses:
         '204':
-          description: ''
-      tags: *ref_15
-  /api/v1/mcp:
-    post:
-      operationId: McpController_post_v1
-      parameters: []
-      responses:
-        '201':
-          description: ''
-      tags: &ref_16
-        - Mcp
-    delete:
-      operationId: McpController_remove_v1
-      parameters: []
+          description: OK
+          content: {}
+  /workspaces:
+    get:
+      operationId: workspaces.list
+      summary: List workspaces in the active organization
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: offset
+          schema:
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          allowEmptyValue: true
+          allowReserved: true
       responses:
         '200':
-          description: ''
-      tags: *ref_16
-info:
-  title: NestJS SaaS Start API
-  description: NestJS SaaS Start API documentation
-  version: 1.0.0
-  contact: {}
-tags: []
-servers: []
-components:
-  securitySchemes:
-    bearer:
-      scheme: bearer
-      bearerFormat: JWT
-      type: http
-  schemas:
-    ApiEnvelope:
-      type: object
-      properties:
-        statusCode:
-          type: number
-          description: HTTP 状态码回显（响应体字段，非状态码本身）。
-        message:
-          type: string
-          description: 人面可读消息（成功面恒 "Success"）。
-        data:
-          type: object
-          description: 业务载荷；具体形状见 allOf 第二项的 $ref。
-          additionalProperties: true
-      required:
-        - statusCode
-        - message
-        - data
-    ApiErrorDetail:
-      type: object
-      properties:
-        path:
-          type: string
-          description: 字段路径（校验失败 = property；业务失败可缺省）。
-        code:
-          type: string
-          description: 细分机器码（业务子错误给；校验面留空）。
-        message:
-          type: string
-          description: 人面可读（随 i18n 译文）。
-      required:
-        - message
-    ApiErrorResponse:
-      type: object
-      properties:
-        statusCode:
-          type: number
-          description: HTTP 状态码。
-        message:
-          description: 人面可读消息；校验失败时为逐字段消息数组。
-          oneOf:
-            - type: string
-            - type: array
-              items:
-                type: string
-        error:
-          type: string
-          description: HTTP 类别名（如 "Not Found"）。
-        timestamp:
-          type: string
-          format: date-time
-          description: 服务端时刻 ISO 串。
-        path:
-          type: string
-          description: 请求路径。
-        requestId:
-          type: string
-          description: 请求关联 id（与 x-request-id 头、日志、领域事件 correlationId 同源）。
-        errorCode:
-          type: string
-          description: >-
-            业务错误码（`NAMESPACE:NAME` 冒号文法·单源 = @core ERROR_CODES，前端据 code 分支、据
-            message 展示）。
-        errors:
-          description: 字段级结构化明细。
-          type: array
-          items:
-            $ref: '#/components/schemas/ApiErrorDetail'
-      required:
-        - statusCode
-        - message
-        - error
-        - timestamp
-        - path
-        - requestId
-    FileUploadResultDto:
-      type: object
-      properties:
-        key:
-          type: string
-          description: File unique identifier
-        url:
-          type: string
-          description: File access URL
-        etag:
-          type: string
-          description: File ETag value
-        size:
-          type: number
-          description: File size (bytes)
-        mimetype:
-          type: string
-          description: File MIME type
-        originalname:
-          type: string
-          description: Original filename
-      required:
-        - key
-        - url
-        - size
-        - mimetype
-        - originalname
-    StorageDeleteResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          description: 删除是否成功。
-      required:
-        - success
-    StorageUrlResponse:
-      type: object
-      properties:
-        url:
-          type: string
-          description: 签名访问 URL。
-      required:
-        - url
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        organizationId:
+                          type: string
+                        ownerId:
+                          type:
+                            - string
+                            - 'null'
+                        createdAt: {}
+                        updatedAt: {}
+                      required:
+                        - id
+                        - name
+                        - slug
+                        - organizationId
+                        - createdAt
+                        - updatedAt
+                      additionalProperties: false
+                  total:
+                    type: number
+                  limit:
+                    type: number
+                  offset:
+                    type: number
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                additionalProperties: false
+    post:
+      operationId: workspaces.create
+      summary: Create a workspace (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                slug:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+              required:
+                - name
+                - slug
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  organizationId:
+                    type: string
+                  ownerId:
+                    type:
+                      - string
+                      - 'null'
+                  createdAt: {}
+                  updatedAt: {}
+                required:
+                  - id
+                  - name
+                  - slug
+                  - organizationId
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+  /workspaces/:id:
+    patch:
+      operationId: workspaces.update
+      summary: Update a workspace (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                slug:
+                  type: string
+                  maxLength: 128
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  organizationId:
+                    type: string
+                  ownerId:
+                    type:
+                      - string
+                      - 'null'
+                  createdAt: {}
+                  updatedAt: {}
+                required:
+                  - id
+                  - name
+                  - slug
+                  - organizationId
+                  - createdAt
+                  - updatedAt
+                additionalProperties: false
+    delete:
+      operationId: workspaces.remove
+      summary: Delete a workspace (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '204':
+          description: OK
+          content: {}
+  /payment/test:
+    get:
+      operationId: payment.test
+      summary: Payment integration status
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    const: ok
+                  selected:
+                    type: string
+                    enum:
+                      - stripe
+                      - alipay
+                      - wechat_pay
+                  available:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        - stripe
+                        - alipay
+                        - wechat_pay
+                required:
+                  - status
+                  - selected
+                  - available
+                additionalProperties: false
+  /payment/customers:
+    post:
+      operationId: payment.createCustomer
+      summary: Create a payment customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                name:
+                  type: string
+                  maxLength: 200
+                metadata:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    type: string
+              required:
+                - email
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  providerId:
+                    type: string
+                    enum:
+                      - stripe
+                      - alipay
+                      - wechat_pay
+                  email:
+                    type: string
+                  raw: {}
+                required:
+                  - id
+                  - providerId
+                  - email
+                  - raw
+                additionalProperties: false
+  /payment/checkouts:
+    post:
+      operationId: payment.createCheckout
+      summary: Create a checkout (payment intent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  minimum: 1
+                currency:
+                  type: string
+                  minLength: 1
+                  maxLength: 10
+                description:
+                  type: string
+                  maxLength: 20000
+                metadata:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties:
+                    type: string
+              required:
+                - amount
+                - currency
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  providerId:
+                    type: string
+                    enum:
+                      - stripe
+                      - alipay
+                      - wechat_pay
+                  status:
+                    type: string
+                  clientSecret:
+                    type: string
+                  raw: {}
+                required:
+                  - id
+                  - providerId
+                  - raw
+                additionalProperties: false
+  /payment/checkouts/:id:
+    get:
+      operationId: payment.retrieveCheckout
+      summary: Retrieve a checkout
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  providerId:
+                    type: string
+                    enum:
+                      - stripe
+                      - alipay
+                      - wechat_pay
+                  status:
+                    type: string
+                  clientSecret:
+                    type: string
+                  raw: {}
+                required:
+                  - id
+                  - providerId
+                  - raw
+                additionalProperties: false
+  /payment/refunds:
+    post:
+      operationId: payment.refund
+      summary: Refund a checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checkoutId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                amount:
+                  type: number
+                  minimum: 1
+                reason:
+                  type: string
+                  maxLength: 20000
+              required:
+                - checkoutId
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  providerId:
+                    type: string
+                    enum:
+                      - stripe
+                      - alipay
+                      - wechat_pay
+                  status:
+                    type: string
+                  amount:
+                    type: number
+                  raw: {}
+                required:
+                  - id
+                  - providerId
+                  - raw
+                additionalProperties: false
+  /storage/:key:
+    delete:
+      operationId: storage.remove
+      summary: Delete a file
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+              required:
+                - key
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+                additionalProperties: false
+  /storage/:key/url:
+    get:
+      operationId: storage.url
+      summary: Get a signed URL for a file
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+        - in: query
+          name: expiresIn
+          schema:
+            type: number
+          allowEmptyValue: true
+          allowReserved: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required:
+                  - url
+                additionalProperties: false
+  /subscriptions/current:
+    get:
+      operationId: subscriptions.current
+      summary: >-
+        Current organization subscription: plan, seat quota, usage, customer
+        mapping
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasSubscription:
+                    type: boolean
+                  plan:
+                    type: string
+                  seatsLimit:
+                    type: number
+                  used:
+                    type: number
+                  remaining:
+                    type: number
+                  providerCustomerId:
+                    type:
+                      - string
+                      - 'null'
+                required:
+                  - hasSubscription
+                  - plan
+                  - seatsLimit
+                  - used
+                  - remaining
+                  - providerCustomerId
+                additionalProperties: false
+  /subscriptions:
+    post:
+      operationId: subscriptions.create
+      summary: >-
+        Provision/upgrade the organization subscription (creates the provider
+        customer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan:
+                  type: string
+                  enum:
+                    - free
+                    - pro
+                    - enterprise
+                customerEmail:
+                  type: string
+                  maxLength: 254
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                seatsLimit:
+                  type: integer
+                  minimum: 1
+                  maximum: 9007199254740991
+                storageQuota:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+                apiQuota:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+              required:
+                - plan
+                - customerEmail
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasSubscription:
+                    type: boolean
+                  plan:
+                    type: string
+                  seatsLimit:
+                    type: number
+                  used:
+                    type: number
+                  remaining:
+                    type: number
+                  providerCustomerId:
+                    type:
+                      - string
+                      - 'null'
+                required:
+                  - hasSubscription
+                  - plan
+                  - seatsLimit
+                  - used
+                  - remaining
+                  - providerCustomerId
+                additionalProperties: false
+  /tenants:
+    get:
+      operationId: tenants.list
+      summary: List tenant directory of the current user (tenants → organizations)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tenantId:
+                          type: string
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - pending_approval
+                            - active
+                            - suspended
+                            - deleted
+                        organizations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              organizationId:
+                                type: string
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                            required:
+                              - organizationId
+                              - name
+                              - slug
+                            additionalProperties: false
+                      required:
+                        - tenantId
+                        - name
+                        - slug
+                        - status
+                        - organizations
+                      additionalProperties: false
+                required:
+                  - tenants
+                additionalProperties: false
+  /tenants/active:
+    put:
+      operationId: tenants.setActive
+      summary: Set the active tenant of the current session (tenant activation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                required:
+                  - tenantId
+                additionalProperties: false
+  /organizations:
+    get:
+      operationId: organizations.list
+      summary: List organizations the current user belongs to (personal channel)
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/active:
+    post:
+      operationId: organizations.setActive
+      summary: Switch the session's active organization (must be a member)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organizationId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - organizationId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/members/leave:
+    post:
+      operationId: organizations.leave
+      summary: Leave the active tenant (self-service · last-owner cannot leave)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organizationId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - organizationId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/invitations/accept:
+    post:
+      operationId: organizations.acceptInvitation
+      summary: Accept an invitation addressed to the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - invitationId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/invitations/reject:
+    post:
+      operationId: organizations.rejectInvitation
+      summary: Reject an invitation addressed to the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - invitationId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/invitations/mine:
+    get:
+      operationId: organizations.listMyInvitations
+      summary: List pending invitations addressed to the current user
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/odoo/availability:
+    get:
+      operationId: organizations.odooAvailability
+      summary: >-
+        Read the active organization Odoo availability for the apps panel
+        (personal channel)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                  odooBindingStatus:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - pending
+                          - provisioning
+                          - ready
+                          - failed
+                      - type: 'null'
+                  odooCompanyId:
+                    anyOf:
+                      - type: integer
+                        exclusiveMinimum: 0
+                        maximum: 9007199254740991
+                      - type: 'null'
+                required:
+                  - available
+                  - odooBindingStatus
+                  - odooCompanyId
+                additionalProperties: false
+  /organizations/applications:
+    post:
+      operationId: organizations.applications.apply
+      summary: Apply to create an organization (user-level · lands pending_approval)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                slug:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  pattern: ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$
+              required:
+                - name
+                - slug
+              additionalProperties: false
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizationId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - organizationId
+                  - status
+                additionalProperties: false
+  /organizations/applications/:id/approve:
+    post:
+      operationId: organizations.applications.approve
+      summary: Approve a pending organization (platform operator · pending → active)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizationId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - organizationId
+                  - status
+                additionalProperties: false
+  /organizations/applications/:id/reject:
+    post:
+      operationId: organizations.applications.reject
+      summary: Reject a pending organization (platform operator · hard-delete)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '204':
+          description: OK
+          content: {}
+  /organizations/:id/odoo-binding:
+    post:
+      operationId: organizations.applications.bindOdoo
+      summary: >-
+        Bind an existing Odoo company to an active organization (platform
+        operator)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                odooCompanyId:
+                  type: integer
+                  exclusiveMinimum: 0
+                  maximum: 9007199254740991
+                odooCompanyName:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                id:
+                  type: string
+              required:
+                - odooCompanyId
+                - odooCompanyName
+                - id
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organizationId:
+                    type: string
+                  odooCompanyId:
+                    type: integer
+                    exclusiveMinimum: 0
+                    maximum: 9007199254740991
+                  odooBindingStatus:
+                    type: string
+                    enum:
+                      - pending
+                      - provisioning
+                      - ready
+                      - failed
+                  odooCompanyName:
+                    type:
+                      - string
+                      - 'null'
+                  odooBoundAt:
+                    anyOf:
+                      - {}
+                      - type: 'null'
+                required:
+                  - organizationId
+                  - odooCompanyId
+                  - odooBindingStatus
+                  - odooCompanyName
+                  - odooBoundAt
+                additionalProperties: false
+  /organizations/members:
+    get:
+      operationId: organizations.members.list
+      summary: List members of the active tenant (all roles · CASL read)
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/members/role:
+    post:
+      operationId: organizations.members.updateRole
+      summary: Update a member role (owner/admin · CASL update)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                memberId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                role:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - memberId
+                - role
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/members/remove:
+    post:
+      operationId: organizations.members.remove
+      summary: Remove a member (owner/admin · CASL delete)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                memberId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - memberId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/invitations:
+    get:
+      operationId: organizations.invitations.list
+      summary: List pending invitations of the active tenant (all roles)
+      responses:
+        '200':
+          description: OK
+          content: {}
+    post:
+      operationId: organizations.invitations.create
+      summary: Invite a member to the active tenant (owner/admin · CASL create)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  minLength: 1
+                  maxLength: 254
+                role:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - email
+                - role
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/invitations/cancel:
+    post:
+      operationId: organizations.invitations.cancel
+      summary: Cancel an invitation (owner/admin · CASL cancel)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invitationId:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - invitationId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/roles:
+    get:
+      operationId: organizations.roles.list
+      summary: List roles of the active organization (system + custom)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    key:
+                      type: string
+                    name:
+                      type: string
+                    isSystem:
+                      type: boolean
+                  required:
+                    - id
+                    - key
+                    - name
+                    - isSystem
+                  additionalProperties: false
+    post:
+      operationId: organizations.roles.create
+      summary: Create a custom role (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+              required:
+                - key
+                - name
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  key:
+                    type: string
+                  name:
+                    type: string
+                  isSystem:
+                    type: boolean
+                required:
+                  - id
+                  - key
+                  - name
+                  - isSystem
+                additionalProperties: false
+  /organizations/roles/rename:
+    post:
+      operationId: organizations.roles.rename
+      summary: Rename a custom role (system roles protected)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+              required:
+                - key
+                - name
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/roles/delete:
+    post:
+      operationId: organizations.roles.remove
+      summary: Delete a custom role (grants cascade; system roles protected)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - key
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/roles/grants:
+    get:
+      operationId: organizations.roles.grants.list
+      summary: List grant rows of a role (echo checked state)
+      parameters:
+        - in: query
+          name: roleKey
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    subject:
+                      type: string
+                      enum:
+                        - Organization
+                        - Member
+                        - Invitation
+                        - Workspace
+                        - Role
+                        - RoleGrant
+                    action:
+                      type: string
+                      enum:
+                        - create
+                        - read
+                        - update
+                        - delete
+                        - cancel
+                    conditions:
+                      anyOf:
+                        - type: object
+                          propertyNames:
+                            type: string
+                          additionalProperties: {}
+                        - type: 'null'
+                  required:
+                    - subject
+                    - action
+                    - conditions
+                  additionalProperties: false
+    post:
+      operationId: organizations.roles.grants.grant
+      summary: Grant a permission cell to a role (multi-condition rows = OR union)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                subject:
+                  type: string
+                  enum:
+                    - Organization
+                    - Member
+                    - Invitation
+                    - Workspace
+                    - Role
+                    - RoleGrant
+                action:
+                  type: string
+                  enum:
+                    - create
+                    - read
+                    - update
+                    - delete
+                    - cancel
+                conditions:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties: {}
+              required:
+                - roleKey
+                - subject
+                - action
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /organizations/roles/grants/revoke:
+    post:
+      operationId: organizations.roles.grants.revoke
+      summary: Revoke a grant (conditions null = whole-subject row; object = exact row)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleKey:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                subject:
+                  type: string
+                  enum:
+                    - Organization
+                    - Member
+                    - Invitation
+                    - Workspace
+                    - Role
+                    - RoleGrant
+                action:
+                  type: string
+                  enum:
+                    - create
+                    - read
+                    - update
+                    - delete
+                    - cancel
+                conditions:
+                  type: object
+                  propertyNames:
+                    type: string
+                  additionalProperties: {}
+              required:
+                - roleKey
+                - subject
+                - action
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /platform/users:
+    get:
+      operationId: platform.users.list
+      summary: List all platform users with lifecycle status (operator only)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: offset
+          schema:
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 200
+          allowEmptyValue: true
+          allowReserved: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        name:
+                          type: string
+                        email:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - pending_approval
+                            - active
+                            - suspended
+                            - deleted
+                        createdAt: {}
+                      required:
+                        - userId
+                        - name
+                        - email
+                        - status
+                        - createdAt
+                      additionalProperties: false
+                  total:
+                    type: number
+                  limit:
+                    type: number
+                  offset:
+                    type: number
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                additionalProperties: false
+  /platform/users/:id/suspend:
+    patch:
+      operationId: platform.users.suspend
+      summary: >-
+        Suspend a platform user (active → suspended · sessions invalidated ·
+        fail-closed失能)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - userId
+                  - status
+                additionalProperties: false
+  /platform/users/:id/resume:
+    patch:
+      operationId: platform.users.resume
+      summary: Resume a suspended platform user (suspended → active)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+              required:
+                - id
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - userId
+                  - status
+                additionalProperties: false
+  /platform/tenants:
+    get:
+      operationId: platform.tenants.list
+      summary: List all tenants across the platform (operator only)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            default: 20
+            type: integer
+            minimum: 1
+            maximum: 100
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: offset
+          schema:
+            default: 0
+            type: integer
+            minimum: 0
+            maximum: 9007199254740991
+          allowEmptyValue: true
+          allowReserved: true
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 200
+          allowEmptyValue: true
+          allowReserved: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tenantId:
+                          type: string
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - pending_approval
+                            - active
+                            - suspended
+                            - deleted
+                        organizationCount:
+                          type: number
+                        createdAt: {}
+                      required:
+                        - tenantId
+                        - name
+                        - slug
+                        - status
+                        - organizationCount
+                        - createdAt
+                      additionalProperties: false
+                  total:
+                    type: number
+                  limit:
+                    type: number
+                  offset:
+                    type: number
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                additionalProperties: false
+  /platform/tenants/:tenantId:
+    get:
+      operationId: platform.tenants.detail
+      summary: Get one tenant with its organization roster (operator only)
+      parameters:
+        - in: query
+          name: tenantId
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  name:
+                    type: string
+                  slug:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                  createdAt: {}
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        organizationId:
+                          type: string
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        status:
+                          type: string
+                          enum:
+                            - pending_approval
+                            - active
+                            - suspended
+                            - deleted
+                        odooCompanyId:
+                          anyOf:
+                            - type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            - type: 'null'
+                        odooBindingStatus:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - pending
+                                - provisioning
+                                - ready
+                                - failed
+                            - type: 'null'
+                        odooCompanyName:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - organizationId
+                        - name
+                        - slug
+                        - status
+                        - odooCompanyId
+                        - odooBindingStatus
+                        - odooCompanyName
+                      additionalProperties: false
+                required:
+                  - tenantId
+                  - name
+                  - slug
+                  - status
+                  - createdAt
+                  - organizations
+                additionalProperties: false
+    delete:
+      operationId: platform.tenants.remove
+      summary: >-
+        Soft-delete a tenant (→ deleted terminal · blocks the whole tenant · row
+        kept for export)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - tenantId
+                  - status
+                additionalProperties: false
+  /platform/tenants/:tenantId/suspend:
+    patch:
+      operationId: platform.tenants.suspend
+      summary: Suspend an active tenant (active → suspended · blocks the whole tenant)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - tenantId
+                  - status
+                additionalProperties: false
+  /platform/tenants/:tenantId/resume:
+    patch:
+      operationId: platform.tenants.resume
+      summary: Resume a suspended tenant (suspended → active)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - pending_approval
+                      - active
+                      - suspended
+                      - deleted
+                required:
+                  - tenantId
+                  - status
+                additionalProperties: false
+  /platform/tenants/:tenantId/visibility:
+    patch:
+      operationId: platform.tenants.setVisibility
+      summary: >-
+        Set the tenant's intra-tenant organization visibility policy (shared ⇄
+        isolated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orgVisibility:
+                  type: string
+                  enum:
+                    - shared
+                    - isolated
+                tenantId:
+                  type: string
+              required:
+                - orgVisibility
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  orgVisibility:
+                    type: string
+                    enum:
+                      - shared
+                      - isolated
+                required:
+                  - tenantId
+                  - orgVisibility
+                additionalProperties: false
+  /platform/tenants/:tenantId/permanent:
+    delete:
+      operationId: platform.tenants.permanentRemove
+      summary: >-
+        Hard-delete a deleted-terminal tenant (irreversible · cascade purge of
+        all its orgs + event purge · NFR-6)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tenantId:
+                  type: string
+              required:
+                - tenantId
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  purgedOrgs:
+                    type: number
+                  purgedEvents:
+                    type: number
+                required:
+                  - tenantId
+                  - purgedOrgs
+                  - purgedEvents
+                additionalProperties: false
+  /platform/tenants/:tenantId/organizations/:orgId/diagnostics:
+    get:
+      operationId: platform.tenants.diagnostics
+      summary: >-
+        Per-organization diagnostics: member/invitation/workspace/post counts
+        (drill-down)
+      parameters:
+        - in: query
+          name: tenantId
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+        - in: query
+          name: orgId
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organization:
+                    type: object
+                    properties:
+                      organizationId:
+                        type: string
+                      name:
+                        type: string
+                      slug:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - pending_approval
+                          - active
+                          - suspended
+                          - deleted
+                      createdAt: {}
+                    required:
+                      - organizationId
+                      - name
+                      - slug
+                      - status
+                      - createdAt
+                    additionalProperties: false
+                  memberCount:
+                    type: number
+                  invitationCount:
+                    type: number
+                  workspaceCount:
+                    type: number
+                  postCount:
+                    type: number
+                required:
+                  - organization
+                  - memberCount
+                  - invitationCount
+                  - workspaceCount
+                  - postCount
+                additionalProperties: false
+  /platform/tenants/:tenantId/organizations/:orgId/export:
+    get:
+      operationId: platform.tenants.exportData
+      summary: >-
+        Export all organization-owned data as a single JSON payload (NFR-6 ·
+        drill-down)
+      parameters:
+        - in: query
+          name: tenantId
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+        - in: query
+          name: orgId
+          schema:
+            type: string
+          allowEmptyValue: true
+          allowReserved: true
+          required: true
+      responses:
+        '200':
+          description: OK
+          content: {}
