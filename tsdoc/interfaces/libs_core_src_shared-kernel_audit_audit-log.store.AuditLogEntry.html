@@ -16,7 +16,7 @@
 </div></section>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">AuditLogEntry</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#action">action</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#actorid">actorId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#correlationid">correlationId</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#entityid">entityId</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#entitytype">entityType</a><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_shared-kernel_audit_audit-log.store.AuditEntityKind.html" class="tsd-signature-type tsd-kind-type-alias">AuditEntityKind</a><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#from">from</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#reason">reason</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#to">to</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L33">libs/core/src/shared-kernel/audit/audit-log.store.ts:33</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L33">libs/core/src/shared-kernel/audit/audit-log.store.ts:33</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -42,56 +42,56 @@
 <div class="tsd-comment tsd-typography"><p>治理动作名（approve/reject/suspend/resume/delete/hard_delete）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L39">libs/core/src/shared-kernel/audit/audit-log.store.ts:39</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L39">libs/core/src/shared-kernel/audit/audit-log.store.ts:39</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="actorid"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>actor<wbr/>Id</span><a href="#actorid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">actorId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>操作者 id（可空·本体删除后 set null 留账行本体）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L45">libs/core/src/shared-kernel/audit/audit-log.store.ts:45</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L45">libs/core/src/shared-kernel/audit/audit-log.store.ts:45</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="correlationid"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>correlation<wbr/>Id</span><a href="#correlationid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">correlationId</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>关联 id（请求链·可空·后台/脚本调用落 null）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L49">libs/core/src/shared-kernel/audit/audit-log.store.ts:49</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L49">libs/core/src/shared-kernel/audit/audit-log.store.ts:49</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="entityid"><code class="tsd-tag">Readonly</code><span>entity<wbr/>Id</span><a href="#entityid" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">entityId</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>被治理实体 id（organizationId / userId·多态裸值·非 FK·本体硬删后仍留痕）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L37">libs/core/src/shared-kernel/audit/audit-log.store.ts:37</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L37">libs/core/src/shared-kernel/audit/audit-log.store.ts:37</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="entitytype"><code class="tsd-tag">Readonly</code><span>entity<wbr/>Type</span><a href="#entitytype" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">entityType</span><span class="tsd-signature-symbol">:</span> <a href="../types/libs_core_src_shared-kernel_audit_audit-log.store.AuditEntityKind.html" class="tsd-signature-type tsd-kind-type-alias">AuditEntityKind</a></div>
 <div class="tsd-comment tsd-typography"><p>审计实体类别。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L35">libs/core/src/shared-kernel/audit/audit-log.store.ts:35</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L35">libs/core/src/shared-kernel/audit/audit-log.store.ts:35</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="from"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>from</span><a href="#from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">from</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>迁移起态（可空·驳回/硬删无 to）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L41">libs/core/src/shared-kernel/audit/audit-log.store.ts:41</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L41">libs/core/src/shared-kernel/audit/audit-log.store.ts:41</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="reason"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>reason</span><a href="#reason" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">reason</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>治理理由（可空）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L47">libs/core/src/shared-kernel/audit/audit-log.store.ts:47</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L47">libs/core/src/shared-kernel/audit/audit-log.store.ts:47</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="to"><code class="tsd-tag">Optional</code> <code class="tsd-tag">Readonly</code><span>to</span><a href="#to" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">to</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">null</span></div>
 <div class="tsd-comment tsd-typography"><p>迁移止态（可空）。</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/bbe10e29ebaeb19e8b3bdca86ba0389db1469b6b/libs/core/src/shared-kernel/audit/audit-log.store.ts#L43">libs/core/src/shared-kernel/audit/audit-log.store.ts:43</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/FDE-GROUP/nestjs-saas-start/blob/e5f1404b087849904652b7b47cacc81540771a2f/libs/core/src/shared-kernel/audit/audit-log.store.ts#L43">libs/core/src/shared-kernel/audit/audit-log.store.ts:43</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
