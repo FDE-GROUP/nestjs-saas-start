@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: web_app/settings_pages
+title: 设置中心子页面（账户/计费/集成/邀请/成员/角色/存储）
+scope:
+    - apps/web/src/routes/settings.account.tsx
+    - apps/web/src/routes/settings.billing.tsx
+    - apps/web/src/routes/settings.integrations.tsx
+    - apps/web/src/routes/settings.invitations.tsx
+    - apps/web/src/routes/settings.members.tsx
+    - apps/web/src/routes/settings.roles.tsx
+    - apps/web/src/routes/settings.storage.tsx
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_storage
+    - path: api_app/domain_subscriptions

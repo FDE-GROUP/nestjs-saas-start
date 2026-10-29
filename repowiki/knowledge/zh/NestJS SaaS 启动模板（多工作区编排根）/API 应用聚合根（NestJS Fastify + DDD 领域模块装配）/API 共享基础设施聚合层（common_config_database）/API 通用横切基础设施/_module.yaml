@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure/common_plumbing
+title: API 通用横切基础设施
+scope:
+    - apps/api/src/common/
+source_files: []
+depends_on: []
+related_to: []

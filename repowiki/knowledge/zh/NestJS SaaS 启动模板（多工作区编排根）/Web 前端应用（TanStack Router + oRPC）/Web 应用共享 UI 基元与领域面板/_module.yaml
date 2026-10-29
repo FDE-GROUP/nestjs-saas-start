@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: web_app/shared_components
+title: Web 应用共享 UI 基元与领域面板
+scope:
+    - apps/web/src/components/
+source_files: []
+depends_on: []
+related_to: []

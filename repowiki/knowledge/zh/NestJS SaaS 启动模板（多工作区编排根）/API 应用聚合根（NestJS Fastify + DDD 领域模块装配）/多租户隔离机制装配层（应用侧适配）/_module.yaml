@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_app/tenant_isolation
+title: 多租户隔离机制装配层（应用侧适配）
+scope:
+    - apps/api/src/tenant-isolation/
+source_files: []
+depends_on: []
+related_to:
+    - path: core_lib/tenant_isolation

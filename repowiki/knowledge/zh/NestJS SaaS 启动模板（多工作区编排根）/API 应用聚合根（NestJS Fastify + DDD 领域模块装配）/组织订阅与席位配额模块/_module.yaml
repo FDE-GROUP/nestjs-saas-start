@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: api_app/domain_subscriptions
+title: 组织订阅与席位配额模块
+scope:
+    - apps/api/src/modules/subscriptions/
+source_files: []
+depends_on: []
+related_to:
+    - path: core_lib/business_modules/subscriptions
+    - path: web_app/settings_pages

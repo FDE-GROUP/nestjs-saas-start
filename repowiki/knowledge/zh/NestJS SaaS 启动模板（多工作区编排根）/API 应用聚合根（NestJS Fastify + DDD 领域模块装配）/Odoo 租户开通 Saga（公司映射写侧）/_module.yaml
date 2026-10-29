@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: api_app/feature_odoo_provisioning
+title: Odoo 租户开通 Saga（公司映射写侧）
+scope:
+    - apps/api/src/features/odoo-provisioning/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_organizations
+    - path: api_app/feature_odoo_rpc_api
+    - path: scripts_tooling

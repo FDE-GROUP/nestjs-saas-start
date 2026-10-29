@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure/database_eventing/db_shared
+title: 数据库基础设施与事件总线持久化层
+scope:
+    - apps/api/src/database/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: api_app/cross_cutting_services
+title: 跨领域服务：i18n、日志与邮件
+scope:
+    - apps/api/src/i18n/
+    - apps/api/src/logger/
+    - apps/api/src/mailer/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_app/domain_workspaces
+title: 工作区（Workspace）API 模块
+scope:
+    - apps/api/src/modules/workspaces/
+source_files: []
+depends_on: []
+related_to:
+    - path: core_lib/business_modules/workspaces

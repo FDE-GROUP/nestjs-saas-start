@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_app/domain_payment
+title: 支付领域模块（多通道抽象与 Stripe 适配）
+scope:
+    - apps/api/src/modules/payment/
+source_files: []
+depends_on: []
+related_to: []

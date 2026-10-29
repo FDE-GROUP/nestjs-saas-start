@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_app/domain_storage
+title: 对象存储上传与文件管理模块
+scope:
+    - apps/api/src/modules/storage/
+source_files: []
+depends_on: []
+related_to:
+    - path: web_app/settings_pages

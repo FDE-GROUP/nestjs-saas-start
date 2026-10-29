@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: api_app/app_bootstrap_and_config
+title: API 应用启动与配置装配
+scope:
+    - apps/api/src/main.ts
+    - apps/api/src/app.module.ts
+    - apps/api/src/load-env.ts
+source_files: []
+depends_on: []
+related_to: []

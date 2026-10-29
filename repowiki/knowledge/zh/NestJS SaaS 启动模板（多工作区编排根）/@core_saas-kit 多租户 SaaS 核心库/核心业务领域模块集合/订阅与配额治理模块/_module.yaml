@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: core_lib/business_modules/subscriptions
+title: 订阅与配额治理模块
+scope:
+    - libs/core/src/modules/subscriptions/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_subscriptions

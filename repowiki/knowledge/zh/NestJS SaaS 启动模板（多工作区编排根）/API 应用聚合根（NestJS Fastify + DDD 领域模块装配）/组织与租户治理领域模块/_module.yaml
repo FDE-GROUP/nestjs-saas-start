@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: api_app/domain_organizations
+title: 组织与租户治理领域模块
+scope:
+    - apps/api/src/modules/organizations/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_authorization
+    - path: api_app/domain_platform
+    - path: api_app/feature_odoo_provisioning
+    - path: core_lib/business_modules/organizations

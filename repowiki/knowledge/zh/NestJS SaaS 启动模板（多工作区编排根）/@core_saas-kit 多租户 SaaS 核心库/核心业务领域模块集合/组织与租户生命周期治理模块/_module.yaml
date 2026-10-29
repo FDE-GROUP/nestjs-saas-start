@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: core_lib/business_modules/organizations
+title: 组织与租户生命周期治理模块
+scope:
+    - libs/core/src/modules/organizations/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_organizations

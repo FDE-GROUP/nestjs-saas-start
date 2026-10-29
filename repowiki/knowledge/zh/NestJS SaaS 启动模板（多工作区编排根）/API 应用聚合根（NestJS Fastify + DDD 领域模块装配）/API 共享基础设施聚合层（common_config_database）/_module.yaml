@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: api_app/shared_infrastructure
+title: API 共享基础设施聚合层（common/config/database）
+scope:
+    - apps/api/src/common/
+    - apps/api/src/config/
+    - apps/api/src/database/
+source_files: []
+depends_on: []
+related_to: []

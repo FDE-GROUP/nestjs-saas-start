@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: web_app/app_shell
+title: Web 应用启动与根路由壳
+scope:
+    - apps/web/src/routes/__root.tsx
+    - apps/web/src/routes/index.tsx
+    - apps/web/src/main.tsx
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: api_app/domain_platform
+title: 平台治理限界上下文（Platform Governance Bounded Context）
+scope:
+    - apps/api/src/modules/platform/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_app/domain_organizations
+    - path: core_lib/platform
+    - path: web_app/platform_admin

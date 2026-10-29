@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: shared_libs
+title: 共享契约与 Better Auth MikroORM 适配器
+scope:
+    - libs/api-contract/
+    - libs/ba-mikro-adapter/
+    - libs/contracts/
+source_files: []
+depends_on: []
+related_to: []
