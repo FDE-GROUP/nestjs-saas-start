@@ -12,9 +12,6 @@ node_modules/
 # bundle
 packages/**/*.d.ts
 packages/**/*.js
-# 前端 F1（module-frontend-api-client）：@saas/api-client 从 openapi.yaml 生成的契约类型刻意入库（同 routeTree.gen 惯例），
-# 供无生成步骤即可消费/构建；仅放出生成契约类型，dist 编译产物仍由上方 `*.js` + `dist/` 规则忽略。
-!packages/api-client/src/schema.d.ts
 
 # misc
 .DS_Store
@@ -49,8 +46,8 @@ logs/
 
 #openapi
 openapi/*.json
-# 前端 F1（module-frontend-api-client）：openapi.yaml 作 codegen 产出的契约 SSOT 纳入版本控制，
-# 供 ci 字节对拍防漂移与 @saas/api-client 生成消费（人令「你裁定」2026-10-17 采推荐档·高危门禁面签核在场）。
+# 换轨后 openapi.yaml 为 `openapi:export` 从 oRPC 契约 router 重生的生成态文档面（非 SSOT·
+# 旧 `openapi:drift` 三向字节闸随 `schema.d.ts`/`gen:types` 退役·等价守卫=verify:orpc-contract）；仍入库供人读/GH Pages。
 !openapi/openapi.yaml
 
 # personal incubation workspace (oh-my-env) — 个人孵化层，不入库；其结论经提炼后落入 docs/specs（见 workflow.md）

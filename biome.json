@@ -15,8 +15,7 @@
       "!.claude",
       "!.qoder",
       "!**/*.gen.ts",
-      "!**/*.gen.tsx",
-      "!packages/api-client/src/schema.d.ts"
+      "!**/*.gen.tsx"
     ]
   },
   "formatter": {

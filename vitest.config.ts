@@ -76,8 +76,6 @@ export default defineConfig({
         'apps/**/main.ts',
         'apps/**/database/seed.ts',
         'apps/**/*.module.ts',
-        // packages/api-client：schema.d.ts 为 openapi.yaml 生成物（非手写逻辑），index.ts 为纯 barrel。
-        'packages/**/schema.d.ts',
         'packages/**/*.test.ts',
       ],
     },
