@@ -1,17 +1,17 @@
-import type { components } from '@saas/api-client';
+import type { OrganizationOdooAvailabilityView, PaymentStatusView } from '@saas/contracts';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { SubmitButton } from '../components/forms';
 import { ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
-/** 真相源 = `PaymentStatusResponse`（`@saas/api-client` schema 派生·编译期契约锁定）。 */
-type PaymentStatus = components['schemas']['PaymentStatusResponse'];
+/** 真相源 = `PaymentStatusView`（`@saas/contracts` zod 派生·编译期契约锁定）。 */
+type PaymentStatus = PaymentStatusView;
 
 /** 当前活跃租户 Odoo 可用性视图（切片 D · apps 面板数据源·后端 `canUseOdoo` 单源裁决透传）。 */
-type OdooAvailability = components['schemas']['OrganizationOdooAvailabilityResponse'];
+type OdooAvailability = OrganizationOdooAvailabilityView;
 
 /**
  * health 探针运行期被 `TransformInterceptor` 全局包成 `{data,statusCode,message}`，而 openapi/schema.d.ts
@@ -37,44 +37,37 @@ export const Route = createFileRoute('/settings/integrations')({
   loader: async (): Promise<LoaderResult> => {
     await requireSession();
     const checkedAt = new Date().toLocaleString();
-    // 解构取（`{data,error}`）而非整体 res：openapi-fetch 单 200 响应面直接成员访问 `.error` 会塌 never。
-    const { data: healthData, error: healthError } = await api.GET('/api/v1/health');
     let health: Panel<string>;
-    if (healthError) {
-      logApiError({ path: '/api/v1/health', scope: 'integrations.health' }, healthError);
-      health = { kind: 'error', message: describeApiError(healthError) };
-    } else {
-      // 双兜解包（envelope 优先·承 §2 文档↔运行时落差）。
-      const body = healthData as unknown as HealthProbe;
+    try {
+      // oRPC 客户端已拆信封→payload 即 HealthCheckResponse（双兼包保旧文档↔运行时落差）。
+      const body = (await rpc.health.check()) as unknown as HealthProbe;
       health = { kind: 'ok', value: body?.data?.status ?? body?.status ?? 'unknown' };
+    } catch (e) {
+      logApiError({ path: '/api/v1/health', scope: 'integrations.health' }, e);
+      health = { kind: 'error', message: describeApiError(e) };
     }
 
-    const { data: paymentData, error: paymentError } = await api.GET('/api/v1/payment/test');
     let payment: Panel<PaymentStatus>;
-    if (paymentError) {
-      logApiError({ path: '/api/v1/payment/test', scope: 'integrations.payment' }, paymentError);
-      payment = { kind: 'error', message: describeApiError(paymentError) };
-    } else if (paymentData?.data) {
-      payment = { kind: 'ok', value: paymentData.data };
-    } else {
-      payment = { kind: 'error', message: '支付集成状态不可用' };
+    try {
+      payment = { kind: 'ok', value: (await rpc.payment.test()) as unknown as PaymentStatus };
+    } catch (e) {
+      logApiError({ path: '/api/v1/payment/test', scope: 'integrations.payment' }, e);
+      payment = { kind: 'error', message: describeApiError(e) };
     }
 
-    // Odoo 可用性（GET 只读·无活跃租户/未登录均返 available=false，非错误态）。
-    const { data: odooData, error: odooError } = await api.GET(
-      '/api/v1/organizations/odoo/availability',
-    );
+    // Odoo 可用性（只读·无活跃租户/未登录均返 available=false，非错误态）。
     let odoo: Panel<OdooAvailability>;
-    if (odooError) {
+    try {
+      odoo = {
+        kind: 'ok',
+        value: (await rpc.organizations.odooAvailability()) as unknown as OdooAvailability,
+      };
+    } catch (e) {
       logApiError(
         { path: '/api/v1/organizations/odoo/availability', scope: 'integrations.odoo' },
-        odooError,
+        e,
       );
-      odoo = { kind: 'error', message: describeApiError(odooError) };
-    } else if (odooData?.data) {
-      odoo = { kind: 'ok', value: odooData.data };
-    } else {
-      odoo = { kind: 'error', message: 'Odoo 可用性状态不可用' };
+      odoo = { kind: 'error', message: describeApiError(e) };
     }
 
     return { health, payment, odoo, checkedAt };

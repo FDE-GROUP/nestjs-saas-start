@@ -47,15 +47,16 @@
 - 认证：邮箱 + 社交登录（Google/GitHub + 微信、企业微信、钉钉、飞书）、会话与 CSRF 防护
 - 校验单源：以 zod 契约同时驱动请求校验、响应序列化与前后端类型
 - 支付、对象存储、邮件、日志、i18n 等横切能力抽象为可插拔 provider
-- OpenAPI 契约与类型安全 API 客户端由代码单一来源生成
+- 契约类型由 oRPC router 单一来源派生，类型安全 API 客户端与后端共用同一契约树
 - **MCP Agent 导出面（已落地）**：经官方 `@modelcontextprotocol/sdk` 建 `/mcp`（Streamable HTTP·bearer 租级服务凭证·scope 空集 deny-by-default·工具薄壳复用既有应用服务），向 Agent 导出 `tenant.directory` / `posts.list` / `workspace.create`（落 `features/mcp`·与 `modules/` 双向隔离）
-- **oRPC（评估中·未采用）**：「以 oRPC 统一传输层 / 契约治理」处于已审通过的评估阶段（结论「技术可行·现在全量引入否」）；MCP 动机已从此评估解耦先行落地，oRPC 治理翻转切片候 v2 GA 三触发条件后方启
+- **oRPC（现栈）**：对外接口面统一走 oRPC（`@orpc/nest` contract 模式·`/api/v1` 路径与 REST 逐字节兼容），契约类型由 router 从 `@saas/contracts` zod 单源派生；`openapi.yaml` 退出提交态 SSOT，仅保留生成态文档面（非 SSOT·不入闸）。MCP 面仍复用官方 SDK 落 `features/mcp`，与 oRPC 零冲突
 - 本地 CI 一键质量门禁 + Git Hooks；容器化开箱即用
 
 ## 技术栈
 
 - **运行时**：Node LTS ≥ 22（ESM，`"type": "module"`；开发经 `nest start --watch`，生产运行 SWC 编译产物）+ pnpm（workspace 包管理）
 - **框架**：NestJS 12 + Fastify 5
+- **传输 / 契约层**：oRPC（`@orpc/nest` contract 模式·v2 beta）统一对外 HTTP 面；公共契约 router 单源居 `@saas/api-contract`
 - **架构范式**：Clean Architecture（依赖规则向内·边界以 ports & adapters 落地·同族亦称六边形）垂直切片 + 函数式领域内核；CQRS/ES/EDA **皆按需引入、能力基线完备备能**（简单上下文直接调用服务即为合法终态；被事件化聚合可选「回放即真相」为真相源，简单 CRUD 依法可永不事件化），领域事件用于跨上下文集成与审计；已知范式偏移（auth/BA、authorization/CASL 等）以 `docs/specs/architecture.md`「Paradigm Deviations」登记册为权威
 - **数据库 / ORM**：PostgreSQL + MikroORM（迁移与种子）
 - **认证**：Better Auth（邮箱 + OAuth、会话 / CSRF）
@@ -68,9 +69,9 @@
 - **支付**：Stripe（海外·已集成）+ 微信支付 / 支付宝（境内·经统一 provider 抽象预留）
 - **对象存储**：多云统一接口（AWS S3 / 阿里云 OSS / 腾讯云 COS）
 - **邮件**：Nodemailer + MJML 模板
-- **API 文档**：Swagger / OpenAPI
+- **API 文档**：OpenAPI（生成态·非 SSOT·供外部消费者）
 - **前端**：React 19 + Vite + TanStack Router + Tailwind CSS 4（租户自助面 `apps/web`）
-- **契约客户端**：`@saas/api-client`（由 OpenAPI 生成的类型安全客户端）
+- **契约客户端**：`@saas/api-client`（typed oRPC 客户端·类型锚从 `@saas/api-contract` router 派生）
 - **容器化**：Docker + Docker Compose（dev / prod）
 - **工程协作**：Husky + Conventional Commits + commitlint
 
@@ -82,6 +83,7 @@
 libs/
 ├─ core/src/          # @core 共享内核：领域事件/聚合基类、tenant-isolation/authorization 契约，以及 organizations 生命周期状态机内核（lifecycle/）、subscriptions/workspaces 领域层
 ├─ contracts/src/     # @saas/contracts 跨端传输契约单源（请求/响应/envelope 的 zod schema + 派生类型）
+├─ api-contract/src/  # @saas/api-contract 公共契约 router（AppRouterContract·从 @saas/contracts 派生·前后端类型锚单源）
 └─ ba-mikro-adapter/  # Better Auth × MikroORM 适配层
 apps/
 ├─ api/src/           # 后端参考应用（NestJS + Fastify）
@@ -95,7 +97,7 @@ apps/
 │  └─ main.ts / app.module.ts
 └─ web/               # 前端租户自助控制台（React + Vite，经 @saas/api-client 消费后端）
 packages/
-└─ api-client/        # @saas/api-client：OpenAPI 生成的类型安全 API 客户端
+└─ api-client/        # @saas/api-client：typed oRPC 客户端（类型锚从 @saas/api-contract router 派生）
 ```
 
 ### 共享内核与业务上下文的分界
@@ -148,7 +150,7 @@ pnpm run start:prod         # 生产运行：node dist/apps/api/src/main.js
 本项目以**本地 CI** 作为主要质量门禁（不依赖远程 CI 才能把关），提交 / 推送前一键校验：
 
 ```bash
-pnpm run ci          # 完整门禁：check → 类型/布局守护 → build → 全量类型检查 → OpenAPI 契约对拍 → test
+pnpm run ci          # 完整门禁：check → 类型/布局守护 → build → 全量类型检查 → oRPC 契约对拍 → test
 pnpm run ci:quick    # 轻量门禁：check + test
 pnpm run test        # Vitest 测试
 pnpm run verify:test-types  # 全包测试类型检查（含 *.test.ts·补 build 排测试 + vitest transpile-only 盲区·full ci 内自动跑）
@@ -158,7 +160,7 @@ pnpm run test:fullstack     # 仅跑上述带库段（ci:db 的 DB 部分·编�
 
 - **Git Hooks**（Husky）：`pre-commit` 跑 `lint:fix`、`commit-msg` 校验 Conventional Commits、`pre-push` 跑 `pnpm run ci`。
 - **提交规范**：Conventional Commits，详见 [约定文档](./COMMIT_CONVENTION.md)。
-- **契约对拍**：响应注解变更须重生成 OpenAPI 规范与 `@saas/api-client` 类型，门禁会比对入库产物与代码是否同源。
+- **契约对拍**：对外契约类型由 `@saas/api-contract` router 从 `@saas/contracts` zod 单源派生；门禁以「router 叶子集 ⇔ 各域 `*Contract` 叶子集」恒等对拍（`verify:orpc-contract`）拦截漏挂/漂移，取代旧 OpenAPI 字节对拍。
 - **代码智能分析**：`fallow`（devDependency）用于架构边界与死代码佐证，结论须人工二次核验后采信。
 
 > **公开 clone 须知·文档与 CI 的耦合**：治理文档（specs / plans / stories 等）住**私有仓**，本公共仓不含 `docs/`——根 `docs` 是指向本地私有 checkout `docs-private/docs` 的软链（`.gitignore` 排除・不入库）。因此 **全新公开 clone 直接 `pnpm run ci`（或 `ci:quick`）会在 stories-drift 闸失败**——该闸对 `docs/stories` 溯源做恒等对拍、缺目录即 fail-loud，系「文档不开源」的必然代价。两种应对：① 本地要让全链绿，先 `git clone <私有文档仓> docs-private` 并建软链 `docs → docs-private/docs`；② 只跑与文档无关的单步（`pnpm run test`、`pnpm run check`）。

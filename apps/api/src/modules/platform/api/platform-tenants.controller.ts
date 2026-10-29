@@ -1,5 +1,3 @@
-import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
-import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { DeleteOrganizationCommand } from '@app/modules/organizations/application/commands/delete-organization.command';
 import { DeleteOrganizationPermanentlyCommand } from '@app/modules/organizations/application/commands/delete-organization-permanently.command';
 import { ResumeOrganizationCommand } from '@app/modules/organizations/application/commands/resume-organization.command';
@@ -24,50 +22,43 @@ import type { OrgVisibility } from '@core/saas-kit/modules/organizations/visibil
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  NotFoundException,
-  Param,
-  Patch,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { SerializeOptions } from '@nestjs/common/serializer/index.js';
+import { Controller, Inject, NotFoundException, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
 import {
-  type ListPlatformTenantsQuery as ListPlatformTenantsQueryDto,
+  platformTenantsDetailContract,
+  platformTenantsDetailMeta,
+  platformTenantsDiagnosticsContract,
+  platformTenantsDiagnosticsMeta,
+  platformTenantsExportContract,
+  platformTenantsExportMeta,
+  platformTenantsListContract,
+  platformTenantsListMeta,
+  platformTenantsPermanentRemoveContract,
+  platformTenantsPermanentRemoveMeta,
+  platformTenantsRemoveContract,
+  platformTenantsRemoveMeta,
+  platformTenantsResumeContract,
+  platformTenantsResumeMeta,
+  platformTenantsSuspendContract,
+  platformTenantsSuspendMeta,
+  platformTenantsVisibilityContract,
+  platformTenantsVisibilityMeta,
+} from '@saas/api-contract/index';
+import {
   listPlatformTenantsQuerySchema,
   organizationDiagnosticsSchema,
+  platformOrgDrilldownParamSchema,
   platformTenantDetailSchema,
+  platformTenantIdParamSchema,
   platformTenantPageSchema,
-  type SetTenantOrgVisibility,
-  setTenantOrgVisibilitySchema,
+  setTenantOrgVisibilityInputSchema,
   tenantGovernanceResultSchema,
   tenantHardDeleteResultSchema,
   tenantOrgVisibilityResultSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-  apiOkPassthrough,
-} from '../../../common/contracts/api-contracts';
-import {
-  OrganizationDiagnosticsResponse,
-  PlatformTenantDetailResponse,
-  PlatformTenantPageResponse,
-  TenantGovernanceResultResponse,
-  TenantHardDeleteResultResponse,
-  TenantOrgVisibilityResultResponse,
-} from './response/governance.response';
+import { os } from '../../../common/orpc/orpc';
+import { requireSessionUser } from '../../../common/orpc/orpc-context';
 
 /**
  * 平台操作员治理切片的 HTTP 控制器（多租户 S5 · FR-6/FR-11①/FR-13）。
@@ -87,20 +78,26 @@ import {
  * 每次成功/失败均落结构化审计行（FR-6）。
  * @public
  */
-@ApiExtraModels(
-  ApiEnvelope,
-  ApiErrorResponse,
-  PlatformTenantPageResponse,
-  PlatformTenantDetailResponse,
-  OrganizationDiagnosticsResponse,
-  TenantGovernanceResultResponse,
-  TenantHardDeleteResultResponse,
-  TenantOrgVisibilityResultResponse,
-)
-@ApiTags('platform')
-// S11 复合全局：跨租平台治理（列表/详情/诊断/suspend·resume·delete）无关单一租户上下文 → 类级豁免租户墙。
+// 换轨 WP-C：九路由转 per-method `@Impl`——class 级 `@TenantIsolationExempt()` + `@UseGuards(PlatformOperatorGuard)`
+// 原生保留（跨租平台治理墙不弱化）。旧 `@SerializeOptions` 白名单换 `.output`；`@CurrentUser()` 换 `context.user`；
+// `:tenantId`/`:orgId` 路径参经紧凑 input 结构合并（纯参=`platformTenantIdParamSchema`·body⊕参=`setTenantOrgVisibilityInputSchema`·
+// 下钻双参=`platformOrgDrilldownParamSchema`）。in-handler `NotFoundException`（含 errorCode）经 WP-D 错误面逐字承接。
+// exportData 旧 `apiOkPassthrough`（bulk-export 六段·不挂白名单）→ 不挂 `.output`（逐字透传）。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export {
+  platformTenantsDetailContract,
+  platformTenantsDiagnosticsContract,
+  platformTenantsExportContract,
+  platformTenantsListContract,
+  platformTenantsPermanentRemoveContract,
+  platformTenantsRemoveContract,
+  platformTenantsResumeContract,
+  platformTenantsSuspendContract,
+  platformTenantsVisibilityContract,
+};
+
+@Controller('')
 @TenantIsolationExempt()
-@Controller('platform/tenants')
 @UseGuards(PlatformOperatorGuard)
 export class PlatformTenantsController {
   constructor(
@@ -110,285 +107,203 @@ export class PlatformTenantsController {
 
   /**
    * 跨平台列出所有租户（仅操作员·offset 分页·每行携名下组织计数）。
-   * @param dto - 分页与搜索请求。
-   * @returns 带准入态的租户分页页。
    */
-  @Get()
-  @SerializeOptions({ schema: platformTenantPageSchema })
-  @ApiOperation({ summary: 'List all tenants across the platform (operator only)' })
-  @ApiResponse(
-    apiEnvelopeShape(PlatformTenantPageResponse, {
-      description: 'A page of tenants with admission status and org counts.',
-    }),
-  )
-  @ApiResponse(apiError(403, 'Not the platform operator.'))
-  list(
-    @Query({ schema: listPlatformTenantsQuerySchema }) dto: ListPlatformTenantsQueryDto,
-  ): Promise<PlatformTenantPage> {
-    return this.queryBus.execute<ListPlatformTenantsQuery, PlatformTenantPage>(
-      new ListPlatformTenantsQuery(dto.limit, dto.offset, dto.search),
-    );
+  @Impl(platformTenantsListContract)
+  list() {
+    return os
+      .input(listPlatformTenantsQuerySchema)
+      .output(platformTenantPageSchema)
+      .meta(platformTenantsListMeta)
+      .handler(({ input }) =>
+        this.queryBus.execute<ListPlatformTenantsQuery, PlatformTenantPage>(
+          new ListPlatformTenantsQuery(input.limit, input.offset, input.search),
+        ),
+      );
   }
 
   /**
-   * 取单个租户详情（仅操作员·tenant 基本盘 + 名下组织名册）。
-   * @param tenantId - 租户主键。
-   * @returns 租户详情；未命中抛 404。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 取单个租户详情（仅操作员·tenant 基本盘 + 名下组织名册·未命中 404 经 WP-D 承接）。
    */
-  @Get(':tenantId')
-  @SerializeOptions({ schema: platformTenantDetailSchema })
-  @ApiOperation({ summary: 'Get one tenant with its organization roster (operator only)' })
-  @ApiResponse(apiEnvelopeShape(PlatformTenantDetailResponse, { description: 'Tenant detail.' }))
-  @ApiResponse(apiError(404, 'Tenant not found.'))
-  async detail(@Param('tenantId') tenantId: string): Promise<PlatformTenantDetail> {
-    const detail = await this.queryBus.execute<GetPlatformTenantQuery, PlatformTenantDetail | null>(
-      new GetPlatformTenantQuery(tenantId),
-    );
-    if (!detail)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsDetailContract)
+  detail() {
+    return os
+      .input(platformTenantIdParamSchema)
+      .output(platformTenantDetailSchema)
+      .meta(platformTenantsDetailMeta)
+      .handler(async ({ input }) => {
+        const detail = await this.queryBus.execute<
+          GetPlatformTenantQuery,
+          PlatformTenantDetail | null
+        >(new GetPlatformTenantQuery(input.tenantId));
+        if (!detail)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return detail;
       });
-    return detail;
   }
 
   /**
-   * 暂停生效租户（active→suspended·封禁整个租户·fail-closed 失能）。
-   * @param tenantId - 租户主键。
-   * @param user - 当前操作员会话。
-   * @returns 迁移后租户治理回执；未命中 404、非法转移 409。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 暂停生效租户（active→suspended·封禁整个租户·fail-closed 失能·未命中 404/非法转移 409 经 WP-D 承接）。
    */
-  @Patch(':tenantId/suspend')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantGovernanceResultSchema })
-  @ApiOperation({
-    summary: 'Suspend an active tenant (active → suspended · blocks the whole tenant)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(TenantGovernanceResultResponse, { description: 'Tenant suspended.' }),
-  )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
-  @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
-  async suspend(
-    @Param('tenantId') tenantId: string,
-    @CurrentUser() user: SessionUser,
-  ): Promise<TenantGovernanceResult> {
-    const result = await this.commandBus.execute<
-      SuspendOrganizationCommand,
-      TenantGovernanceResult | null
-    >(new SuspendOrganizationCommand(tenantId, user.id));
-    if (!result)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsSuspendContract)
+  suspend() {
+    return os
+      .input(platformTenantIdParamSchema)
+      .output(tenantGovernanceResultSchema)
+      .meta(platformTenantsSuspendMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          SuspendOrganizationCommand,
+          TenantGovernanceResult | null
+        >(new SuspendOrganizationCommand(input.tenantId, user.id));
+        if (!result)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return result;
       });
-    return result;
   }
 
   /**
-   * 恢复已暂停租户（suspended→active）。
-   * @param tenantId - 租户主键。
-   * @param user - 当前操作员会话。
-   * @returns 迁移后租户治理回执；未命中 404、非法转移 409。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 恢复已暂停租户（suspended→active·未命中 404/非法转移 409 经 WP-D 承接）。
    */
-  @Patch(':tenantId/resume')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantGovernanceResultSchema })
-  @ApiOperation({ summary: 'Resume a suspended tenant (suspended → active)' })
-  @ApiResponse(apiEnvelopeShape(TenantGovernanceResultResponse, { description: 'Tenant resumed.' }))
-  @ApiResponse(apiError(404, 'Tenant not found.'))
-  @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
-  async resume(
-    @Param('tenantId') tenantId: string,
-    @CurrentUser() user: SessionUser,
-  ): Promise<TenantGovernanceResult> {
-    const result = await this.commandBus.execute<
-      ResumeOrganizationCommand,
-      TenantGovernanceResult | null
-    >(new ResumeOrganizationCommand(tenantId, user.id));
-    if (!result)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsResumeContract)
+  resume() {
+    return os
+      .input(platformTenantIdParamSchema)
+      .output(tenantGovernanceResultSchema)
+      .meta(platformTenantsResumeMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          ResumeOrganizationCommand,
+          TenantGovernanceResult | null
+        >(new ResumeOrganizationCommand(input.tenantId, user.id));
+        if (!result)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return result;
       });
-    return result;
   }
 
   /**
-   * 设置该租户租内跨组织可见性策略（第三次复裁切片 3·D2·`platform` 治理面）。
-   * @param tenantId - 租户主键。
-   * @param dto - 目标可见性策略（shared/isolated）。
-   * @param user - 当前操作员会话。
-   * @returns 设置后的租户可见性回执；未命中 404。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 设置该租户租内跨组织可见性策略（第三次复裁切片 3·D2·未命中 404 经 WP-D 承接）。
    */
-  @Patch(':tenantId/visibility')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantOrgVisibilityResultSchema })
-  @ApiOperation({
-    summary: "Set the tenant's intra-tenant organization visibility policy (shared ⇄ isolated)",
-  })
-  @ApiResponse(
-    apiEnvelopeShape(TenantOrgVisibilityResultResponse, {
-      description: 'Tenant orgVisibility updated (shared=互见 · isolated=租内跨组织互不可见).',
-    }),
-  )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
-  async setVisibility(
-    @Param('tenantId') tenantId: string,
-    @Body({ schema: setTenantOrgVisibilitySchema }) dto: SetTenantOrgVisibility,
-    @CurrentUser() user: SessionUser,
-  ): Promise<TenantOrgVisibilityResult> {
-    const result = await this.commandBus.execute<
-      SetTenantOrgVisibilityCommand,
-      TenantOrgVisibilityResult | null
-    >(new SetTenantOrgVisibilityCommand(tenantId, dto.orgVisibility as OrgVisibility, user.id));
-    if (!result)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsVisibilityContract)
+  setVisibility() {
+    return os
+      .input(setTenantOrgVisibilityInputSchema)
+      .output(tenantOrgVisibilityResultSchema)
+      .meta(platformTenantsVisibilityMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          SetTenantOrgVisibilityCommand,
+          TenantOrgVisibilityResult | null
+        >(
+          new SetTenantOrgVisibilityCommand(
+            input.tenantId,
+            input.orgVisibility as OrgVisibility,
+            user.id,
+          ),
+        );
+        if (!result)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return result;
       });
-    return result;
   }
 
   /**
-   * 软删租户（→deleted 终态·封禁整个租户·行保留供导出）。
-   * @param tenantId - 租户主键。
-   * @param user - 当前操作员会话。
-   * @returns 迁移后租户治理回执；未命中 404、已删 409。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 软删租户（→deleted 终态·封禁整个租户·行保留供导出·未命中 404/已删 409 经 WP-D 承接）。
    */
-  @Delete(':tenantId')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantGovernanceResultSchema })
-  @ApiOperation({
-    summary:
-      'Soft-delete a tenant (→ deleted terminal · blocks the whole tenant · row kept for export)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(TenantGovernanceResultResponse, {
-      description: 'Tenant marked deleted.',
-    }),
-  )
-  @ApiResponse(apiError(404, 'Tenant not found.'))
-  @ApiResponse(apiError(409, 'Already deleted (illegal transition).'))
-  async remove(
-    @Param('tenantId') tenantId: string,
-    @CurrentUser() user: SessionUser,
-  ): Promise<TenantGovernanceResult> {
-    const result = await this.commandBus.execute<
-      DeleteOrganizationCommand,
-      TenantGovernanceResult | null
-    >(new DeleteOrganizationCommand(tenantId, user.id));
-    if (!result)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsRemoveContract)
+  remove() {
+    return os
+      .input(platformTenantIdParamSchema)
+      .output(tenantGovernanceResultSchema)
+      .meta(platformTenantsRemoveMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          DeleteOrganizationCommand,
+          TenantGovernanceResult | null
+        >(new DeleteOrganizationCommand(input.tenantId, user.id));
+        if (!result)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return result;
       });
-    return result;
   }
 
   /**
-   * 硬删已处 deleted 终态的租户（不可逆·连带清除名下所有组织及子表 + 事件清除·NFR-6）。
-   * @param tenantId - 租户主键。
-   * @param user - 当前操作员会话。
-   * @returns 含 purgedOrgs/purgedEvents 的硬删结果；未命中/幂等 404、非终态 409。
-   *
-   * @throws {NotFoundException} 租户不存在时。
+   * 硬删已处 deleted 终态的租户（不可逆·连带清除名下所有组织及子表 + 事件清除·NFR-6·未命中/幂等 404/非终态 409 经 WP-D 承接）。
    */
-  @Delete(':tenantId/permanent')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantHardDeleteResultSchema })
-  @ApiOperation({
-    summary:
-      'Hard-delete a deleted-terminal tenant (irreversible · cascade purge of all its orgs + event purge · NFR-6)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(TenantHardDeleteResultResponse, {
-      description: 'Tenant rows purged; payload carries purgedOrgs/purgedEvents for audit核对.',
-    }),
-  )
-  @ApiResponse(apiError(404, 'Tenant not found (or already hard-deleted · idempotent).'))
-  @ApiResponse(apiError(409, 'Not in deleted terminal state — soft-delete first.'))
-  async permanentRemove(
-    @Param('tenantId') tenantId: string,
-    @CurrentUser() user: SessionUser,
-  ): Promise<TenantHardDeleteResult> {
-    const result = await this.commandBus.execute<
-      DeleteOrganizationPermanentlyCommand,
-      TenantHardDeleteResult | null
-    >(new DeleteOrganizationPermanentlyCommand(tenantId, user.id));
-    if (!result)
-      throw new NotFoundException('Tenant not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsPermanentRemoveContract)
+  permanentRemove() {
+    return os
+      .input(platformTenantIdParamSchema)
+      .output(tenantHardDeleteResultSchema)
+      .meta(platformTenantsPermanentRemoveMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          DeleteOrganizationPermanentlyCommand,
+          TenantHardDeleteResult | null
+        >(new DeleteOrganizationPermanentlyCommand(input.tenantId, user.id));
+        if (!result)
+          throw new NotFoundException('Tenant not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return result;
       });
-    return result;
   }
 
   /**
-   * 组织级诊断下钻：成员/邀请/工作区/帖子计数（经租户详情抵达）。
-   * @param orgId - 组织主键（租户路径下钻·一组织一公司）。
-   * @returns 诊断包；未命中抛 404。
-   *
-   * @throws {NotFoundException} 组织不存在时。
+   * 组织级诊断下钻：成员/邀请/工作区/帖子计数（经租户详情抵达·未命中 404 经 WP-D 承接）。
    */
-  @Get(':tenantId/organizations/:orgId/diagnostics')
-  @SerializeOptions({ schema: organizationDiagnosticsSchema })
-  @ApiOperation({
-    summary: 'Per-organization diagnostics: member/invitation/workspace/post counts (drill-down)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(OrganizationDiagnosticsResponse, { description: 'Diagnostics bundle.' }),
-  )
-  @ApiResponse(apiError(404, 'Organization not found.'))
-  async diagnostics(
-    @Param('tenantId') _tenantId: string,
-    @Param('orgId') orgId: string,
-  ): Promise<OrganizationDiagnostics> {
-    const diag = await this.queryBus.execute<
-      GetOrganizationDiagnosticsQuery,
-      OrganizationDiagnostics | null
-    >(new GetOrganizationDiagnosticsQuery(orgId));
-    if (!diag)
-      throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsDiagnosticsContract)
+  diagnostics() {
+    return os
+      .input(platformOrgDrilldownParamSchema)
+      .output(organizationDiagnosticsSchema)
+      .meta(platformTenantsDiagnosticsMeta)
+      .handler(async ({ input }) => {
+        const diag = await this.queryBus.execute<
+          GetOrganizationDiagnosticsQuery,
+          OrganizationDiagnostics | null
+        >(new GetOrganizationDiagnosticsQuery(input.orgId));
+        if (!diag)
+          throw new NotFoundException('Organization not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return diag;
       });
-    return diag;
   }
 
   /**
-   * 导出该组织全部数据为单一 JSON（NFR-6·不含凭证·经租户详情下钻）。
-   * @param orgId - 组织主键（租户路径下钻）。
-   * @returns 六段聚合导出；未命中抛 404。
-   *
-   * @throws {NotFoundException} 组织不存在时。
+   * 导出该组织全部数据为单一 JSON（NFR-6·不含凭证·经租户详情下钻·未命中 404 经 WP-D 承接）。
    */
-  @Get(':tenantId/organizations/:orgId/export')
-  @ApiOperation({
-    summary: 'Export all organization-owned data as a single JSON payload (NFR-6 · drill-down)',
-  })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Six-section organization data export (credentials excluded)',
-      ssotHint: 'OrganizationDataExport（bulk-export·六段聚合）',
-    }),
-  )
-  @ApiResponse(apiError(404, 'Organization not found.'))
-  async exportData(
-    @Param('tenantId') _tenantId: string,
-    @Param('orgId') orgId: string,
-  ): Promise<OrganizationDataExport> {
-    const payload = await this.queryBus.execute<
-      ExportOrganizationDataQuery,
-      OrganizationDataExport | null
-    >(new ExportOrganizationDataQuery(orgId));
-    if (!payload)
-      throw new NotFoundException('Organization not found', {
-        errorCode: ERROR_CODES.ORG_NOT_FOUND,
+  @Impl(platformTenantsExportContract)
+  exportData() {
+    return os
+      .input(platformOrgDrilldownParamSchema)
+      .meta(platformTenantsExportMeta)
+      .handler(async ({ input }) => {
+        const payload = await this.queryBus.execute<
+          ExportOrganizationDataQuery,
+          OrganizationDataExport | null
+        >(new ExportOrganizationDataQuery(input.orgId));
+        if (!payload)
+          throw new NotFoundException('Organization not found', {
+            errorCode: ERROR_CODES.ORG_NOT_FOUND,
+          });
+        return payload;
       });
-    return payload;
   }
 }

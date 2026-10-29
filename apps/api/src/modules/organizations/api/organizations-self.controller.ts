@@ -1,5 +1,3 @@
-import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
-import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { AuthInstanceInjectKey } from '@app/modules/auth/auth.constant';
 import type { InjectAuthInstance } from '@app/modules/auth/auth.interface';
@@ -15,40 +13,34 @@ import {
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
+import { Controller, ForbiddenException, Inject, UseGuards } from '@nestjs/common';
+import { Impl } from '@orpc/nest';
 import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Post,
-  SerializeOptions,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+  selfAcceptContract,
+  selfAcceptMeta,
+  selfLeaveContract,
+  selfLeaveMeta,
+  selfListContract,
+  selfListInvitationsContract,
+  selfListInvitationsMeta,
+  selfListMeta,
+  selfOdooAvailabilityContract,
+  selfOdooAvailabilityMeta,
+  selfRejectContract,
+  selfRejectMeta,
+  selfSetActiveContract,
+  selfSetActiveMeta,
+} from '@saas/api-contract/index';
 import {
-  type InvitationId,
   invitationIdSchema,
-  type LeaveOrganization,
   leaveOrganizationSchema,
-  type OrganizationOdooAvailabilityView,
   organizationOdooAvailabilityViewSchema,
-  type SetActiveOrganization,
   setActiveOrganizationSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-  apiOkPassthrough,
-} from '../../../common/contracts/api-contracts';
+import { os } from '../../../common/orpc/orpc';
+import { requireSessionUser } from '../../../common/orpc/orpc-context';
 import { TenantMemberFacadeService } from '../application/tenant-member-facade.service';
 import { mapBaError } from './ba-error.mapping';
-import { OrganizationOdooAvailabilityResponse } from './response/organization-odoo-availability.response';
 
 /** BA org 个人通道窄类型（服务端 API·非 HTTP）。 */
 interface OrganizationSelfApi {
@@ -71,11 +63,24 @@ interface OrganizationSelfApi {
  * 不经被封堵的 BA 内置 org HTTP 面。
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, OrganizationOdooAvailabilityResponse)
-@ApiTags('organizations')
-// 入组前/无租户态的合法个人操作（成员资格列表、接受/拒绝邀请）→ 类级豁免租户墙，登录仍必需。
+// 换轨 WP-C：七路由转 per-method `@Impl`——class 级 `@TenantIsolationExempt()` + 逐方法 `@UseGuards(SessionGuard)`
+// 原生保留（会话墙不弱化·401 先于 handler）。旧 `@CurrentUser()` 换 `context.user`、`@Headers()` 换 `context.headers`
+// （BA 服务端直调透传）。`apiOkPassthrough` 面（list/setActive/leave/accept/reject/listMyInvitations）不挂 `.output`
+// （透传逐字保真）；仅 odooAvailability 旧 `@SerializeOptions` 换 `.output(organizationOdooAvailabilityViewSchema)`。
+// `mapBaError` 出口经 WP-D 错误面归一为逐字 REST 信封。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export {
+  selfAcceptContract,
+  selfLeaveContract,
+  selfListContract,
+  selfListInvitationsContract,
+  selfOdooAvailabilityContract,
+  selfRejectContract,
+  selfSetActiveContract,
+};
+
+@Controller('')
 @TenantIsolationExempt()
-@Controller('organizations')
 export class OrganizationsSelfController {
   constructor(
     @Inject(AuthInstanceInjectKey) private readonly authInstance: InjectAuthInstance,
@@ -96,166 +101,109 @@ export class OrganizationsSelfController {
   }
 
   /**
-   * 列出当前用户所属的租户（个人通道）。
-   * @param headers - 透传给 BA 服务端调用的请求头。
-   * @returns BA 成员资格组织列表。
+   * 列出当前用户所属的租户（个人通道·BA passthrough）。
    */
-  @Get()
   @UseGuards(SessionGuard)
-  @ApiOperation({ summary: 'List organizations the current user belongs to (personal channel)' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Membership organizations (data from Better Auth)',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async listMyOrganizations(@Headers() headers: Record<string, unknown>): Promise<unknown> {
-    try {
-      return await this.ba().listOrganizations({ headers });
-    } catch (err) {
-      return mapBaError(err);
-    }
-  }
-
-  /**
-   * 切换会话的 active 组织（须为其成员）。
-   * @param headers - 透传 BA 的请求头。
-   * @param dto - 目标组织 id 载荷。
-   * @param user - 会话用户（携 sessionId·P0 X2 双激活位互斥写坐标）。
-   * @returns BA 切换结果；非成员 403 经 `mapBaError` 归一。
-   */
-  @Post('active')
-  @UseGuards(SessionGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Switch the session's active organization (must be a member)" })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Session activated organization updated',
-      ssotHint: 'Better Auth auth.api.*（服务端直调透传）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(403, 'Not a member of the target organization (BA).'))
-  async setActive(
-    @Headers() headers: Record<string, unknown>,
-    @Body({ schema: setActiveOrganizationSchema }) dto: SetActiveOrganization,
-    @CurrentUser() user: SessionUser,
-  ): Promise<unknown> {
-    try {
-      const result = await this.ba().setActiveOrganization({ headers, body: dto });
-      // P0 修复 X2（双激活位互斥）：BA 写完 activeOrganizationId 后清 activeTenantId（与 setActiveTenant
-      // 反向成对），杜绝 `{activeTenantId=T1, activeOrganizationId=O2∈T2}` 混态→租内跨租借权。sessionId 缺
-      // 位（旧会话）→ 跳过清位（仍有中间件读侧 org∈tenant 校验兜底）。
-      if (user?.sessionId) {
-        await this.sessions.clearActiveTenant(user.sessionId);
+  @Impl(selfListContract)
+  listMyOrganizations() {
+    return os.meta(selfListMeta).handler(async ({ context }) => {
+      try {
+        return await this.ba().listOrganizations({ headers: context.headers ?? {} });
+      } catch (err) {
+        return mapBaError(err);
       }
-      return result;
-    } catch (err) {
-      return mapBaError(err);
-    }
-  }
-
-  /**
-   * 自助退租（X7 切片 G·G1 租级换轴：不再 BA passthrough，经门面 `leaveSelf` 撤租级两表 + 连清 BA member）。
-   * @param _dto - 目标组织 id 载荷（租级以活动租定位·本字段保留仅守线形契约·不再透传 BA）。
-   * @param user - 会话用户（退租主体）。
-   * @returns 撤权撤席结果（唯一 owner 拒退 403·非成员 404）。
-   */
-  @Post('members/leave')
-  @UseGuards(SessionGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Leave the active tenant (self-service · last-owner cannot leave)' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Membership revoked (tenant-level SSOT + BA member sync)',
-      ssotHint: 'tenant_membership + tenant_role_assignment（自有租级表）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(403, 'Sole owner leaving the tenant (last-owner guard).'))
-  @ApiResponse(apiError(404, 'Not a member of the active tenant.'))
-  async leave(
-    @Body({ schema: leaveOrganizationSchema }) _dto: LeaveOrganization,
-    @CurrentUser() user: SessionUser,
-  ): Promise<{ ok: true }> {
-    await this.facade.leaveSelf(user.id);
-    return { ok: true };
-  }
-
-  /**
-   * 接受发给当前用户的邀请（X7 租级化：消费自有 `tenant_invitation`·非 BA passthrough）。
-   * @param dto - 邀请 id 载荷。
-   * @param user - 会话用户（受邀主体·邮箱匹配与入租落行依据）。
-   * @returns 入租结果（目标租 + 授予角色）；无效/过期 404、非受邀人 403、席位超限 402（门面守卫）。
-   */
-  @Post('invitations/accept')
-  @UseGuards(SessionGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Accept an invitation addressed to the current user' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Invitation accepted; tenant-level membership created',
-      ssotHint: 'tenant_invitation + tenant_membership（自有租级表）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(403, 'Session email does not match the invitee (fail-closed).'))
-  @ApiResponse(apiError(404, 'Pending invitation not found or expired.'))
-  @ApiResponse(apiError(402, 'Seat quota exceeded (checked at accept time).'))
-  async acceptInvitation(
-    @Body({ schema: invitationIdSchema }) dto: InvitationId,
-    @CurrentUser() user: SessionUser,
-  ): Promise<{ tenantId: string; roleKey: string }> {
-    return this.facade.acceptInvitation(dto.invitationId, {
-      userId: user.id,
-      email: user.email,
     });
   }
 
   /**
-   * 拒绝发给当前用户的邀请（X7 租级化：自有 `tenant_invitation` pending → cancelled）。
-   * @param dto - 邀请 id 载荷。
-   * @param user - 会话用户（受邀邮箱锥定·fail-closed 他人不可代拒）。
-   * @returns 空体（非 pending/邮箱不符 → 404）。
+   * 切换会话的 active 组织（须为其成员·BA passthrough·非成员 403 经 `mapBaError` 归一→WP-D 承接）。
    */
-  @Post('invitations/reject')
   @UseGuards(SessionGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reject an invitation addressed to the current user' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Invitation rejected',
-      ssotHint: 'tenant_invitation（自有租级表）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(404, 'Invitation not found/expired/not the invitee.'))
-  async rejectInvitation(
-    @Body({ schema: invitationIdSchema }) dto: InvitationId,
-    @CurrentUser() user: SessionUser,
-  ): Promise<{ ok: true }> {
-    await this.facade.rejectInvitation(dto.invitationId, user.email);
-    return { ok: true };
+  @Impl(selfSetActiveContract)
+  setActive() {
+    return os
+      .input(setActiveOrganizationSchema)
+      .meta(selfSetActiveMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        try {
+          const result = await this.ba().setActiveOrganization({
+            headers: context.headers ?? {},
+            body: input,
+          });
+          // P0 修复 X2（双激活位互斥）：BA 写完 activeOrganizationId 后清 activeTenantId（与 setActiveTenant
+          // 反向成对），杜绝 `{activeTenantId=T1, activeOrganizationId=O2∈T2}` 混态→租内跨租借权。sessionId 缺
+          // 位（旧会话）→ 跳过清位（仍有中间件读侧 org∈tenant 校验兜底）。
+          if (user.sessionId) {
+            await this.sessions.clearActiveTenant(user.sessionId);
+          }
+          return result;
+        } catch (err) {
+          return mapBaError(err);
+        }
+      });
   }
 
   /**
-   * 列出发给当前用户的待处理邀请（X7 租级化：自有 `tenant_invitation`·跨租个人可见面）。
-   * @param user - 会话用户（以 email 收敛可见面）。
-   * @returns 租级邀请列表。
+   * 自助退租（X7 切片 G·G1 租级换轴：经门面 `leaveSelf` 撤租级两表 + 连清 BA member·唯一 owner 拒退 403/非成员 404 经 WP-D 承接）。
    */
-  @Get('invitations/mine')
   @UseGuards(SessionGuard)
-  @ApiOperation({ summary: 'List pending invitations addressed to the current user' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Invitation list (tenant-level invitation SSOT)',
-      ssotHint: 'tenant_invitation（自有租级表）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async listMyInvitations(@CurrentUser() user: SessionUser): Promise<unknown> {
-    return this.facade.listMyInvitations(user.email);
+  @Impl(selfLeaveContract)
+  leave() {
+    return os
+      .input(leaveOrganizationSchema)
+      .meta(selfLeaveMeta)
+      .handler(async ({ context }) => {
+        const user = requireSessionUser(context);
+        await this.facade.leaveSelf(user.id);
+        return { ok: true };
+      });
+  }
+
+  /**
+   * 接受发给当前用户的邀请（X7 租级化·无效/过期 404/非受邀人 403/席位超限 402 经门面守卫→WP-D 承接）。
+   */
+  @UseGuards(SessionGuard)
+  @Impl(selfAcceptContract)
+  acceptInvitation() {
+    return os
+      .input(invitationIdSchema)
+      .meta(selfAcceptMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        return this.facade.acceptInvitation(input.invitationId, {
+          userId: user.id,
+          email: user.email,
+        });
+      });
+  }
+
+  /**
+   * 拒绝发给当前用户的邀请（X7 租级化·非 pending/邮箱不符 → 404 经 WP-D 承接）。
+   */
+  @UseGuards(SessionGuard)
+  @Impl(selfRejectContract)
+  rejectInvitation() {
+    return os
+      .input(invitationIdSchema)
+      .meta(selfRejectMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        await this.facade.rejectInvitation(input.invitationId, user.email);
+        return { ok: true };
+      });
+  }
+
+  /**
+   * 列出发给当前用户的待处理邀请（X7 租级化·跨租个人可见面·BA passthrough）。
+   */
+  @UseGuards(SessionGuard)
+  @Impl(selfListInvitationsContract)
+  listMyInvitations() {
+    return os.meta(selfListInvitationsMeta).handler(async ({ context }) => {
+      const user = requireSessionUser(context);
+      return this.facade.listMyInvitations(user.email);
+    });
   }
 
   /**
@@ -265,33 +213,28 @@ export class OrganizationsSelfController {
    * 软读会话活跃租户（本路由随类级 `@TenantIsolationExempt`·无活跃 org 不 403 而返「不可用」——面板
    * 需在未入组/未选租户态也能渲染），命中则经 published reader 端口取绑定行喂 `canUseOdoo` 单源裁决
    * （与 SSO/RPC 门禁同口径·三点门禁不漂移）。**不**触 Odoo·只读 SaaS 侧绑定态。
-   * @returns 可用性视图（available/绑定态/公司 id·缺席一律 false/null）。
    */
-  @Get('odoo/availability')
   @UseGuards(SessionGuard)
-  @SerializeOptions({ schema: organizationOdooAvailabilityViewSchema })
-  @ApiOperation({
-    summary: 'Read the active organization Odoo availability for the apps panel (personal channel)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(OrganizationOdooAvailabilityResponse, {
-      description: 'Odoo availability by binding status (single-source canUseOdoo verdict).',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async odooAvailability(): Promise<OrganizationOdooAvailabilityView> {
-    const organizationId = this.tenant.organizationId;
-    if (!organizationId) return { available: false, odooBindingStatus: null, odooCompanyId: null };
-    const row = await this.bindings.read(organizationId);
-    if (!row) return { available: false, odooBindingStatus: null, odooCompanyId: null };
-    return {
-      available: canUseOdoo({
-        status: row.organizationStatus,
-        odooBindingStatus: row.odooBindingStatus,
-        odooCompanyId: row.odooCompanyId,
-      }),
-      odooBindingStatus: row.odooBindingStatus,
-      odooCompanyId: row.odooCompanyId,
-    };
+  @Impl(selfOdooAvailabilityContract)
+  odooAvailability() {
+    return os
+      .output(organizationOdooAvailabilityViewSchema)
+      .meta(selfOdooAvailabilityMeta)
+      .handler(async () => {
+        const organizationId = this.tenant.organizationId;
+        if (!organizationId)
+          return { available: false, odooBindingStatus: null, odooCompanyId: null };
+        const row = await this.bindings.read(organizationId);
+        if (!row) return { available: false, odooBindingStatus: null, odooCompanyId: null };
+        return {
+          available: canUseOdoo({
+            status: row.organizationStatus,
+            odooBindingStatus: row.odooBindingStatus,
+            odooCompanyId: row.odooCompanyId,
+          }),
+          odooBindingStatus: row.odooBindingStatus,
+          odooCompanyId: row.odooCompanyId,
+        };
+      });
   }
 }

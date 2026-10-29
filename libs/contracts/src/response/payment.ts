@@ -26,6 +26,7 @@ export const paymentStatusSchema = z.object({
   /** 可用通道集合。 */
   available: z.array(z.enum(PAYMENT_PROVIDER_VALUES)),
 });
+export type PaymentStatusView = z.infer<typeof paymentStatusSchema>;
 
 /**
  * 支付 customer 引用（`PaymentCustomerRef`·通道侧客户）。

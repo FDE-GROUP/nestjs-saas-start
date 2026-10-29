@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { OrganizationOdooAvailabilityView, PaymentStatusView } from '@saas/contracts';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -8,8 +8,8 @@ import {
   PaymentIntegrationPanel,
 } from './settings.integrations';
 
-type PaymentStatus = components['schemas']['PaymentStatusResponse'];
-type OdooAvailability = components['schemas']['OrganizationOdooAvailabilityResponse'];
+type PaymentStatus = PaymentStatusView;
+type OdooAvailability = OrganizationOdooAvailabilityView;
 
 afterEach(() => cleanup());
 

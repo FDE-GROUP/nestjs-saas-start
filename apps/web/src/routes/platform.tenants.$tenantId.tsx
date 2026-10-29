@@ -1,38 +1,43 @@
-import type { components } from '@saas/api-client';
+import type {
+  OrganizationDiagnosticsView,
+  PlatformTenantDetailView,
+  PlatformTenantOrganizationView,
+} from '@saas/contracts';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ErrorPanel, SectionHeading } from '../components/panels';
 import { StatusBadge, TenantActions } from '../components/platform-tenants';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { apiErrorDetail, describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 
-type TenantOrg = components['schemas']['PlatformTenantOrganizationResponse'];
-type Diagnostics = components['schemas']['OrganizationDiagnosticsResponse'];
+type TenantOrg = PlatformTenantOrganizationView;
+type Diagnostics = OrganizationDiagnosticsView;
+type TenantDetail = PlatformTenantDetailView;
 
 export const Route = createFileRoute('/platform/tenants/$tenantId')({
   loader: async ({ params }) => {
     await requireSession();
     const tenantId = params.tenantId;
-    const { data, error } = await api.GET('/api/v1/platform/tenants/{tenantId}', {
-      params: { path: { tenantId } },
-    });
-    if (error) {
+    try {
+      const tenant = (await rpc.platform.tenants.detail({
+        tenantId,
+      })) as unknown as TenantDetail | null;
+      if (!tenant) return { kind: 'notFound' as const, tenantId };
+      return { kind: 'ok' as const, tenant };
+    } catch (e) {
       logApiError(
         { path: `/api/v1/platform/tenants/${tenantId}`, scope: 'platform.tenant.detail' },
-        error,
+        e,
       );
       return {
         kind: 'error' as const,
-        denied: apiErrorDetail(error).statusCode === 403,
-        body: describeApiError(error),
+        denied: apiErrorDetail(e).statusCode === 403,
+        body: describeApiError(e),
       };
     }
-    const tenant = data?.data ?? null;
-    if (!tenant) return { kind: 'notFound' as const, tenantId };
-    return { kind: 'ok' as const, tenant };
   },
   component: TenantDetailPage,
 });
@@ -63,12 +68,8 @@ function TenantDetailPage() {
         verb === 'suspend' ? '已暂停（active→suspended）' : '已恢复（suspended→active）',
       thunk: () =>
         verb === 'suspend'
-          ? api.PATCH('/api/v1/platform/tenants/{tenantId}/suspend', {
-              params: { path: { tenantId } },
-            })
-          : api.PATCH('/api/v1/platform/tenants/{tenantId}/resume', {
-              params: { path: { tenantId } },
-            }),
+          ? rpc.platform.tenants.suspend({ tenantId })
+          : rpc.platform.tenants.resume({ tenantId }),
     });
   }
 
@@ -82,8 +83,7 @@ function TenantDetailPage() {
       method: 'DELETE',
       scope: 'platform.tenant.softDelete',
       successMessage: '已软删除（进入 deleted 终态）',
-      thunk: () =>
-        api.DELETE('/api/v1/platform/tenants/{tenantId}', { params: { path: { tenantId } } }),
+      thunk: () => rpc.platform.tenants.remove({ tenantId }),
     });
   }
 
@@ -99,10 +99,7 @@ function TenantDetailPage() {
       method: 'DELETE',
       scope: 'platform.tenant.permanentDelete',
       successMessage: '已不可逆硬删除（连带清除名下组织）',
-      thunk: () =>
-        api.DELETE('/api/v1/platform/tenants/{tenantId}/permanent', {
-          params: { path: { tenantId } },
-        }),
+      thunk: () => rpc.platform.tenants.permanentRemove({ tenantId }),
     });
   }
 
@@ -187,52 +184,50 @@ function OrganizationDrill({ tenantId, org }: { tenantId: string; org: TenantOrg
 
   async function handleDiagnostics() {
     setDiagErr(null);
-    const { data, error } = await api.GET(
-      '/api/v1/platform/tenants/{tenantId}/organizations/{orgId}/diagnostics',
-      { params: { path: { tenantId, orgId: org.organizationId } } },
-    );
-    if (error) {
+    try {
+      const diag = await rpc.platform.tenants.diagnostics({
+        tenantId,
+        orgId: org.organizationId,
+      });
+      setDiag(diag as unknown as Diagnostics);
+    } catch (e) {
       logApiError(
         {
           path: `/api/v1/platform/tenants/${tenantId}/organizations/${org.organizationId}/diagnostics`,
           scope: 'platform.organization.diag',
         },
-        error,
+        e,
       );
-      setDiagErr(describeApiError(error));
-      return;
+      setDiagErr(describeApiError(e));
     }
-    setDiag(data?.data ?? null);
   }
 
   async function handleExport() {
     setExporting(true);
     setExportErr(null);
     try {
-      const { data, error } = await api.GET(
-        '/api/v1/platform/tenants/{tenantId}/organizations/{orgId}/export',
-        { params: { path: { tenantId, orgId: org.organizationId } } },
-      );
-      if (error) {
-        logApiError(
-          {
-            path: `/api/v1/platform/tenants/${tenantId}/organizations/${org.organizationId}/export`,
-            method: 'GET',
-            scope: 'platform.export',
-          },
-          error,
-        );
-        setExportErr(describeApiError(error));
-        return;
-      }
-      // passthrough（类型 unknown·六段聚合不解析）→ 原样序列化下载。
-      const blob = new Blob([JSON.stringify(data ?? {}, null, 2)], { type: 'application/json' });
+      // passthrough（六段聚合不解析）→ oRPC 客户端已拆信封，payload 即聚合体·原样序列化下载。
+      const payload = await rpc.platform.tenants.exportData({
+        tenantId,
+        orgId: org.organizationId,
+      });
+      const blob = new Blob([JSON.stringify(payload ?? {}, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `organization-${org.slug}.json`;
       a.click();
       URL.revokeObjectURL(url);
+    } catch (e) {
+      logApiError(
+        {
+          path: `/api/v1/platform/tenants/${tenantId}/organizations/${org.organizationId}/export`,
+          method: 'GET',
+          scope: 'platform.export',
+        },
+        e,
+      );
+      setExportErr(describeApiError(e));
     } finally {
       setExporting(false);
     }

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DangerButton, Feedback, FormWrap, Select, SubmitButton } from '../components/forms';
 import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -21,14 +21,15 @@ interface MemberRow {
 export const Route = createFileRoute('/settings/members')({
   loader: async () => {
     const session = await requireSession();
-    const { data, error } = await api.GET('/api/v1/organizations/members');
-    if (error) {
-      logApiError({ path: '/api/v1/organizations/members', scope: 'members' }, error);
-      const guide = await probeOrganizationContext(error);
+    try {
+      const raw = await rpc.organizations.members.list();
+      return { kind: 'ok' as const, raw, orgId: session.session.activeOrganizationId };
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/members', scope: 'members' }, e);
+      const guide = await probeOrganizationContext(e);
       if (guide) return { kind: 'guide' as const, guide };
-      return { kind: 'error' as const, body: error };
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, raw: data?.data, orgId: session.session.activeOrganizationId };
   },
   component: MembersPage,
 });
@@ -57,10 +58,7 @@ function MembersPage() {
       method: 'POST',
       scope: 'member.leave',
       successMessage: '已退出组织',
-      thunk: () =>
-        api.POST('/api/v1/organizations/members/leave', {
-          body: { organizationId: orgId },
-        }),
+      thunk: () => rpc.organizations.leave({ organizationId: orgId }),
     });
   }
 
@@ -101,10 +99,7 @@ function MemberActions({ member }: { member: MemberRow }) {
       method: 'POST',
       scope: 'member.role',
       successMessage: `${member.userId} 角色已更新`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/members/role', {
-          body: { memberId: member.userId ?? '', role },
-        }),
+      thunk: () => rpc.organizations.members.updateRole({ memberId: member.userId ?? '', role }),
     });
   }
 
@@ -114,10 +109,7 @@ function MemberActions({ member }: { member: MemberRow }) {
       method: 'POST',
       scope: 'member.remove',
       successMessage: `${member.userId} 已移除`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/members/remove', {
-          body: { memberId: member.userId ?? '' },
-        }),
+      thunk: () => rpc.organizations.members.remove({ memberId: member.userId ?? '' }),
     });
   }
 

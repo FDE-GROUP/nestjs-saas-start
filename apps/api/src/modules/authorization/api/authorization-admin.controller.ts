@@ -1,47 +1,37 @@
 import { AuthorizationGuard } from '@core/saas-kit/authorization/authorization.guard';
 import { Can } from '@core/saas-kit/authorization/can.decorator';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
+import { BadRequestException, Controller, Inject, UseGuards } from '@nestjs/common';
+import { Impl } from '@orpc/nest';
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { SerializeOptions } from '@nestjs/common/serializer/index.js';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+  authzCreateRoleContract,
+  authzCreateRoleMeta,
+  authzDeleteRoleContract,
+  authzDeleteRoleMeta,
+  authzGrantContract,
+  authzGrantMeta,
+  authzListGrantsContract,
+  authzListGrantsMeta,
+  authzListRolesContract,
+  authzListRolesMeta,
+  authzRenameRoleContract,
+  authzRenameRoleMeta,
+  authzRevokeContract,
+  authzRevokeMeta,
+} from '@saas/api-contract/index';
 import {
-  type CreateRole,
   createRoleSchema,
-  type DeleteRole,
   deleteRoleSchema,
-  type GrantRolePermission,
   grantRolePermissionSchema,
-  type RenameRole,
-  type RevokeRolePermission,
+  listGrantsQuerySchema,
   renameRoleSchema,
   revokeRolePermissionSchema,
-  tenantRoleGrantViewSchema,
+  tenantRoleGrantViewListSchema,
+  tenantRoleViewListSchema,
   tenantRoleViewSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-  apiOkArray,
-} from '../../../common/contracts/api-contracts';
+import { os } from '../../../common/orpc/orpc';
 import { TenantRbacAdminService } from '../application/organization-rbac-admin.service';
-import type {
-  TenantRoleGrantView,
-  TenantRoleView,
-} from '../domain/repositories/organization-rbac.repository';
-import { TenantRoleGrantViewResponse, TenantRoleViewResponse } from './response/role.response';
 
 /**
  * 角色/授权**管理门面**端点（module-rbac-dynamic-roles §2.5·S3·甲裁自建角色 + 丁裁随片授权面）。
@@ -56,9 +46,23 @@ import { TenantRoleGrantViewResponse, TenantRoleViewResponse } from './response/
  * (create/read/delete)，member 无 → 非管理员请求由守卫 403（fail-closed）。
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, TenantRoleViewResponse, TenantRoleGrantViewResponse)
-@ApiTags('organizations')
-@Controller('organizations/roles')
+// 换轨 WP-C：七路由转 per-method `@Impl`（非 router 扇出）——class 级 `@UseGuards(TenantIsolationGuard,
+// AuthorizationGuard)` + 方法级 `@Can` 原生保留（守卫墙不弱化）。旧 S4 `@Body({schema})` 参数校验与
+// S7b `@SerializeOptions` 序列化白名单换落点到 procedure 级 `.input/.output`（zod 单源不变·数组逐元素
+// 面显式包 `tenantRoleViewListSchema`/`tenantRoleGrantViewListSchema`）；void 端点不挂 `.output`。
+// listGrants 缺参的 `BadRequestException` 经 WP-D 错误面逐字承接为 REST 400 信封。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export {
+  authzCreateRoleContract,
+  authzDeleteRoleContract,
+  authzGrantContract,
+  authzListGrantsContract,
+  authzListRolesContract,
+  authzRenameRoleContract,
+  authzRevokeContract,
+};
+
+@Controller('')
 @UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class AuthorizationAdminController {
   constructor(@Inject(TenantRbacAdminService) private readonly rbac: TenantRbacAdminService) {}
@@ -67,120 +71,109 @@ export class AuthorizationAdminController {
    * 列出活动租户全部角色（系统 + 自定义）。
    * @returns 角色读模型列表。
    */
-  @Get()
   @Can('read', 'Role')
-  @SerializeOptions({ schema: tenantRoleViewSchema })
-  @ApiOperation({ summary: 'List roles of the active organization (system + custom)' })
-  @ApiResponse(apiOkArray(TenantRoleViewResponse, 'Role views.'))
-  @ApiResponse(apiError(403, 'CASL deny (no Role read).'))
-  listRoles(): Promise<TenantRoleView[]> {
-    return this.rbac.listRoles();
+  @Impl(authzListRolesContract)
+  listRoles() {
+    return os
+      .output(tenantRoleViewListSchema)
+      .meta(authzListRolesMeta)
+      .handler(() => this.rbac.listRoles());
   }
 
   /**
    * 创建自定义角色（仅 owner/admin）。
-   * @param dto - 创建载荷（key/name）。
-   * @returns 创建后的角色读模型。
+   * @returns 创建后的角色读模型（无效/保留 key→400·重复 key→409·经 WP-D 承接）。
    */
-  @Post()
   @Can('create', 'Role')
-  @HttpCode(HttpStatus.OK)
-  @SerializeOptions({ schema: tenantRoleViewSchema })
-  @ApiOperation({ summary: 'Create a custom role (owner/admin)' })
-  @ApiResponse(apiEnvelopeShape(TenantRoleViewResponse, { description: 'Created role view.' }))
-  @ApiResponse(apiError(400, 'Invalid/reserved role key.'))
-  @ApiResponse(apiError(409, 'Role key already exists.'))
-  createRole(@Body({ schema: createRoleSchema }) dto: CreateRole): Promise<TenantRoleView> {
-    return this.rbac.createRole(dto.key, dto.name);
+  @Impl(authzCreateRoleContract)
+  createRole() {
+    return os
+      .input(createRoleSchema)
+      .output(tenantRoleViewSchema)
+      .meta(authzCreateRoleMeta)
+      .handler(({ input }) => this.rbac.createRole(input.key, input.name));
   }
 
   /**
-   * 自定义角色改名（系统角色屏）。
-   * @param dto - 改名载荷（key/name）。
+   * 自定义角色改名（系统角色屏·未命中 404/系统角色 409 经 WP-D 承接）。
    */
-  @Post('rename')
   @Can('update', 'Role')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rename a custom role (system roles protected)' })
-  @ApiResponse({ status: 200, description: 'Renamed.' })
-  @ApiResponse(apiError(404, 'Role not found.'))
-  @ApiResponse(apiError(409, 'System role protected.'))
-  async renameRole(@Body({ schema: renameRoleSchema }) dto: RenameRole): Promise<void> {
-    await this.rbac.renameRole(dto.key, dto.name);
+  @Impl(authzRenameRoleContract)
+  renameRole() {
+    return os
+      .input(renameRoleSchema)
+      .meta(authzRenameRoleMeta)
+      .handler(async ({ input }) => {
+        await this.rbac.renameRole(input.key, input.name);
+      });
   }
 
   /**
-   * 删除自定义角色（授权行级联销；系统角色屏）。
-   * @param dto - 删除载荷（key）。
+   * 删除自定义角色（授权行级联销·系统角色屏·未命中 404/系统角色 409 经 WP-D 承接）。
    */
-  @Post('delete')
   @Can('delete', 'Role')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a custom role (grants cascade; system roles protected)' })
-  @ApiResponse({ status: 200, description: 'Deleted.' })
-  @ApiResponse(apiError(404, 'Role not found.'))
-  @ApiResponse(apiError(409, 'System role protected.'))
-  async deleteRole(@Body({ schema: deleteRoleSchema }) dto: DeleteRole): Promise<void> {
-    await this.rbac.deleteRole(dto.key);
+  @Impl(authzDeleteRoleContract)
+  deleteRole() {
+    return os
+      .input(deleteRoleSchema)
+      .meta(authzDeleteRoleMeta)
+      .handler(async ({ input }) => {
+        await this.rbac.deleteRole(input.key);
+      });
   }
 
   /**
-   * 列出某角色的授权行（回显勾选态）。
-   * @param roleKey - 查询参数：目标角色 key（缺失 → 400）。
-   * @returns 授权行读模型列表。
-   *
-   * @throws {BadRequestException} 缺少 roleKey 查询参数时。
+   * 列出某角色的授权行（回显勾选态·缺 roleKey 查询参数 → 400 经 WP-D 承接）。
    */
-  @Get('grants')
   @Can('read', 'RoleGrant')
-  @SerializeOptions({ schema: tenantRoleGrantViewSchema })
-  @ApiOperation({ summary: 'List grant rows of a role (echo checked state)' })
-  @ApiResponse(apiOkArray(TenantRoleGrantViewResponse, 'Grant views (subject/action/conditions).'))
-  @ApiResponse(apiError(404, 'Role not found.'))
-  listGrants(@Query('roleKey') roleKey?: string): Promise<TenantRoleGrantView[]> {
-    if (!roleKey) {
-      throw new BadRequestException('roleKey query param is required');
-    }
-    return this.rbac.getGrants(roleKey);
+  @Impl(authzListGrantsContract)
+  listGrants() {
+    return os
+      .input(listGrantsQuerySchema)
+      .output(tenantRoleGrantViewListSchema)
+      .meta(authzListGrantsMeta)
+      .handler(async ({ input }) => {
+        if (!input.roleKey) {
+          throw new BadRequestException('roleKey query param is required');
+        }
+        return this.rbac.getGrants(input.roleKey);
+      });
   }
 
   /**
-   * 为角色新增授权格（同格多条件行 = OR 并集）。
-   * @param dto - 授权载荷（roleKey/subject/action/conditions）。
+   * 为角色新增授权格（同格多条件行 = OR 并集·无效条件 400/未命中 404/重复 409 经 WP-D 承接）。
    */
-  @Post('grants')
   @Can('create', 'RoleGrant')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Grant a permission cell to a role (multi-condition rows = OR union)' })
-  @ApiResponse({ status: 200, description: 'Granted.' })
-  @ApiResponse(apiError(400, 'Invalid conditions (whitelist-only).'))
-  @ApiResponse(apiError(404, 'Role not found.'))
-  @ApiResponse(apiError(409, 'Duplicate grant.'))
-  async grant(
-    @Body({ schema: grantRolePermissionSchema }) dto: GrantRolePermission,
-  ): Promise<void> {
-    await this.rbac.grant(dto.roleKey, {
-      subject: dto.subject,
-      action: dto.action,
-      conditions: dto.conditions ?? null,
-    });
+  @Impl(authzGrantContract)
+  grant() {
+    return os
+      .input(grantRolePermissionSchema)
+      .meta(authzGrantMeta)
+      .handler(async ({ input }) => {
+        await this.rbac.grant(input.roleKey, {
+          subject: input.subject,
+          action: input.action,
+          conditions: input.conditions ?? null,
+        });
+      });
   }
 
   /**
-   * 撤权（conditions 缺省 = 整 subject 级行；传对象 = 精确撤单条件行）。
-   * @param dto - 撤权载荷（roleKey/subject/action/conditions）。
+   * 撤权（conditions 缺省 = 整 subject 级行；传对象 = 精确撤单条件行·未命中 404 经 WP-D 承接）。
    */
-  @Post('grants/revoke')
   @Can('delete', 'RoleGrant')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Revoke a grant (conditions null = whole-subject row; object = exact row)',
-  })
-  @ApiResponse({ status: 200, description: 'Revoked.' })
-  @ApiResponse(apiError(404, 'Role or matching grant not found.'))
-  async revoke(
-    @Body({ schema: revokeRolePermissionSchema }) dto: RevokeRolePermission,
-  ): Promise<void> {
-    await this.rbac.revoke(dto.roleKey, dto.subject, dto.action, dto.conditions ?? null);
+  @Impl(authzRevokeContract)
+  revoke() {
+    return os
+      .input(revokeRolePermissionSchema)
+      .meta(authzRevokeMeta)
+      .handler(async ({ input }) => {
+        await this.rbac.revoke(
+          input.roleKey,
+          input.subject,
+          input.action,
+          input.conditions ?? null,
+        );
+      });
   }
 }

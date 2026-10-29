@@ -1,14 +1,15 @@
-import type { components } from '@saas/api-client';
+import type { FileUploadResult } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useRef, useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
+import { uploadStorageFile } from '../lib/upload';
 
-/** 真相源 = `FileUploadResultDto`（`@saas/api-client` schema 派生·编译期契约锁定）。 */
-type StoredFile = components['schemas']['FileUploadResultDto'];
+/** 真相源 = `FileUploadResult`（`@saas/contracts` zod 派生·编译期契约锁定）。 */
+type StoredFile = FileUploadResult;
 
 /**
  * 前端 F5 · Storage 消费面（module-frontend-storage）。
@@ -54,11 +55,10 @@ function StoragePage() {
       scope: 'storage.upload',
       successMessage: '上传成功',
       thunk: async () => {
-        // openapi-typescript 把 `format: binary` 映射为 `file?: string`，openapi-fetch 运行期识别
-        // FormData 实例直传 multipart——typed body 形与实际 FormData 之既有张力，须窄化（承 plan 裁④）。
-        const { data, error } = await api.POST('/api/v1/storage/upload', { body: fd as never });
+        // multipart carve-out：换原生 fetch（FormData 直传·oRPC link 不承接二进制体·见 ./lib/upload.ts）。
+        const { data, error } = await uploadStorageFile(fd);
         if (error) return { error };
-        setUploaded(data?.data ?? null);
+        setUploaded(data ?? null);
         setSignedUrl(null);
         return {};
       },
@@ -76,11 +76,8 @@ function StoragePage() {
       scope: 'storage.url',
       successMessage: '已生成签名 URL',
       thunk: async () => {
-        const { data, error } = await api.GET('/api/v1/storage/{key}/url', {
-          params: { path: { key } },
-        });
-        if (error) return { error };
-        setSignedUrl(data?.data?.url ?? null);
+        const res = await rpc.storage.url({ key });
+        setSignedUrl(res.url ?? null);
         return {};
       },
     });
@@ -93,8 +90,8 @@ function StoragePage() {
       scope: 'storage.delete',
       successMessage: '已删除',
       thunk: async () => {
-        const { error } = await api.DELETE('/api/v1/storage/{key}', { params: { path: { key } } });
-        return { error };
+        await rpc.storage.remove({ key });
+        return {};
       },
     });
     if (ok) {
@@ -112,11 +109,8 @@ function StoragePage() {
       scope: 'storage.url.manual',
       successMessage: '已生成签名 URL',
       thunk: async () => {
-        const { data, error } = await api.GET('/api/v1/storage/{key}/url', {
-          params: { path: { key: manualKey } },
-        });
-        if (error) return { error };
-        setManualUrl(data?.data?.url ?? null);
+        const res = await rpc.storage.url({ key: manualKey });
+        setManualUrl(res.url ?? null);
         return {};
       },
     });
@@ -130,10 +124,8 @@ function StoragePage() {
       scope: 'storage.delete.manual',
       successMessage: '已删除',
       thunk: async () => {
-        const { error } = await api.DELETE('/api/v1/storage/{key}', {
-          params: { path: { key: manualKey } },
-        });
-        return { error };
+        await rpc.storage.remove({ key: manualKey });
+        return {};
       },
     });
     if (ok) {

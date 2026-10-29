@@ -1,42 +1,27 @@
-import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
-import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { SessionGuard } from '@app/modules/auth/api/guards/session.guard';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Put,
-  SerializeOptions,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Inject, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
+import {
+  tenantsListContract,
+  tenantsListMeta,
+  tenantsSetActiveContract,
+  tenantsSetActiveMeta,
+} from '@saas/api-contract/index';
 import {
   type ActiveTenantResult,
   activeTenantResultSchema,
-  type SetActiveTenant,
   setActiveTenantSchema,
-  type TenantDirectoryView,
   tenantDirectoryViewSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-} from '../../../common/contracts/api-contracts';
+import { os } from '../../../common/orpc/orpc';
+import { requireSessionUser } from '../../../common/orpc/orpc-context';
 import { SetSessionActiveTenantCommand } from '../application/commands/set-session-active-tenant.command';
 import {
   TENANT_DIRECTORY_REPOSITORY,
   type TenantDirectoryRepository,
 } from '../domain/repositories/tenant-directory.repository';
-import {
-  ActiveTenantResponse,
-  TenantDirectoryResponse,
-} from './response/tenant-directory.response';
 
 /**
  * 租户目录端点（global-tenant-organization-rehierarchy 切片 E-F·FR-11 用户级读面）。
@@ -49,10 +34,13 @@ import {
  * `PUT /tenants/active`——它不写租户生命周期态，只写当前会话的租级激活位（session-scoped）。
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, TenantDirectoryResponse, ActiveTenantResponse)
-@ApiTags('tenants')
+// 换轨 WP-C：两路由转 per-method `@Impl`。已认证主体经 `context.user`（取代 `@CurrentUser()`）·
+// 逐路由 `@UseGuards(SessionGuard)` 原生保留；`@TenantIsolationExempt` 类级旁路租户墙不变。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export { tenantsListContract, tenantsSetActiveContract };
+
 @TenantIsolationExempt()
-@Controller('tenants')
+@Controller('')
 export class TenantsController {
   constructor(
     @Inject(TENANT_DIRECTORY_REPOSITORY) private readonly directory: TenantDirectoryRepository,
@@ -64,19 +52,17 @@ export class TenantsController {
    * @param user - 会话用户（成员资格收敛输入）。
    * @returns 归组后的租户目录视图。
    */
-  @Get()
   @UseGuards(SessionGuard)
-  @SerializeOptions({ schema: tenantDirectoryViewSchema })
-  @ApiOperation({ summary: 'List tenant directory of the current user (tenants → organizations)' })
-  @ApiResponse(
-    apiEnvelopeShape(TenantDirectoryResponse, {
-      description: 'Tenant directory grouped by the current user memberships.',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async list(@CurrentUser() user: SessionUser): Promise<TenantDirectoryView> {
-    const tenants = await this.directory.listForUser(user.id);
-    return { tenants };
+  @Impl(tenantsListContract)
+  list() {
+    return os
+      .output(tenantDirectoryViewSchema)
+      .meta(tenantsListMeta)
+      .handler(async ({ context }) => {
+        const user = requireSessionUser(context);
+        const tenants = await this.directory.listForUser(user.id);
+        return { tenants };
+      });
   }
 
   /**
@@ -90,29 +76,26 @@ export class TenantsController {
    * @param dto - 目标 tenantId。
    * @returns 已激活租户回执；写行查无 → 401。
    */
-  @Put('active')
   @UseGuards(SessionGuard)
-  @SerializeOptions({ schema: activeTenantResultSchema })
-  @ApiOperation({ summary: 'Set the active tenant of the current session (tenant activation)' })
-  @ApiResponse(
-    apiEnvelopeShape(ActiveTenantResponse, {
-      description: 'The activated tenant id written to the session.',
-    }),
-  )
-  @ApiResponse(apiError(400, 'Session id missing on the authenticated principal.'))
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  @ApiResponse(apiError(403, 'Not a member of the target tenant.'))
-  async setActiveTenant(
-    @CurrentUser() user: SessionUser,
-    @Body({ schema: setActiveTenantSchema }) dto: SetActiveTenant,
-  ): Promise<ActiveTenantResult> {
-    if (!user.sessionId)
-      throw new UnauthorizedException('Session id missing on the authenticated principal.');
-    const result = await this.commandBus.execute<
-      SetSessionActiveTenantCommand,
-      ActiveTenantResult | null
-    >(new SetSessionActiveTenantCommand(user.id, user.sessionId, dto.tenantId));
-    if (!result) throw new UnauthorizedException('Session no longer valid.');
-    return result;
+  @Impl(tenantsSetActiveContract)
+  setActiveTenant() {
+    return os
+      .input(setActiveTenantSchema)
+      .output(activeTenantResultSchema)
+      .meta(tenantsSetActiveMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        if (!user.sessionId) {
+          throw new UnauthorizedException('Session id missing on the authenticated principal.');
+        }
+        const result = await this.commandBus.execute<
+          SetSessionActiveTenantCommand,
+          ActiveTenantResult | null
+        >(new SetSessionActiveTenantCommand(user.id, user.sessionId, input.tenantId));
+        if (!result) {
+          throw new UnauthorizedException('Session no longer valid.');
+        }
+        return result;
+      });
   }
 }

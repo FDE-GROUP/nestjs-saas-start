@@ -5,44 +5,31 @@ import { DeleteWorkspaceCommand } from '@core/saas-kit/modules/workspaces/applic
 import { UpdateWorkspaceCommand } from '@core/saas-kit/modules/workspaces/application/commands/update-workspace.command';
 import { ListWorkspacesQuery } from '@core/saas-kit/modules/workspaces/application/queries/list-workspaces.query';
 import type { WorkspaceReadModel } from '@core/saas-kit/modules/workspaces/application/read-models/workspace.read-model';
-import type { Page } from '@core/saas-kit/shared-kernel/domain/pagination';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  NotFoundException,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { SerializeOptions } from '@nestjs/common/serializer/index.js';
+import { Controller, Inject, NotFoundException, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
 import {
-  type CreateWorkspace,
+  workspacesCreateContract,
+  workspacesCreateMeta,
+  workspacesListContract,
+  workspacesListMeta,
+  workspacesRemoveContract,
+  workspacesRemoveMeta,
+  workspacesUpdateContract,
+  workspacesUpdateMeta,
+} from '@saas/api-contract/index';
+import {
   createWorkspaceSchema,
-  type ListPageQuery,
   listPageQuerySchema,
-  type UpdateWorkspace,
-  updateWorkspaceSchema,
+  updateWorkspaceInputSchema,
+  type WorkspacePage,
+  workspaceIdParamSchema,
   workspacePageSchema,
   workspaceViewSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-} from '../../../common/contracts/api-contracts';
-import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.response';
+import { os } from '../../../common/orpc/orpc';
 
 /**
  * 工作区 CRUD 参考切片的 HTTP 控制器（多租户 S3 · D2/§9.1 / FR-4/FR-5）。
@@ -60,9 +47,20 @@ import { WorkspacePageResponse, WorkspaceResponse } from './response/workspace.r
  * the repository — handlers/controllers never name a tenant id.
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, WorkspaceResponse, WorkspacePageResponse)
-@ApiTags('workspaces')
-@Controller('workspaces')
+// 换轨 WP-C：四条路由全部转 per-method `@Impl`（单 ProcedureContract·非 router 扇出）——@Can 仍落
+// 在本方法上，class 级 `@UseGuards(TenantIsolationGuard, AuthorizationGuard)` + 方法级 `@Can` 原生生效（守卫墙不弱化）。
+// update/remove 的 in-handler `NotFoundException`（含 errorCode）经 WP-D 错误面承接逐字复原 REST 信封；
+// `:id` 路径参经紧凑 input 结构（`{...body, ...params}` 平并）落到合并 input schema（`@saas/contracts` 单源）。
+// 契约 meta.path 现为绝对段（`/workspaces`·换轨 B-5 路径单源前置 lib）·`@Controller('')` 让 @Impl 按 meta 原样挂载，合成最终 /workspaces（prod 加前缀版本后 /api/v1/workspaces）。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export {
+  workspacesCreateContract,
+  workspacesListContract,
+  workspacesRemoveContract,
+  workspacesUpdateContract,
+};
+
+@Controller('')
 @UseGuards(TenantIsolationGuard, AuthorizationGuard)
 export class WorkspacesController {
   constructor(
@@ -72,100 +70,82 @@ export class WorkspacesController {
 
   /**
    * 分页列出当前组织下的工作区（offset 分页）。
-   * @param request - offset 分页请求。
    * @returns 当前组织拥有的工作区分页。
    */
-  @Get()
   @Can('read', 'Workspace')
-  @SerializeOptions({ schema: workspacePageSchema })
-  @ApiOperation({ summary: 'List workspaces in the active organization' })
-  @ApiResponse(
-    apiEnvelopeShape(WorkspacePageResponse, {
-      description: 'Workspaces owned by the active organization (offset page).',
-    }),
-  )
-  @ApiResponse(apiError(403, 'No active organization, or missing workspace:read.'))
-  list(
-    @Query({ schema: listPageQuerySchema }) request: ListPageQuery,
-  ): Promise<Page<WorkspaceReadModel>> {
-    return this.queryBus.execute<ListWorkspacesQuery, Page<WorkspaceReadModel>>(
-      new ListWorkspacesQuery(request),
-    );
+  @Impl(workspacesListContract)
+  list() {
+    return os
+      .input(listPageQuerySchema)
+      .output(workspacePageSchema)
+      .meta(workspacesListMeta)
+      .handler(({ input }) =>
+        this.queryBus.execute<ListWorkspacesQuery, WorkspacePage>(new ListWorkspacesQuery(input)),
+      );
   }
 
   /**
    * 创建工作区（owner/admin）。
-   * @param dto - 创建入参（name/slug）。
    * @returns 已落库并盖章当前组织的工作区。
    */
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
   @Can('create', 'Workspace')
-  @SerializeOptions({ schema: workspaceViewSchema })
-  @ApiOperation({ summary: 'Create a workspace (owner/admin)' })
-  @ApiResponse(
-    apiEnvelopeShape(WorkspaceResponse, {
-      status: 201,
-      description: 'Created workspace stamped with the active organization.',
-    }),
-  )
-  @ApiResponse(apiError(403, 'Missing workspace:create (members are rejected).'))
-  create(
-    @Body({ schema: createWorkspaceSchema }) dto: CreateWorkspace,
-  ): Promise<WorkspaceReadModel> {
-    return this.commandBus.execute<CreateWorkspaceCommand, WorkspaceReadModel>(
-      new CreateWorkspaceCommand(dto.name, dto.slug),
-    );
+  @Impl(workspacesCreateContract)
+  create() {
+    return os
+      .input(createWorkspaceSchema)
+      .output(workspaceViewSchema)
+      .meta(workspacesCreateMeta)
+      .handler(({ input }) =>
+        this.commandBus.execute<CreateWorkspaceCommand, WorkspaceReadModel>(
+          new CreateWorkspaceCommand(input.name, input.slug),
+        ),
+      );
   }
 
   /**
    * 更新工作区（owner/admin）。
-   * @param id - 工作区主键。
-   * @param dto - 更新入参（name/slug）。
-   * @returns 更新后的工作区；未命中则抛 404。
-   *
-   * @throws {NotFoundException} 工作区不存在时。
+   * @returns 更新后的工作区；未命中则 404（经 WP-D 错误面承接逐字复原）。
    */
-  @Patch(':id')
   @Can('update', 'Workspace')
-  @SerializeOptions({ schema: workspaceViewSchema })
-  @ApiOperation({ summary: 'Update a workspace (owner/admin)' })
-  @ApiResponse(apiEnvelopeShape(WorkspaceResponse, { description: 'Updated workspace.' }))
-  @ApiResponse(apiError(404, 'Workspace not found in the active organization.'))
-  async update(
-    @Param('id') id: string,
-    @Body({ schema: updateWorkspaceSchema }) dto: UpdateWorkspace,
-  ): Promise<WorkspaceReadModel> {
-    const result = await this.commandBus.execute<UpdateWorkspaceCommand, WorkspaceReadModel | null>(
-      new UpdateWorkspaceCommand(id, dto.name, dto.slug),
-    );
-    if (!result)
-      throw new NotFoundException('Workspace not found', {
-        errorCode: ERROR_CODES.WORKSPACE_NOT_FOUND,
+  @Impl(workspacesUpdateContract)
+  update() {
+    return os
+      .input(updateWorkspaceInputSchema)
+      .output(workspaceViewSchema)
+      .meta(workspacesUpdateMeta)
+      .handler(async ({ input }) => {
+        const result = await this.commandBus.execute<
+          UpdateWorkspaceCommand,
+          WorkspaceReadModel | null
+        >(new UpdateWorkspaceCommand(input.id, input.name, input.slug));
+        if (!result) {
+          throw new NotFoundException('Workspace not found', {
+            errorCode: ERROR_CODES.WORKSPACE_NOT_FOUND,
+          });
+        }
+        return result;
       });
-    return result;
   }
 
   /**
    * 删除工作区（owner/admin）。
-   * @param id - 工作区主键。
-   * @returns 无内容（204）；未命中则抛 404。
-   *
-   * @throws {NotFoundException} 工作区不存在时。
+   * @returns 无内容（204）；未命中则 404（经 WP-D 错误面承接逐字复原）。
    */
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @Can('delete', 'Workspace')
-  @ApiOperation({ summary: 'Delete a workspace (owner/admin)' })
-  @ApiResponse({ status: 204, description: 'Workspace deleted.' })
-  @ApiResponse(apiError(404, 'Workspace not found in the active organization.'))
-  async remove(@Param('id') id: string): Promise<void> {
-    const deleted = await this.commandBus.execute<DeleteWorkspaceCommand, boolean>(
-      new DeleteWorkspaceCommand(id),
-    );
-    if (!deleted)
-      throw new NotFoundException('Workspace not found', {
-        errorCode: ERROR_CODES.WORKSPACE_NOT_FOUND,
+  @Impl(workspacesRemoveContract)
+  remove() {
+    return os
+      .input(workspaceIdParamSchema)
+      .meta(workspacesRemoveMeta)
+      .handler(async ({ input }) => {
+        const deleted = await this.commandBus.execute<DeleteWorkspaceCommand, boolean>(
+          new DeleteWorkspaceCommand(input.id),
+        );
+        if (!deleted) {
+          throw new NotFoundException('Workspace not found', {
+            errorCode: ERROR_CODES.WORKSPACE_NOT_FOUND,
+          });
+        }
       });
   }
 }

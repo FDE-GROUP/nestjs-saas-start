@@ -91,3 +91,17 @@ export type GrantRolePermission = z.infer<typeof grantRolePermissionSchema>;
  */
 export const revokeRolePermissionSchema = grantRolePermissionSchema;
 export type RevokeRolePermission = GrantRolePermission;
+
+/**
+ * 列授权行查询入参（换轨 WP-C·旧 `@Query('roleKey') roleKey?: string`）。
+ *
+ * @remarks
+ * **非-strict**（容忍多余 query·保真旧 REST query 宽松面）；`roleKey` 缺省可选，
+ * 缺参的 `400 roleKey query param is required` 由控制器 handler 内抛（经 WP-D 错误面逐字承接）。
+ *
+ * @public
+ */
+export const listGrantsQuerySchema = z.object({
+  roleKey: z.string().optional(),
+});
+export type ListGrantsQuery = z.infer<typeof listGrantsQuerySchema>;

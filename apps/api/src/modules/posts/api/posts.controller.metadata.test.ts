@@ -1,38 +1,63 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serializer.constants.js';
-import { listPostsQuerySchema, postCursorPageSchema, postViewSchema } from '@saas/contracts/index';
+import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { getOpenAPIMeta } from '@orpc/openapi';
+import {
+  createPostSchema,
+  listPostsQuerySchema,
+  postCursorPageSchema,
+  postViewSchema,
+} from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
-import { PostsController } from './posts.controller';
+import { PostsController, postsCreateContract, postsListContract } from './posts.controller';
 
-// S4/S5 换轨后 list() 的校验凭 `@Query({ schema })` 路由参数元数据生效（不再依赖 class DTO 的
-// design:paramtypes）——锁「schema 已挂到 @Query 参数元数据」，复刻旧 paramtypes 锁的本职：
-// 防漏配/import type 致 limit/cursor 校验整链静默跳过（S9 同形风险的 schema 侧等价守卫）。
-describe('PostsController query schema metadata', () => {
-  it('list() 的 @Query 携 listPostsQuerySchema（S4 schema 路径·非 class DTO）', () => {
-    const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, PostsController, 'list') as Record<
-      string,
-      { schema?: unknown }
-    >;
-    expect(Object.values(args).some((v) => v.schema === listPostsQuerySchema)).toBe(true);
+/**
+ * 换轨 WP-B parity 锁（posts·S4 schema 路径 + S7b 序列化白名单 + 路由注册的 oRPC 等价承接）：
+ *
+ * 旧 REST 三件静默失守防线（`@Query({schema})` 参数元数据 / `@SerializeOptions` 类序列化元数据）
+ * 在 oRPC 下换了落点——校验与 PII 白名单下沉到 procedure 级 `.input/.output`，路由经 `@Impl` 的
+ * contract `openapi` meta 注册。本测锁等价不变量，复刻旧测本职：
+ * ① contract 携 zod 单源 schema（input=请求校验·output=序列化白名单），漏配即 TS 型变 + 此红；
+ * ② `@Impl` 确把 HTTP 动词语义落到 contract openapi meta（GET/POST + successStatus）；
+ * ③ `@Impl` 确在**同一 controller 方法**上落了 Nest 路由元数据（非 router 扇出生成派生方法）——
+ *   这是 class 级守卫（TenantIsolationGuard）与 `@Can` 仍逐路由生效、guard-wiring 扫描器仍识别的前提。
+ */
+interface SchemasDef {
+  inputSchemas?: readonly unknown[];
+  outputSchemas?: readonly unknown[];
+}
+
+function schemasOf(contract: object): SchemasDef {
+  return (contract as { '~orpc': SchemasDef })['~orpc'];
+}
+
+describe('PostsController oRPC contract parity（S4 校验 + S7b 白名单 + 路由注册）', () => {
+  it('list contract：input=listPostsQuerySchema·output=postCursorPageSchema（S4/S7b 单源承接）', () => {
+    const def = schemasOf(postsListContract);
+    expect(def.inputSchemas).toContain(listPostsQuerySchema);
+    expect(def.outputSchemas).toContain(postCursorPageSchema);
   });
 
-  // S7b 白名单序列化：官方 StandardSchemaSerializerInterceptor 经 getAllAndOverride 读
-  // CLASS_SERIALIZER_OPTIONS（方法级 SetMetadata 落 descriptor.value）——锁「@SerializeOptions 已挂且
-  // 指向契约单源 schema」。fail-open 序列化器无 schema 那么原样透传（不剥 PII）→漏配静默安整白名单链。
-  it('list() 携 @SerializeOptions(postCursorPageSchema)（S7b 序列化白名单）', () => {
-    const opts = Reflect.getMetadata(
-      CLASS_SERIALIZER_OPTIONS,
-      PostsController.prototype.list as object,
-    ) as { schema?: unknown };
-    expect(opts?.schema).toBe(postCursorPageSchema);
+  it('create contract：input=createPostSchema·output=postViewSchema（S4/S7b 单源承接）', () => {
+    const def = schemasOf(postsCreateContract);
+    expect(def.inputSchemas).toContain(createPostSchema);
+    expect(def.outputSchemas).toContain(postViewSchema);
   });
 
-  it('create() 携 @SerializeOptions(postViewSchema)（S7b 序列化白名单）', () => {
-    const opts = Reflect.getMetadata(
-      CLASS_SERIALIZER_OPTIONS,
-      PostsController.prototype.create as object,
-    ) as { schema?: unknown };
-    expect(opts?.schema).toBe(postViewSchema);
+  it('contract openapi meta：list=GET /posts·create=POST /posts 201（路径/动词语义等价旧 REST）', () => {
+    const list = getOpenAPIMeta(postsListContract);
+    expect(list?.method).toBe('GET');
+    expect(list?.path).toBe('/posts');
+    const create = getOpenAPIMeta(postsCreateContract);
+    expect(create?.method).toBe('POST');
+    expect(create?.path).toBe('/posts');
+    expect(create?.successStatus).toBe(201);
+  });
+
+  it('@Impl 把路由元数据落在 list/create 方法本身（非派生方法·class 守卫与 @Can 逐路由生效的前提）', () => {
+    const proto = PostsController.prototype as unknown as Record<string, object>;
+    expect(Reflect.getMetadata(PATH_METADATA, proto.list)).toBe('/posts');
+    expect(Reflect.getMetadata(METHOD_METADATA, proto.list)).toBe(0); // GET
+    expect(Reflect.getMetadata(PATH_METADATA, proto.create)).toBe('/posts');
+    expect(Reflect.getMetadata(METHOD_METADATA, proto.create)).toBe(1); // POST
   });
 });

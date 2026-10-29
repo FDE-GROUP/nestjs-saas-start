@@ -1,8 +1,8 @@
 /**
- * `@saas/api-client` 汇面（前端 F1 typed 契约消费制品）。
- * 四件：生成类型（schema）· typed client · errors 单源 · envelope 契约。
+ * `@saas/api-client` 汇面（前端 F1 typed 契约消费制品·换轨 B-6c/B-7）。
+ * 三件：typed oRPC client · errors 单源（re-export @core）· envelope 契约。
+ * 契约型不再来自 openapi codegen（旧 `client.ts`/`schema.d.ts` 已退役），改由 `@saas/api-contract` router 派生。
  */
-export * from './client';
 export * from './envelope';
 export * from './errors';
-export type { components, operations, paths } from './schema';
+export * from './rpc-client';

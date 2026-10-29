@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { WorkspacePage } from '@saas/contracts';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WorkspacesView } from './workspaces';
 
-type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
+type WorkspacePageResponse = WorkspacePage;
 
 const page: WorkspacePageResponse = {
   items: [
@@ -14,8 +14,8 @@ const page: WorkspacePageResponse = {
       slug: 'design',
       organizationId: 'org-1',
       ownerId: 'u1',
-      createdAt: '2026-01-02T00:00:00.000Z',
-      updatedAt: '2026-01-02T00:00:00.000Z',
+      createdAt: new Date('2026-01-02T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     },
   ],
   total: 1,

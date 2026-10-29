@@ -7,23 +7,36 @@ import { routeTree } from '../routeTree.gen';
 
 /**
  * dashboard loader「引导落租」路由级集成（module-frontend-organization-bootstrap-activation A）。
- * 承 `invitations.test.tsx` 手法：`vi.mock(lib/session·lib/api)` 注入拟真 envelope·经真实 routeTree
- * 的 memory router 打穿 loader·全 mock 不触网。钉四条落租分支：
- * - 无 active + 恰一个成员组织 → 自动 `POST /organizations/active`（body=该 org）+ 订阅取数 → SubscriptionView；
+ * 承 `invitations.test.tsx` 手法：`vi.mock(lib/session·lib/api)` 注入拟真 payload·经真实 routeTree
+ * 的 memory router 打穿 loader·全 mock 不触网。【换轨 B-6】loader 改用 typed `rpc`（拆信封直返 payload·抛错），
+ * 故 mock 改为过过程方（organizations.list/tenants.list/subscriptions.current/setActive/apply）。
+ * 钉四条落租分支：
+ * - 无 active + 恰一个成员组织 → 自动 `organizations.setActive`（body=该 org）+ 订阅取数 → SubscriptionView；
  * - 已有 active → 不自动激活、直接订阅取数；
  * - 无 active + 多组织 → 不自动择（交手动切换器）·订阅面不打·呈现切换引导；
  * - 无 active + 零组织 → 不激活·订阅面不打·呈现 onboarding 引导（申请入口 + 邀请链接）。
  */
 const mocks = vi.hoisted(() => ({
-  GET: vi.fn(),
-  POST: vi.fn(),
-  PUT: vi.fn(),
+  organizationsList: vi.fn(),
+  tenantsList: vi.fn(),
+  subscriptionsCurrent: vi.fn(),
+  setActiveOrganization: vi.fn(),
+  tenantSetActive: vi.fn(),
+  applyOrganization: vi.fn(),
   requireSession: vi.fn(),
 }));
 
 vi.mock('../lib/session', () => ({ requireSession: mocks.requireSession }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: mocks.POST, PUT: mocks.PUT, PATCH: vi.fn(), DELETE: vi.fn() },
+  rpc: {
+    organizations: {
+      list: mocks.organizationsList,
+      setActive: mocks.setActiveOrganization,
+      applications: { apply: mocks.applyOrganization },
+    },
+    tenants: { list: mocks.tenantsList, setActive: mocks.tenantSetActive },
+    subscriptions: { current: mocks.subscriptionsCurrent },
+  },
 }));
 
 const activeSub = {
@@ -42,15 +55,11 @@ function session(activeOrganizationId?: string) {
   };
 }
 
-/** GET 按 path 分派：/organizations 返回成员组织列表·/subscriptions/current 返回订阅快照。 */
-function stubGet(organizations: { id: string; name: string }[]) {
-  mocks.GET.mockImplementation((path: string) => {
-    if (path === '/api/v1/organizations')
-      return Promise.resolve({ data: { data: organizations }, error: null });
-    if (path === '/api/v1/subscriptions/current')
-      return Promise.resolve({ data: { data: activeSub }, error: null });
-    return Promise.resolve({ data: null, error: null });
-  });
+/** organizations.list 按入参组织列表·subscriptions.current 固定返订阅快照·tenants.list 缺省空目录。 */
+function stubReads(organizations: { id: string; name: string }[]) {
+  mocks.organizationsList.mockResolvedValue(organizations);
+  mocks.subscriptionsCurrent.mockResolvedValue(activeSub);
+  mocks.tenantsList.mockResolvedValue({ tenants: [] });
 }
 
 function renderAt(path: string) {
@@ -66,12 +75,16 @@ function renderAt(path: string) {
 }
 
 beforeEach(() => {
-  mocks.GET.mockReset();
-  mocks.POST.mockReset();
-  mocks.PUT.mockReset();
+  mocks.organizationsList.mockReset();
+  mocks.tenantsList.mockReset();
+  mocks.subscriptionsCurrent.mockReset();
+  mocks.setActiveOrganization.mockReset();
+  mocks.tenantSetActive.mockReset();
+  mocks.applyOrganization.mockReset();
   mocks.requireSession.mockReset();
-  mocks.POST.mockResolvedValue({ data: {}, error: null });
-  mocks.PUT.mockResolvedValue({ data: {}, error: null });
+  mocks.setActiveOrganization.mockResolvedValue({});
+  mocks.tenantSetActive.mockResolvedValue({});
+  mocks.applyOrganization.mockResolvedValue({});
 });
 
 afterEach(cleanup);
@@ -79,27 +92,25 @@ afterEach(cleanup);
 describe('dashboard loader 引导落租', () => {
   it('无 active + 恰一个成员组织 → 自动激活该组织并取订阅 → 渲订阅快照', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
-    stubGet([{ id: 'org-a', name: 'Acme' }]);
+    stubReads([{ id: 'org-a', name: 'Acme' }]);
     renderAt('/');
     await vi.waitFor(() => expect(screen.getByTestId('sub-plan').textContent).toBe('pro'));
-    expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/active', {
-      body: { organizationId: 'org-a' },
-    });
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/subscriptions/current');
+    expect(mocks.setActiveOrganization).toHaveBeenCalledWith({ organizationId: 'org-a' });
+    expect(mocks.subscriptionsCurrent).toHaveBeenCalled();
   });
 
   it('已有 activeOrganizationId → 不自动激活·直接取订阅', async () => {
     mocks.requireSession.mockResolvedValue(session('org-existing'));
-    stubGet([{ id: 'org-a', name: 'Acme' }]);
+    stubReads([{ id: 'org-a', name: 'Acme' }]);
     renderAt('/');
     await vi.waitFor(() => expect(screen.getByTestId('sub-plan').textContent).toBe('pro'));
-    expect(mocks.POST).not.toHaveBeenCalled();
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/subscriptions/current');
+    expect(mocks.setActiveOrganization).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsCurrent).toHaveBeenCalled();
   });
 
   it('无 active + 多组织 → 不自动择（交手动切换器）·订阅面不打·呈现切换引导', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
-    stubGet([
+    stubReads([
       { id: 'org-a', name: 'Acme' },
       { id: 'org-b', name: 'Globex' },
     ]);
@@ -107,26 +118,26 @@ describe('dashboard loader 引导落租', () => {
     await vi.waitFor(() =>
       expect(screen.getByText('尚无活跃租户，请在「租户与组织」中选择。')).toBeTruthy(),
     );
-    expect(mocks.POST).not.toHaveBeenCalled();
-    expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
+    expect(mocks.setActiveOrganization).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsCurrent).not.toHaveBeenCalled();
   });
 
   it('无 active + 零组织 → 不激活·订阅面不打·呈现 onboarding 引导（申请入口 + 邀请链接）', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
-    stubGet([]);
+    stubReads([]);
     renderAt('/');
     await vi.waitFor(() =>
       expect(screen.getByRole('button', { name: '申请创建组织' })).toBeTruthy(),
     );
     expect(screen.getByText(/你尚未加入任何组织/)).toBeTruthy();
     expect(screen.getByRole('link', { name: '前往接受邀请' })).toBeTruthy();
-    expect(mocks.POST).not.toHaveBeenCalled();
-    expect(mocks.GET).not.toHaveBeenCalledWith('/api/v1/subscriptions/current');
+    expect(mocks.setActiveOrganization).not.toHaveBeenCalled();
+    expect(mocks.subscriptionsCurrent).not.toHaveBeenCalled();
   });
 
-  it('零组织 onboarding 提交申请 → POST /organizations/applications（body name+slug）·回执 pending 提示', async () => {
+  it('零组织 onboarding 提交申请 → organizations.applications.apply（name+slug）·回执 pending 提示', async () => {
     mocks.requireSession.mockResolvedValue(session(undefined));
-    stubGet([]);
+    stubReads([]);
     const { container } = renderAt('/');
     await vi.waitFor(() =>
       expect(screen.getByRole('button', { name: '申请创建组织' })).toBeTruthy(),
@@ -139,98 +150,60 @@ describe('dashboard loader 引导落租', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '申请创建组织' }));
     await vi.waitFor(() =>
-      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/applications', {
-        body: { name: 'Acme', slug: 'acme' },
-      }),
+      expect(mocks.applyOrganization).toHaveBeenCalledWith({ name: 'Acme', slug: 'acme' }),
     );
     await vi.waitFor(() =>
       expect(screen.getByRole('status').textContent).toContain('已提交，等待平台审批'),
     );
   });
 
-  it('租户目录非空 → 渲双层「租户与组织」（顶层租户 + 二级组织），点击切换命中 /organizations/active', async () => {
+  it('租户目录非空 → 渲双层「租户与组织」（顶层租户 + 二级组织），点击切换命中 organizations.setActive', async () => {
     mocks.requireSession.mockResolvedValue(session('org-a'));
-    mocks.GET.mockImplementation((path: string) => {
-      if (path === '/api/v1/organizations')
-        return Promise.resolve({
-          data: {
-            data: [
-              { id: 'org-a', name: 'Acme' },
-              { id: 'org-b', name: 'Beta' },
-            ],
-          },
-          error: null,
-        });
-      if (path === '/api/v1/tenants')
-        return Promise.resolve({
-          data: {
-            data: {
-              tenants: [
-                {
-                  tenantId: 't1',
-                  name: 'Acme Holdings',
-                  status: 'active',
-                  organizations: [
-                    { organizationId: 'org-a', name: 'Acme' },
-                    { organizationId: 'org-b', name: 'Beta' },
-                  ],
-                },
-              ],
-            },
-          },
-          error: null,
-        });
-      if (path === '/api/v1/subscriptions/current')
-        return Promise.resolve({ data: { data: activeSub }, error: null });
-      return Promise.resolve({ data: null, error: null });
+    mocks.organizationsList.mockResolvedValue([
+      { id: 'org-a', name: 'Acme' },
+      { id: 'org-b', name: 'Beta' },
+    ]);
+    mocks.tenantsList.mockResolvedValue({
+      tenants: [
+        {
+          tenantId: 't1',
+          name: 'Acme Holdings',
+          status: 'active',
+          organizations: [
+            { organizationId: 'org-a', name: 'Acme' },
+            { organizationId: 'org-b', name: 'Beta' },
+          ],
+        },
+      ],
     });
+    mocks.subscriptionsCurrent.mockResolvedValue(activeSub);
     renderAt('/');
     await vi.waitFor(() => expect(screen.getByText('租户：Acme Holdings')).toBeTruthy());
     const buttons = screen.getAllByRole('button', { name: '切换到此组织' });
     expect(buttons).toHaveLength(2);
     fireEvent.click(buttons[1] as HTMLElement);
     await vi.waitFor(() =>
-      expect(mocks.POST).toHaveBeenCalledWith('/api/v1/organizations/active', {
-        body: { organizationId: 'org-b' },
-      }),
+      expect(mocks.setActiveOrganization).toHaveBeenCalledWith({ organizationId: 'org-b' }),
     );
   });
 
-  it('顶层租户「切换到此租户」→ PUT /tenants/active（写会话 activeTenantId·X7 租级激活）', async () => {
+  it('顶层租户「切换到此租户」→ tenants.setActive（写会话 activeTenantId·X7 租级激活）', async () => {
     mocks.requireSession.mockResolvedValue(session('org-a'));
-    mocks.GET.mockImplementation((path: string) => {
-      if (path === '/api/v1/organizations')
-        return Promise.resolve({
-          data: { data: [{ id: 'org-a', name: 'Acme' }] },
-          error: null,
-        });
-      if (path === '/api/v1/tenants')
-        return Promise.resolve({
-          data: {
-            data: {
-              tenants: [
-                {
-                  tenantId: 't1',
-                  name: 'Acme Holdings',
-                  status: 'active',
-                  organizations: [{ organizationId: 'org-a', name: 'Acme' }],
-                },
-              ],
-            },
-          },
-          error: null,
-        });
-      if (path === '/api/v1/subscriptions/current')
-        return Promise.resolve({ data: { data: activeSub }, error: null });
-      return Promise.resolve({ data: null, error: null });
+    mocks.organizationsList.mockResolvedValue([{ id: 'org-a', name: 'Acme' }]);
+    mocks.tenantsList.mockResolvedValue({
+      tenants: [
+        {
+          tenantId: 't1',
+          name: 'Acme Holdings',
+          status: 'active',
+          organizations: [{ organizationId: 'org-a', name: 'Acme' }],
+        },
+      ],
     });
+    mocks.subscriptionsCurrent.mockResolvedValue(activeSub);
     renderAt('/');
     await vi.waitFor(() => expect(screen.getByText('租户：Acme Holdings')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: '切换到此租户' }));
-    await vi.waitFor(() =>
-      expect(mocks.PUT).toHaveBeenCalledWith('/api/v1/tenants/active', {
-        body: { tenantId: 't1' },
-      }),
-    );
+    await vi.waitFor(() => expect(mocks.tenantSetActive).toHaveBeenCalledWith({ tenantId: 't1' }));
   });
 });

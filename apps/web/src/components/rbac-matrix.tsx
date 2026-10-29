@@ -7,17 +7,15 @@
  * 枚举词汇单一 SSOT（待裁点④甲）：subject/action 联合类型直取 @saas/api-client schema，
  * 运行时数组以 `readonly AuthorizationSubject[]` 注解约束元素合法——后端枚举新增值会在此拓红（编译期）。
  */
-import type { components, paths } from '@saas/api-client';
+import type { GrantRolePermission, TenantRoleGrantView } from '@saas/contracts';
+
+export type { TenantRoleGrantView };
 
 /**
- * S6 请求契约翻转后 `GrantRolePermissionDto` 具名组件已 inline 进 path、不再列于 `components.schemas`；
- * subject/action 联合遂由授予端点请求体派生（后端枚举改动会在此即时拓红·编译期）。
+ * subject/action 联合直取 `@saas/contracts` 授予入参 `GrantRolePermission`（后端枚举改动会在此即时拓红·编译期）。
  */
-type GrantRequestBody =
-  paths['/api/v1/organizations/roles/grants']['post']['requestBody']['content']['application/json'];
-export type AuthorizationSubject = GrantRequestBody['subject'];
-export type AuthorizationAction = GrantRequestBody['action'];
-export type TenantRoleGrantView = components['schemas']['TenantRoleGrantViewResponse'];
+export type AuthorizationSubject = GrantRolePermission['subject'];
+export type AuthorizationAction = GrantRolePermission['action'];
 
 export const SUBJECTS: readonly AuthorizationSubject[] = [
   'Organization',

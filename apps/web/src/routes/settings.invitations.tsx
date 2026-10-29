@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, Select, SubmitButton } from '../components/forms';
 import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -39,14 +39,15 @@ const INVITE_ROLES = [
 export const Route = createFileRoute('/settings/invitations')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/organizations/invitations');
-    if (error) {
-      logApiError({ path: '/api/v1/organizations/invitations', scope: 'invitations' }, error);
-      const guide = await probeOrganizationContext(error);
+    try {
+      const raw = await rpc.organizations.invitations.list();
+      return { kind: 'ok' as const, raw };
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/invitations', scope: 'invitations' }, e);
+      const guide = await probeOrganizationContext(e);
       if (guide) return { kind: 'guide' as const, guide };
-      return { kind: 'error' as const, body: error };
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, raw: data?.data };
   },
   component: InvitationsAdminPage,
 });
@@ -78,10 +79,7 @@ function InvitationsAdminPage() {
       method: 'POST',
       scope: 'invitation.create',
       successMessage: `已邀请 ${email}`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/invitations', {
-          body: { email, role },
-        }),
+      thunk: () => rpc.organizations.invitations.create({ email, role }),
     });
     if (ok) setEmail('');
   }
@@ -138,10 +136,7 @@ function InvitationCancelRow({ invitation }: { invitation: InvitationRow }) {
       method: 'POST',
       scope: 'invitation.cancel',
       successMessage: `${invitation.email} 的邀请已撤回`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/invitations/cancel', {
-          body: { invitationId: invitation.id ?? '' },
-        }),
+      thunk: () => rpc.organizations.invitations.cancel({ invitationId: invitation.id ?? '' }),
     });
   }
 

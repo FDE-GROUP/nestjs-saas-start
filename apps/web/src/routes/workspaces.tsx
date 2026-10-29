@@ -1,28 +1,29 @@
-import type { components } from '@saas/api-client';
-import { createWorkspaceSchema, updateWorkspaceSchema } from '@saas/contracts';
+import { createWorkspaceSchema, updateWorkspaceSchema, type WorkspacePage } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 import { clientValidateFields } from '../lib/validation';
 
-type WorkspacePageResponse = components['schemas']['WorkspacePageResponse'];
+type WorkspacePageResponse = WorkspacePage;
 type WorkspaceItem = WorkspacePageResponse['items'][number];
 
 export const Route = createFileRoute('/workspaces')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/workspaces');
-    if (error) {
-      logApiError({ path: '/api/v1/workspaces', scope: 'workspaces' }, error);
-      return { kind: 'error' as const, body: error };
+    try {
+      // 【换轨 B-6】oRPC typed 客户端：直接回拆封后的分页载荷（无 {data,error} 组·错误抛 ORPCError）。
+      const page = await rpc.workspaces.list({});
+      return { kind: 'ok' as const, page: page as unknown as WorkspacePageResponse };
+    } catch (e) {
+      logApiError({ path: '/api/v1/workspaces', scope: 'workspaces' }, e);
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, page: data?.data };
   },
   component: WorkspacesPage,
 });
@@ -50,7 +51,7 @@ function WorkspacesPage() {
       method: 'POST',
       scope: 'workspace.create',
       successMessage: `已创建「${name}」`,
-      thunk: () => api.POST('/api/v1/workspaces', { body: { name, slug } }),
+      thunk: () => rpc.workspaces.create({ name, slug }),
     });
     if (ok) {
       setName('');
@@ -119,11 +120,7 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
       method: 'PATCH',
       scope: 'workspace.rename',
       successMessage: '已重命名',
-      thunk: () =>
-        api.PATCH('/api/v1/workspaces/{id}', {
-          params: { path: { id: ws.id } },
-          body: { name: editName },
-        }),
+      thunk: () => rpc.workspaces.update({ id: ws.id, name: editName }),
     });
     if (ok) setEditing(false);
   }
@@ -134,7 +131,7 @@ function WorkspaceRow({ ws }: { ws: WorkspaceItem }) {
       method: 'DELETE',
       scope: 'workspace.delete',
       successMessage: `已删除「${ws.name}」`,
-      thunk: () => api.DELETE('/api/v1/workspaces/{id}', { params: { path: { id: ws.id } } }),
+      thunk: () => rpc.workspaces.remove({ id: ws.id }),
     });
   }
 

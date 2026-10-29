@@ -1,11 +1,11 @@
 import { ERROR_CODES } from '@saas/api-client';
-import { api } from './api';
+import { rpc } from './api';
 import { apiErrorDetail } from './format';
 
 /**
  * 缺活跃租户 403 判别探测（module-frontend-organization-admin-guide）：租户边界管理页
  * loader 错误分支统一接此——非 `ISOLATION:NO_ACTIVE_CONTEXT` 返回 `null`（调用方维持
- * ErrorPanel 原文，语义不变）；命中则补一次廉价 `GET /api/v1/organizations` 分两态
+ * ErrorPanel 原文，语义不变）；命中则补一次廉价 `organizations.list` 分两态
  * （零组织 vs 有组织未激活），探测自身失败保守归零组织态（不阻塞渲染）。
  * 判别走 `describeApiError` 同源提码文案里的 `errorCode`——实为 @core 单源
  * `errorCodeOf`（经 format 层）·码引用常量零手打。
@@ -24,9 +24,8 @@ export async function probeOrganizationContext(
     return null;
   }
   try {
-    const res = await api.GET('/api/v1/organizations');
-    const list = (res.data as { data?: unknown[] } | undefined)?.data ?? [];
-    return { hasMemberships: list.length > 0 };
+    const list = (await rpc.organizations.list()) as unknown;
+    return { hasMemberships: Array.isArray(list) ? list.length > 0 : false };
   } catch {
     return { hasMemberships: false };
   }

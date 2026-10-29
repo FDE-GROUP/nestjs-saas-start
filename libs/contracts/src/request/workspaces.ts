@@ -32,3 +32,18 @@ export const updateWorkspaceSchema = strictObject({
     .optional(),
 });
 export type UpdateWorkspace = z.infer<typeof updateWorkspaceSchema>;
+
+/**
+ * 工作区路由参数（换轨 WP-C·oRPC procedure 输入单源）。
+ *
+ * @remarks
+ * 旧 REST `@Param('id') id: string` 无独立校验（`:id` 命中即非空串）；此处以 `z.string()` 逐字保真
+ * （不新增空串 400 门槛）。紧凑 input 结构下路径参 `{...body, ...params}` 平并入同一 input 对象，故 update 用
+ * {@link updateWorkspaceInputSchema}（body ⊕ id），remove 仅用本参。
+ */
+export const workspaceIdParamSchema = strictObject({ id: z.string() });
+export type WorkspaceIdParam = z.infer<typeof workspaceIdParamSchema>;
+
+/** `PATCH /workspaces/:id` 合并入参（update body ⊕ 路径 `id`·`.extend` 承 strict 语义）。 */
+export const updateWorkspaceInputSchema = updateWorkspaceSchema.extend({ id: z.string() });
+export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceInputSchema>;

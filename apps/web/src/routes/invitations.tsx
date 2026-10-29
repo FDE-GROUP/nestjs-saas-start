@@ -4,7 +4,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { DangerButton, Feedback, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -29,15 +29,13 @@ function extractMyInvitations(raw: unknown): MyInvitationRow[] {
 export const Route = createFileRoute('/invitations')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/organizations/invitations/mine');
-    if (error) {
-      logApiError(
-        { path: '/api/v1/organizations/invitations/mine', scope: 'my-invitations' },
-        error,
-      );
-      return { kind: 'error' as const, body: error };
+    try {
+      const raw = await rpc.organizations.listMyInvitations();
+      return { kind: 'ok' as const, raw };
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/invitations/mine', scope: 'my-invitations' }, e);
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, raw: data?.data };
   },
   component: MyInvitationsPage,
 });
@@ -73,10 +71,7 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
       method: 'POST',
       scope: 'my-invitation.accept',
       successMessage: `已接受邀请`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/invitations/accept', {
-          body: { invitationId: invitation.id ?? '' },
-        }),
+      thunk: () => rpc.organizations.acceptInvitation({ invitationId: invitation.id ?? '' }),
     });
   }
 
@@ -86,10 +81,7 @@ function MyInvitationActions({ invitation }: { invitation: MyInvitationRow }) {
       method: 'POST',
       scope: 'my-invitation.reject',
       successMessage: '已拒绝邀请',
-      thunk: () =>
-        api.POST('/api/v1/organizations/invitations/reject', {
-          body: { invitationId: invitation.id ?? '' },
-        }),
+      thunk: () => rpc.organizations.rejectInvitation({ invitationId: invitation.id ?? '' }),
     });
   }
 

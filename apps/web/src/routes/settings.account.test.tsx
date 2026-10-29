@@ -7,12 +7,12 @@ import { routeTree } from '../routeTree.gen';
 
 /**
  * 账号自助面（PIPL·切片 A·A-1）。`/settings/account` loader 仅 `requireSession`（无数据取）。
- * 锁：导出/注销两区块渲染 + 不可逆注销的键入闸（`confirmText!=='DELETE'` → 点击不触发 `api.DELETE`）。
+ * 【换轨 B-6】导出/注销改 typed `rpc`（users.exportData / users.remove），锁：
+ * 两区块渲染 + 不可逆注销的键入闸（`confirmText!=='DELETE'` → 点击不触发 `rpc.users.remove`）。
  */
 const mocks = vi.hoisted(() => ({
-  GET: vi.fn(),
-  POST: vi.fn(),
-  DELETE: vi.fn(),
+  exportData: vi.fn(),
+  remove: vi.fn(),
 }));
 
 vi.mock('../lib/session', () => ({
@@ -22,7 +22,7 @@ vi.mock('../lib/session', () => ({
   }),
 }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: mocks.POST, PATCH: vi.fn(), DELETE: mocks.DELETE },
+  rpc: { users: { exportData: mocks.exportData, remove: mocks.remove } },
 }));
 
 function renderAt(path: string) {
@@ -38,9 +38,8 @@ function renderAt(path: string) {
 }
 
 beforeEach(() => {
-  mocks.GET.mockReset();
-  mocks.POST.mockReset();
-  mocks.DELETE.mockReset();
+  mocks.exportData.mockReset();
+  mocks.remove.mockReset();
 });
 afterEach(cleanup);
 
@@ -53,11 +52,11 @@ describe('账号自助面（PIPL · 路由级）', () => {
     expect(screen.getByRole('button', { name: '永久注销' })).toBeTruthy();
   });
 
-  it('未键入 DELETE → 点「永久注销」不触发 api.DELETE（不可逆闸）', async () => {
+  it('未键入 DELETE → 点「永久注销」不触发 rpc.users.remove（不可逆闸）', async () => {
     renderAt('/settings/account');
     await vi.waitFor(() => expect(screen.getByRole('button', { name: '永久注销' })).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: '永久注销' }));
     await Promise.resolve();
-    expect(mocks.DELETE).not.toHaveBeenCalled();
+    expect(mocks.remove).not.toHaveBeenCalled();
   });
 });

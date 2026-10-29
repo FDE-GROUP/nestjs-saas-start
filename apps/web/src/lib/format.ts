@@ -1,9 +1,15 @@
 import { errorCodeOf } from '@saas/api-client';
 
-/** ISO date-time → YYYY-MM-DD（无法解析回落原串，避免渲染 NaN）。 */
-export function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toISOString().slice(0, 10);
+/**
+ * 日期出线 → YYYY-MM-DD（无法解析回落原串，避免渲染 NaN）。
+ * 【换轨 B-6c】客户端已 `reviving Date`→契约视图日期字段型为 `Date`；此处兼收 `Date` 与（mock/历史）ISO 串。
+ */
+export function formatDate(value: string | Date): string {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return typeof value === 'string' ? value : String(value);
+  }
+  return d.toISOString().slice(0, 10);
 }
 
 /**
@@ -20,10 +26,16 @@ export interface ApiErrorDetail {
 }
 
 export function apiErrorDetail(body: unknown): ApiErrorDetail {
-  const b = (body ?? {}) as Record<string, unknown>;
+  // 【换轨 B-6 过渡】新链抛 `ORPCError`（其 `.data` 挂 REST 错误体·由 api-client decoder 置）；
+  // 旧链传 REST 体本身。据 `name==='ORPCError'` 鸭形拆 `.data`，两形都归一到同一字段源。
+  const source =
+    body && typeof body === 'object' && (body as { name?: string }).name === 'ORPCError'
+      ? (body as { data?: unknown }).data
+      : body;
+  const b = (source ?? {}) as Record<string, unknown>;
   const raw = b.message as string | string[] | undefined;
   const message = Array.isArray(raw) ? raw.join('; ') : (raw ?? '请求失败');
-  const code = errorCodeOf(body);
+  const code = errorCodeOf(source);
   return {
     message,
     ...(code ? { errorCode: code } : {}),

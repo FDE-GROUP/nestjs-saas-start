@@ -1,18 +1,23 @@
-import type { components } from '@saas/api-client';
-import { createPostSchema } from '@saas/contracts';
+import { createPostSchema, type PostView } from '@saas/contracts';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 import { clientValidate } from '../lib/validation';
 
-/** 真相源 = `PostResponse`（`@saas/api-client` schema 派生·编译期契约锁定）。 */
-type Post = components['schemas']['PostResponse'];
+/** 真相源 = `PostView`（`@saas/contracts` zod 派生·编译期契约锁定·日期字段 = `Date`）。 */
+type Post = PostView;
+
+/**
+ * 游标分页视图形（换轨 B-6c：型锥切 `@saas/contracts` 派生 `PostView`（日期 = `Date`·客户端
+ * reviving Date 与 runtime 一致）·rpc leaf 直接返回该形）。
+ */
+type PostPageView = { items?: Post[]; nextCursor?: string; hasMore?: boolean };
 
 // S8 前后端共享契约单源：客户端前置校验直接用 `@saas/contracts` 的 `createPostSchema`（与后端
 // `@Body({ schema: createPostSchema })` 同一实例），校验与友好文案映射统一走 `clientValidate` 基元。
@@ -22,14 +27,13 @@ const PAGE_LIMIT = 20;
 export const Route = createFileRoute('/posts')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/posts', {
-      params: { query: { limit: PAGE_LIMIT } },
-    });
-    if (error) {
-      logApiError({ path: '/api/v1/posts', scope: 'posts' }, error);
-      return { kind: 'error' as const, body: error };
+    try {
+      const page = (await rpc.posts.list({ limit: PAGE_LIMIT })) as unknown as PostPageView;
+      return { kind: 'ok' as const, page };
+    } catch (e) {
+      logApiError({ path: '/api/v1/posts', scope: 'posts' }, e);
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, page: data?.data };
   },
   component: PostsPage,
 });
@@ -64,19 +68,18 @@ function PostsPage() {
   async function handleLoadMore() {
     if (!cursor) return;
     setLoadingMore(true);
-    const { data, error } = await api.GET('/api/v1/posts', {
-      params: { query: { limit: PAGE_LIMIT, cursor } },
-    });
-    setLoadingMore(false);
-    if (error) {
-      logApiError({ path: '/api/v1/posts', method: 'GET', scope: 'posts.more' }, error);
-      return;
-    }
-    const page = data?.data;
-    if (page) {
+    try {
+      const page = (await rpc.posts.list({
+        limit: PAGE_LIMIT,
+        cursor,
+      })) as unknown as PostPageView;
       setItems((prev) => [...prev, ...(page.items ?? [])]);
-      setCursor(page.nextCursor);
+      setCursor(page.nextCursor ?? undefined);
       setHasMore(page.hasMore ?? false);
+    } catch (e) {
+      logApiError({ path: '/api/v1/posts', method: 'GET', scope: 'posts.more' }, e);
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -95,7 +98,7 @@ function PostsPage() {
       method: 'POST',
       scope: 'posts.create',
       successMessage: '文章已创建',
-      thunk: () => api.POST('/api/v1/posts', { body: draft }),
+      thunk: () => rpc.posts.create(draft),
     });
     if (ok) {
       setTitle('');
@@ -197,7 +200,7 @@ export function PostsView({ posts }: { posts?: Post[] }) {
                   )}
                 </td>
                 <td className="py-2 text-slate-500 dark:text-slate-400">
-                  {p.createdAt ? new Date(p.createdAt).toLocaleString() : '—'}
+                  {p.createdAt.toLocaleString()}
                 </td>
               </tr>
             ))}

@@ -36,3 +36,16 @@ export type MintMcpCredential = z.infer<typeof mintMcpCredentialSchema>;
  * @public
  */
 export const mcpCredentialIdParamSchema = reqString('mcpCredentialId.required');
+
+/**
+ * 撤销凭证入参（换轨 WP-C·`DELETE /mcp/credentials/:id` 无体→紧凑 input 结构返 params 对象 `{id}`）。
+ *
+ * @remarks
+ * 单值 `id` 沿用 {@link mcpCredentialIdParamSchema} 的字符串校验（错误键 `mcpCredentialId.required` 保真）。
+ *
+ * @public
+ */
+export const mcpCredentialRevokeInputSchema = strictObject({
+  id: mcpCredentialIdParamSchema,
+});
+export type McpCredentialRevokeInput = z.infer<typeof mcpCredentialRevokeInputSchema>;

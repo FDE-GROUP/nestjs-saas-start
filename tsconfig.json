@@ -1,8 +1,8 @@
 {
   "include": ["apps/**/*", "libs/**/*"],
   "compilerOptions": {
-    "module": "ES2022",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -36,6 +36,8 @@
       "@core/saas-kit/*": ["libs/core/src/*"],
       "@saas/contracts": ["libs/contracts/src/index.ts"],
       "@saas/contracts/*": ["libs/contracts/src/*"],
+      "@saas/api-contract": ["libs/api-contract/src/index.ts"],
+      "@saas/api-contract/*": ["libs/api-contract/src/*"],
       "@okee/ba-mikro-adapter": ["libs/ba-mikro-adapter/src/index.ts"],
       "@okee/ba-mikro-adapter/*": ["libs/ba-mikro-adapter/src/*"]
     }

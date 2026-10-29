@@ -9,7 +9,7 @@ import {
   cellKey,
   RbacMatrix,
 } from '../components/rbac-matrix';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -25,31 +25,26 @@ export const Route = createFileRoute('/settings/roles/$roleKey')({
   loader: async ({ params }) => {
     await requireSession();
     const roleKey = params.roleKey;
-    const { data: rolesData, error: rolesError } = await api.GET('/api/v1/organizations/roles');
-    if (rolesError) {
-      logApiError({ path: '/api/v1/organizations/roles', scope: 'role.matrix' }, rolesError);
-      const guide = await probeOrganizationContext(rolesError);
+    let roles: Awaited<ReturnType<typeof rpc.organizations.roles.list>>;
+    try {
+      roles = await rpc.organizations.roles.list();
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/roles', scope: 'role.matrix' }, e);
+      const guide = await probeOrganizationContext(e);
       if (guide) return { kind: 'guide' as const, guide: guide.hasMemberships };
-      return { kind: 'error' as const, body: describeApiError(rolesError) };
+      return { kind: 'error' as const, body: describeApiError(e) };
     }
-    const role = (rolesData?.data ?? []).find((r) => r.key === roleKey);
+    const role = (roles ?? []).find((r) => r.key === roleKey);
     if (!role) {
       return { kind: 'notFound' as const, roleKey };
     }
-    const { data: grantsData, error: grantsError } = await api.GET(
-      '/api/v1/organizations/roles/grants',
-      {
-        params: { query: { roleKey } },
-      },
-    );
-    if (grantsError) {
-      logApiError(
-        { path: '/api/v1/organizations/roles/grants', scope: 'role.matrix' },
-        grantsError,
-      );
-      return { kind: 'error' as const, body: describeApiError(grantsError) };
+    try {
+      const grants = await rpc.organizations.roles.grants.list({ roleKey });
+      return { kind: 'ok' as const, role, grants };
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/roles/grants', scope: 'role.matrix' }, e);
+      return { kind: 'error' as const, body: describeApiError(e) };
     }
-    return { kind: 'ok' as const, role, grants: grantsData?.data ?? [] };
   },
   component: RoleMatrixPage,
 });
@@ -82,8 +77,10 @@ function RoleMatrixPage() {
           scope: 'role.revoke',
           successMessage: `已撤销 ${subject}:${actionName}`,
           thunk: () =>
-            api.POST('/api/v1/organizations/roles/grants/revoke', {
-              body: { roleKey: role.key, subject, action: actionName },
+            rpc.organizations.roles.grants.revoke({
+              roleKey: role.key,
+              subject,
+              action: actionName,
             }),
         });
       } else {
@@ -93,8 +90,10 @@ function RoleMatrixPage() {
           scope: 'role.grant',
           successMessage: `已授予 ${subject}:${actionName}`,
           thunk: () =>
-            api.POST('/api/v1/organizations/roles/grants', {
-              body: { roleKey: role.key, subject, action: actionName },
+            rpc.organizations.roles.grants.grant({
+              roleKey: role.key,
+              subject,
+              action: actionName,
             }),
         });
       }

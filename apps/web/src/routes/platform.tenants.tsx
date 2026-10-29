@@ -1,15 +1,15 @@
-import type { components } from '@saas/api-client';
+import type { PlatformTenantRowView } from '@saas/contracts';
 import { createFileRoute, Link, Outlet, useMatchRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Field, FormWrap } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
 import { StatusBadge } from '../components/platform-tenants';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { apiErrorDetail, describeApiError, formatDate } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { requireSession } from '../lib/session';
 
-type TenantRow = components['schemas']['PlatformTenantRowResponse'];
+type TenantRow = PlatformTenantRowView;
 
 const LIMIT = 20;
 
@@ -28,18 +28,21 @@ export const Route = createFileRoute('/platform/tenants')({
   loaderDeps: ({ search }): TenantSearch => ({ offset: search.offset, q: search.q }),
   loader: async ({ deps }) => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/platform/tenants', {
-      params: { query: { limit: LIMIT, offset: deps.offset, search: deps.q } },
-    });
-    if (error) {
-      logApiError({ path: '/api/v1/platform/tenants', scope: 'platform.tenants' }, error);
+    try {
+      const page = (await rpc.platform.tenants.list({
+        limit: LIMIT,
+        offset: deps.offset,
+        search: deps.q,
+      })) as unknown as { items?: TenantRow[]; total?: number };
+      return { kind: 'ok' as const, page, offset: deps.offset, q: deps.q };
+    } catch (e) {
+      logApiError({ path: '/api/v1/platform/tenants', scope: 'platform.tenants' }, e);
       return {
         kind: 'error' as const,
-        denied: apiErrorDetail(error).statusCode === 403,
-        body: describeApiError(error),
+        denied: apiErrorDetail(e).statusCode === 403,
+        body: describeApiError(e),
       };
     }
-    return { kind: 'ok' as const, page: data?.data, offset: deps.offset, q: deps.q };
   },
   component: PlatformTenantsPage,
 });

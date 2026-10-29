@@ -94,12 +94,16 @@ if (!quick) {
   // （apps/api + libs 已含测试）+ packages/scripts 两个 test-inclusive 配置；web 测试由上面独立步已覆盖。
   // 多次全量 tsc 较重，故仅 full 模式（随 pre-push 强制），quick 不加。
   step('Test typecheck (all packages incl *.test.ts)', run('run', 'verify:test-types'));
-  // 契约对拍（前端 F1 · module-frontend-api-client 丁裁）：以 build 产物直出 openapi.yaml，
-  // 与入库的 openapi/openapi.yaml 逐字节对拍——改响应注解却未 `openapi:export` 重生成 → 此处拓红，
-  // 逼「文档 SSOT 与代码同源」。需 DB-free dist，故仅 full 模式（build 之后）执行。
-  // 本轮加固：同闸内再 `gen:types` 重生 api-client schema.d.ts 并纳入 git diff 对拍面，
-  // 堵旧盲区（旧闸只比 yaml↔码、不覆盖 schema.d.ts↔yaml，曾掩盖 S6 漏重生）。
-  step('OpenAPI codegen 对拍 (spec ↔ committed yaml ↔ schema.d.ts)', run('run', 'openapi:drift'));
+  // oRPC 契约对拍闸（换轨 B-6c/B-7·翻 openapi codegen SSOT 治理）：契约型不再从提交态
+  // openapi.yaml/schema.d.ts 派生，改由 `@saas/api-contract` router 单源在编译期派生。旧
+  // `openapi:drift` 三向字节闸随 `schema.d.ts`/`gen:types` 退役；等价守卫=「router 叶子集 ⇔ 各域
+  // `*Contract` 叶子集」恒等对拍（公共 56 + 含 feature 全量 61 锁），漂移/漏挂/重复挂载即 fail-loud。
+  // 该对拍测虽也在 `pnpm test` 内跑，仍单列命名闸以保换轨后契约地基可见、早失败。需 build 产 dist，
+  // 故仅 full 模式（build 之后）执行。
+  step(
+    'oRPC 契约对拍 (router 派生型 ⇔ 各域 *Contract 叶子恒等·56/61 锁)',
+    run('run', 'verify:orpc-contract'),
+  );
   // 租户实体登记恒等闸（module-tenant-scoped-entity-registry-gate · 新增门禁 · 高危#3 经人签核 2026-10-26）：
   // 对脚本内置登记表与实体块实存做三向对拍（有列须在册/在册须实存/豁免防腐），
   // 堵 boilerplate 核查（tmp/tenant-bp-review）同形人祸「新实体漏登记=静默无过滤」。纯文本块定界扫描、亚秒级。

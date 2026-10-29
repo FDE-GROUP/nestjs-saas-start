@@ -1,4 +1,4 @@
-import type { components } from '@saas/api-client';
+import type { PlatformTenantRowView } from '@saas/contracts';
 
 /**
  * 平台租户治理面纯展示/判定基元（前端 F4a · module-frontend-platform §2.3 · rehierarchy 片一 治理台改锚 tenant）。
@@ -9,7 +9,7 @@ import type { components } from '@saas/api-client';
  * 治理台改锚 tenant：租户控制台的生命周期动作收敛为 suspend/resume/软删/硬删（键 tenantId）；
  * 申请审批（approve/reject）系用户向 organizations 申请面（非租户治理台），故本组件不再暴露。
  */
-export type TenantStatus = components['schemas']['PlatformTenantRowResponse']['status'];
+export type TenantStatus = PlatformTenantRowView['status'];
 
 const LABELS: Record<TenantStatus, string> = {
   pending_approval: '待审批',

@@ -111,3 +111,14 @@ export const bindOdooCompanySchema = strictObject({
   odooCompanyName: reqStringMax('validate.odooCompanyName.required', 256),
 });
 export type BindOdooCompany = z.infer<typeof bindOdooCompanySchema>;
+
+/**
+ * 租户路由参数（换轨 WP-C·approve/reject 的 `:id` 路径参·紧凑 input 平并单一对象）。
+ * 旧 `@Param('id')` 无校验（命中即非空串）·`z.string()` 逐字保真。
+ */
+export const organizationIdParamSchema = strictObject({ id: z.string() });
+export type OrganizationIdParam = z.infer<typeof organizationIdParamSchema>;
+
+/** `POST /organizations/:id/odoo-binding` 合并入参（bind body ⊕ 路径 `id`·`.extend` 承 strict）。 */
+export const bindOdooCompanyInputSchema = bindOdooCompanySchema.extend({ id: z.string() });
+export type BindOdooCompanyInput = z.infer<typeof bindOdooCompanyInputSchema>;

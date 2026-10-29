@@ -1,24 +1,16 @@
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Logger,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Inject, Logger, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
 import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiError,
-  apiOkPassthrough,
-} from '../../../common/contracts/api-contracts';
-import { CurrentUser } from '../../auth/api/decorators/current-user.decorator';
-import { SessionGuard, type SessionUser } from '../../auth/api/guards/session.guard';
+  usersDeleteContract,
+  usersDeleteMeta,
+  usersExportContract,
+  usersExportMeta,
+} from '@saas/api-contract/index';
+import { os } from '../../../common/orpc/orpc';
+import { requireSessionUser } from '../../../common/orpc/orpc-context';
+import { SessionGuard } from '../../auth/api/guards/session.guard';
 import { DeleteUserCommand } from '../application/commands/delete-user.command';
 import { ExportUserDataQuery } from '../application/queries/export-user-data.query';
 import type { UserDataExportReadModel } from '../application/read-models/user-data-export.read-model';
@@ -33,11 +25,15 @@ import type { UserDataExportReadModel } from '../application/read-models/user-da
  * （PlatformOperatorGuard），建号正道收口 better-auth sign-up。
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse)
-@ApiTags('users')
+// 换轨 WP-C：两路由转 per-method `@Impl`（无入参·output passthrough 不挂 .output·逐字保真）。
+// 已认证主体经 `context.user`（orpc-context 增强 DefaultInitialContext·取 SessionGuard 挂的 req.sessionUser）·
+// 取代旧 `@CurrentUser()`；方法级 `@UseGuards(SessionGuard)` 原生保留（会话墙不弱化）。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export { usersDeleteContract, usersExportContract };
+
 // S11 复合全局：users 全路由属用户级（不经租户仓储）·需登录但合法无租户 → 类级豁免全局租户墙。
 @TenantIsolationExempt()
-@Controller('users')
+@Controller('')
 export class UsersController {
   private readonly logger = new Logger(UsersController.name);
 
@@ -48,38 +44,30 @@ export class UsersController {
 
   /**
    * PIPL 右-access：导出当前用户全部个人数据（凭据除外）。
-   * @param user - 由 SessionGuard 挂载的已认证主体。
    * @returns 四段聚合的个人数据导出体。
    */
-  @Get('me/data-export')
   @UseGuards(SessionGuard)
-  @ApiOperation({ summary: 'PIPL right-to-access: export current user personal data (C1 · FR-7)' })
-  @ApiResponse(
-    apiOkPassthrough({
-      description: 'Aggregated personal data (no credentials)',
-      ssotHint: 'UserDataExportReadModel（bulk-export·四段聚合）',
-    }),
-  )
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async exportMe(@CurrentUser() user: SessionUser): Promise<UserDataExportReadModel> {
-    this.logger.log(`Exporting personal data for user ${user.id}`);
-    return this.queryBus.execute<ExportUserDataQuery, UserDataExportReadModel>(
-      new ExportUserDataQuery(user.id),
-    );
+  @Impl(usersExportContract)
+  exportMe() {
+    return os.meta(usersExportMeta).handler(async ({ context }) => {
+      const user = requireSessionUser(context);
+      this.logger.log(`Exporting personal data for user ${user.id}`);
+      return this.queryBus.execute<ExportUserDataQuery, UserDataExportReadModel>(
+        new ExportUserDataQuery(user.id),
+      );
+    });
   }
 
   /**
    * PIPL 右-erase：硬删当前用户（consent 匿名留存）。
-   * @param user - 由 SessionGuard 挂载的已认证主体。
    */
-  @Delete('me')
   @UseGuards(SessionGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'PIPL right-to-erase: hard-delete current user (C1 · FR-7)' })
-  @ApiResponse({ status: 204, description: 'User deleted; consent rows retained anonymously.' })
-  @ApiResponse(apiError(401, 'Missing or invalid session.'))
-  async deleteMe(@CurrentUser() user: SessionUser): Promise<void> {
-    this.logger.log(`Deleting user ${user.id} (PIPL right-to-erase)`);
-    await this.commandBus.execute<DeleteUserCommand, void>(new DeleteUserCommand(user.id));
+  @Impl(usersDeleteContract)
+  deleteMe() {
+    return os.meta(usersDeleteMeta).handler(async ({ context }) => {
+      const user = requireSessionUser(context);
+      this.logger.log(`Deleting user ${user.id} (PIPL right-to-erase)`);
+      await this.commandBus.execute<DeleteUserCommand, void>(new DeleteUserCommand(user.id));
+    });
   }
 }

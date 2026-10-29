@@ -24,6 +24,7 @@ export const fileUploadResultSchema = z.object({
   /** Original filename. */
   originalname: z.string(),
 });
+export type FileUploadResult = z.infer<typeof fileUploadResultSchema>;
 
 /**
  * `DELETE /storage/:key`：`{success}`。

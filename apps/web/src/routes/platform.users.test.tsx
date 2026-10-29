@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { PlatformUserRowView } from '@saas/contracts';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { UserRowActions, UsersListView, userActionEnabled } from '../components/platform-users';
 
-type UserRow = components['schemas']['PlatformUserRowResponse'];
+type UserRow = PlatformUserRowView;
 
 const rows: UserRow[] = [
   {
@@ -12,14 +12,14 @@ const rows: UserRow[] = [
     name: 'Alice',
     email: 'alice@example.com',
     status: 'active',
-    createdAt: '2026-01-02T03:04:05.000Z',
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
   },
   {
     userId: 'u2',
     name: 'Bob',
     email: 'bob@example.com',
     status: 'suspended',
-    createdAt: '2026-01-03T03:04:05.000Z',
+    createdAt: new Date('2026-01-03T03:04:05.000Z'),
   },
 ];
 

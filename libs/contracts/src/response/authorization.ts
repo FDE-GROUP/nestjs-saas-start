@@ -18,6 +18,7 @@ export const tenantRoleViewSchema = z.object({
   /** 系统内置角色（不可改名/删除）。 */
   isSystem: z.boolean(),
 });
+export type TenantRoleView = z.infer<typeof tenantRoleViewSchema>;
 
 /**
  * 角色授权项视图（subject × action 的授予记录）。
@@ -33,3 +34,16 @@ export const tenantRoleGrantViewSchema = z.object({
   /** CASL 条件（白名单字段）；null = 无约束。值面自由透传（strip 只作用于本层键）。 */
   conditions: z.record(z.string(), z.unknown()).nullable(),
 });
+export type TenantRoleGrantView = z.infer<typeof tenantRoleGrantViewSchema>;
+
+/**
+ * 角色列表出线（换轨 WP-C·旧 `@SerializeOptions` 逐元素数组面经 `.output` 显式包数组承接）。
+ * @public
+ */
+export const tenantRoleViewListSchema = z.array(tenantRoleViewSchema);
+
+/**
+ * 授权行列表出线（换轨 WP-C·纪律同 {@link tenantRoleViewListSchema}）。
+ * @public
+ */
+export const tenantRoleGrantViewListSchema = z.array(tenantRoleGrantViewSchema);

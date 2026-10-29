@@ -1,7 +1,7 @@
 {
   "name": "@saas/api-client",
   "version": "0.0.0",
-  "description": "前端 typed API 客户端（F1·类型从 openapi/openapi.yaml 生成，envelope/errors 与后端实存对拍，码表单源 re-export @core）",
+  "description": "前端 typed API 客户端（换轨 B-6c/B-7·契约型从 @saas/api-contract router 派生·envelope/errors 与后端实存对拍·码表单源 re-export @core）",
   "type": "module",
   "private": true,
   "main": "./dist/index.js",
@@ -13,15 +13,13 @@
     }
   },
   "scripts": {
-    "gen:types": "openapi-typescript ../../openapi/openapi.yaml -o src/schema.d.ts",
-    "build": "tsc -p tsconfig.json && cp src/schema.d.ts dist/schema.d.ts"
+    "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@core/saas-kit": "workspace:*",
-    "openapi-fetch": "^0.17.0"
-  },
-  "devDependencies": {
-    "js-yaml": "^5.4.3",
-    "openapi-typescript": "^7.13.0"
+    "@orpc/client": "2.0.0-beta.44",
+    "@orpc/contract": "2.0.0-beta.44",
+    "@orpc/openapi": "2.0.0-beta.44",
+    "@saas/api-contract": "workspace:*"
   }
 }

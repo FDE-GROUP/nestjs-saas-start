@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { FileUploadResult } from '@saas/contracts';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { UploadResultPanel } from './settings.storage';
 
-type StoredFile = components['schemas']['FileUploadResultDto'];
+type StoredFile = FileUploadResult;
 
 afterEach(() => cleanup());
 

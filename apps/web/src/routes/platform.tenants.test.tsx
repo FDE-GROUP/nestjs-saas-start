@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { PlatformTenantRowView } from '@saas/contracts';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { actionEnabled, StatusBadge, TenantActions } from '../components/platform-tenants';
 import { TenantsListView } from './platform.tenants';
 
-type TenantRow = components['schemas']['PlatformTenantRowResponse'];
+type TenantRow = PlatformTenantRowView;
 
 const rows: TenantRow[] = [
   {
@@ -14,7 +14,7 @@ const rows: TenantRow[] = [
     slug: 'acme',
     status: 'active',
     organizationCount: 3,
-    createdAt: '2026-01-02T03:04:05.000Z',
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
   },
   {
     tenantId: 't2',
@@ -22,7 +22,7 @@ const rows: TenantRow[] = [
     slug: 'globex',
     status: 'suspended',
     organizationCount: 1,
-    createdAt: '2026-01-02T03:04:05.000Z',
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
   },
 ];
 

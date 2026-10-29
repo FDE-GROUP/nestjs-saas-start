@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
+import type { PostView } from '@saas/contracts';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PostsView } from './posts';
 
-type Post = components['schemas']['PostResponse'];
+type Post = PostView;
 
 const posts: Post[] = [
   {
@@ -14,8 +14,8 @@ const posts: Post[] = [
     published: true,
     organizationId: 'o1',
     workspaceId: null,
-    createdAt: '2026-01-02T03:04:05.000Z',
-    updatedAt: '2026-01-02T03:04:05.000Z',
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
+    updatedAt: new Date('2026-01-02T03:04:05.000Z'),
   },
   {
     id: 'p2',
@@ -24,8 +24,8 @@ const posts: Post[] = [
     published: false,
     organizationId: 'o1',
     workspaceId: null,
-    createdAt: '2026-01-02T03:04:05.000Z',
-    updatedAt: '2026-01-02T03:04:05.000Z',
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
+    updatedAt: new Date('2026-01-02T03:04:05.000Z'),
   },
 ];
 

@@ -1,16 +1,16 @@
-import type { components } from '@saas/api-client';
+import type { PlatformUserRowView } from '@saas/contracts';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { ErrorPanel, SectionHeading } from '../components/panels';
 import { UserRowActions, UsersListView } from '../components/platform-users';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { apiErrorDetail, describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 
-type UserRow = components['schemas']['PlatformUserRowResponse'];
+type UserRow = PlatformUserRowView;
 
 const LIMIT = 20;
 
@@ -29,18 +29,21 @@ export const Route = createFileRoute('/platform/users')({
   loaderDeps: ({ search }): UserSearch => ({ offset: search.offset, q: search.q }),
   loader: async ({ deps }) => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/platform/users', {
-      params: { query: { limit: LIMIT, offset: deps.offset, search: deps.q } },
-    });
-    if (error) {
-      logApiError({ path: '/api/v1/platform/users', scope: 'platform.users' }, error);
+    try {
+      const page = (await rpc.platform.users.list({
+        limit: LIMIT,
+        offset: deps.offset,
+        search: deps.q,
+      })) as unknown as { items?: UserRow[]; total?: number };
+      return { kind: 'ok' as const, page, offset: deps.offset, q: deps.q };
+    } catch (e) {
+      logApiError({ path: '/api/v1/platform/users', scope: 'platform.users' }, e);
       return {
         kind: 'error' as const,
-        denied: apiErrorDetail(error).statusCode === 403,
-        body: describeApiError(error),
+        denied: apiErrorDetail(e).statusCode === 403,
+        body: describeApiError(e),
       };
     }
-    return { kind: 'ok' as const, page: data?.data, offset: deps.offset, q: deps.q };
   },
   component: PlatformUsersPage,
 });
@@ -143,10 +146,7 @@ function UserGovernanceRow({ user }: { user: UserRow }) {
       scope: 'platform.user.suspend',
       successMessage: '已暂停（active→suspended · 会话失效）',
       thunk: () =>
-        api.PATCH('/api/v1/platform/users/{id}/suspend', {
-          params: { path: { id } },
-          body: reason.trim() ? { reason: reason.trim() } : {},
-        }),
+        rpc.platform.users.suspend({ id, ...(reason.trim() ? { reason: reason.trim() } : {}) }),
     });
     if (ok) {
       setEditing(false);
@@ -160,7 +160,7 @@ function UserGovernanceRow({ user }: { user: UserRow }) {
       method: 'PATCH',
       scope: 'platform.user.resume',
       successMessage: '已恢复（suspended→active）',
-      thunk: () => api.PATCH('/api/v1/platform/users/{id}/resume', { params: { path: { id } } }),
+      thunk: () => rpc.platform.users.resume({ id }),
     });
   }
 

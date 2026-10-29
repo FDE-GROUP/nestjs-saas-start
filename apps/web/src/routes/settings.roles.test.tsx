@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RolesView } from './settings.roles';
 
-type TenantRoleView = components['schemas']['TenantRoleViewResponse'];
+type TenantRoleView = import('@saas/contracts').TenantRoleView;
 
 const roles: TenantRoleView[] = [
   { id: 'r1', key: 'owner', name: 'Owner', isSystem: true },

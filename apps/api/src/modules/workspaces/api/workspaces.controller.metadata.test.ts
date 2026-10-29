@@ -1,48 +1,59 @@
 import 'reflect-metadata';
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { CLASS_SERIALIZER_OPTIONS } from '@nestjs/common/serializer/class-serializer.constants.js';
 import {
+  createWorkspaceSchema,
   listPageQuerySchema,
+  updateWorkspaceInputSchema,
+  workspaceIdParamSchema,
   workspacePageSchema,
   workspaceViewSchema,
 } from '@saas/contracts/index';
 import { describe, expect, it } from 'vitest';
-import { WorkspacesController } from './workspaces.controller';
+import {
+  workspacesCreateContract,
+  workspacesListContract,
+  workspacesRemoveContract,
+  workspacesUpdateContract,
+} from './workspaces.controller';
 
-// S4/S5 换轨后 list() 的校验凭 `@Query({ schema })` 路由参数元数据生效（不再依赖 class DTO 的
-// design:paramtypes）——锁「schema 已挂到 @Query 参数元数据」，复刻旧 paramtypes 锁的本职：
-// 防漏配/import type 致 limit/offset 校验整链静默跳过（S9 同形风险的 schema 侧等价守卫）。
-describe('WorkspacesController query schema metadata', () => {
-  it('list() 的 @Query 携 listPageQuerySchema（S4 schema 路径·非 class DTO）', () => {
-    const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, WorkspacesController, 'list') as Record<
-      string,
-      { schema?: unknown }
-    >;
-    expect(Object.values(args).some((v) => v.schema === listPageQuerySchema)).toBe(true);
+interface SchemasDef {
+  inputSchemas?: readonly unknown[];
+  outputSchemas?: readonly unknown[];
+}
+
+function schemasOf(contract: object): SchemasDef {
+  return (contract as { '~orpc': SchemasDef })['~orpc'];
+}
+
+// 换轨 WP-B parity：list/create 转 per-method `@Impl` 后，旧 S4 `@Query({schema})` 参数元数据与
+// S7b `@SerializeOptions` 类序列化元数据换落点到 procedure 级 `.input/.output`（zod 单源不变）。
+// 本测复刻旧防线本职（防漏配致校验/白名单整链静默跳过）——锁 contract 携对应 schema。
+describe('WorkspacesController list/create contract parity（S4 校验 + S7b 白名单）', () => {
+  it('list contract：input=listPageQuerySchema·output=workspacePageSchema（offsetPage 形状）', () => {
+    const def = schemasOf(workspacesListContract);
+    expect(def.inputSchemas).toContain(listPageQuerySchema);
+    expect(def.outputSchemas).toContain(workspacePageSchema);
+  });
+
+  it('create contract：input=createWorkspaceSchema·output=workspaceViewSchema（单对象形状）', () => {
+    const def = schemasOf(workspacesCreateContract);
+    expect(def.inputSchemas).toContain(createWorkspaceSchema);
+    expect(def.outputSchemas).toContain(workspaceViewSchema);
   });
 });
 
-// S7b 序列化白名单·offsetPage 形状锁：workspaces.list 返回 `Page<T>`（整体对象含 items/total/…），
-// 故挂包数组的 offsetPage schema（区别于 authorization.listRoles 的元素数组）。
-describe('WorkspacesController @SerializeOptions 元数据（S7b 序列化白名单）', () => {
-  const proto = WorkspacesController.prototype as unknown as Record<string, unknown>;
-  const serializeSchema = (method: string) =>
-    (
-      Reflect.getMetadata(CLASS_SERIALIZER_OPTIONS, proto[method] as object) as {
-        schema?: unknown;
-      }
-    )?.schema;
-
-  it('list() 携 offsetPage schema workspacePageSchema', () => {
-    expect(serializeSchema('list')).toBe(workspacePageSchema);
+// 换轨 WP-C：update/remove 亦转 per-method `@Impl`（路径参经合并 input schema·出线经 .output）。
+// 旧 S4 `@Body({schema})` 参数校验与 S7b `@SerializeOptions` 序列化白名单换落点到 procedure 级
+// `.input/.output`（zod 单源不变）·本测锁 update/remove contract 携对应 schema（含 :id 路径参）。
+describe('WorkspacesController update/remove contract parity（S4 校验 + S7b 白名单·含 :id 路径参）', () => {
+  it('update contract：input=updateWorkspaceInputSchema（body ⊕ id）·output=workspaceViewSchema', () => {
+    const def = schemasOf(workspacesUpdateContract);
+    expect(def.inputSchemas).toContain(updateWorkspaceInputSchema);
+    expect(def.outputSchemas).toContain(workspaceViewSchema);
   });
 
-  it('create/update() 携单对象 schema workspaceViewSchema', () => {
-    expect(serializeSchema('create')).toBe(workspaceViewSchema);
-    expect(serializeSchema('update')).toBe(workspaceViewSchema);
-  });
-
-  it('remove()（void）不挂序列化', () => {
-    expect(serializeSchema('remove')).toBeUndefined();
+  it('remove contract：input=workspaceIdParamSchema（携 id）·void 出线不挂 output', () => {
+    const def = schemasOf(workspacesRemoveContract);
+    expect(def.inputSchemas).toContain(workspaceIdParamSchema);
+    expect(def.outputSchemas ?? []).not.toContain(workspaceViewSchema);
   });
 });

@@ -10,9 +10,9 @@ import { routeTree } from '../routeTree.gen';
  * `settings.roles.$roleKey`（权限矩阵页）是 `/settings/roles` 的文件式子路由——修复前父 `RolesPage`
  * 无 `<Outlet/>`，命中子路由时子页永不挂载（见该 plan 的实跑探针反证）。此处经真实 routeTree 的
  * memory router 驱动父子链，锁：列表路由渲染父页且不含矩阵 h1；子路由经 Outlet 委托渲染矩阵页。
- * 手法承切片 A：`vi.mock(lib/api·lib/session)` 注入拟真 envelope·全 mock 不触网。
+ * 手法承切片 A（【换轨 B-6】改 mock typed `rpc` 过程方 roles.list / grants.list）·全 mock 不触网。
  */
-const mocks = vi.hoisted(() => ({ GET: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rolesList: vi.fn(), grantsList: vi.fn() }));
 
 vi.mock('../lib/session', () => ({
   requireSession: vi.fn().mockResolvedValue({
@@ -21,7 +21,18 @@ vi.mock('../lib/session', () => ({
   }),
 }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: vi.fn(), PATCH: vi.fn(), DELETE: vi.fn() },
+  rpc: {
+    organizations: {
+      list: vi.fn(),
+      roles: {
+        list: mocks.rolesList,
+        create: vi.fn(),
+        rename: vi.fn(),
+        remove: vi.fn(),
+        grants: { list: mocks.grantsList, grant: vi.fn(), revoke: vi.fn() },
+      },
+    },
+  },
 }));
 
 const roleRows = [
@@ -42,11 +53,8 @@ function mountAt(path: string) {
 }
 
 beforeEach(() => {
-  mocks.GET.mockReset().mockImplementation((path: string) => {
-    if (path === '/api/v1/organizations/roles')
-      return Promise.resolve({ data: { data: roleRows }, error: null });
-    return Promise.resolve({ data: { data: [] }, error: null });
-  });
+  mocks.rolesList.mockReset().mockResolvedValue(roleRows);
+  mocks.grantsList.mockReset().mockResolvedValue([]);
 });
 afterEach(cleanup);
 

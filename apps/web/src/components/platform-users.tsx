@@ -1,5 +1,6 @@
-import type { components } from '@saas/api-client';
+import type { PlatformUserRowView } from '@saas/contracts';
 import type { ReactNode } from 'react';
+import { formatDate } from '../lib/format';
 import { StatusBadge } from './platform-tenants';
 
 /**
@@ -7,7 +8,7 @@ import { StatusBadge } from './platform-tenants';
  * 治理动作可用性镜像后端 `UserStatus = TenantStatus` 状态机——suspend 仅 active · resume 仅
  * suspended（无删除面）。前端 disable 非法动作仅为止损体验，最终裁判仍是后端 409（双保险·对齐 F4a）。
  */
-type UserRow = components['schemas']['PlatformUserRowResponse'];
+type UserRow = PlatformUserRowView;
 export type UserStatus = UserRow['status'];
 
 /**
@@ -107,7 +108,7 @@ export function UsersListView({
                   <StatusBadge status={u.status} />
                 </td>
                 <td className="py-2 pr-4 text-slate-500 dark:text-slate-400">
-                  {u.createdAt ? u.createdAt.slice(0, 10) : '—'}
+                  {u.createdAt ? formatDate(u.createdAt) : '—'}
                 </td>
                 {renderActions && <td className="py-2">{renderActions(u)}</td>}
               </tr>

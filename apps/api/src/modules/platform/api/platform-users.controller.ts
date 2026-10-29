@@ -1,5 +1,3 @@
-import { CurrentUser } from '@app/modules/auth/api/decorators/current-user.decorator';
-import type { SessionUser } from '@app/modules/auth/api/guards/session.guard';
 import { ResumeUserCommand } from '@app/modules/organizations/application/commands/resume-user.command';
 import { SuspendUserCommand } from '@app/modules/organizations/application/commands/suspend-user.command';
 import { ListPlatformUsersQuery } from '@app/modules/organizations/application/queries/list-platform-users.query';
@@ -10,38 +8,26 @@ import type {
 import { PlatformOperatorGuard } from '@core/saas-kit/platform/platform-operator.guard';
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { TenantIsolationExempt } from '@core/saas-kit/tenant-isolation/tenant-isolation-exempt.decorator';
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  NotFoundException,
-  Param,
-  Patch,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { SerializeOptions } from '@nestjs/common/serializer/index.js';
+import { Controller, Inject, NotFoundException, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
 import {
-  type ListPlatformUsersQuery as ListPlatformUsersQueryDto,
+  platformUsersListContract,
+  platformUsersListMeta,
+  platformUsersResumeContract,
+  platformUsersResumeMeta,
+  platformUsersSuspendContract,
+  platformUsersSuspendMeta,
+} from '@saas/api-contract/index';
+import {
   listPlatformUsersQuerySchema,
+  platformUserIdParamSchema,
   platformUserPageSchema,
-  type SuspendUser,
-  suspendUserSchema,
+  suspendUserInputSchema,
   userGovernanceResultSchema,
 } from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-} from '../../../common/contracts/api-contracts';
-import {
-  PlatformUserPageResponse,
-  UserGovernanceResultResponse,
-} from './response/governance.response';
+import { os } from '../../../common/orpc/orpc';
+import { requireSessionUser } from '../../../common/orpc/orpc-context';
 
 /**
  * 平台操作员用户治理切片的 HTTP 控制器（多租户 S6 · FR-6/FR-10/FR-11①/FR-13）。
@@ -57,16 +43,16 @@ import {
  * resume (suspended→active) lifts the deny-list. Each success/failure emits a structured audit line (FR-6).
  * @public
  */
-@ApiExtraModels(
-  ApiEnvelope,
-  ApiErrorResponse,
-  PlatformUserPageResponse,
-  UserGovernanceResultResponse,
-)
-@ApiTags('platform')
-// S11 复合全局：跨租平台治理（operator 行动时无关租户上下文）→ 类级豁免租户墙（仍由 PlatformOperatorGuard 逐路由卡）。
+// 换轨 WP-C：三条路由转 per-method `@Impl`——class 级 `@TenantIsolationExempt()` + `@UseGuards(PlatformOperatorGuard)`
+// 原生保留（跨租平台治理墙不弱化）。旧 `@SerializeOptions` 白名单换落点 procedure 级 `.output`（zod 单源不变）；
+// `@CurrentUser()` 换 `context.user`（经 `requireSessionUser`）；`:id` 路径参经紧凑 input 结构合并
+// （suspend body⊕id=`suspendUserInputSchema`·resume 纯参=`platformUserIdParamSchema`）。in-handler
+// `NotFoundException`（含 errorCode）经 WP-D 错误面逐字承接为 REST 404 信封。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export { platformUsersListContract, platformUsersResumeContract, platformUsersSuspendContract };
+
+@Controller('')
 @TenantIsolationExempt()
-@Controller('platform/users')
 @UseGuards(PlatformOperatorGuard)
 export class PlatformUsersController {
   constructor(
@@ -76,80 +62,60 @@ export class PlatformUsersController {
 
   /**
    * 跨平台列出所有用户及生命周期状态（仅操作员·offset 分页）。
-   * @param dto - 分页与搜索请求。
    * @returns 带封禁状态的用户分页页。
    */
-  @Get()
-  @SerializeOptions({ schema: platformUserPageSchema })
-  @ApiOperation({ summary: 'List all platform users with lifecycle status (operator only)' })
-  @ApiResponse(
-    apiEnvelopeShape(PlatformUserPageResponse, {
-      description: 'A page of users with suspension status.',
-    }),
-  )
-  @ApiResponse(apiError(403, 'Not the platform operator.'))
-  list(
-    @Query({ schema: listPlatformUsersQuerySchema }) dto: ListPlatformUsersQueryDto,
-  ): Promise<PlatformUserPage> {
-    return this.queryBus.execute<ListPlatformUsersQuery, PlatformUserPage>(
-      new ListPlatformUsersQuery(dto.limit, dto.offset, dto.search),
-    );
+  @Impl(platformUsersListContract)
+  list() {
+    return os
+      .input(listPlatformUsersQuerySchema)
+      .output(platformUserPageSchema)
+      .meta(platformUsersListMeta)
+      .handler(({ input }) =>
+        this.queryBus.execute<ListPlatformUsersQuery, PlatformUserPage>(
+          new ListPlatformUsersQuery(input.limit, input.offset, input.search),
+        ),
+      );
   }
 
   /**
-   * 暂停平台用户（active→suspended·会话失效·fail-closed 失能）。
-   * @param id - 用户主键。
-   * @param user - 当前操作员会话。
-   * @param dto - 暂停入参（可选 reason）。
-   * @returns 用户治理结果；未命中 404、非法转移 409。
-   *
-   * @throws {NotFoundException} 用户不存在时。
+   * 暂停平台用户（active→suspended·会话失效·fail-closed 失能·未命中 404/非法转移 409 经 WP-D 承接）。
    */
-  @Patch(':id/suspend')
-  @SerializeOptions({ schema: userGovernanceResultSchema })
-  @ApiOperation({
-    summary:
-      'Suspend a platform user (active → suspended · sessions invalidated · fail-closed失能)',
-  })
-  @ApiResponse(apiEnvelopeShape(UserGovernanceResultResponse, { description: 'User suspended.' }))
-  @ApiResponse(apiError(404, 'User not found.'))
-  @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
-  async suspend(
-    @Param('id') id: string,
-    @CurrentUser() user: SessionUser,
-    @Body({ schema: suspendUserSchema }) dto: SuspendUser,
-  ): Promise<UserGovernanceResult> {
-    const result = await this.commandBus.execute<SuspendUserCommand, UserGovernanceResult | null>(
-      new SuspendUserCommand(id, user.id, dto?.reason),
-    );
-    if (!result)
-      throw new NotFoundException('User not found', { errorCode: ERROR_CODES.USER_NOT_FOUND });
-    return result;
+  @Impl(platformUsersSuspendContract)
+  suspend() {
+    return os
+      .input(suspendUserInputSchema)
+      .output(userGovernanceResultSchema)
+      .meta(platformUsersSuspendMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          SuspendUserCommand,
+          UserGovernanceResult | null
+        >(new SuspendUserCommand(input.id, user.id, input.reason));
+        if (!result)
+          throw new NotFoundException('User not found', { errorCode: ERROR_CODES.USER_NOT_FOUND });
+        return result;
+      });
   }
 
   /**
-   * 恢复已暂停的平台用户（suspended→active）。
-   * @param id - 用户主键。
-   * @param user - 当前操作员会话。
-   * @returns 用户治理结果；未命中 404、非法转移 409。
-   *
-   * @throws {NotFoundException} 用户不存在时。
+   * 恢复已暂停的平台用户（suspended→active·未命中 404/非法转移 409 经 WP-D 承接）。
    */
-  @Patch(':id/resume')
-  @SerializeOptions({ schema: userGovernanceResultSchema })
-  @ApiOperation({ summary: 'Resume a suspended platform user (suspended → active)' })
-  @ApiResponse(apiEnvelopeShape(UserGovernanceResultResponse, { description: 'User resumed.' }))
-  @ApiResponse(apiError(404, 'User not found.'))
-  @ApiResponse(apiError(409, 'Illegal transition for the current status.'))
-  async resume(
-    @Param('id') id: string,
-    @CurrentUser() user: SessionUser,
-  ): Promise<UserGovernanceResult> {
-    const result = await this.commandBus.execute<ResumeUserCommand, UserGovernanceResult | null>(
-      new ResumeUserCommand(id, user.id),
-    );
-    if (!result)
-      throw new NotFoundException('User not found', { errorCode: ERROR_CODES.USER_NOT_FOUND });
-    return result;
+  @Impl(platformUsersResumeContract)
+  resume() {
+    return os
+      .input(platformUserIdParamSchema)
+      .output(userGovernanceResultSchema)
+      .meta(platformUsersResumeMeta)
+      .handler(async ({ input, context }) => {
+        const user = requireSessionUser(context);
+        const result = await this.commandBus.execute<
+          ResumeUserCommand,
+          UserGovernanceResult | null
+        >(new ResumeUserCommand(input.id, user.id));
+        if (!result)
+          throw new NotFoundException('User not found', { errorCode: ERROR_CODES.USER_NOT_FOUND });
+        return result;
+      });
   }
 }

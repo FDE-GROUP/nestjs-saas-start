@@ -5,7 +5,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { DangerButton, Feedback, SubmitButton } from '../components/forms';
 import { SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -29,21 +29,21 @@ function AccountPage() {
 
   async function handleExport() {
     setExportError(null);
-    const { data, error } = await api.GET('/api/v1/users/me/data-export');
-    if (error) {
-      logApiError({ path: '/api/v1/users/me/data-export', scope: 'pipl.export' }, error);
-      setExportError(describeApiError(error));
-      return;
+    try {
+      const payload = await rpc.users.exportData();
+      // 浏览器下载 JSON（oRPC 客户端已拆信封→payload 即业务聚合体）。
+      const json = JSON.stringify(payload ?? {}, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `personal-data-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      logApiError({ path: '/api/v1/users/me/data-export', scope: 'pipl.export' }, e);
+      setExportError(describeApiError(e));
     }
-    // 浏览器下载 JSON
-    const json = JSON.stringify(data?.data ?? data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `personal-data-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
 
   async function handleDelete() {
@@ -53,7 +53,7 @@ function AccountPage() {
       method: 'DELETE',
       scope: 'pipl.erase',
       successMessage: '账号已注销',
-      thunk: () => api.DELETE('/api/v1/users/me'),
+      thunk: () => rpc.users.remove(),
     });
     if (ok) {
       await navigate({ to: '/login' });

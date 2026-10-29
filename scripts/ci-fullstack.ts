@@ -94,6 +94,9 @@ process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
 const GATED_EXEMPT = [
   // DB-free HTTP 面契约测（probe DTO + 校验链），L1 全量常跑已覆盖，不需 E2E_DATABASE_URL。
   'apps/api/src/i18n/validation-i18n.e2e.test.ts',
+  // 换轨 WP-D 错误面线上等价集成测（真起 Nest+Fastify·仅 CommonModule 过滤器/拦截器 +
+  // ORPCModule.forRoot·零守卫零 DB）——属默认 CI 常跑的 DB-free e2e，同 validation-i18n 归豁免。
+  'apps/api/src/common/orpc/rest-error.e2e.test.ts',
 ];
 
 /**

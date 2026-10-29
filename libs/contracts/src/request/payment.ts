@@ -41,3 +41,12 @@ export const refundPaymentSchema = strictObject({
   reason: z.string().max(20000).optional(),
 });
 export type RefundPayment = z.infer<typeof refundPaymentSchema>;
+
+/**
+ * 取回 checkout 路径参（换轨 WP-C·旧 `GET /payment/checkouts/:id` 的 `@Param('id')`·紧凑 input 结构 params 对象）。
+ * @public
+ */
+export const paymentCheckoutIdParamSchema = strictObject({
+  id: z.string().min(1).max(128),
+});
+export type PaymentCheckoutIdParam = z.infer<typeof paymentCheckoutIdParamSchema>;

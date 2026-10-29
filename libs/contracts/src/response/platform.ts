@@ -95,6 +95,7 @@ export const organizationDiagnosticsSchema = z.object({
   workspaceCount: z.number(),
   postCount: z.number(),
 });
+export type OrganizationDiagnosticsView = z.infer<typeof organizationDiagnosticsSchema>;
 
 /**
  * 租户生命周期治理结果（approve/suspend/resume/delete 迁移后回执·tenant 主键）。

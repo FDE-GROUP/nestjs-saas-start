@@ -4,31 +4,17 @@ import { CreateSubscriptionCommand } from '@core/saas-kit/modules/subscriptions/
 import { GetSubscriptionQuery } from '@core/saas-kit/modules/subscriptions/application/queries/get-current-subscription.query';
 import type { OrganizationSubscriptionView } from '@core/saas-kit/modules/subscriptions/application/read-models/subscription.read-model';
 import { TenantIsolationGuard } from '@core/saas-kit/tenant-isolation/tenant-isolation.guard';
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { SerializeOptions } from '@nestjs/common/serializer/index.js';
+import { Controller, Inject, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Impl } from '@orpc/nest';
 import {
-  type CreateSubscription,
-  createSubscriptionSchema,
-  subscriptionViewSchema,
-} from '@saas/contracts/index';
-import {
-  ApiEnvelope,
-  ApiErrorResponse,
-  apiEnvelopeShape,
-  apiError,
-} from '../../../common/contracts/api-contracts';
-import { SubscriptionResponse } from './response/subscription.response';
+  subscriptionsCreateContract,
+  subscriptionsCreateMeta,
+  subscriptionsGetCurrentContract,
+  subscriptionsGetCurrentMeta,
+} from '@saas/api-contract/index';
+import { createSubscriptionSchema, subscriptionViewSchema } from '@saas/contracts/index';
+import { os } from '../../../common/orpc/orpc';
 
 /**
  * 组织订阅切片的 HTTP 控制器（多租户 S7 · FR-7/FR-8/D5）。
@@ -48,9 +34,12 @@ import { SubscriptionResponse } from './response/subscription.response';
  * the production member-add attach point (Better Auth route) is deferred to a later slice.
  * @public
  */
-@ApiExtraModels(ApiEnvelope, ApiErrorResponse, SubscriptionResponse)
-@ApiTags('subscriptions')
-@Controller('subscriptions')
+// 换轨 WP-C：两路由转 per-method `@Impl`（非 router 扇出）——方法级 `@UseGuards` + `@Can` 原生保留
+// （租户墙/授权墙不弱化）；旧 `@SerializeOptions` 白名单下沉到 procedure 级 `.output`（zod 单源不变）。
+// 契约 + meta 定义单源已前置 `@saas/api-contract`；re-export 保下游（AppRouterContract/覆盖测）拿到同一物体。
+export { subscriptionsCreateContract, subscriptionsGetCurrentContract };
+
+@Controller('')
 export class SubscriptionsController {
   constructor(
     @Inject(CommandBus) private readonly commandBus: CommandBus,
@@ -61,56 +50,41 @@ export class SubscriptionsController {
    * 读取当前组织的有效订阅快照（套餐/席位配额/用量/客户映射）。
    * @returns 当前组织的订阅视图。
    */
-  @Get('current')
   @UseGuards(TenantIsolationGuard)
-  @SerializeOptions({ schema: subscriptionViewSchema })
-  @ApiOperation({
-    summary: 'Current organization subscription: plan, seat quota, usage, customer mapping',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(SubscriptionResponse, {
-      description: 'Effective subscription snapshot for the active organization.',
-    }),
-  )
-  @ApiResponse(apiError(403, 'No active organization context.'))
-  getCurrent(): Promise<OrganizationSubscriptionView> {
-    return this.queryBus.execute<GetSubscriptionQuery, OrganizationSubscriptionView>(
-      new GetSubscriptionQuery(),
-    );
+  @Impl(subscriptionsGetCurrentContract)
+  getCurrent() {
+    return os
+      .output(subscriptionViewSchema)
+      .meta(subscriptionsGetCurrentMeta)
+      .handler(() =>
+        this.queryBus.execute<GetSubscriptionQuery, OrganizationSubscriptionView>(
+          new GetSubscriptionQuery(),
+        ),
+      );
   }
 
   /**
    * 开通/升级组织订阅（创建支付供应商客户并落席位/存储/API 配额）。
-   * @param dto - 开通入参（plan/customerEmail/seatsLimit/storageQuota/apiQuota）。
    * @returns 更新后的订阅快照视图。
    */
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
   @UseGuards(TenantIsolationGuard, AuthorizationGuard)
   @Can('update', 'Organization')
-  @SerializeOptions({ schema: subscriptionViewSchema })
-  @ApiOperation({
-    summary: 'Provision/upgrade the organization subscription (creates the provider customer)',
-  })
-  @ApiResponse(
-    apiEnvelopeShape(SubscriptionResponse, {
-      status: 201,
-      description: 'Subscription created; returns the updated snapshot.',
-    }),
-  )
-  @ApiResponse(apiError(403, 'Not allowed to update the organization.'))
-  @ApiResponse(apiError(503, 'No payment provider configured.'))
-  create(
-    @Body({ schema: createSubscriptionSchema }) dto: CreateSubscription,
-  ): Promise<OrganizationSubscriptionView> {
-    return this.commandBus.execute<CreateSubscriptionCommand, OrganizationSubscriptionView>(
-      new CreateSubscriptionCommand(
-        dto.plan,
-        dto.customerEmail,
-        dto.seatsLimit,
-        dto.storageQuota,
-        dto.apiQuota,
-      ),
-    );
+  @Impl(subscriptionsCreateContract)
+  create() {
+    return os
+      .input(createSubscriptionSchema)
+      .output(subscriptionViewSchema)
+      .meta(subscriptionsCreateMeta)
+      .handler(({ input }) =>
+        this.commandBus.execute<CreateSubscriptionCommand, OrganizationSubscriptionView>(
+          new CreateSubscriptionCommand(
+            input.plan,
+            input.customerEmail,
+            input.seatsLimit,
+            input.storageQuota,
+            input.apiQuota,
+          ),
+        ),
+      );
   }
 }

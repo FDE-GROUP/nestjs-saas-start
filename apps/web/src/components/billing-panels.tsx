@@ -1,4 +1,7 @@
-import type { components } from '@saas/api-client';
+import type {
+  PaymentStatusView as PaymentStatusContractView,
+  SubscriptionView,
+} from '@saas/contracts';
 import { useState } from 'react';
 
 /**
@@ -7,8 +10,8 @@ import { useState } from 'react';
  * 视图与判定纯件化（回调外置·可脱离 router/mutation 单测）；typed 形直接取生成契约
  * `SubscriptionResponse` / `PaymentStatusResponse`，写面 dto 对齐 `createSubscriptionSchema`。
  */
-export type SubscriptionSnapshot = components['schemas']['SubscriptionResponse'];
-export type PaymentStatus = components['schemas']['PaymentStatusResponse'];
+export type SubscriptionSnapshot = SubscriptionView;
+export type PaymentStatus = PaymentStatusContractView;
 
 export interface UpgradeDto {
   plan: 'free' | 'pro' | 'enterprise';

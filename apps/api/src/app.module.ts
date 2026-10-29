@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
+import { ORPCModule } from '@orpc/nest';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './common/health/health.module';
+import { createOrpcContext } from './common/orpc/orpc-context';
+import { restErrorStatusMap } from './common/orpc/rest-error.middleware';
+import { restErrorResponseBodyEncoder } from './common/orpc/rest-error.serializer';
 // 限流全局墙（module-common-rate-limit 甲裁）：必须排在 AuthModule 之前——APP_GUARD 执行序
 // 按模块注册序 = 限流(最廉价拒绝) → 会话墙 401 → 租户墙 403。
 import { RateLimitModule } from './common/rate-limit.module';
@@ -28,6 +32,19 @@ import { TenantIsolationModule } from './tenant-isolation/tenant-isolation.modul
 
 @Module({
   imports: [
+    // oRPC 换轨 WP-A：@orpc/nest 集成根（提供 ImplementInterceptor + ORPC_MODULE_CONFIG），
+    // `@Impl(contract)` 借此在既有 Nest 路由生命周期上服务 oRPC procedure。
+    // WP-D 错误面承接：全局 `customErrorResponseBodyEncoder` 把 oRPC 错误（in-handler HttpException
+    // 归一形 / standard-schema 校验 issues / 兜底 500）复刻成 HttpExceptionFilter 认得的响应体形，
+    // 再由其对 `status>=300` 对象体重抛 `HttpException(body,status)` → 既有过滤器逐字补 statusCode/
+    // timestamp/path/requestId（错误信封单源不变·状态经 code 由 `restErrorStatusMap`〔common ∪ HTTP_400–599〕复原）。
+    // WP-C 请求上下文：`context` 工厂转读守卫已挂的 `req.sessionUser`（见 orpc-context.ts·取代旧 `@CurrentUser()`·
+    // 会话写权仍单源于 SessionGuard·此处只转读不重解析）。
+    ORPCModule.forRoot({
+      customErrorResponseBodyEncoder: restErrorResponseBodyEncoder,
+      errorStatusMap: restErrorStatusMap,
+      context: createOrpcContext,
+    }),
     ConfigModule,
     RateLimitModule,
     LoggerModule,

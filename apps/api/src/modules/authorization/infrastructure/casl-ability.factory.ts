@@ -14,7 +14,20 @@ import type {
  * check 级实例 conditions（S4·乙裁）在此承接口径：`conditions` 非空行走 CASL mongo
  * conditions 匹配（`{{userId}}` 模板由 checker 侧在建 ability 前解析，本投影保持无感）。
  */
-export type CaslScopedAbility = MongoAbility<[AuthorizationAction, AuthorizationSubject]>;
+/**
+ * 实例 subject（S4·check 级 detached 形）：`__caslSubjectType__` 作判别键 + 任意资源属性。
+ * CASL v7 判定同时支持「类型名字符串」（类型级）与此「实例对象」（带 conditions 的
+ * check 级·先取资源再判），故 ability 的 subject 泛型须为两者之并——node10 旧解析把
+ * @casl 类型退成宽松形而掩盖了这点，bundler 经 exports 拿到 v7 真类型后须显式建模。
+ */
+export type CaslSubjectInstance = { __caslSubjectType__: AuthorizationSubject } & Record<
+  string,
+  unknown
+>;
+
+export type CaslScopedAbility = MongoAbility<
+  [AuthorizationAction, AuthorizationSubject | CaslSubjectInstance]
+>;
 
 /** 投影输入行：与 `tenant_role_grant` 行、seed grant 皆同构（subject×action×conditions）。 */
 export interface ScopedAbilityGrant {
@@ -24,9 +37,7 @@ export interface ScopedAbilityGrant {
 }
 
 export function buildScopedAbility(grants: readonly ScopedAbilityGrant[]): CaslScopedAbility {
-  const { can, build } = new AbilityBuilder<[AuthorizationAction, AuthorizationSubject]>(
-    createMongoAbility,
-  );
+  const { can, build } = new AbilityBuilder<CaslScopedAbility>(createMongoAbility);
   for (const grant of grants) {
     if (grant.conditions) can(grant.action, grant.subject, grant.conditions as object);
     else can(grant.action, grant.subject);

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DangerButton, Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { OrganizationContextGuidePanel } from '../components/organization-context-guide';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -15,19 +15,20 @@ import { requireSession } from '../lib/session';
  * 列表（系统 + 自定义）+ 新建/改名/删除；行内链至权限矩阵页 `/settings/roles/$roleKey`。
  * 系统角色（isSystem）改名/删除按钮 disable（前端防御 + 后端 409 兜底双保险）。
  */
-type TenantRoleView = import('@saas/api-client').components['schemas']['TenantRoleViewResponse'];
+type TenantRoleView = import('@saas/contracts').TenantRoleView;
 
 export const Route = createFileRoute('/settings/roles')({
   loader: async () => {
     await requireSession();
-    const { data, error } = await api.GET('/api/v1/organizations/roles');
-    if (error) {
-      logApiError({ path: '/api/v1/organizations/roles', scope: 'roles' }, error);
-      const guide = await probeOrganizationContext(error);
+    try {
+      const roles = (await rpc.organizations.roles.list()) as unknown as TenantRoleView[];
+      return { kind: 'ok' as const, roles };
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations/roles', scope: 'roles' }, e);
+      const guide = await probeOrganizationContext(e);
       if (guide) return { kind: 'guide' as const, guide };
-      return { kind: 'error' as const, body: error };
+      return { kind: 'error' as const, body: e };
     }
-    return { kind: 'ok' as const, roles: data?.data ?? [] };
   },
   component: RolesPage,
 });
@@ -54,7 +55,7 @@ function RolesPage() {
       method: 'POST',
       scope: 'role.create',
       successMessage: `已创建角色「${name}」`,
-      thunk: () => api.POST('/api/v1/organizations/roles', { body: { key, name } }),
+      thunk: () => rpc.organizations.roles.create({ key, name }),
     });
     if (ok) {
       setKey('');
@@ -102,8 +103,7 @@ function RoleRow({ role }: { role: TenantRoleView }) {
       method: 'POST',
       scope: 'role.rename',
       successMessage: '已重命名',
-      thunk: () =>
-        api.POST('/api/v1/organizations/roles/rename', { body: { key: role.key, name: editName } }),
+      thunk: () => rpc.organizations.roles.rename({ key: role.key, name: editName }),
     });
     if (ok) setEditing(false);
   }
@@ -114,7 +114,7 @@ function RoleRow({ role }: { role: TenantRoleView }) {
       method: 'POST',
       scope: 'role.delete',
       successMessage: `已删除「${role.name}」`,
-      thunk: () => api.POST('/api/v1/organizations/roles/delete', { body: { key: role.key } }),
+      thunk: () => rpc.organizations.roles.remove({ key: role.key }),
     });
   }
 

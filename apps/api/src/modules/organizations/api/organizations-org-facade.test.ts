@@ -6,6 +6,7 @@ import type {
 } from '@core/saas-kit/modules/organizations/lifecycle/organization-odoo-binding-reader';
 import type { TenantIsolationService } from '@core/saas-kit/tenant-isolation/tenant-isolation.service';
 import { BadRequestException } from '@nestjs/common';
+import { call, ORPCError } from '@orpc/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { TenantMemberFacadeService } from '../application/tenant-member-facade.service';
 import { OrganizationsOrgAdminController } from './organizations-org-admin.controller';
@@ -71,26 +72,29 @@ describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委�
     };
   }
 
+  // 换轨 WP-C：六方法转 per-method `@Impl`（方法返回 procedure）·经 `call` 驱动。
+  // 门面守卫抛的 `HttpException` 现由 WP-D `restErrorMiddleware` 归一为 `ORPCError`（code 经状态·原始
+  // getResponse 塞 `data.__rest`）；procedure 未挂 `.output`（passthrough 逐字保真）→ 返回原引用。
   it('listMembers 委派 facade.listMembers()', async () => {
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(ctrl.listMembers()).resolves.toEqual([{ userId: 'u1', roleKey: 'member' }]);
+    await expect(call(ctrl.listMembers())).resolves.toEqual([{ userId: 'u1', roleKey: 'member' }]);
     expect(facade.listMembers).toHaveBeenCalledOnce();
   });
 
   it('updateMemberRole 委派（memberId 视作 userId）并回 ok', async () => {
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(
-      ctrl.updateMemberRole({ memberId: 'u1', role: 'admin' } as never),
-    ).resolves.toEqual({ ok: true });
+    await expect(call(ctrl.updateMemberRole(), { memberId: 'u1', role: 'admin' })).resolves.toEqual(
+      { ok: true },
+    );
     expect(facade.updateMemberRole).toHaveBeenCalledWith('u1', 'admin');
   });
 
   it('removeMember 委派（memberId 视作 userId）', async () => {
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(ctrl.removeMember({ memberId: 'u1' } as never)).resolves.toEqual({ ok: true });
+    await expect(call(ctrl.removeMember(), { memberId: 'u1' })).resolves.toEqual({ ok: true });
     expect(facade.removeMember).toHaveBeenCalledWith('u1');
   });
 
@@ -98,7 +102,7 @@ describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委�
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
     await expect(
-      ctrl.createInvitation({ email: 'a@b.c', role: 'member' } as never),
+      call(ctrl.createInvitation(), { email: 'a@b.c', role: 'member' }),
     ).resolves.toEqual({ ok: true });
     expect(facade.createInvitation).toHaveBeenCalledWith('a@b.c', 'member');
   });
@@ -106,19 +110,25 @@ describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委�
   it('cancelInvitation 委派 invitationId', async () => {
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(ctrl.cancelInvitation({ invitationId: 'inv-1' } as never)).resolves.toEqual({
+    await expect(call(ctrl.cancelInvitation(), { invitationId: 'inv-1' })).resolves.toEqual({
       ok: true,
     });
     expect(facade.cancelInvitation).toHaveBeenCalledWith('inv-1');
   });
 
-  it('门面守卫拒绝（不可挂载角色 → 400）原样上抛不伪装', async () => {
+  it('门面守卫拒绝（不可挂载角色 → 400）经 WP-D 归一 BAD_REQUEST·__rest 携逐字 400 体', async () => {
     const facade = facadeStub();
     facade.updateMemberRole.mockRejectedValue(new BadRequestException('Role not assignable'));
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(
-      ctrl.updateMemberRole({ memberId: 'u1', role: 'ghost' } as never),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    const caught = await call(ctrl.updateMemberRole(), {
+      memberId: 'u1',
+      role: 'ghost',
+    }).catch((error: unknown) => error);
+    expect(caught).toBeInstanceOf(ORPCError);
+    expect((caught as ORPCError<string, unknown>).code).toBe('BAD_REQUEST');
+    expect((caught as { data: { __rest: Record<string, unknown> } }).data.__rest).toMatchObject({
+      message: 'Role not assignable',
+    });
   });
 });
 
@@ -132,7 +142,9 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       sessionsStub(),
       facade,
     );
-    await ctrl.listMyInvitations({ id: 'u1', email: 'me@acme.com' });
+    await call(ctrl.listMyInvitations(), undefined, {
+      context: { user: { id: 'u1', email: 'me@acme.com' } },
+    });
     expect(facade.listMyInvitations).toHaveBeenCalledWith('me@acme.com');
   });
 
@@ -146,7 +158,13 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       facade,
     );
     await expect(
-      ctrl.acceptInvitation({ invitationId: 'inv-1' }, { id: 'u1', email: 'me@acme.com' }),
+      call(
+        ctrl.acceptInvitation(),
+        { invitationId: 'inv-1' },
+        {
+          context: { user: { id: 'u1', email: 'me@acme.com' } },
+        },
+      ),
     ).resolves.toEqual({ tenantId: 't1', roleKey: 'member' });
     expect(facade.acceptInvitation).toHaveBeenCalledWith('inv-1', {
       userId: 'u1',
@@ -164,12 +182,18 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       facade,
     );
     await expect(
-      ctrl.rejectInvitation({ invitationId: 'inv-1' }, { id: 'u1', email: 'me@acme.com' }),
+      call(
+        ctrl.rejectInvitation(),
+        { invitationId: 'inv-1' },
+        {
+          context: { user: { id: 'u1', email: 'me@acme.com' } },
+        },
+      ),
     ).resolves.toEqual({ ok: true });
     expect(facade.rejectInvitation).toHaveBeenCalledWith('inv-1', 'me@acme.com');
   });
 
-  it('BA status 为字符串的 4xx（如 setActive 非成员 403）同样归一透传', async () => {
+  it('BA status 为字符串的 4xx（如 setActive 非成员 403）经 WP-D 归一 FORBIDDEN·__rest 携逐字 403 体', async () => {
     const apiError = Object.assign(new Error('Not a member'), { status: '403' });
     const sessions = sessionsStub();
     const ctrl = new OrganizationsSelfController(
@@ -179,15 +203,18 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       sessions,
       selfFacadeStub(),
     );
-    await expect(
-      ctrl.setActive(
-        HEADERS,
-        { organizationId: 'org_1' },
-        { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
-      ),
-    ).rejects.toMatchObject({
-      status: 403,
-    });
+    const caught = await call(
+      ctrl.setActive(),
+      { organizationId: 'org_1' },
+      {
+        context: {
+          user: { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
+          headers: HEADERS,
+        },
+      },
+    ).catch((error: unknown) => error);
+    expect(caught).toBeInstanceOf(ORPCError);
+    expect((caught as ORPCError<string, unknown>).code).toBe('FORBIDDEN');
     // BA 写失败 → 不得清租位（不产生 org 已切/租已清的半态）。
     expect(sessions.clearActiveTenant).not.toHaveBeenCalled();
   });
@@ -203,10 +230,15 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       selfFacadeStub(),
     );
     await expect(
-      ctrl.setActive(
-        HEADERS,
+      call(
+        ctrl.setActive(),
         { organizationId: 'org_1' },
-        { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
+        {
+          context: {
+            user: { id: 'u1', email: 'me@acme.com', sessionId: 'sess-1' },
+            headers: HEADERS,
+          },
+        },
       ),
     ).resolves.toEqual({ ok: true });
     expect(clearActiveTenant).toHaveBeenCalledWith('sess-1');
@@ -222,7 +254,11 @@ describe('OrganizationsSelfController（个人通道门面·X7 邀请面换自�
       { clearActiveTenant } as unknown as AuthSessionStore,
       selfFacadeStub(),
     );
-    await ctrl.setActive(HEADERS, { organizationId: 'org_1' }, { id: 'u1', email: 'me@acme.com' });
+    await call(
+      ctrl.setActive(),
+      { organizationId: 'org_1' },
+      { context: { user: { id: 'u1', email: 'me@acme.com' }, headers: HEADERS } },
+    );
     expect(clearActiveTenant).not.toHaveBeenCalled();
   });
 });
@@ -243,7 +279,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       sessionsStub(),
       selfFacadeStub(),
     );
-    await expect(ctrl.odooAvailability()).resolves.toEqual({
+    await expect(call(ctrl.odooAvailability())).resolves.toEqual({
       available: true,
       odooBindingStatus: 'ready',
       odooCompanyId: 42,
@@ -259,7 +295,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       sessionsStub(),
       selfFacadeStub(),
     );
-    await expect(ctrl.odooAvailability()).resolves.toEqual({
+    await expect(call(ctrl.odooAvailability())).resolves.toEqual({
       available: false,
       odooBindingStatus: null,
       odooCompanyId: null,
@@ -275,7 +311,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       sessionsStub(),
       selfFacadeStub(),
     );
-    await expect(ctrl.odooAvailability()).resolves.toEqual({
+    await expect(call(ctrl.odooAvailability())).resolves.toEqual({
       available: false,
       odooBindingStatus: null,
       odooCompanyId: null,
@@ -297,7 +333,7 @@ describe('OrganizationsSelfController#odooAvailability（apps 面板数据源·�
       sessionsStub(),
       selfFacadeStub(),
     );
-    await expect(ctrl.odooAvailability()).resolves.toEqual({
+    await expect(call(ctrl.odooAvailability())).resolves.toEqual({
       available: false,
       odooBindingStatus: 'provisioning',
       odooCompanyId: null,

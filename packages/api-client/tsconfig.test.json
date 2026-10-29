@@ -8,6 +8,8 @@
     "baseUrl": "../../",
     "paths": {
       "@core/saas-kit/*": ["libs/core/src/*"],
+      "@saas/api-contract": ["libs/api-contract/src/index.ts"],
+      "@saas/api-contract/*": ["libs/api-contract/src/*"],
       "@saas/contracts": ["libs/contracts/src/index.ts"],
       "@saas/contracts/*": ["libs/contracts/src/*"]
     }

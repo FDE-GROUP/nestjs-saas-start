@@ -7,7 +7,7 @@ import {
 } from '../components/billing-panels';
 import { Feedback } from '../components/forms';
 import { ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { apiErrorDetail, describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
@@ -20,30 +20,29 @@ import { requireSession } from '../lib/session';
 export const Route = createFileRoute('/settings/billing')({
   loader: async () => {
     await requireSession();
-    const [cur, pay] = await Promise.all([
-      api.GET('/api/v1/subscriptions/current'),
-      api.GET('/api/v1/payment/test'),
-    ]);
-    if (cur.error) {
+    let snap: Awaited<ReturnType<typeof rpc.subscriptions.current>> | null = null;
+    let snapDenied = false;
+    let snapErr: string | null = null;
+    try {
+      snap = await rpc.subscriptions.current();
+    } catch (e) {
       logApiError(
         { path: '/api/v1/subscriptions/current', method: 'GET', scope: 'billing.subscription' },
-        cur.error,
+        e,
       );
+      snapDenied = apiErrorDetail(e).statusCode === 403;
+      snapErr = describeApiError(e);
     }
-    // /payment/test 契约无错误响应分支→openapi-fetch 的 error 恒 undefined 类型，
-    // 若 if(pay.error) 会把 pay 收窄为 never；改以 response.ok 现形运行期非 2xx 失败。
-    if (!pay.response.ok) {
+    let status: Awaited<ReturnType<typeof rpc.payment.test>> | null = null;
+    try {
+      status = await rpc.payment.test();
+    } catch (e) {
       logApiError(
         { path: '/api/v1/payment/test', method: 'GET', scope: 'billing.payment-status' },
-        pay.error,
+        e,
       );
     }
-    return {
-      snap: cur.error ? null : (cur.data?.data ?? null),
-      snapDenied: !!cur.error && apiErrorDetail(cur.error).statusCode === 403,
-      snapErr: cur.error ? describeApiError(cur.error) : null,
-      status: pay.response.ok ? (pay.data?.data ?? null) : null,
-    };
+    return { snap, snapDenied, snapErr, status };
   },
   component: BillingPage,
 });
@@ -59,7 +58,7 @@ function BillingPage() {
       method: 'POST',
       scope: 'billing.subscription.provision',
       successMessage: '已更新订阅档位',
-      thunk: () => api.POST('/api/v1/subscriptions', { body: dto }),
+      thunk: () => rpc.subscriptions.create(dto),
     });
   }
 

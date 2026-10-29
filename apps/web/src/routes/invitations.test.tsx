@@ -7,13 +7,12 @@ import { routeTree } from '../routeTree.gen';
 
 /**
  * 「我的邀请」路由级集成（module-frontend-test-completion 切片 A·A-2）。
- * loader 依赖 `requireSession`（守卫）+ openapi `api.GET`（相对 URL 在 jsdom 会抛，见既有 §5 边界）——
- * 故 `vi.mock` 两模块以注入拟真 envelope，经真实 routeTree 的 memory router 打穿 loader 三分支：
- * error→ErrorPanel·ok 空→EmptyPanel·ok 有→行 + 接受/拒绝。mutation 的动作走 mock `api`，不断真网络。
+ * loader 依赖 `requireSession`（守卫）+ typed `rpc.organizations.listMyInvitations`——【换轨 B-6】
+ * 客户端拆信封直返 payload·抛错——故 `vi.mock` 两模块注入拟真 payload，经真实 routeTree 的 memory
+ * router 打穿 loader 三分支：error→ErrorPanel·ok 空→EmptyPanel·ok 有→行 + 接受/拒绝。
  */
 const mocks = vi.hoisted(() => ({
-  GET: vi.fn(),
-  POST: vi.fn(),
+  listMyInvitations: vi.fn(),
 }));
 
 vi.mock('../lib/session', () => ({
@@ -23,7 +22,7 @@ vi.mock('../lib/session', () => ({
   }),
 }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: mocks.POST, PATCH: vi.fn(), DELETE: vi.fn() },
+  rpc: { organizations: { listMyInvitations: mocks.listMyInvitations } },
 }));
 
 function renderAt(path: string) {
@@ -39,8 +38,7 @@ function renderAt(path: string) {
 }
 
 beforeEach(() => {
-  mocks.GET.mockReset();
-  mocks.POST.mockReset();
+  mocks.listMyInvitations.mockReset();
 });
 
 afterEach(() => {
@@ -49,24 +47,23 @@ afterEach(() => {
 
 describe('我的邀请（路由级 · loader 三分支）', () => {
   it('loader error → ErrorPanel 展示后端文案', async () => {
-    mocks.GET.mockResolvedValue({ data: null, error: { message: '邀请服务暂不可用' } });
+    mocks.listMyInvitations.mockRejectedValue({ message: '邀请服务暂不可用' });
     renderAt('/invitations');
     await vi.waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(screen.getByRole('alert').textContent).toContain('邀请服务暂不可用');
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/organizations/invitations/mine');
+    expect(mocks.listMyInvitations).toHaveBeenCalled();
   });
 
   it('loader ok 空列表 → EmptyPanel', async () => {
-    mocks.GET.mockResolvedValue({ data: { data: [] }, error: null });
+    mocks.listMyInvitations.mockResolvedValue([]);
     renderAt('/invitations');
     await vi.waitFor(() => expect(screen.getByText('暂无待处理的邀请。')).toBeTruthy());
   });
 
   it('loader ok 有行 → 渲染组织名/角色 + 接受/拒绝动作', async () => {
-    mocks.GET.mockResolvedValue({
-      data: { data: [{ id: 'i1', email: 'x@y.z', roleKey: 'admin', organizationName: 'Acme' }] },
-      error: null,
-    });
+    mocks.listMyInvitations.mockResolvedValue([
+      { id: 'i1', email: 'x@y.z', roleKey: 'admin', organizationName: 'Acme' },
+    ]);
     renderAt('/invitations');
     await vi.waitFor(() => expect(screen.getByText('Acme')).toBeTruthy());
     expect(screen.getByText('(admin)')).toBeTruthy();

@@ -7,12 +7,13 @@ import { routeTree } from '../routeTree.gen';
 
 /**
  * 「邀请管理」（管理员面·切片 A·A-2）。`/settings/invitations` 为根级路由（无嵌套父）。
- * mock `session`/`api` 注入拟真 envelope，经 memory router 打穿 loader 分支：
+ * 【换轨 B-6】loader 改 typed `rpc`（拆信封直返 payload·抛错），故 mock 改过过程方
+ * `organizations.invitations.list`（+ probe 支路 `organizations.list`），经 memory router 打穿 loader 分支：
  * error→ErrorPanel·ok 空→发邀表单 + EmptyPanel·ok 有→撤回行。
  */
 const mocks = vi.hoisted(() => ({
-  GET: vi.fn(),
-  POST: vi.fn(),
+  invitationsList: vi.fn(),
+  organizationsList: vi.fn(),
 }));
 
 vi.mock('../lib/session', () => ({
@@ -22,7 +23,12 @@ vi.mock('../lib/session', () => ({
   }),
 }));
 vi.mock('../lib/api', () => ({
-  api: { GET: mocks.GET, POST: mocks.POST, PATCH: vi.fn(), DELETE: vi.fn() },
+  rpc: {
+    organizations: {
+      list: mocks.organizationsList,
+      invitations: { list: mocks.invitationsList, create: vi.fn(), cancel: vi.fn() },
+    },
+  },
 }));
 
 function renderAt(path: string) {
@@ -38,33 +44,32 @@ function renderAt(path: string) {
 }
 
 beforeEach(() => {
-  mocks.GET.mockReset();
-  mocks.POST.mockReset();
+  mocks.invitationsList.mockReset();
+  mocks.organizationsList.mockReset();
 });
 afterEach(cleanup);
 
 describe('邀请管理（路由级 · loader 分支 + 表单）', () => {
   it('loader error → ErrorPanel', async () => {
-    mocks.GET.mockResolvedValue({ data: null, error: { message: '邀请列表加载失败' } });
+    mocks.invitationsList.mockRejectedValue({ message: '邀请列表加载失败' });
     renderAt('/settings/invitations');
     await vi.waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(screen.getByRole('alert').textContent).toContain('邀请列表加载失败');
   });
 
   it('loader ok 空 → 发邀表单（邮箱/角色/邀请）+ 空态', async () => {
-    mocks.GET.mockResolvedValue({ data: { data: { invitations: [] } }, error: null });
+    mocks.invitationsList.mockResolvedValue({ invitations: [] });
     renderAt('/settings/invitations');
     await vi.waitFor(() => expect(screen.getByText('发送邀请')).toBeTruthy());
     expect(screen.getByText('暂无待处理邀请。')).toBeTruthy();
     expect(screen.getByRole('button', { name: '邀请' })).toBeTruthy();
-    expect(mocks.GET).toHaveBeenCalledWith('/api/v1/organizations/invitations');
+    expect(mocks.invitationsList).toHaveBeenCalled();
   });
 
   it('loader ok 有行 → 邮箱 + 撤回动作', async () => {
-    mocks.GET.mockResolvedValue({
-      data: { data: [{ id: 'i1', email: 'pending@x.com', roleKey: 'member', status: 'pending' }] },
-      error: null,
-    });
+    mocks.invitationsList.mockResolvedValue([
+      { id: 'i1', email: 'pending@x.com', roleKey: 'member', status: 'pending' },
+    ]);
     renderAt('/settings/invitations');
     await vi.waitFor(() => expect(screen.getByText('pending@x.com')).toBeTruthy());
     expect(screen.getByRole('button', { name: '撤回' })).toBeTruthy();

@@ -1,0 +1,32 @@
+{
+  "name": "@saas/api-contract",
+  "version": "0.0.0",
+  "description": "oRPC 契约先行单源：procedure contract + openapi meta + AppRouterContract 聚合（依赖 @saas/contracts zod 单源 + @orpc/contract/@orpc/openapi）。前后端共享 wire 型的类型 SSOT（换轨 WP-E/#2·高危 #5 经人签核）。",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*"
+      ]
+    }
+  },
+  "dependencies": {
+    "@orpc/contract": "2.0.0-beta.44",
+    "@orpc/openapi": "2.0.0-beta.44",
+    "@saas/contracts": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

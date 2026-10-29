@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
-import type { components } from '@saas/api-client';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SubscriptionView } from './index';
 
-type SubscriptionResponse = components['schemas']['SubscriptionResponse'];
+type SubscriptionResponse = import('@saas/contracts').SubscriptionView;
 
 const active: SubscriptionResponse = {
   hasSubscription: true,

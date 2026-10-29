@@ -1,16 +1,16 @@
-import type { components } from '@saas/api-client';
+import type { SubscriptionView as SubscriptionContractView } from '@saas/contracts';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 import { Feedback, Field, FormWrap, SubmitButton } from '../components/forms';
 import { EmptyPanel, ErrorPanel, SectionHeading } from '../components/panels';
-import { api } from '../lib/api';
+import { rpc } from '../lib/api';
 import { signOut } from '../lib/auth';
 import { describeApiError } from '../lib/format';
 import { logApiError } from '../lib/log';
 import { useAction } from '../lib/mutation';
 import { requireSession } from '../lib/session';
 
-type SubscriptionResponse = components['schemas']['SubscriptionResponse'];
+type SubscriptionResponse = SubscriptionContractView;
 
 /** 透传面防御形（GET /organizations 返回 BA organization 列表·无 Nest typed 契约）。 */
 interface OrganizationOrg {
@@ -60,47 +60,45 @@ export const Route = createFileRoute('/')({
   // 未登录直接弹回登录页（deny-by-default 的前端映射·与后端会话墙同向）。
   loader: async () => {
     const session = await requireSession();
-    // 先取「我可成员的组织」列表（GET /organizations）——用于判定是否需引导落租（须先于订阅取数）。
-    const { data: organizationData, error: organizationError } =
-      await api.GET('/api/v1/organizations');
-    if (organizationError)
-      logApiError({ path: '/api/v1/organizations', scope: 'organizations' }, organizationError);
-    const organizations = organizationError ? [] : extractOrganizations(organizationData?.data);
+    // 先取「我可成员的组织」列表（organizations.list）——用于判定是否需引导落租（须先于订阅取数）。
+    let organizations: OrganizationOrg[] = [];
+    try {
+      organizations = extractOrganizations(await rpc.organizations.list());
+    } catch (e) {
+      logApiError({ path: '/api/v1/organizations', scope: 'organizations' }, e);
+    }
 
-    // 租户目录（GET /tenants·双层切换器数据源）：把成员组织按派生租户归组。与 `organizations`
+    // 租户目录（tenants.list·双层切换器数据源）：把成员组织按派生租户归组。与 `organizations`
     // 取数正交（后者仍供引导落租/订阅门控），目录缺席（未携/错）降级为空→切换器不渲。
-    const { data: tenantData, error: tenantError } = await api.GET('/api/v1/tenants');
-    if (tenantError) logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, tenantError);
-    const tenants = tenantError ? [] : extractTenants(tenantData?.data);
+    let tenants: TenantDirectoryEntry[] = [];
+    try {
+      tenants = extractTenants(await rpc.tenants.list());
+    } catch (e) {
+      logApiError({ path: '/api/v1/tenants', scope: 'tenants' }, e);
+    }
 
     // 引导落租（module-frontend-organization-bootstrap-activation）：会话未带 activeOrganizationId 且
-    // **恰有一个**成员组织时自动 `POST /api/v1/organizations/active`（消订阅面冷 403·多组织交手动切换器·不自动择）。
+    // **恰有一个**成员组织时自动 `organizations.setActive`（消订阅面冷 403·多组织交手动切换器·不自动择）。
     let activeOrganizationId = session.session.activeOrganizationId;
     let note: string | null = null;
     if (!activeOrganizationId && organizations.length === 1 && organizations[0]?.id) {
-      const { error: activateError } = await api.POST('/api/v1/organizations/active', {
-        body: { organizationId: organizations[0].id },
-      });
-      if (activateError) {
-        logApiError(
-          { path: '/api/v1/organizations/active', scope: 'organization.bootstrap' },
-          activateError,
-        );
-        note = describeApiError(activateError);
-      } else {
+      try {
+        await rpc.organizations.setActive({ organizationId: organizations[0].id });
         activeOrganizationId = organizations[0].id;
+      } catch (e) {
+        logApiError({ path: '/api/v1/organizations/active', scope: 'organization.bootstrap' }, e);
+        note = describeApiError(e);
       }
     }
 
     // 订阅取数 gate 在「有活跃租户」之后：无活跃租户则不打（避免无谓 403）。
     let subscription: SubscriptionResponse | null = null;
     if (activeOrganizationId) {
-      const { data: subData, error: subError } = await api.GET('/api/v1/subscriptions/current');
-      if (subError) {
-        logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, subError);
-        note = describeApiError(subError);
-      } else {
-        subscription = subData?.data ?? null;
+      try {
+        subscription = (await rpc.subscriptions.current()) as unknown as SubscriptionResponse;
+      } catch (e) {
+        logApiError({ path: '/api/v1/subscriptions/current', scope: 'subscription' }, e);
+        note = describeApiError(e);
       }
     }
 
@@ -199,10 +197,7 @@ function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
       method: 'POST',
       scope: 'organization.switch',
       successMessage: `已切换到「${orgName}」`,
-      thunk: () =>
-        api.POST('/api/v1/organizations/active', {
-          body: { organizationId: orgId },
-        }),
+      thunk: () => rpc.organizations.setActive({ organizationId: orgId }),
     });
   }
 
@@ -213,7 +208,7 @@ function TenantSwitchSection({ tenants }: { tenants: TenantDirectoryEntry[] }) {
       method: 'PUT',
       scope: 'tenant.switch',
       successMessage: `已切换到租户「${tenantName}」`,
-      thunk: () => api.PUT('/api/v1/tenants/active', { body: { tenantId } }),
+      thunk: () => rpc.tenants.setActive({ tenantId }),
     });
   }
 
@@ -297,7 +292,7 @@ function OrganizationOnboardingPanel() {
       method: 'POST',
       scope: 'organization.apply',
       successMessage: '已提交，等待平台审批。',
-      thunk: () => api.POST('/api/v1/organizations/applications', { body: { name, slug } }),
+      thunk: () => rpc.organizations.applications.apply({ name, slug }),
     });
   }
 

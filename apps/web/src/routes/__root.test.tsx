@@ -25,13 +25,21 @@ vi.mock('../lib/auth', () => ({
   signInMagicLink: vi.fn(),
 }));
 
-// authed 反向守卫会把 /login 弹向 /（首页 dashboard）；其 loader 走 openapi `api.GET`，jsdom 下
+// authed 反向守卫会把 /login 弹向 /（首页 dashboard）；其 loader 走 typed `rpc`，jsdom 下
 // 相对 URL 的 `new Request` 必抛（已知陷阱），错误冒泡顶掉 root header。本测只验 root 会话面板，
-// 故 mock `api` 数据接缝令 / 干净渲染（requireSession 内部走已 mock 的 getSession）。
+// 故 mock `rpc` 数据接缝（【换轨 B-6】拆信封直返 payload）令 / 干净渲染（requireSession 内部走已 mock 的 getSession）。
 vi.mock('../lib/api', () => ({
-  api: {
-    GET: vi.fn(async () => ({ data: { data: [] }, error: undefined })),
-    POST: vi.fn(async () => ({ data: {}, error: undefined })),
+  rpc: {
+    organizations: {
+      list: vi.fn(async () => []),
+      setActive: vi.fn(async () => ({})),
+      applications: { apply: vi.fn(async () => ({})) },
+    },
+    tenants: {
+      list: vi.fn(async () => ({ tenants: [] })),
+      setActive: vi.fn(async () => ({})),
+    },
+    subscriptions: { current: vi.fn(async () => ({ hasSubscription: false })) },
   },
 }));
 

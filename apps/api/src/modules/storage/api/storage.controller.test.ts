@@ -1,5 +1,6 @@
 import { ERROR_CODES } from '@core/saas-kit/shared-kernel/errors/error-codes';
 import { BadRequestException, Logger } from '@nestjs/common';
+import { call } from '@orpc/server';
 import type { FastifyRequest } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageController } from './storage.controller';
@@ -126,14 +127,14 @@ describe('StorageController.deleteFile / getFileUrl（G2）', () => {
 
   it('deleteFile → { success }', async () => {
     const { ctrl, storageService } = makeController();
-    const out = await ctrl.deleteFile('k');
+    const out = await call(ctrl.deleteFile(), { key: 'k' });
     expect(storageService.deleteFile).toHaveBeenCalledWith('k');
     expect(out).toEqual({ success: true });
   });
 
   it('getFileUrl → { url }（透传 expiresIn）', async () => {
     const { ctrl, storageService } = makeController();
-    const out = await ctrl.getFileUrl('k', 60);
+    const out = await call(ctrl.getFileUrl(), { key: 'k', expiresIn: 60 });
     expect(storageService.getFileUrl).toHaveBeenCalledWith('k', 60);
     expect(out).toEqual({ url: 'https://signed' });
   });
