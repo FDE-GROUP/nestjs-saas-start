@@ -5,10 +5,11 @@
  * 平台操作员治理切片（多租户 S5·治理台改锚 tenant 主键）：列表/详情/暂停/恢复/可见性/软删/硬删 + org 下钻诊断/导出。
  * 全线 `PlatformOperatorGuard`（唯一跨租权威·fail-closed）·故意无租户作用域——守卫留 apps/api。`:tenantId`/`:orgId`
  * 路径参经紧凑 input 合并（纯参=`platformTenantIdParamSchema`·body⊕参=`setTenantOrgVisibilityInputSchema`·
- * 下钻双参=`platformOrgDrilldownParamSchema`）。exportData 逐字透传（不挂 `.output`）。in-handler `NotFoundException` 经 WP-D 承接。
+ * 下钻双参=`platformOrgDrilldownParamSchema`）。exportData M4-b 挂 `.output`（`organizationDataExportViewSchema`·顶层骨架防脆）。in-handler `NotFoundException` 经 WP-D 承接。
  */
 import {
   listPlatformTenantsQuerySchema,
+  organizationDataExportViewSchema,
   organizationDiagnosticsSchema,
   platformOrgDrilldownParamSchema,
   platformTenantDetailSchema,
@@ -103,4 +104,5 @@ export const platformTenantsDiagnosticsContract = oc
   .meta(platformTenantsDiagnosticsMeta);
 export const platformTenantsExportContract = oc
   .input(platformOrgDrilldownParamSchema)
+  .output(organizationDataExportViewSchema)
   .meta(platformTenantsExportMeta);

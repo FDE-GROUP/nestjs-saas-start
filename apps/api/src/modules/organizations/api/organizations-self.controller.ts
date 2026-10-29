@@ -32,10 +32,13 @@ import {
   selfSetActiveMeta,
 } from '@saas/api-contract/index';
 import {
+  acceptInvitationResultSchema,
   invitationIdSchema,
   leaveOrganizationSchema,
+  okResponseSchema,
   organizationOdooAvailabilityViewSchema,
   setActiveOrganizationSchema,
+  tenantInvitationViewListSchema,
 } from '@saas/contracts/index';
 import { os } from '../../../common/orpc/orpc';
 import { requireSessionUser } from '../../../common/orpc/orpc-context';
@@ -152,6 +155,7 @@ export class OrganizationsSelfController {
   leave() {
     return os
       .input(leaveOrganizationSchema)
+      .output(okResponseSchema)
       .meta(selfLeaveMeta)
       .handler(async ({ context }) => {
         const user = requireSessionUser(context);
@@ -168,6 +172,7 @@ export class OrganizationsSelfController {
   acceptInvitation() {
     return os
       .input(invitationIdSchema)
+      .output(acceptInvitationResultSchema)
       .meta(selfAcceptMeta)
       .handler(async ({ input, context }) => {
         const user = requireSessionUser(context);
@@ -186,6 +191,7 @@ export class OrganizationsSelfController {
   rejectInvitation() {
     return os
       .input(invitationIdSchema)
+      .output(okResponseSchema)
       .meta(selfRejectMeta)
       .handler(async ({ input, context }) => {
         const user = requireSessionUser(context);
@@ -200,10 +206,13 @@ export class OrganizationsSelfController {
   @UseGuards(SessionGuard)
   @Impl(selfListInvitationsContract)
   listMyInvitations() {
-    return os.meta(selfListInvitationsMeta).handler(async ({ context }) => {
-      const user = requireSessionUser(context);
-      return this.facade.listMyInvitations(user.email);
-    });
+    return os
+      .output(tenantInvitationViewListSchema)
+      .meta(selfListInvitationsMeta)
+      .handler(async ({ context }) => {
+        const user = requireSessionUser(context);
+        return this.facade.listMyInvitations(user.email);
+      });
   }
 
   /**

@@ -8,6 +8,7 @@ import {
   usersExportContract,
   usersExportMeta,
 } from '@saas/api-contract/index';
+import { userDataExportViewSchema } from '@saas/contracts/index';
 import { os } from '../../../common/orpc/orpc';
 import { requireSessionUser } from '../../../common/orpc/orpc-context';
 import { SessionGuard } from '../../auth/api/guards/session.guard';
@@ -49,13 +50,16 @@ export class UsersController {
   @UseGuards(SessionGuard)
   @Impl(usersExportContract)
   exportMe() {
-    return os.meta(usersExportMeta).handler(async ({ context }) => {
-      const user = requireSessionUser(context);
-      this.logger.log(`Exporting personal data for user ${user.id}`);
-      return this.queryBus.execute<ExportUserDataQuery, UserDataExportReadModel>(
-        new ExportUserDataQuery(user.id),
-      );
-    });
+    return os
+      .output(userDataExportViewSchema)
+      .meta(usersExportMeta)
+      .handler(async ({ context }) => {
+        const user = requireSessionUser(context);
+        this.logger.log(`Exporting personal data for user ${user.id}`);
+        return this.queryBus.execute<ExportUserDataQuery, UserDataExportReadModel>(
+          new ExportUserDataQuery(user.id),
+        );
+      });
   }
 
   /**

@@ -4,6 +4,7 @@
  * 经 `@SerializeOptions({schema})` 消费——默认 strip 即白名单（未声明字段/PII 剥落不出线）。
  */
 export * from './authorization';
+export * from './health';
 export * from './mcp';
 export * from './oauth-sso';
 export * from './organizations';
@@ -14,4 +15,5 @@ export * from './posts';
 export * from './storage';
 export * from './subscriptions';
 export * from './tenants';
+export * from './users';
 export * from './workspaces';

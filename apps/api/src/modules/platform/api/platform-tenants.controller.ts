@@ -47,6 +47,7 @@ import {
 } from '@saas/api-contract/index';
 import {
   listPlatformTenantsQuerySchema,
+  organizationDataExportViewSchema,
   organizationDiagnosticsSchema,
   platformOrgDrilldownParamSchema,
   platformTenantDetailSchema,
@@ -293,6 +294,7 @@ export class PlatformTenantsController {
   exportData() {
     return os
       .input(platformOrgDrilldownParamSchema)
+      .output(organizationDataExportViewSchema)
       .meta(platformTenantsExportMeta)
       .handler(async ({ input }) => {
         const payload = await this.queryBus.execute<

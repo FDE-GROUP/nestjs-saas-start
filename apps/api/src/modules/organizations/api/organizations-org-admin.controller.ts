@@ -20,7 +20,10 @@ import {
 import {
   createInvitationSchema,
   invitationIdSchema,
+  okResponseSchema,
   removeMemberSchema,
+  tenantInvitationViewListSchema,
+  tenantMemberViewListSchema,
   updateMemberRoleSchema,
 } from '@saas/contracts/index';
 import { os } from '../../../common/orpc/orpc';
@@ -64,7 +67,10 @@ export class OrganizationsOrgAdminController {
   @Can('read', 'Member')
   @Impl(orgAdminListMembersContract)
   listMembers() {
-    return os.meta(orgAdminListMembersMeta).handler(() => this.facade.listMembers());
+    return os
+      .output(tenantMemberViewListSchema)
+      .meta(orgAdminListMembersMeta)
+      .handler(() => this.facade.listMembers());
   }
 
   /**
@@ -76,6 +82,7 @@ export class OrganizationsOrgAdminController {
   updateMemberRole() {
     return os
       .input(updateMemberRoleSchema)
+      .output(okResponseSchema)
       .meta(orgAdminUpdateRoleMeta)
       .handler(async ({ input }) => {
         await this.facade.updateMemberRole(input.memberId, input.role);
@@ -92,6 +99,7 @@ export class OrganizationsOrgAdminController {
   removeMember() {
     return os
       .input(removeMemberSchema)
+      .output(okResponseSchema)
       .meta(orgAdminRemoveMemberMeta)
       .handler(async ({ input }) => {
         await this.facade.removeMember(input.memberId);
@@ -106,7 +114,10 @@ export class OrganizationsOrgAdminController {
   @Can('read', 'Invitation')
   @Impl(orgAdminListInvitationsContract)
   listInvitations() {
-    return os.meta(orgAdminListInvitationsMeta).handler(() => this.facade.listInvitations());
+    return os
+      .output(tenantInvitationViewListSchema)
+      .meta(orgAdminListInvitationsMeta)
+      .handler(() => this.facade.listInvitations());
   }
 
   /**
@@ -118,6 +129,7 @@ export class OrganizationsOrgAdminController {
   createInvitation() {
     return os
       .input(createInvitationSchema)
+      .output(okResponseSchema)
       .meta(orgAdminCreateInvitationMeta)
       .handler(async ({ input }) => {
         await this.facade.createInvitation(input.email, input.role);
@@ -134,6 +146,7 @@ export class OrganizationsOrgAdminController {
   cancelInvitation() {
     return os
       .input(invitationIdSchema)
+      .output(okResponseSchema)
       .meta(orgAdminCancelInvitationMeta)
       .handler(async ({ input }) => {
         await this.facade.cancelInvitation(input.invitationId);

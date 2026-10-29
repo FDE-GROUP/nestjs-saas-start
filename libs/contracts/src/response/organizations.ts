@@ -89,3 +89,101 @@ export const organizationOdooAvailabilityViewSchema = z.object({
 export type OrganizationOdooAvailabilityView = z.infer<
   typeof organizationOdooAvailabilityViewSchema
 >;
+
+/**
+ * 通用写操作回执（M4-b 响应面建模·organizations 六个变更类 op 共用）。
+ *
+ * @remarks
+ * 承 `@saas/api-contract` 各面 handler 实返 `{ ok: true }`（leave/reject/updateRole/removeMember/create/cancel）。
+ * 本件为**文档/客户端型契约 + 服务端校验**（`.output` 供 openapi 回填 + router 派生型）；@Impl 双侧同挂本件，
+ * handler 侧真跑 parse（`{ ok: true }` 字面量命中·返回同形）。
+ *
+ * @public
+ */
+export const okResponseSchema = z.object({ ok: z.literal(true) });
+
+/**
+ * 租级成员行视图（↔ `TenantMemberView` 端口·只读展示四字段）。
+ * @public
+ */
+export const tenantMemberViewSchema = z.object({
+  /** 成员用户 id（租级成员定位键）。 */
+  userId: z.string(),
+  /** 用户邮箱（join user）。 */
+  email: z.string(),
+  /** 用户名（join user）。 */
+  name: z.string(),
+  /** 本租分配的角色 key（无分配行 → `member` 缺省）。 */
+  roleKey: z.string(),
+});
+
+/** 租级成员列表响应（↔ `listMembers(): TenantMemberView[]`·沿 `tenantRoleGrantViewListSchema` 具名 list 件先例）。 @public */
+export const tenantMemberViewListSchema = z.array(tenantMemberViewSchema);
+
+/**
+ * 租级邀请行视图（↔ `TenantInvitationView` 端口）。
+ *
+ * @remarks
+ * `status` 源端口无值域 enum 型（仅注释述 pending/accepted/cancelled/expired）→ 采 `z.string()`
+ * 不臆造值域（防无对拍闸保护的承诺漂移）；`expiresAt`/`createdAt` 取 `z.instanceof(Date)` 沿 page.ts 先例
+ * （序列化出线为 ISO 串·客户端 reviving 还原 Date）。
+ *
+ * @public
+ */
+export const tenantInvitationViewSchema = z.object({
+  /** 邀请行 id。 */
+  id: z.string(),
+  /** 所属租户 id。 */
+  tenantId: z.string(),
+  /** 受邀邮箱。 */
+  email: z.string(),
+  /** 授予角色 key。 */
+  roleKey: z.string(),
+  /** 邀请人用户 id（可空·系统动作）。 */
+  invitorId: z.string().nullable(),
+  /** 状态（无值域 enum 型·见 @remarks）。 */
+  status: z.string(),
+  /** 过期时刻（可空·不过期）。 */
+  expiresAt: z.instanceof(Date).nullable(),
+  /** 创建时刻。 */
+  createdAt: z.instanceof(Date),
+});
+
+/** 租级邀请列表响应（↔ `listInvitations()/listMyInvitations(): TenantInvitationView[]`）。 @public */
+export const tenantInvitationViewListSchema = z.array(tenantInvitationViewSchema);
+
+/**
+ * 接受邀请入租回执（↔ `TenantMemberFacadeService.acceptInvitation` 返回 `{ tenantId, roleKey }`）。
+ * @public
+ */
+export const acceptInvitationResultSchema = z.object({
+  /** 入落的活动租户 id。 */
+  tenantId: z.string(),
+  /** 本次授予的角色 key。 */
+  roleKey: z.string(),
+});
+
+/**
+ * 平台租户-组织导出体（↔ `OrganizationDataExport`·裁点④**顶层骨架·防脆**）。
+ *
+ * @remarks
+ * 只锁顶层六键形状，内层（成员/邀请/工作区/订阅/文章记录集）采 `z.array(z.unknown())` free-form：导出面字段随
+ * ORM/领域演化，严格逐字段会脆断，且内层记录为具名接口（无索引签名·不可赋 `Record<string, unknown>`）。@Impl 双侧
+ * 同挂本件 → handler 侧真跑 parse：仅校顶层六键存在，内层 free-form 逐字透传不剥（不产生 PII 泄露新面·裁点③）。
+ *
+ * @public
+ */
+export const organizationDataExportViewSchema = z.object({
+  /** 所属租户行。 */
+  organization: z.record(z.string(), z.unknown()),
+  /** 成员记录集合（内层 free-form·防脆）。 */
+  members: z.array(z.unknown()),
+  /** 邀请记录集合（内层 free-form·防脆）。 */
+  invitations: z.array(z.unknown()),
+  /** 工作区记录集合（内层 free-form·防脆）。 */
+  workspaces: z.array(z.unknown()),
+  /** 订阅记录集合（内层 free-form·防脆）。 */
+  subscriptions: z.array(z.unknown()),
+  /** 文章记录集合（内层 free-form·防脆）。 */
+  posts: z.array(z.unknown()),
+});

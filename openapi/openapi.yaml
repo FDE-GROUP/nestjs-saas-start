@@ -13,7 +13,32 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  info:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                  error:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                  details:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                required:
+                  - status
+                  - details
+                additionalProperties: false
   /posts:
     get:
       operationId: posts.list
@@ -157,7 +182,68 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      handle:
+                        type: string
+                      role:
+                        type: string
+                      emailVerified:
+                        type: boolean
+                      image:
+                        type:
+                          - string
+                          - 'null'
+                      firstName:
+                        type:
+                          - string
+                          - 'null'
+                      lastName:
+                        type:
+                          - string
+                          - 'null'
+                      createdAt: {}
+                      updatedAt: {}
+                    required:
+                      - id
+                      - email
+                      - name
+                      - handle
+                      - role
+                      - emailVerified
+                      - image
+                      - firstName
+                      - lastName
+                      - createdAt
+                      - updatedAt
+                    additionalProperties: false
+                  accounts:
+                    type: array
+                    items: {}
+                  sessions:
+                    type: array
+                    items: {}
+                  consents:
+                    type: array
+                    items: {}
+                required:
+                  - user
+                  - accounts
+                  - sessions
+                  - consents
+                additionalProperties: false
   /users/me:
     delete:
       operationId: users.remove
@@ -899,7 +985,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/invitations/accept:
     post:
       operationId: organizations.acceptInvitation
@@ -921,7 +1017,19 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  roleKey:
+                    type: string
+                required:
+                  - tenantId
+                  - roleKey
+                additionalProperties: false
   /organizations/invitations/reject:
     post:
       operationId: organizations.rejectInvitation
@@ -943,7 +1051,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/invitations/mine:
     get:
       operationId: organizations.listMyInvitations
@@ -951,7 +1069,42 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    tenantId:
+                      type: string
+                    email:
+                      type: string
+                    roleKey:
+                      type: string
+                    invitorId:
+                      type:
+                        - string
+                        - 'null'
+                    status:
+                      type: string
+                    expiresAt:
+                      anyOf:
+                        - {}
+                        - type: 'null'
+                    createdAt: {}
+                  required:
+                    - id
+                    - tenantId
+                    - email
+                    - roleKey
+                    - invitorId
+                    - status
+                    - expiresAt
+                    - createdAt
+                  additionalProperties: false
   /organizations/odoo/availability:
     get:
       operationId: organizations.odooAvailability
@@ -1161,7 +1314,27 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                    email:
+                      type: string
+                    name:
+                      type: string
+                    roleKey:
+                      type: string
+                  required:
+                    - userId
+                    - email
+                    - name
+                    - roleKey
+                  additionalProperties: false
   /organizations/members/role:
     post:
       operationId: organizations.members.updateRole
@@ -1188,7 +1361,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/members/remove:
     post:
       operationId: organizations.members.remove
@@ -1210,7 +1393,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/invitations:
     get:
       operationId: organizations.invitations.list
@@ -1218,7 +1411,42 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    tenantId:
+                      type: string
+                    email:
+                      type: string
+                    roleKey:
+                      type: string
+                    invitorId:
+                      type:
+                        - string
+                        - 'null'
+                    status:
+                      type: string
+                    expiresAt:
+                      anyOf:
+                        - {}
+                        - type: 'null'
+                    createdAt: {}
+                  required:
+                    - id
+                    - tenantId
+                    - email
+                    - roleKey
+                    - invitorId
+                    - status
+                    - expiresAt
+                    - createdAt
+                  additionalProperties: false
     post:
       operationId: organizations.invitations.create
       summary: Invite a member to the active tenant (owner/admin · CASL create)
@@ -1244,7 +1472,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/invitations/cancel:
     post:
       operationId: organizations.invitations.cancel
@@ -1266,7 +1504,17 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                required:
+                  - ok
+                additionalProperties: false
   /organizations/roles:
     get:
       operationId: organizations.roles.list
@@ -2135,4 +2383,36 @@ paths:
       responses:
         '200':
           description: OK
-          content: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organization:
+                    type: object
+                    propertyNames:
+                      type: string
+                    additionalProperties: {}
+                  members:
+                    type: array
+                    items: {}
+                  invitations:
+                    type: array
+                    items: {}
+                  workspaces:
+                    type: array
+                    items: {}
+                  subscriptions:
+                    type: array
+                    items: {}
+                  posts:
+                    type: array
+                    items: {}
+                required:
+                  - organization
+                  - members
+                  - invitations
+                  - workspaces
+                  - subscriptions
+                  - posts
+                additionalProperties: false

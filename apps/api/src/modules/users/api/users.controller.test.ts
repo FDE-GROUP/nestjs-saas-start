@@ -22,12 +22,30 @@ describe('UsersController (bus-backed, self-service surface only)', () => {
   });
 
   it('GET /users/me/data-export dispatches ExportUserDataQuery with session user id', async () => {
-    const payload = { user: { id: 'u9' }, accounts: [], sessions: [], consents: [] } as never;
+    // 导出面 M4-b 挂 `.output(userDataExportViewSchema)`·真实读模型形（user 全字段）→ `call` 返 parse 后同形**新对象**（identity 改 equality）。
+    const payload = {
+      user: {
+        id: 'u9',
+        email: 'a@b.c',
+        name: 'A Bee',
+        handle: 'abee',
+        role: 'member',
+        emailVerified: false,
+        image: null,
+        firstName: null,
+        lastName: null,
+        createdAt: new Date('2020-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2020-01-01T00:00:00.000Z'),
+      },
+      accounts: [],
+      sessions: [],
+      consents: [],
+    } as never;
     executeQuery.mockResolvedValue(payload);
 
     await expect(
       call(controller.exportMe(), undefined, { context: { user: sessionUser } }),
-    ).resolves.toBe(payload);
+    ).resolves.toEqual(payload);
     const q = executeQuery.mock.calls[0][0];
     expect(q).toMatchObject({ userId: 'u9' });
   });

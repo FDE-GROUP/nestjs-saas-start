@@ -6,6 +6,7 @@ import { HealthCheckService } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Impl } from '@orpc/nest';
 import { healthContract, healthProcedureContract } from '@saas/api-contract/index';
+import { healthCheckResultViewSchema } from '@saas/contracts/index';
 import { os } from '../orpc/orpc';
 
 // 契约定义已前置 `@saas/api-contract` 单源（换轨 WP-E/#2·B 契约先行）；此处 re-export 保下游
@@ -33,7 +34,7 @@ export class HealthController {
   @Impl(healthContract)
   router() {
     return os.router({
-      check: os.handler(() => pingOnly(this.health)),
+      check: os.output(healthCheckResultViewSchema).handler(() => pingOnly(this.health)),
     });
   }
 }

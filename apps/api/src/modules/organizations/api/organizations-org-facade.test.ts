@@ -63,7 +63,11 @@ describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委�
   // 此处只验「端点形状 → facade 调用坐标」与「4xx 拒因原样上抛不伪装」。
   function facadeStub() {
     return {
-      listMembers: vi.fn().mockResolvedValue([{ userId: 'u1', roleKey: 'member' }]),
+      listMembers: vi
+        .fn()
+        .mockResolvedValue([
+          { userId: 'u1', email: 'u1@example.com', name: 'U One', roleKey: 'member' },
+        ]),
       updateMemberRole: vi.fn().mockResolvedValue(undefined),
       removeMember: vi.fn().mockResolvedValue(undefined),
       listInvitations: vi.fn().mockResolvedValue([]),
@@ -74,11 +78,13 @@ describe('OrganizationsOrgAdminController（管理门面·X7 租级化：纯委�
 
   // 换轨 WP-C：六方法转 per-method `@Impl`（方法返回 procedure）·经 `call` 驱动。
   // 门面守卫抛的 `HttpException` 现由 WP-D `restErrorMiddleware` 归一为 `ORPCError`（code 经状态·原始
-  // getResponse 塞 `data.__rest`）；procedure 未挂 `.output`（passthrough 逐字保真）→ 返回原引用。
+  // getResponse 塞 `data.__rest`）；列表面挂 `.output`（M4-b·真实读模型形）→ `call` 返 parse 后同形新对象。
   it('listMembers 委派 facade.listMembers()', async () => {
     const facade = facadeStub();
     const ctrl = new OrganizationsOrgAdminController(facade as never);
-    await expect(call(ctrl.listMembers())).resolves.toEqual([{ userId: 'u1', roleKey: 'member' }]);
+    await expect(call(ctrl.listMembers())).resolves.toEqual([
+      { userId: 'u1', email: 'u1@example.com', name: 'U One', roleKey: 'member' },
+    ]);
     expect(facade.listMembers).toHaveBeenCalledOnce();
   });
 

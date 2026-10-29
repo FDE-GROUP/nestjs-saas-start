@@ -5,7 +5,8 @@
  * 租户差异化授权唯一入口（module-rbac-dynamic-roles §2.5·`@Controller('organizations/roles')`）：
  * 角色 CRUD（list/create/rename/delete）+ 授权行（list/grant/revoke）。class 级双守卫 + 方法级 `@Can`
  * 留 apps/api（CASL 经 `AuthorizationGuard` 判定）。S4 `@Body({schema})` 校验与 S7b `@SerializeOptions`
- * 白名单下沉 procedure 级 `.input/.output`（数组逐元素面显式包 List schema·void 端点不挂 `.output`）。
+ * 白名单下沉 procedure 级 `.input/.output`（数组逐元素面显式包 List schema）。void 端点（rename/delete/grant/revoke）
+ * 无固定响应载荷→有意不挂 `.output`（逐字透传·宁缺不造·属 M5 豁免面·沿 `usersDelete` 空回执口径）。
  */
 import {
   createRoleSchema,
