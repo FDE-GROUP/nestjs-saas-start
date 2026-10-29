@@ -195,11 +195,14 @@ jobs:
             <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
             <script>
               if (window.mermaid) window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
-              // Docsify 把 ```mermaid 渲染成 <pre><code class="language-mermaid">，
-              // 每次页面渲染后将其改写为 <div class="mermaid"> 并交给 mermaid.run 就地绘制。
+              // Docsify(marked) 把 ```mermaid 渲染成 <pre data-lang="mermaid"><code class="lang-mermaid">，
+              // 类名前缀随版本变（lang- / language-），故三类选择器并集→ 改写为 <div class="mermaid"> 交给 mermaid.run 就地绘制。
               function renderMermaid() {
                 if (!window.mermaid) return;
-                document.querySelectorAll('pre code.language-mermaid').forEach(function (codeEl) {
+                var nodes = document.querySelectorAll(
+                  'pre > code.language-mermaid, pre > code.lang-mermaid, pre[data-lang="mermaid"] > code',
+                );
+                nodes.forEach(function (codeEl) {
                   var div = document.createElement('div');
                   div.className = 'mermaid';
                   div.textContent = codeEl.textContent;
